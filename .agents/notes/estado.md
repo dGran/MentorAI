@@ -265,6 +265,10 @@ redes=3, ruta encadena url-a-fondo→http-a-fondo→tcp-ip→opcache).
   lanzarlos, no se infieren de una pregunta.
 
 ## Planes pendientes (detalle en notes)
+- `ideas-tutoriales.md` — ideas sueltas (pedido 2026-06-21): **Redis a fondo**
+  (estructuras: sets/hashes/sorted sets…, distinto de `redis-cache` que es el
+  patrón de caché) y **jerga del desarrollo** (glosario: parsear, stack
+  overflow, deploy…).
 - `ideas-php-por-dentro.md` — cola de tutoriales **aplicados a PHP** (pedido
   2026-06-21): extensiones de PHP, SAPIs/PHP-FPM, gestión de memoria de PHP
   (Zend, zvals, GC) y workers/long-running. Profundizan memoria/procesos-hilos/
