@@ -911,19 +911,72 @@
       statusEl.className = "modal__status" + (kind ? " is-" + kind : "");
     }
 
+    let lastFocused = null;
+
+    function focusableElements() {
+      const selector =
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+      return Array.from(modal.querySelectorAll(selector)).filter(function (el) {
+        return el.offsetParent !== null;
+      });
+    }
+
+    function focusInitial() {
+      const items = focusableElements();
+      const firstField = items.find(function (el) {
+        return /^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName);
+      });
+
+      (firstField || items[0] || modal).focus();
+    }
+
     function open() {
+      lastFocused = document.activeElement;
       modal.hidden = false;
       document.body.style.overflow = "hidden";
       setStatus(IS_FILE_PROTOCOL ? BRIDGE_HINT : "", IS_FILE_PROTOCOL ? "warning" : "");
+      focusInitial();
     }
 
     function close() {
       modal.hidden = true;
       document.body.style.overflow = "";
+
+      if (lastFocused && typeof lastFocused.focus === "function") {
+        lastFocused.focus();
+      }
     }
 
     modal.querySelectorAll("[data-close]").forEach(function (el) {
       el.addEventListener("click", close);
+    });
+
+    modal.addEventListener("keydown", function (event) {
+      if (event.key !== "Tab") {
+        return;
+      }
+
+      const items = focusableElements();
+
+      if (items.length === 0) {
+        return;
+      }
+
+      const first = items[0];
+      const last = items[items.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+
+        return;
+      }
+
+      if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     });
 
     document.addEventListener("keydown", function (event) {
@@ -1420,6 +1473,10 @@
     initRefiner();
     initYear();
     SyntaxHighlighter.run();
+  });
+
+  window.addEventListener("load", function () {
+    document.documentElement.classList.add("smooth-scroll");
   });
 
   // El tema se aplica cuanto antes para evitar parpadeo.
