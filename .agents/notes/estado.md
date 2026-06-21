@@ -265,6 +265,10 @@ redes=3, ruta encadena url-a-fondo→http-a-fondo→tcp-ip→opcache).
   lanzarlos, no se infieren de una pregunta.
 
 ## Planes pendientes (detalle en notes)
+- `ideas-php-por-dentro.md` — cola de tutoriales **aplicados a PHP** (pedido
+  2026-06-21): extensiones de PHP, SAPIs/PHP-FPM, gestión de memoria de PHP
+  (Zend, zvals, GC) y workers/long-running. Profundizan memoria/procesos-hilos/
+  async; cruzar con enlaces, no duplicar.
 - `plan-curriculum-fundamentos.md` — currículum de fundamentos CS para backend
   autodidacta (7 pilares). **Decidido:** arrancar por el pilar Bases de datos,
   ejemplos PHP+SQL/bash. Dep. técnica: añadir `sql` al highlighter antes del 1er
