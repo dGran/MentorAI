@@ -59,12 +59,22 @@
       return;
     }
 
+    const slug = currentTutorialSlug();
+    let lastSaved = 0;
+
     function update() {
       const scrollTop = window.scrollY;
       const height =
         document.documentElement.scrollHeight - window.innerHeight;
       const progress = height > 0 ? (scrollTop / height) * 100 : 0;
       bar.style.width = progress + "%";
+
+      const now = Date.now();
+
+      if (now - lastSaved > 600) {
+        Reading.save(slug, progress);
+        lastSaved = now;
+      }
     }
 
     window.addEventListener("scroll", update, { passive: true });
@@ -256,6 +266,63 @@
     };
   })();
 
+  /* ---------- Lectura en curso (% de scroll por tutorial) ----------
+     Persistencia individual del avance dentro de cada tutorial para
+     alimentar "Seguir viendo" en la portada. Guarda el % máximo. */
+  const Reading = (function () {
+    const KEY = "academia-reading";
+    const MIN_PERCENT = 5;
+
+    function read() {
+      try {
+        const stored = JSON.parse(localStorage.getItem(KEY));
+        return stored && typeof stored === "object" ? stored : {};
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function write(map) {
+      localStorage.setItem(KEY, JSON.stringify(map));
+    }
+
+    return {
+      save: function (slug, percent) {
+        if (!slug || percent < MIN_PERCENT) {
+          return;
+        }
+
+        const map = read();
+        const previous = map[slug] ? map[slug].percent : 0;
+
+        map[slug] = {
+          percent: Math.max(previous, Math.round(percent)),
+          updatedAt: Date.now(),
+        };
+
+        write(map);
+      },
+      get: function (slug) {
+        return read()[slug] || null;
+      },
+      list: function () {
+        const map = read();
+
+        return Object.keys(map)
+          .map(function (slug) {
+            return {
+              slug: slug,
+              percent: map[slug].percent,
+              updatedAt: map[slug].updatedAt,
+            };
+          })
+          .sort(function (a, b) {
+            return b.updatedAt - a.updatedAt;
+          });
+      },
+    };
+  })();
+
   /* ---------- Catálogo auto-generado desde el manifiesto ----------
      Lee window.ACADEMIA_TUTORIALS y construye los filtros (con conteo
      por categoría) y las tarjetas. Añadir un tutorial = una entrada en
@@ -263,7 +330,16 @@
      Filtra por categoría, por marcadores y por texto a la vez. */
   const Catalog = (function () {
     const BOOKMARK_FILTER = "saved";
-    const state = { filter: "all", query: "" };
+    const ALL = "all";
+    const DURATION_THRESHOLD = 15;
+    const LEVEL_ORDER = ["Principiante", "Intermedio", "Avanzado"];
+    const state = {
+      category: ALL,
+      level: ALL,
+      duration: ALL,
+      tag: ALL,
+      query: "",
+    };
     let cardEls = [];
     let emptyEl = null;
     const ICONS = {
@@ -434,6 +510,12 @@
         escapeHtml((tutorial.categories || []).join(" ")) +
         '" data-topic="' +
         escapeHtml(tutorial.topic || "") +
+        '" data-level="' +
+        escapeHtml(tutorial.level || "") +
+        '" data-minutes="' +
+        escapeHtml(String(tutorial.minutes || "")) +
+        '" data-tags="' +
+        escapeHtml((tutorial.tags || []).join("|")) +
         '" data-slug="' +
         escapeHtml(tutorial.slug) +
         '" data-search="' +
@@ -465,23 +547,53 @@
       return state.query === "" || card.dataset.search.indexOf(state.query) !== -1;
     }
 
-    function matchesFilter(card) {
-      if (state.filter === "all") {
+    function matchesCategory(card) {
+      if (state.category === ALL) {
         return true;
       }
 
-      if (state.filter === BOOKMARK_FILTER) {
+      if (state.category === BOOKMARK_FILTER) {
         return Bookmarks.has(card.dataset.slug);
       }
 
-      return card.dataset.categories.split(" ").indexOf(state.filter) !== -1;
+      return card.dataset.categories.split(" ").indexOf(state.category) !== -1;
+    }
+
+    function matchesLevel(card) {
+      return state.level === ALL || card.dataset.level === state.level;
+    }
+
+    function matchesDuration(card) {
+      if (state.duration === ALL) {
+        return true;
+      }
+
+      const minutes = Number(card.dataset.minutes);
+
+      if (state.duration === "short") {
+        return minutes < DURATION_THRESHOLD;
+      }
+
+      return minutes >= DURATION_THRESHOLD;
+    }
+
+    function matchesTag(card) {
+      return (
+        state.tag === ALL ||
+        card.dataset.tags.split("|").indexOf(state.tag) !== -1
+      );
     }
 
     function applyFilters() {
       let visibleCount = 0;
 
       cardEls.forEach(function (card) {
-        const isVisible = matchesFilter(card) && matchesQuery(card);
+        const isVisible =
+          matchesCategory(card) &&
+          matchesLevel(card) &&
+          matchesDuration(card) &&
+          matchesTag(card) &&
+          matchesQuery(card);
         card.classList.toggle("is-hidden", !isVisible);
 
         if (isVisible) {
@@ -503,7 +615,95 @@
             other.classList.toggle("is-active", other === chip);
           });
 
-          state.filter = chip.dataset.filter;
+          state.category = chip.dataset.filter;
+          applyFilters();
+        });
+      });
+    }
+
+    function levelsIn(tutorials) {
+      const present = {};
+
+      tutorials.forEach(function (tutorial) {
+        if (tutorial.level) {
+          present[tutorial.level] = true;
+        }
+      });
+
+      return LEVEL_ORDER.filter(function (level) {
+        return present[level];
+      });
+    }
+
+    function tagsIn(tutorials) {
+      const present = {};
+
+      tutorials.forEach(function (tutorial) {
+        (tutorial.tags || []).forEach(function (tag) {
+          present[tag] = true;
+        });
+      });
+
+      return Object.keys(present).sort(function (a, b) {
+        return a.localeCompare(b);
+      });
+    }
+
+    function optionsHtml(allLabel, pairs) {
+      return (
+        '<option value="' +
+        ALL +
+        '">' +
+        allLabel +
+        "</option>" +
+        pairs
+          .map(function (pair) {
+            return (
+              '<option value="' +
+              escapeHtml(pair.value) +
+              '">' +
+              escapeHtml(pair.label) +
+              "</option>"
+            );
+          })
+          .join("")
+      );
+    }
+
+    function selectHtml(key, label, optionsMarkup) {
+      return (
+        '<label class="subfilter"><span class="subfilter__label">' +
+        label +
+        '</span><select class="subfilter__select" data-subfilter="' +
+        key +
+        '">' +
+        optionsMarkup +
+        "</select></label>"
+      );
+    }
+
+    function buildSubfilters(subfiltersEl, tutorials) {
+      const levels = levelsIn(tutorials).map(function (level) {
+        return { value: level, label: level };
+      });
+      const durations = [
+        { value: "short", label: "Menos de " + DURATION_THRESHOLD + " min" },
+        { value: "long", label: DURATION_THRESHOLD + " min o más" },
+      ];
+      const tags = tagsIn(tutorials).map(function (tag) {
+        return { value: tag, label: tag };
+      });
+
+      subfiltersEl.innerHTML =
+        selectHtml("level", "Nivel", optionsHtml("Todos", levels)) +
+        selectHtml("duration", "Duración", optionsHtml("Cualquiera", durations)) +
+        selectHtml("tag", "Tema", optionsHtml("Todos", tags));
+    }
+
+    function wireSubfilters(subfiltersEl) {
+      subfiltersEl.querySelectorAll(".subfilter__select").forEach(function (select) {
+        select.addEventListener("change", function () {
+          state[select.dataset.subfilter] = select.value;
           applyFilters();
         });
       });
@@ -539,7 +739,7 @@
             savedCount.textContent = Bookmarks.count();
           }
 
-          if (state.filter === BOOKMARK_FILTER) {
+          if (state.category === BOOKMARK_FILTER) {
             applyFilters();
           }
         });
@@ -547,6 +747,11 @@
     }
 
     return {
+      iconFor: function (key) {
+        return ICONS[key] || ICONS.default;
+      },
+      clockSvg: CLOCK_SVG,
+      levelSvg: LEVEL_SVG,
       render: function () {
         const cardsEl = document.getElementById("cards");
         const filtersEl = document.getElementById("filters");
@@ -592,6 +797,13 @@
           publishedEl.textContent = tutorials.filter(function (tutorial) {
             return !isSoon(tutorial);
           }).length;
+        }
+
+        const subfiltersEl = document.getElementById("subfilters");
+
+        if (subfiltersEl) {
+          buildSubfilters(subfiltersEl, tutorials);
+          wireSubfilters(subfiltersEl);
         }
 
         if (filtersEl) {
@@ -744,7 +956,258 @@
     };
   })();
 
-  /* ---------- Conmutador de vistas (catálogo / ruta) ---------- */
+  /* ---------- Portada: dashboard de inicio ----------
+     Cruza manifest + Reading + Progress + roadmap y pinta cuatro bloques:
+     seguir viendo, novedades, destacados y el banner de ruta en curso.
+     Tarjetas propias (ancla simple), sin acoplarse al wiring del catálogo. */
+  const Home = (function () {
+    const MIN_PERCENT = 5;
+    const DONE_PERCENT = 90;
+    const SHELF_LIMIT = 4;
+
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function publishedTutorials() {
+      return (window.ACADEMIA_TUTORIALS || []).filter(function (tutorial) {
+        return tutorial.status !== "soon";
+      });
+    }
+
+    function manifestMap() {
+      const map = {};
+
+      (window.ACADEMIA_TUTORIALS || []).forEach(function (tutorial) {
+        map[tutorial.slug] = tutorial;
+      });
+
+      return map;
+    }
+
+    function metaLine(tutorial) {
+      return (
+        "<span>" +
+        Catalog.clockSvg +
+        escapeHtml(tutorial.minutes) +
+        " min</span><span>" +
+        Catalog.levelSvg +
+        escapeHtml(tutorial.level) +
+        "</span>"
+      );
+    }
+
+    function miniCard(tutorial) {
+      return (
+        '<a class="mini-card" href="' +
+        escapeHtml(tutorial.href) +
+        '"><span class="mini-card__icon">' +
+        Catalog.iconFor(tutorial.icon) +
+        '</span><h4 class="mini-card__title">' +
+        escapeHtml(tutorial.title) +
+        '</h4><p class="mini-card__desc">' +
+        escapeHtml(tutorial.description) +
+        '</p><div class="mini-card__meta">' +
+        metaLine(tutorial) +
+        "</div></a>"
+      );
+    }
+
+    function continueCard(tutorial, percent) {
+      return (
+        '<a class="continue-card" href="' +
+        escapeHtml(tutorial.href) +
+        '"><div class="continue-card__top"><span class="mini-card__icon">' +
+        Catalog.iconFor(tutorial.icon) +
+        '</span><span class="continue-card__percent">' +
+        percent +
+        '%</span></div><h4 class="mini-card__title">' +
+        escapeHtml(tutorial.title) +
+        '</h4><div class="continue-card__bar"><span style="width:' +
+        percent +
+        '%"></span></div></a>'
+      );
+    }
+
+    function fillShelf(id, title, subtitle, innerHtml) {
+      const host = document.getElementById(id);
+
+      if (!host) {
+        return;
+      }
+
+      host.innerHTML =
+        '<header class="shelf__head"><div><h3 class="shelf__title">' +
+        escapeHtml(title) +
+        "</h3>" +
+        (subtitle
+          ? '<p class="shelf__sub">' + escapeHtml(subtitle) + "</p>"
+          : "") +
+        '</div></header><div class="rail">' +
+        innerHtml +
+        "</div>";
+      host.hidden = false;
+    }
+
+    function hideShelf(id) {
+      const host = document.getElementById(id);
+
+      if (host) {
+        host.hidden = true;
+        host.innerHTML = "";
+      }
+    }
+
+    function renderContinue(map) {
+      const items = Reading.list()
+        .filter(function (entry) {
+          const tutorial = map[entry.slug];
+
+          return (
+            tutorial &&
+            tutorial.status !== "soon" &&
+            entry.percent >= MIN_PERCENT &&
+            entry.percent < DONE_PERCENT &&
+            !Progress.has(entry.slug)
+          );
+        })
+        .slice(0, SHELF_LIMIT);
+
+      if (items.length === 0) {
+        hideShelf("home-continue");
+        return;
+      }
+
+      const cards = items
+        .map(function (entry) {
+          return continueCard(map[entry.slug], entry.percent);
+        })
+        .join("");
+
+      fillShelf("home-continue", "Seguir viendo", "Retoma donde lo dejaste", cards);
+    }
+
+    function renderNew(list) {
+      const ordered = list
+        .slice()
+        .sort(function (a, b) {
+          return String(b.date || "").localeCompare(String(a.date || ""));
+        })
+        .slice(0, SHELF_LIMIT);
+
+      fillShelf(
+        "home-new",
+        "Novedades",
+        "Lo último que hemos publicado",
+        ordered.map(miniCard).join("")
+      );
+    }
+
+    function renderPopular(list) {
+      const popular = list.filter(function (tutorial) {
+        return tutorial.popular === true;
+      });
+
+      if (popular.length === 0) {
+        hideShelf("home-popular");
+        return;
+      }
+
+      fillShelf(
+        "home-popular",
+        "Destacados",
+        "Una buena puerta de entrada",
+        popular.map(miniCard).join("")
+      );
+    }
+
+    function pendingPillar(map) {
+      const pillars = window.MENTORAI_ROADMAP || [];
+      let target = null;
+
+      pillars.forEach(function (pillar) {
+        if (target) {
+          return;
+        }
+
+        const publishedSteps = pillar.steps.filter(function (step) {
+          const tutorial = map[step.slug];
+          return tutorial && tutorial.status !== "soon";
+        });
+        const pending = publishedSteps.filter(function (step) {
+          return !Progress.has(step.slug);
+        });
+
+        if (publishedSteps.length > 0 && pending.length > 0) {
+          target = {
+            pillar: pillar,
+            next: map[pending[0].slug],
+            done: publishedSteps.length - pending.length,
+            total: publishedSteps.length,
+          };
+        }
+      });
+
+      return target;
+    }
+
+    function renderRoute(map) {
+      const host = document.getElementById("home-route");
+
+      if (!host) {
+        return;
+      }
+
+      const target = pendingPillar(map);
+
+      if (!target) {
+        hideShelf("home-route");
+        return;
+      }
+
+      host.hidden = false;
+      host.innerHTML =
+        '<div class="route-banner"><div class="route-banner__body">' +
+        '<span class="route-banner__eyebrow">Ruta de aprendizaje</span>' +
+        '<h3 class="route-banner__title">' +
+        escapeHtml(target.pillar.title) +
+        '</h3><p class="route-banner__sub">' +
+        escapeHtml(target.pillar.summary) +
+        '</p><p class="route-banner__progress">' +
+        target.done +
+        " / " +
+        target.total +
+        " completados</p></div>" +
+        '<div class="route-banner__cta"><a class="btn btn--primary" href="' +
+        escapeHtml(target.next.href) +
+        '">Continuar: ' +
+        escapeHtml(target.next.title) +
+        '</a><button class="btn btn--ghost" type="button" data-view-jump="roadmap">' +
+        "Ver la ruta completa</button></div></div>";
+    }
+
+    return {
+      render: function () {
+        if (!document.getElementById("home-new")) {
+          return;
+        }
+
+        const map = manifestMap();
+        const list = publishedTutorials();
+
+        renderContinue(map);
+        renderNew(list);
+        renderPopular(list);
+        renderRoute(map);
+      },
+    };
+  })();
+
+  /* ---------- Conmutador de vistas (inicio / catálogo / ruta) ---------- */
   function initViewToggle() {
     const buttons = Array.from(document.querySelectorAll(".view-toggle__btn"));
 
@@ -756,7 +1219,9 @@
 
     function show(view) {
       buttons.forEach(function (button) {
-        button.classList.toggle("is-active", button.dataset.view === view);
+        const isActive = button.dataset.view === view;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-selected", isActive ? "true" : "false");
       });
 
       document.querySelectorAll("[data-view-panel]").forEach(function (panel) {
@@ -773,6 +1238,24 @@
         show(button.dataset.view);
       });
     });
+
+    document.querySelectorAll("[data-view-jump]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        show(el.dataset.viewJump);
+
+        const section = document.getElementById("catalogo");
+
+        if (section) {
+          section.scrollIntoView({ block: "start" });
+        }
+      });
+    });
+
+    const active = buttons.find(function (button) {
+      return button.classList.contains("is-active");
+    });
+
+    show(active ? active.dataset.view : buttons[0].dataset.view);
   }
 
   /* ---------- Resaltador de sintaxis propio ----------
@@ -1467,6 +1950,7 @@
     initCopyButtons();
     Catalog.render();
     Roadmap.render();
+    Home.render();
     initViewToggle();
     initTutorialPage();
     initComposer();

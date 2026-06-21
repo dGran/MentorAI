@@ -19,7 +19,8 @@
      icon         clave de icono (ver ICONS en main.js)
      status       "published" | "soon"
      date         fecha ISO (ordena el catálogo, más nuevo arriba)
-     featured     true para resaltar como "Nuevo"
+     featured     true para resaltar como "Nuevo" (el más reciente)
+     popular      true para curar la sección "Destacados" de la portada
    ============================================================ */
 
 window.ACADEMIA_TUTORIALS = [
@@ -56,6 +57,7 @@ window.ACADEMIA_TUTORIALS = [
   },
   {
     slug: "url-a-fondo",
+    popular: true,
     title: "Qué pasa al escribir una URL",
     description:
       "El viaje completo de pulsar Enter a ver la página: anatomía de una URL, resolución DNS, el handshake de TCP, el cifrado de TLS y la petición HTTP final, con los errores típicos en cada eslabón de la cadena.",
@@ -101,6 +103,7 @@ window.ACADEMIA_TUTORIALS = [
   },
   {
     slug: "concurrencia",
+    popular: true,
     title: "Concurrencia: el bug que solo pasa en prod",
     description:
       "Race conditions explicadas con un ejemplo de stock, qué es una sección crítica y cómo la protege un mutex, qué es una operación atómica, cómo aparecen estas carreras en PHP vía la base de datos y qué es un deadlock.",
@@ -161,6 +164,7 @@ window.ACADEMIA_TUTORIALS = [
   },
   {
     slug: "indices-btree",
+    popular: true,
     title: "Índices y B-tree: por qué tu query es lenta",
     description:
       "Por qué una consulta sin índice lee la tabla entera, cómo un B-tree encuentra una fila en pocos saltos, cómo leer un EXPLAIN, el orden de columnas en índices compuestos y cuándo un índice no se usa.",
@@ -206,6 +210,7 @@ window.ACADEMIA_TUTORIALS = [
   },
   {
     slug: "big-o",
+    popular: true,
     title: "Big-O sin matemáticas: cómo saber si tu código escala",
     description:
       "Qué mide Big-O (cómo crece el coste, no los segundos), las clases que verás en la práctica (O(1), O(log n), O(n), O(n log n), O(n²)) y cómo cazar el O(n²) escondido que mata el rendimiento.",
@@ -296,6 +301,7 @@ window.ACADEMIA_TUTORIALS = [
   },
   {
     slug: "opcache",
+    popular: true,
     title: "OPcache: cómo PHP deja de releer tu código",
     description:
       "Qué es, cómo funciona la caché de opcodes en memoria compartida, cómo configurarlo bien y los errores típicos que matan su efecto.",
