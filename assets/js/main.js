@@ -23,8 +23,17 @@
   }
 
   function applyTheme(theme) {
-    document.documentElement.setAttribute("data-theme", theme);
+    const root = document.documentElement;
+
+    root.classList.add("theme-switching");
+    root.setAttribute("data-theme", theme);
     localStorage.setItem(THEME_KEY, theme);
+
+    window.requestAnimationFrame(function () {
+      window.requestAnimationFrame(function () {
+        root.classList.remove("theme-switching");
+      });
+    });
   }
 
   function initTheme() {
