@@ -1,5 +1,5 @@
 /* ============================================================
-   Academia — Interacciones
+   MentorAI — Interacciones
    Sin dependencias externas. Todo funciona abriendo el HTML
    directamente en el navegador (file://).
    ============================================================ */
@@ -202,6 +202,51 @@
     };
   })();
 
+  /* ---------- Progreso de lectura (localStorage) ----------
+     Marca individual de "tutorial completado". Alimenta la ruta. */
+  const Progress = (function () {
+    const KEY = "academia-progress";
+
+    function read() {
+      try {
+        const stored = JSON.parse(localStorage.getItem(KEY));
+        return Array.isArray(stored) ? stored : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function write(slugs) {
+      localStorage.setItem(KEY, JSON.stringify(slugs));
+    }
+
+    return {
+      has: function (slug) {
+        return read().indexOf(slug) !== -1;
+      },
+      count: function () {
+        return read().length;
+      },
+      toggle: function (slug) {
+        const slugs = read();
+        const index = slugs.indexOf(slug);
+        const isDone = index !== -1;
+
+        if (isDone) {
+          slugs.splice(index, 1);
+        }
+
+        if (!isDone) {
+          slugs.push(slug);
+        }
+
+        write(slugs);
+
+        return !isDone;
+      },
+    };
+  })();
+
   /* ---------- Catálogo auto-generado desde el manifiesto ----------
      Lee window.ACADEMIA_TUTORIALS y construye los filtros (con conteo
      por categoría) y las tarjetas. Añadir un tutorial = una entrada en
@@ -237,6 +282,8 @@
       bbdd: "Bases de datos",
       representacion: "Representación de datos",
       algoritmos: "Algoritmos",
+      sistemas: "El sistema por debajo",
+      redes: "Cómo viaja un dato",
     };
 
     const CLOCK_SVG =
@@ -549,6 +596,176 @@
     };
   })();
 
+  /* ---------- Ruta de aprendizaje (vista de la home) ----------
+     Lee window.MENTORAI_ROADMAP (orden por pilares) y lo cruza con el
+     manifest (estado y metadatos) y con Progress (lo ya completado). */
+  const Roadmap = (function () {
+    const CHECK_SVG =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function manifestMap() {
+      const map = {};
+
+      (window.ACADEMIA_TUTORIALS || []).forEach(function (tutorial) {
+        map[tutorial.slug] = tutorial;
+      });
+
+      return map;
+    }
+
+    function isPublished(tutorial) {
+      return Boolean(tutorial) && tutorial.status !== "soon";
+    }
+
+    function buildStep(step, manifest, position) {
+      const tutorial = manifest[step.slug];
+      const published = isPublished(tutorial);
+      const soon = Boolean(tutorial) && tutorial.status === "soon";
+      const done = published && Progress.has(step.slug);
+      const title = escapeHtml((tutorial && tutorial.title) || step.title || step.slug);
+
+      const marker = done
+        ? '<span class="step__marker step__marker--done">' + CHECK_SVG + "</span>"
+        : '<span class="step__marker">' + position + "</span>";
+
+      let body;
+      let tag;
+
+      if (published) {
+        body = '<a class="step__title" href="' + escapeHtml(tutorial.href) + '">' + title + "</a>";
+        tag = done
+          ? '<span class="step__tag step__tag--done">Completado</span>'
+          : '<span class="step__meta">' + escapeHtml(tutorial.minutes) + " min</span>";
+      }
+
+      if (soon) {
+        body = '<span class="step__title is-muted">' + title + "</span>";
+        tag = '<span class="step__tag">Próximamente</span>';
+      }
+
+      if (!published && !soon) {
+        body = '<span class="step__title is-muted">' + title + "</span>";
+        tag = '<span class="step__tag">Planificado</span>';
+      }
+
+      return (
+        '<li class="step' +
+        (published ? "" : " step--pending") +
+        (done ? " step--done" : "") +
+        '">' +
+        marker +
+        body +
+        tag +
+        "</li>"
+      );
+    }
+
+    function buildPillar(pillar, manifest, index) {
+      const published = pillar.steps.filter(function (step) {
+        return isPublished(manifest[step.slug]);
+      });
+      const done = published.filter(function (step) {
+        return Progress.has(step.slug);
+      });
+      const percent = published.length
+        ? Math.round((done.length / published.length) * 100)
+        : 0;
+      const label = published.length
+        ? done.length + " / " + published.length
+        : "Próximamente";
+
+      const rows = pillar.steps
+        .map(function (step, position) {
+          return buildStep(step, manifest, position + 1);
+        })
+        .join("");
+
+      return (
+        '<section class="pillar">' +
+        '<header class="pillar__head">' +
+        '<span class="pillar__num">' +
+        (index + 1) +
+        "</span>" +
+        '<div class="pillar__headings">' +
+        '<h3 class="pillar__title">' +
+        escapeHtml(pillar.title) +
+        "</h3>" +
+        '<p class="pillar__summary">' +
+        escapeHtml(pillar.summary) +
+        "</p></div>" +
+        '<span class="pillar__progress">' +
+        label +
+        "</span>" +
+        "</header>" +
+        '<div class="pillar__bar"><span style="width:' +
+        percent +
+        '%"></span></div>' +
+        '<ol class="steps">' +
+        rows +
+        "</ol>" +
+        "</section>"
+      );
+    }
+
+    return {
+      render: function () {
+        const host = document.getElementById("roadmap");
+        const pillars = window.MENTORAI_ROADMAP;
+
+        if (!host || !Array.isArray(pillars)) {
+          return;
+        }
+
+        const manifest = manifestMap();
+
+        host.innerHTML = pillars
+          .map(function (pillar, index) {
+            return buildPillar(pillar, manifest, index);
+          })
+          .join("");
+      },
+    };
+  })();
+
+  /* ---------- Conmutador de vistas (catálogo / ruta) ---------- */
+  function initViewToggle() {
+    const buttons = Array.from(document.querySelectorAll(".view-toggle__btn"));
+
+    if (buttons.length === 0) {
+      return;
+    }
+
+    const emptyEl = document.getElementById("cards-empty");
+
+    function show(view) {
+      buttons.forEach(function (button) {
+        button.classList.toggle("is-active", button.dataset.view === view);
+      });
+
+      document.querySelectorAll("[data-view-panel]").forEach(function (panel) {
+        panel.hidden = panel.dataset.viewPanel !== view;
+      });
+
+      if (emptyEl && view !== "catalog") {
+        emptyEl.hidden = true;
+      }
+    }
+
+    buttons.forEach(function (button) {
+      button.addEventListener("click", function () {
+        show(button.dataset.view);
+      });
+    });
+  }
+
   /* ---------- Resaltador de sintaxis propio ----------
      Una sola pasada con un regex combinado por lenguaje. Gana el token
      que empieza antes; a igualdad de posición, el primero de la lista.
@@ -839,6 +1056,338 @@
     });
   }
 
+  /* ---------- Página de tutorial: audio, progreso y ruta ----------
+     Mejoras inyectadas por JS según el slug del fichero, para no editar
+     a mano cada tutorial: lector por voz (Web Speech), marca de
+     completado (Progress) y navegación dentro de la ruta de aprendizaje. */
+  function initTutorialPage() {
+    const prose = document.querySelector("article.prose");
+
+    if (!prose) {
+      return;
+    }
+
+    const slug = currentTutorialSlug();
+
+    injectTutorialActions(slug, prose);
+    injectRouteNav(slug, prose);
+  }
+
+  function escapeAttr(text) {
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function currentTutorialSlug() {
+    const path = window.location.pathname;
+    const file = path.substring(path.lastIndexOf("/") + 1);
+
+    return file.replace(/\.html$/, "");
+  }
+
+  function basename(href) {
+    return String(href || "").substring(String(href || "").lastIndexOf("/") + 1);
+  }
+
+  const PLAY_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 4 20 12 6 20 6 4"/></svg>';
+  const STOP_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+  const DONE_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+  function injectTutorialActions(slug, prose) {
+    const host = document.querySelector(".tutorial-hero .container");
+
+    if (!host) {
+      return;
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "tutorial-actions";
+
+    const hasSpeech = "speechSynthesis" in window;
+
+    const audioBtn = hasSpeech ? buildAudioButton(prose) : null;
+    const doneBtn = buildDoneButton(slug);
+
+    if (audioBtn) {
+      actions.appendChild(audioBtn);
+    }
+
+    actions.appendChild(doneBtn);
+    host.appendChild(actions);
+  }
+
+  function speechChunks(prose) {
+    const sources = [];
+    const title = document.querySelector(".tutorial-hero__title");
+    const lead = document.querySelector(".tutorial-hero__lead");
+
+    if (title) {
+      sources.push(title);
+    }
+
+    if (lead) {
+      sources.push(lead);
+    }
+
+    prose.querySelectorAll("h2, p, li").forEach(function (node) {
+      sources.push(node);
+    });
+
+    return sources
+      .map(function (node) {
+        return node.textContent.replace(/\s+/g, " ").trim();
+      })
+      .filter(function (text) {
+        return text.length > 0;
+      });
+  }
+
+  function pickSpanishVoice() {
+    const voices = window.speechSynthesis.getVoices();
+
+    return voices.filter(function (voice) {
+      return voice.lang && voice.lang.toLowerCase().indexOf("es") === 0;
+    })[0];
+  }
+
+  function buildAudioButton(prose) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tutorial-action";
+
+    const setIdle = function () {
+      button.classList.remove("is-playing");
+      button.innerHTML = PLAY_SVG + "<span>Escuchar</span>";
+    };
+
+    const setPlaying = function () {
+      button.classList.add("is-playing");
+      button.innerHTML = STOP_SVG + "<span>Detener</span>";
+    };
+
+    setIdle();
+
+    const stop = function () {
+      window.speechSynthesis.cancel();
+      setIdle();
+    };
+
+    const play = function () {
+      const chunks = speechChunks(prose);
+
+      if (chunks.length === 0) {
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+      const voice = pickSpanishVoice();
+
+      chunks.forEach(function (text, index) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "es-ES";
+        utterance.rate = 1;
+
+        if (voice) {
+          utterance.voice = voice;
+        }
+
+        if (index === chunks.length - 1) {
+          utterance.onend = setIdle;
+        }
+
+        window.speechSynthesis.speak(utterance);
+      });
+
+      setPlaying();
+    };
+
+    button.addEventListener("click", function () {
+      if (button.classList.contains("is-playing")) {
+        stop();
+        return;
+      }
+
+      play();
+    });
+
+    window.addEventListener("beforeunload", function () {
+      window.speechSynthesis.cancel();
+    });
+
+    return button;
+  }
+
+  function buildDoneButton(slug) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tutorial-action tutorial-action--done";
+
+    const paint = function (isDone) {
+      button.classList.toggle("is-done", isDone);
+      button.innerHTML = isDone
+        ? DONE_SVG + "<span>Completado</span>"
+        : DONE_SVG + "<span>Marcar como completado</span>";
+    };
+
+    paint(Progress.has(slug));
+
+    button.addEventListener("click", function () {
+      paint(Progress.toggle(slug));
+    });
+
+    return button;
+  }
+
+  function roadmapSequence() {
+    const sequence = [];
+
+    (window.MENTORAI_ROADMAP || []).forEach(function (pillar) {
+      pillar.steps.forEach(function (step, position) {
+        sequence.push({
+          slug: step.slug,
+          title: step.title,
+          pillar: pillar,
+          position: position,
+        });
+      });
+    });
+
+    return sequence;
+  }
+
+  function manifestBySlug() {
+    const map = {};
+
+    (window.ACADEMIA_TUTORIALS || []).forEach(function (tutorial) {
+      map[tutorial.slug] = tutorial;
+    });
+
+    return map;
+  }
+
+  function isPublishedTutorial(tutorial) {
+    return Boolean(tutorial) && tutorial.status !== "soon";
+  }
+
+  function neighborLink(manifest, sequence, fromIndex, direction) {
+    for (let index = fromIndex + direction; index >= 0 && index < sequence.length; index += direction) {
+      const tutorial = manifest[sequence[index].slug];
+
+      if (isPublishedTutorial(tutorial)) {
+        return tutorial;
+      }
+    }
+
+    return null;
+  }
+
+  function relatedInPillar(manifest, pillar, slug) {
+    return pillar.steps
+      .filter(function (step) {
+        return step.slug !== slug && isPublishedTutorial(manifest[step.slug]);
+      })
+      .map(function (step) {
+        return manifest[step.slug];
+      });
+  }
+
+  function buildRouteNav(manifest, sequence, index) {
+    const current = sequence[index];
+    const pillar = current.pillar;
+    const prev = neighborLink(manifest, sequence, index, -1);
+    const next = neighborLink(manifest, sequence, index, 1);
+
+    const crumb =
+      '<p class="route-nav__crumb">Ruta · <strong>' +
+      escapeAttr(pillar.title) +
+      "</strong> · paso " +
+      (current.position + 1) +
+      " de " +
+      pillar.steps.length +
+      "</p>";
+
+    const prevLink = prev
+      ? '<a href="' +
+        escapeAttr(basename(prev.href)) +
+        '"><small>← Anterior</small><b>' +
+        escapeAttr(prev.title) +
+        "</b></a>"
+      : "";
+
+    const nextLink = next
+      ? '<a href="' +
+        escapeAttr(basename(next.href)) +
+        '" class="next"><small>Siguiente →</small><b>' +
+        escapeAttr(next.title) +
+        "</b></a>"
+      : '<a href="../index.html" class="next"><small>Fin de la ruta →</small><b>Volver al catálogo</b></a>';
+
+    const related = relatedInPillar(manifest, pillar, current.slug);
+
+    const relatedBlock =
+      related.length === 0
+        ? ""
+        : '<div class="route-related"><p class="route-related__title">Más en «' +
+          escapeAttr(pillar.title) +
+          '»</p><ul>' +
+          related
+            .map(function (tutorial) {
+              return (
+                '<li><a href="' +
+                escapeAttr(basename(tutorial.href)) +
+                '">' +
+                escapeAttr(tutorial.title) +
+                '<span>' +
+                escapeAttr(tutorial.minutes) +
+                " min</span></a></li>"
+              );
+            })
+            .join("") +
+          "</ul></div>";
+
+    return (
+      '<nav class="route-nav">' +
+      crumb +
+      '<div class="tutorial-nav">' +
+      prevLink +
+      nextLink +
+      "</div>" +
+      relatedBlock +
+      "</nav>"
+    );
+  }
+
+  function injectRouteNav(slug, prose) {
+    const sequence = roadmapSequence();
+    const index = sequence
+      .map(function (step) {
+        return step.slug;
+      })
+      .indexOf(slug);
+
+    if (index === -1) {
+      return;
+    }
+
+    const manifest = manifestBySlug();
+    const manualNav = prose.querySelector(".tutorial-nav");
+    const html = buildRouteNav(manifest, sequence, index);
+
+    if (manualNav) {
+      manualNav.insertAdjacentHTML("beforebegin", html);
+      manualNav.hidden = true;
+      return;
+    }
+
+    prose.insertAdjacentHTML("beforeend", html);
+  }
+
   /* ---------- Año del footer ---------- */
   function initYear() {
     const el = document.querySelector("[data-year]");
@@ -855,6 +1404,9 @@
     initScrollSpy();
     initCopyButtons();
     Catalog.render();
+    Roadmap.render();
+    initViewToggle();
+    initTutorialPage();
     initComposer();
     initRefiner();
     initYear();

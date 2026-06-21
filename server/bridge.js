@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* ============================================================
-   Academia — Puente local con Claude Code
+   MentorAI — Puente local con Claude Code
    ------------------------------------------------------------
    Sirve la web estática Y expone /api/generate en el mismo
    puerto (sin CORS). Cuando la web pide un tutorial nuevo, este
@@ -133,7 +133,7 @@ function buildPrompt(params) {
   const example = fs.readFileSync(EXAMPLE_PATH, "utf8");
 
   return [
-    "Eres un generador de tutoriales para la plataforma de formación 'Academia'.",
+    "Eres un generador de tutoriales para la plataforma de formación 'MentorAI'.",
     "Devuelves EXCLUSIVAMENTE un objeto JSON válido: sin texto antes ni después,",
     "sin vallas de markdown (```), sin comentarios.",
     "",
@@ -427,7 +427,7 @@ async function handleGenerate(request, response) {
 
 function buildRefinePrompt(currentHtml, instructions) {
   return [
-    "Eres editor de tutoriales de la plataforma de formación 'Academia'.",
+    "Eres editor de tutoriales de la plataforma de formación 'MentorAI'.",
     "Devuelves EXCLUSIVAMENTE un objeto JSON válido: sin texto antes ni después,",
     "sin vallas de markdown (```), sin comentarios.",
     "",
@@ -590,7 +590,7 @@ const server = http.createServer(function (request, response) {
 
 server.listen(PORT, function () {
   console.log("");
-  console.log("  Academia — puente local activo");
+  console.log("  MentorAI — puente local activo");
   console.log("  ▶ http://localhost:" + PORT);
   console.log("  Binario de Claude: " + CLAUDE_BIN + (CLAUDE_MODEL ? " (modelo " + CLAUDE_MODEL + ")" : ""));
   console.log("  Ctrl+C para parar");
