@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HTTP a fondo: métodos, estados, cabeceras y caché — MentorAI</title>
+    <meta
+      name="description"
+      content="La anatomía de una petición y una respuesta HTTP, qué métodos son seguros e idempotentes, qué significan de verdad los códigos de estado, cómo funciona la caché con Cache-Control y ETag, y por qué HTTP no tiene estado: cookies frente a tokens."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%235b5bf5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>M</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark">M</span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Cómo viaja un dato</span>
+        </nav>
+        <h1 class="tutorial-hero__title">HTTP a fondo: métodos, estados y caché</h1>
+        <p class="tutorial-hero__lead">
+          HTTP es un protocolo de texto sorprendentemente simple: pides algo, te
+          responden. Pero detrás de esa simpleza hay decisiones que definen tu API:
+          qué método usar, qué código devolver, qué cabeceras mandan en la caché y
+          cómo mantener una sesión sobre un protocolo que, por diseño, no recuerda nada.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            16 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">Pedir y responder, en texto</a></li>
+            <li><a href="#mensaje">Anatomía de un mensaje</a></li>
+            <li><a href="#metodos">Métodos: seguro e idempotente</a></li>
+            <li><a href="#status">Códigos de estado de verdad</a></li>
+            <li><a href="#cache">Caché: Cache-Control y ETag</a></li>
+            <li><a href="#estado">HTTP no tiene estado</a></li>
+            <li><a href="#errores">Errores comunes</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            HTTP es el idioma común de la web: un protocolo de petición-respuesta sobre
+            la conexión que abrió <a href="url-a-fondo.html">la URL</a>. El cliente
+            envía un mensaje pidiendo un recurso y el servidor envía otro con la
+            respuesta. Todo es texto legible, y eso lo hace fácil de inspeccionar.
+          </p>
+
+          <h2 id="idea">
+            Pedir y responder, en texto
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cada intercambio HTTP es independiente: una petición, una respuesta, y a
+            otra cosa. El cliente siempre empieza; el servidor nunca habla por su cuenta
+            (esa limitación es la que obliga a inventar websockets para el tiempo real).
+            La gracia es que el formato es tan simple que puedes escribirlo a mano.
+          </p>
+
+          <h2 id="mensaje">
+            Anatomía de un mensaje
+            <a href="#mensaje" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una petición tiene tres partes: la <strong>línea de petición</strong>
+            (método + ruta + versión), las <strong>cabeceras</strong> (metadatos clave:
+            valor) y, opcionalmente, un <strong>cuerpo</strong> (los datos que envías).
+            La respuesta tiene la misma estructura con una línea de estado al frente.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">http · petición y respuesta</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>GET /precios HTTP/1.1
+Host: www.ejemplo.com
+Accept: text/html
+Cookie: sesion=abc123
+
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+Cache-Control: max-age=3600
+Content-Length: 1024
+
+&lt;!DOCTYPE html&gt;...</code></pre>
+          </div>
+          <p>
+            Una línea en blanco separa las cabeceras del cuerpo. Las cabeceras lo
+            controlan casi todo: qué formato aceptas (<code>Accept</code>), qué tipo
+            tiene la respuesta (<code>Content-Type</code>), cómo cachearla, qué cookies
+            llevas. Aprender HTTP es en buena medida aprender cabeceras.
+          </p>
+
+          <h2 id="metodos">
+            Métodos: seguro e idempotente
+            <a href="#metodos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El <strong>método</strong> declara la intención. Más allá de "GET lee y
+            POST escribe", lo que de verdad los distingue son dos propiedades. Un método
+            es <strong>seguro</strong> si no modifica nada (solo lee), e
+            <strong>idempotente</strong> si repetirlo deja el mismo resultado que
+            hacerlo una vez. Esto no es teoría: define qué puede reintentar un cliente o
+            un proxy sin miedo.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Método</th><th>Para qué</th><th>Seguro</th><th>Idempotente</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>GET</code></td><td>Leer un recurso</td><td>Sí</td><td>Sí</td></tr>
+                <tr><td><code>POST</code></td><td>Crear / acción</td><td>No</td><td>No</td></tr>
+                <tr><td><code>PUT</code></td><td>Reemplazar entero</td><td>No</td><td>Sí</td></tr>
+                <tr><td><code>PATCH</code></td><td>Modificar parcial</td><td>No</td><td>No*</td></tr>
+                <tr><td><code>DELETE</code></td><td>Borrar</td><td>No</td><td>Sí</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            <code>PUT</code> es idempotente porque mandar el mismo recurso completo dos
+            veces deja la misma fila; <code>POST</code> no, porque dos veces crea dos
+            recursos. Por eso un navegador te avisa al recargar un POST ("¿reenviar el
+            formulario?") y nunca al recargar un GET. La idempotencia es clave en
+            sistemas distribuidos, y tiene su propio tutorial más adelante.
+          </p>
+
+          <h2 id="status">
+            Códigos de estado de verdad
+            <a href="#status" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El código de estado resume en tres dígitos qué pasó. La primera cifra es la
+            familia; conviene usarlos con precisión, porque clientes, proxies y buscadores
+            actúan según ellos.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Familia</th><th>Significa</th><th>Ejemplos útiles</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>2xx</code></td><td>Éxito</td><td>200 OK · 201 Created · 204 No Content</td></tr>
+                <tr><td><code>3xx</code></td><td>Redirección</td><td>301 movido para siempre · 304 Not Modified</td></tr>
+                <tr><td><code>4xx</code></td><td>Error del cliente</td><td>400 mala petición · 401 sin autenticar · 403 prohibido · 404 no existe · 409 conflicto · 422 datos inválidos · 429 demasiadas</td></tr>
+                <tr><td><code>5xx</code></td><td>Error del servidor</td><td>500 fallo interno · 502 mala respuesta del upstream · 503 no disponible</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">401 no es 403</p>
+              <p>
+                <strong>401</strong> es "no sé quién eres" (falta o falla la
+                autenticación); <strong>403</strong> es "sé quién eres y no puedes".
+                Y un <strong>404</strong> también sirve para ocultar recursos a quien no
+                debería ni saber que existen. Devolver el código correcto es parte del
+                diseño, no un detalle.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="cache">
+            Caché: Cache-Control y ETag
+            <a href="#cache" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La caché HTTP es de las optimizaciones más rentables que existen: la
+            respuesta más rápida es la que no se pide. El servidor controla la caché
+            con cabeceras, y hay dos estrategias que se combinan.
+          </p>
+          <p>
+            La primera es <strong>caducidad</strong>: con
+            <code>Cache-Control: max-age=3600</code> el servidor dice "esto vale una
+            hora". Durante ese tiempo el navegador usa su copia <strong>sin
+            preguntar</strong>. La segunda es <strong>revalidación</strong>: el servidor
+            manda un <strong>ETag</strong> (una huella del contenido); cuando la copia
+            caduca, el cliente pregunta "¿sigue siendo esta?" con
+            <code>If-None-Match</code>, y si no cambió el servidor responde un
+            <strong>304 Not Modified</strong> sin cuerpo. Ahorra ancho de banda aunque
+            haya que confirmar.
+          </p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Primera vez</b><small>200 OK + ETag "v7" + Cache-Control</small></span>
+              </div>
+              <div class="flow__arrow" data-label="caduca el max-age"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>El cliente revalida</b><small>If-None-Match: "v7"</small></span>
+              </div>
+              <div class="flow__arrow" data-label="no ha cambiado"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>304 Not Modified</b><small>sin cuerpo: reutiliza la copia local</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Caducidad evita la petición; revalidación evita reenviar el cuerpo si nada cambió.</p>
+          </div>
+
+          <h2 id="estado">
+            HTTP no tiene estado
+            <a href="#estado" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            HTTP es <strong>sin estado</strong> (<em>stateless</em>): el servidor no
+            recuerda nada de una petición a la siguiente. Eso es lo que lo hace
+            escalable —cualquier servidor puede atender cualquier petición, como vimos
+            con PHP-FPM— pero plantea un problema: si no recuerda nada, ¿cómo sabe que
+            ya iniciaste sesión? La respuesta es que el cliente lo demuestra en
+            <strong>cada</strong> petición.
+          </p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Cookies de sesión</h4>
+              <ul>
+                <li>El servidor guarda la sesión y manda un id en una cookie</li>
+                <li>El navegador reenvía la cookie sola en cada petición</li>
+                <li>Estado en el servidor: revocar es inmediato</li>
+                <li>Cuidado con CSRF; usa <code>SameSite</code></li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Tokens (JWT)</h4>
+              <ul>
+                <li>El cliente guarda un token firmado y lo envía en <code>Authorization</code></li>
+                <li>El servidor lo verifica sin guardar sesión: stateless de verdad</li>
+                <li>Encaja con APIs y varios servicios</li>
+                <li>Revocar antes de que caduque es el punto difícil</li>
+              </ul>
+            </div>
+          </div>
+          <p>
+            No hay ganador absoluto: cookies de sesión brillan en webs clásicas; los
+            tokens, en APIs y arquitecturas distribuidas. Ambos resuelven lo mismo —dar
+            memoria a un protocolo que no la tiene— y los dos los desarrolla el tutorial
+            de autenticación del pilar de seguridad.
+          </p>
+
+          <h2 id="errores">
+            Errores comunes
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <strong>Devolver 200 con un error dentro.</strong> Un <code>200 OK</code>
+            con <code>{"error": "no encontrado"}</code> engaña a clientes y monitores.
+            Si falló, usa el código de la familia correcta (4xx o 5xx).
+          </p>
+          <p>
+            <strong>Usar POST para todo.</strong> Si la acción solo lee, es GET (cacheable
+            y reintentable); si reemplaza, PUT. Elegir el método por su semántica te
+            regala idempotencia y caché gratis.
+          </p>
+          <p>
+            <strong>Olvidar que la caché existe.</strong> Sin cabeceras explícitas,
+            navegadores y proxies cachean con heurísticas que quizá no quieres. Di tú
+            qué es cacheable y por cuánto; no lo dejes al azar.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un mensaje HTTP es texto: línea de petición/estado, <strong>cabeceras</strong> y cuerpo opcional. Las cabeceras controlan casi todo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Elige el <strong>método</strong> por su semántica: <strong>seguro</strong> (solo lee) e <strong>idempotente</strong> (repetir no cambia el resultado) deciden qué se puede reintentar y cachear.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los <strong>códigos de estado</strong> tienen significado: 401 ≠ 403, no devuelvas 200 en un error. La <strong>caché</strong> combina caducidad (<code>max-age</code>) y revalidación (<code>ETag</code> → 304).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>HTTP es <strong>sin estado</strong>: la sesión se sostiene en cada petición con <strong>cookies</strong> (estado en servidor) o <strong>tokens</strong> (estado en cliente).</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="url-a-fondo.html">
+              <small>← Anterior</small>
+              <b>Qué pasa al escribir una URL</b>
+            </a>
+            <a href="tcp-ip.html" class="next">
+              <small>Siguiente →</small>
+              <b>TCP/IP</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/roadmap.js"></script>
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

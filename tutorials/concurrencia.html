@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Concurrencia: el bug que solo pasa en producción — MentorAI</title>
+    <meta
+      name="description"
+      content="Race conditions explicadas con un ejemplo de stock, qué es una sección crítica y cómo la protege un mutex, qué significa que una operación sea atómica, cómo aparecen estas carreras en PHP a través de la base de datos y qué es un deadlock."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%235b5bf5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>M</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark">M</span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>El sistema por debajo</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Concurrencia: el bug que solo pasa en producción</h1>
+        <p class="tutorial-hero__lead">
+          En tu máquina funciona siempre. En producción, una vez cada mil pedidos,
+          el stock baja de cero o cobras dos veces. No es magia negra: es una
+          <em>race condition</em>, el fallo que aparece cuando dos flujos tocan el
+          mismo dato a la vez y el orden importa.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">El bug que no se reproduce</a></li>
+            <li><a href="#race">Anatomía de una race condition</a></li>
+            <li><a href="#critica">Sección crítica y mutex</a></li>
+            <li><a href="#atomicidad">Operaciones atómicas</a></li>
+            <li><a href="#php">Concurrencia en PHP: vía la base de datos</a></li>
+            <li><a href="#deadlock">Deadlock: el abrazo mortal</a></li>
+            <li><a href="#errores">Errores comunes</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            La concurrencia es que <strong>varias cosas avanzan a la vez</strong>:
+            dos hilos, dos procesos, dos peticiones HTTP. Mientras cada una trabaja
+            con sus propios datos, no hay problema. El drama empieza cuando comparten
+            uno y lo modifican sin ponerse de acuerdo.
+          </p>
+
+          <h2 id="idea">
+            El bug que no se reproduce
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Lo que hace temibles a estos fallos es que dependen del
+            <strong>momento exacto</strong> en que se cruzan dos ejecuciones. En
+            local, con un solo usuario, las cosas pasan de una en una y todo cuadra.
+            En producción, con cien peticiones por segundo, tarde o temprano dos caen
+            en el milisegundo justo y el resultado se corrompe. El bug existe siempre;
+            solo se manifiesta cuando hay carga.
+          </p>
+
+          <h2 id="race">
+            Anatomía de una race condition
+            <a href="#race" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El patrón culpable casi siempre es el mismo:
+            <strong>leer, modificar y escribir</strong> (read-modify-write). Imagina
+            vender la última unidad de un producto. El código parece inocente:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · comprar.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$stock = $producto-&gt;leerStock();
+
+if ($stock &gt; 0) {
+    $producto-&gt;guardarStock($stock - 1);
+    $pedido-&gt;confirmar();
+}</code></pre>
+          </div>
+          <p>
+            Con una unidad en stock, dos peticiones simultáneas pueden intercalarse
+            así:
+          </p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Petición A lee stock</b><small>obtiene 1</small></span>
+              </div>
+              <div class="flow__arrow" data-label="antes de que A escriba"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Petición B lee stock</b><small>también obtiene 1</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>A escribe 0</b><small>y confirma su pedido</small></span>
+              </div>
+              <div class="flow__arrow" data-label="resultado corrupto"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>B escribe 0</b><small>y confirma: vendiste 2 con stock 1</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Ambas leyeron antes de que la otra escribiera: la última en escribir pisa a la primera (lost update).</p>
+          </div>
+          <p>
+            Las dos peticiones leyeron <code>1</code>, las dos pasaron el
+            <code>if</code>, las dos confirmaron. Vendiste dos unidades teniendo una.
+            A esto se le llama <strong>lost update</strong>: una actualización se
+            perdió porque otra la sobrescribió sin saber que existía.
+          </p>
+
+          <h2 id="critica">
+            Sección crítica y mutex
+            <a href="#critica" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El tramo de código que <strong>no puede ejecutarse a la vez</strong> por
+            dos flujos sobre el mismo dato se llama <strong>sección crítica</strong>.
+            En el ejemplo es el leer-comprobar-escribir del stock. La herramienta
+            clásica para protegerlo es el <strong>mutex</strong> (de
+            <em>mutual exclusion</em>): un candado que solo uno puede tener a la vez.
+          </p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Adquirir el candado</b><small>si lo tiene otro, esperas</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Sección crítica</b><small>lees, decides y escribes a solas</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Liberar el candado</b><small>el siguiente ya puede entrar</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Mientras A tiene el candado, B espera en la puerta. Las carreras desaparecen porque dejan de ser simultáneas.</p>
+          </div>
+          <p>
+            El candado serializa la sección crítica: convierte el "a la vez" en
+            "uno detrás de otro". Tiene un precio —los que esperan no avanzan—, así
+            que la regla es <strong>mantener la sección crítica lo más corta
+            posible</strong>: protege solo el dato compartido, no media función.
+          </p>
+
+          <h2 id="atomicidad">
+            Operaciones atómicas
+            <a href="#atomicidad" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una operación es <strong>atómica</strong> si ocurre "de golpe": para
+            cualquier observador, o no ha pasado o ya está entera, nunca a medias y
+            nunca intercalada con otra. La race condition del stock nace de que
+            leer-y-escribir <strong>no</strong> era atómico: había un hueco entre la
+            lectura y la escritura por donde se coló la otra petición.
+          </p>
+          <p>
+            La forma más limpia de matar una carrera es convertir el read-modify-write
+            en <strong>una sola operación atómica</strong> que el sistema ya garantiza.
+            No necesitas el candado si el propio motor hace el incremento de un tirón.
+          </p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Mejor evitar la carrera que sincronizarla</p>
+              <p>
+                Un <code>INCR</code> de Redis o un <code>UPDATE … SET x = x - 1</code>
+                de SQL son atómicos: el motor garantiza que nadie se cuela en medio.
+                Suele ser más simple y rápido que montar candados tú mismo.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="php">
+            Concurrencia en PHP: vía la base de datos
+            <a href="#php" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En PHP normalmente no compartes memoria entre peticiones (cada una es su
+            proceso), así que pensarás que te libras. Pero <strong>sí compartes la
+            base de datos y Redis</strong>, y ahí las carreras vuelven con todas sus
+            letras: dos peticiones distintas, en procesos distintos, tocando la misma
+            fila. La sincronización se delega al motor.
+          </p>
+          <p>
+            La primera opción es hacer el cambio <strong>atómico en la propia
+            consulta</strong>, sin leer antes en PHP:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · stock atómico</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">UPDATE productos
+SET stock = stock - 1
+WHERE id = 42 AND stock &gt; 0;</code></pre>
+          </div>
+          <p>
+            El motor resta y comprueba en una sola operación, fila bloqueada por
+            dentro. Si la sentencia afecta a <strong>0 filas</strong>, es que el stock
+            ya era cero: no había unidad y no la vendes. Sin <code>if</code> previo en
+            PHP, sin hueco para la carrera.
+          </p>
+          <p>
+            Cuando la lógica no cabe en un solo <code>UPDATE</code> (necesitas leer,
+            decidir con reglas y luego escribir), bloquea la fila explícitamente
+            dentro de una transacción con <strong><code>SELECT … FOR UPDATE</code></strong>:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · bloqueo pesimista</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">BEGIN;
+
+SELECT stock FROM productos
+WHERE id = 42
+FOR UPDATE;
+
+UPDATE productos SET stock = stock - 1 WHERE id = 42;
+
+COMMIT;</code></pre>
+          </div>
+          <p>
+            El <code>FOR UPDATE</code> bloquea esa fila hasta el <code>COMMIT</code>:
+            cualquier otra petición que quiera el mismo <code>FOR UPDATE</code> espera
+            su turno. Es el mutex, pero gestionado por la base de datos. Lo viste en el
+            tutorial de transacciones; aquí es la herramienta para la sección crítica.
+          </p>
+
+          <h2 id="deadlock">
+            Deadlock: el abrazo mortal
+            <a href="#deadlock" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Los candados resuelven las carreras, pero traen su propio peligro. Un
+            <strong>deadlock</strong> ocurre cuando dos flujos se quedan esperándose
+            mutuamente para siempre: A tiene el candado 1 y quiere el 2; B tiene el 2
+            y quiere el 1. Ninguno suelta, ninguno avanza.
+          </p>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El antídoto: orden de bloqueo consistente</p>
+              <p>
+                Si todos los flujos adquieren los candados <strong>siempre en el mismo
+                orden</strong> (primero el de menor id, luego el mayor), el abrazo
+                mortal no puede formarse. Las bases de datos además detectan el
+                deadlock y abortan una transacción para romperlo; tu código debe estar
+                preparado para reintentar.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="errores">
+            Errores comunes
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <strong>Leer en PHP, decidir y escribir.</strong> El clásico
+            <code>$x = leer(); $x++; guardar($x);</code> sobre un dato compartido es
+            una carrera esperando a ocurrir. Hazlo atómico en la consulta o bloquea la
+            fila.
+          </p>
+          <p>
+            <strong>Confiar en que "es muy improbable".</strong> Con suficiente tráfico,
+            lo improbable pasa cada día. Si el dato es dinero o stock, la probabilidad
+            no es una defensa.
+          </p>
+          <p>
+            <strong>Bloquear de más.</strong> Un candado demasiado amplio (toda la
+            tabla, toda la función) serializa peticiones que no chocaban y mata el
+            rendimiento. Protege el dato justo, durante el tramo justo.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una <strong>race condition</strong> aparece cuando dos flujos comparten un dato y el resultado depende del orden en que se cruzan; el patrón culpable suele ser <strong>leer-modificar-escribir</strong>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La <strong>sección crítica</strong> se protege con un <strong>mutex</strong>: solo uno entra a la vez. Mantenla corta.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Mejor que sincronizar es evitar la carrera con una <strong>operación atómica</strong> (<code>INCR</code>, <code>UPDATE … SET x = x - 1</code>).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En PHP las carreras llegan por la <strong>base de datos y Redis</strong>: resuélvelas con UPDATE atómico o <code>SELECT … FOR UPDATE</code>. Cuidado con los <strong>deadlocks</strong>: orden de bloqueo consistente.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="procesos-hilos.html">
+              <small>← Anterior</small>
+              <b>Procesos vs hilos</b>
+            </a>
+            <a href="../index.html" class="next">
+              <small>Volver →</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/roadmap.js"></script>
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

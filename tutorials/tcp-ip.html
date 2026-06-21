@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TCP/IP: handshake, puertos y por qué se queda colgado — MentorAI</title>
+    <meta
+      name="description"
+      content="El modelo en capas, qué hace IP (paquetes y direcciones, entrega best-effort), qué añade TCP (fiabilidad, orden, control de flujo), cómo funciona el handshake de tres vías y los puertos, y por qué una conexión se queda colgada en vez de fallar rápido."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%235b5bf5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>M</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark">M</span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Cómo viaja un dato</span>
+        </nav>
+        <h1 class="tutorial-hero__title">TCP/IP: el cartero fiable de internet</h1>
+        <p class="tutorial-hero__lead">
+          La red de verdad pierde paquetes, los desordena y los duplica. Aun así, tu
+          descarga llega entera y en orden. Ese milagro lo hacen dos protocolos que
+          se reparten el trabajo: IP, que mueve paquetes sin garantías, y TCP, que
+          encima construye una conversación fiable.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">Dos trabajos, dos protocolos</a></li>
+            <li><a href="#capas">El modelo en capas</a></li>
+            <li><a href="#ip">IP: paquetes sin promesas</a></li>
+            <li><a href="#puertos">Puertos y sockets</a></li>
+            <li><a href="#handshake">El handshake de tres vías</a></li>
+            <li><a href="#fiabilidad">Cómo TCP hace fiable lo no fiable</a></li>
+            <li><a href="#colgado">Por qué se queda colgado</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            "TCP/IP" se nombra junto, pero son dos cosas con responsabilidades
+            distintas. IP se encarga de <strong>llevar un paquete de A a B</strong>
+            por una red enorme, sin prometer que llegue. TCP usa IP por debajo y añade
+            todo lo que falta para que parezca una <strong>tubería fiable</strong>.
+          </p>
+
+          <h2 id="idea">
+            Dos trabajos, dos protocolos
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Separar estas dos responsabilidades es una de las mejores ideas de
+            internet. IP resuelve "cómo encuentro la otra máquina y le hago llegar un
+            trozo de datos". TCP resuelve "cómo convierto ese servicio poco fiable en
+            un flujo ordenado y sin pérdidas". Cada capa hace una cosa y se apoya en la
+            de debajo.
+          </p>
+
+          <h2 id="capas">
+            El modelo en capas
+            <a href="#capas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La red se organiza en <strong>capas</strong>: cada una ofrece un servicio a
+            la de arriba y se apoya en la de abajo, sin que ninguna necesite saber los
+            detalles de las demás. Tu petición HTTP viaja envuelta como una muñeca rusa.
+          </p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">4</span>
+                <span><b>Aplicación · HTTP</b><small>GET /precios</small></span>
+              </div>
+              <div class="flow__arrow" data-label="se mete dentro de"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Transporte · TCP</b><small>añade puertos, orden y fiabilidad</small></span>
+              </div>
+              <div class="flow__arrow" data-label="se mete dentro de"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Red · IP</b><small>añade direcciones origen y destino</small></span>
+              </div>
+              <div class="flow__arrow" data-label="se mete dentro de"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">1</span>
+                <span><b>Enlace · Ethernet/WiFi</b><small>los bits por el cable o el aire</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Cada capa envuelve a la de arriba. En el destino se desenvuelve en orden inverso.</p>
+          </div>
+
+          <h2 id="ip">
+            IP: paquetes sin promesas
+            <a href="#ip" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            IP trocea los datos en <strong>paquetes</strong> y a cada uno le pone una
+            dirección de origen y otra de destino (la IP). Luego los lanza a la red, y
+            los routers los van encaminando salto a salto hacia su destino. Hasta aquí,
+            ninguna garantía: es entrega <strong>best-effort</strong>, "lo intento lo
+            mejor que puedo".
+          </p>
+          <p>
+            Eso significa que un paquete <strong>puede perderse</strong> (un router
+            saturado lo descarta), <strong>llegar desordenado</strong> (dos paquetes
+            tomaron rutas distintas) o incluso <strong>duplicarse</strong>. IP no lo
+            arregla: solo mueve paquetes. Arreglar todo eso es justo el trabajo que TCP
+            pone encima.
+          </p>
+
+          <h2 id="puertos">
+            Puertos y sockets
+            <a href="#puertos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La IP identifica una <strong>máquina</strong>, pero en esa máquina corren
+            muchos servicios a la vez. El <strong>puerto</strong> es el número que dice
+            a cuál va dirigido el paquete: 80 para HTTP, 443 para HTTPS, 3306 para
+            MySQL. La combinación <strong>IP + puerto</strong> identifica un extremo
+            concreto, y una conexión TCP queda definida por sus dos extremos.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · terminal</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">ss -tn
+
+# Estado   Local              Remoto
+# ESTAB    192.168.1.10:54330 93.184.216.34:443
+# ESTAB    192.168.1.10:54331 93.184.216.34:443</code></pre>
+          </div>
+          <p>
+            Dos conexiones a la misma IP y puerto del servidor (443) conviven sin
+            mezclarse porque el <strong>puerto local</strong> es distinto (54330 y
+            54331). El servidor sabe a quién responder porque cada conexión es una
+            tupla única de cuatro valores: IP y puerto de cada lado.
+          </p>
+
+          <h2 id="handshake">
+            El handshake de tres vías
+            <a href="#handshake" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Antes de enviar datos, TCP establece la conexión con un saludo de
+            <strong>tres mensajes</strong>. Sirve para que ambos lados confirmen que
+            pueden enviar y recibir, y para acordar los números de secuencia con los
+            que llevarán la cuenta de los bytes.
+          </p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Cliente → SYN</b><small>"quiero hablar, empiezo en el byte X"</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Servidor → SYN-ACK</b><small>"vale, y yo empiezo en el byte Y"</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Cliente → ACK</b><small>"recibido: conexión abierta"</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">SYN, SYN-ACK, ACK. Solo tras esta ida y vuelta empiezan a fluir los datos.</p>
+          </div>
+          <p>
+            Ese intercambio cuesta un <strong>ida y vuelta</strong> completo (un RTT)
+            antes de poder mandar nada útil, y por eso conectar con un servidor lejano
+            se nota. Es también la razón de reutilizar conexiones (keep-alive) en vez de
+            abrir una nueva por cada petición.
+          </p>
+
+          <h2 id="fiabilidad">
+            Cómo TCP hace fiable lo no fiable
+            <a href="#fiabilidad" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Sobre la entrega sin promesas de IP, TCP reconstruye un flujo perfecto con
+            unos pocos mecanismos que encajan entre sí:
+          </p>
+          <ul>
+            <li><strong>Números de secuencia.</strong> Cada byte va numerado, así el receptor recompone el orden aunque los paquetes lleguen barajados.</li>
+            <li><strong>Confirmaciones (ACK).</strong> El receptor avisa de qué ha recibido. Lo que no se confirma a tiempo, el emisor lo <strong>retransmite</strong>: así se recupera de las pérdidas.</li>
+            <li><strong>Ventana (control de flujo).</strong> El receptor anuncia cuánto puede aceptar; el emisor no manda más de lo que el otro puede digerir.</li>
+            <li><strong>Control de congestión.</strong> TCP arranca despacio y acelera mientras no haya pérdidas; si las detecta, frena. Así no hunde la red entre todos.</li>
+          </ul>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">¿Y UDP?</p>
+              <p>
+                UDP es la alternativa: IP con puertos y poco más, sin handshake ni
+                retransmisión. Renuncia a la fiabilidad a cambio de latencia mínima, y
+                por eso lo usan juegos, voz y vídeo en directo, donde llegar tarde es
+                peor que perder un trozo.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="colgado">
+            Por qué se queda colgado
+            <a href="#colgado" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Entender TCP explica el síntoma más frustrante: la diferencia entre
+            <strong>fallar rápido</strong> y <strong>quedarse colgado</strong>. No son lo
+            mismo, y distinguirlos te dice dónde está el problema.
+          </p>
+          <p>
+            Si conectas a una máquina que existe pero tiene el puerto
+            <strong>cerrado</strong>, suele responder un <strong>RST</strong> y el error
+            es inmediato ("connection refused"): hay alguien, dice que no. En cambio, si
+            tu <strong>SYN</strong> no recibe respuesta —un cortafuegos lo descarta en
+            silencio, o la máquina no está— no hay nada que te diga "no". TCP solo puede
+            reintentar y <strong>esperar</strong> hasta agotar el timeout. Ese silencio
+            es el "se queda pensando" eterno.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · probar un puerto</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">nc -zv -w 5 www.ejemplo.com 443
+
+# Connection to www.ejemplo.com 443 port succeeded!</code></pre>
+          </div>
+          <p>
+            La lección práctica: <strong>pon siempre timeouts</strong>. Una llamada a
+            una base de datos o a una API sin timeout puede colgar tu proceso entero
+            esperando un SYN-ACK que nunca llegará, y un solo extremo silencioso
+            arrastra a toda tu aplicación.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>IP</strong> mueve paquetes con direcciones, sin garantías (best-effort): pueden perderse, desordenarse o duplicarse.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>TCP</strong> añade fiabilidad sobre IP: números de secuencia, ACK y retransmisión, ventana y control de congestión convierten lo no fiable en un flujo ordenado.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El <strong>puerto</strong> identifica el servicio; una conexión es la tupla IP:puerto de ambos lados. Abrirla cuesta un <strong>handshake</strong> de tres vías (un RTT).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Puerto cerrado = <strong>RST</strong> inmediato; SYN sin respuesta = <strong>colgado</strong> hasta el timeout. Pon timeouts en toda llamada de red.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="http-a-fondo.html">
+              <small>← Anterior</small>
+              <b>HTTP a fondo</b>
+            </a>
+            <a href="../index.html" class="next">
+              <small>Volver →</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/roadmap.js"></script>
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Procesos vs hilos: qué comparten y qué no — MentorAI</title>
+    <meta
+      name="description"
+      content="Qué es un proceso, qué es un hilo, qué memoria comparten y cuál está aislada, por qué PHP-FPM es multiproceso y no multihilo, y cuánto cuesta crear y cambiar entre unos y otros."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%235b5bf5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>M</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark">M</span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>El sistema por debajo</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Procesos vs hilos: qué comparten y qué no</h1>
+        <p class="tutorial-hero__lead">
+          Tu código no se ejecuta en el vacío: el sistema operativo lo envuelve en
+          un <em>proceso</em>, y ese proceso puede tener uno o varios <em>hilos</em>.
+          La diferencia entre ambos —qué memoria comparten y cuál no— explica por
+          qué PHP escala como escala y dónde aparecen los bugs de concurrencia.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">Programa, proceso, hilo</a></li>
+            <li><a href="#proceso">El proceso: un mundo aislado</a></li>
+            <li><a href="#hilo">El hilo: compartir la casa</a></li>
+            <li><a href="#comparten">Qué comparten y qué no</a></li>
+            <li><a href="#modelos">Por qué PHP es multiproceso</a></li>
+            <li><a href="#coste">El coste de cada uno</a></li>
+            <li><a href="#errores">Errores comunes</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Un programa es un fichero muerto en el disco. Cuando lo ejecutas, el
+            sistema operativo lo carga en memoria, le asigna recursos y lo pone a
+            correr: eso es un <strong>proceso</strong>. Dentro de él, la unidad que
+            realmente avanza por las instrucciones es el <strong>hilo</strong>.
+            Entender esa jerarquía es entender cómo se reparte el trabajo en una
+            máquina.
+          </p>
+
+          <h2 id="idea">
+            Programa, proceso, hilo
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La analogía que mejor funciona es la de una <strong>cocina</strong>. La
+            <strong>receta</strong> es el programa: instrucciones en papel, sin vida
+            propia. Cuando un cocinero coge la receta y se pone a cocinar en una
+            cocina con sus fogones e ingredientes, eso es el <strong>proceso</strong>:
+            la receta en ejecución, con sus recursos asignados. Y cada
+            <strong>par de manos</strong> que trabaja en esa cocina es un
+            <strong>hilo</strong>: si hay varias, avanzan en paralelo sobre los
+            mismos ingredientes.
+          </p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Programa</b><small>Fichero en disco: la receta</small></span>
+              </div>
+              <div class="flow__arrow" data-label="el SO lo ejecuta"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Proceso</b><small>Receta + cocina + ingredientes (memoria propia)</small></span>
+              </div>
+              <div class="flow__arrow" data-label="contiene"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Hilo(s)</b><small>Las manos que ejecutan, paso a paso</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Un programa puede tener muchos procesos; un proceso, uno o muchos hilos.</p>
+          </div>
+
+          <h2 id="proceso">
+            El proceso: un mundo aislado
+            <a href="#proceso" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cuando el sistema operativo crea un proceso, le da su propio
+            <strong>espacio de direcciones</strong>: un bloque de memoria virtual que
+            ese proceso cree tener para él solo. Las variables, el código cargado, la
+            pila, el montón… todo vive ahí dentro y <strong>ningún otro proceso puede
+            tocarlo</strong>. Ese aislamiento es la clave: si un proceso se corrompe y
+            revienta, los demás siguen vivos.
+          </p>
+          <p>
+            En Linux, crear un proceso nuevo se hace clonando uno existente con
+            <code>fork()</code>. El hijo recibe una copia del estado del padre y, a
+            partir de ahí, cada uno va por su lado. En PHP lo expone la extensión
+            <code>pcntl</code> (solo en CLI, nunca en peticiones web):
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · fork.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$contador = 0;
+$pid = pcntl_fork();
+
+if ($pid === -1) {
+    throw new RuntimeException('No se pudo crear el proceso hijo');
+}
+
+if ($pid === 0) {
+    $contador = 99;
+    echo "Hijo: contador = {$contador}" . PHP_EOL;
+    exit(0);
+}
+
+pcntl_wait($status);
+echo "Padre: contador = {$contador}" . PHP_EOL;</code></pre>
+          </div>
+          <p>
+            El padre imprime <code>0</code> y el hijo <code>99</code>. Aunque
+            <code>$contador</code> "es la misma variable", tras el <code>fork()</code>
+            cada proceso tiene su <strong>propia copia</strong> en su propia memoria:
+            lo que el hijo cambia no llega al padre. Esa es la frontera dura del
+            aislamiento entre procesos.
+          </p>
+
+          <h2 id="hilo">
+            El hilo: compartir la casa
+            <a href="#hilo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un <strong>hilo</strong> es un flujo de ejecución dentro de un proceso.
+            Un proceso arranca con un hilo (el principal), pero puede crear más. Y
+            aquí está la diferencia que lo cambia todo: <strong>todos los hilos de un
+            proceso comparten el mismo espacio de direcciones</strong>. Misma memoria,
+            mismas variables globales, mismo montón.
+          </p>
+          <p>
+            Eso los hace <strong>baratos y rápidos para comunicarse</strong>: dos
+            hilos no necesitan copiar nada, leen y escriben la misma variable. Pero es
+            justo ahí donde nace el peligro: si dos hilos tocan ese dato compartido a
+            la vez, se pisan. Ese es el territorio de las <em>race conditions</em>, el
+            tema del siguiente tutorial.
+          </p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">PHP no es lenguaje de hilos</p>
+              <p>
+                PHP no expone hilos reales de forma cómoda: su modelo es "una petición,
+                un proceso, sin estado compartido". Por eso aquí el código de hilos va
+                como concepto, no como ejemplo idiomático; lo verás de verdad en Node,
+                Go, Java o con Swoole.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="comparten">
+            Qué comparten y qué no
+            <a href="#comparten" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La tabla resume la frontera. Lo que es <strong>por proceso</strong> está
+            aislado; lo que es <strong>por hilo</strong> lo tiene cada uno aparte; el
+            resto, los hilos lo comparten dentro de su proceso.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Recurso</th><th>Entre procesos</th><th>Entre hilos del mismo proceso</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Espacio de direcciones (montón, globales)</td><td>Aislado</td><td><strong>Compartido</strong></td></tr>
+                <tr><td>Pila (variables locales)</td><td>Aislada</td><td>Una por hilo</td></tr>
+                <tr><td>Registros / contador de programa</td><td>Aislados</td><td>Uno por hilo</td></tr>
+                <tr><td>Descriptores de fichero, sockets</td><td>Propios</td><td>Compartidos</td></tr>
+                <tr><td>Variables de entorno</td><td>Propias</td><td>Compartidas</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            La regla mental: <strong>cada hilo tiene su propia pila</strong> (por eso
+            puede ir por su rama del código sin chocar), pero <strong>el montón y las
+            globales son de todos</strong>. El estado que compartes vive en el montón;
+            ahí es donde hay que protegerse.
+          </p>
+
+          <h2 id="modelos">
+            Por qué PHP es multiproceso
+            <a href="#modelos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Abre cualquier servidor PHP en producción y verás algo así:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · terminal</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">ps aux | grep php-fpm
+
+# php-fpm: master process
+# php-fpm: pool www
+# php-fpm: pool www
+# php-fpm: pool www</code></pre>
+          </div>
+          <p>
+            Un proceso <strong>master</strong> y varios <strong>workers</strong>,
+            todos procesos independientes. Cada petición que entra la atiende un worker
+            entero, de principio a fin, y al terminar ese worker queda libre para la
+            siguiente. No hay hilos compartiendo memoria entre peticiones: cada una
+            arranca con su estado limpio.
+          </p>
+          <p>
+            La ventaja es <strong>robustez y simplicidad</strong>: si una petición
+            provoca un fallo fatal, muere ese worker y el resto sigue sirviendo. Y como
+            no hay memoria compartida entre peticiones, no tienes que preocuparte por
+            <em>race conditions</em> dentro de tu código PHP. El precio es que cada
+            worker es pesado (su propio intérprete, su propia memoria), así que escalar
+            es "más procesos" y eso consume RAM.
+          </p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Modelo multiproceso (PHP-FPM)</h4>
+              <ul>
+                <li>Aislamiento total entre peticiones</li>
+                <li>Un fallo no tumba a los demás workers</li>
+                <li>Sin race conditions en tu código</li>
+                <li>Cuesta más RAM por worker</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Modelo multihilo (Java, Go, Swoole)</h4>
+              <ul>
+                <li>Hilos ligeros, mucha concurrencia con poca RAM</li>
+                <li>Estado compartido en memoria entre peticiones</li>
+                <li>Hay que sincronizar: locks, atomicidad</li>
+                <li>Un hilo que corrompe memoria afecta al proceso entero</li>
+              </ul>
+            </div>
+          </div>
+          <p>
+            Por eso, cuando en PHP necesitas estado compartido entre peticiones
+            (un contador, una sesión, una caché), no lo guardas en una variable: lo
+            sacas <strong>fuera del proceso</strong>, a Redis o a la base de datos. El
+            aislamiento que te da robustez es el mismo que te obliga a externalizar el
+            estado.
+          </p>
+
+          <h2 id="coste">
+            El coste de cada uno
+            <a href="#coste" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Crear un proceso es caro: el sistema operativo monta un espacio de
+            direcciones nuevo, copia tablas, prepara descriptores. Crear un hilo es
+            mucho más barato: reutiliza casi todo del proceso y solo añade una pila y
+            unos registros. Por eso los servidores que necesitan decenas de miles de
+            conexiones simultáneas tiran de hilos (o de algo aún más ligero, como el
+            <em>async</em> de un solo hilo que verás más adelante).
+          </p>
+          <p>
+            Hay un segundo coste, el <strong>cambio de contexto</strong>: la CPU solo
+            ejecuta un flujo a la vez por núcleo, así que el sistema va alternando.
+            Guardar el estado de uno y cargar el del siguiente cuesta tiempo. Cambiar
+            entre hilos del mismo proceso es más barato que entre procesos, porque no
+            hay que cambiar de espacio de direcciones.
+          </p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Más workers no siempre es más rápido</p>
+              <p>
+                Si tienes 4 núcleos y lanzas 400 workers, la CPU se pasa el día
+                haciendo cambios de contexto en lugar de trabajo útil. El número de
+                procesos se ajusta a los núcleos y al tipo de carga, no "cuantos más
+                mejor".
+              </p>
+            </div>
+          </div>
+
+          <h2 id="errores">
+            Errores comunes
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <strong>Creer que una variable global guarda estado entre peticiones en
+            PHP.</strong> No: cada petición es un proceso (o un worker reiniciado) con
+            su memoria limpia. Lo que escribes en una variable muere al acabar la
+            petición. Para persistir, Redis o base de datos.
+          </p>
+          <p>
+            <strong>Confundir paralelismo con concurrencia.</strong> Dos hilos en un
+            solo núcleo no corren a la vez: el sistema los alterna (concurrencia). Para
+            que de verdad avancen en paralelo hacen falta varios núcleos. Más hilos no
+            multiplican una CPU de un solo núcleo.
+          </p>
+          <p>
+            <strong>Compartir memoria entre hilos sin protegerla.</strong> En lenguajes
+            con hilos reales, leer y escribir la misma variable desde dos hilos sin un
+            <em>lock</em> es la receta del bug que solo aparece bajo carga. Es
+            exactamente el tema del siguiente tutorial.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un <strong>proceso</strong> es un programa en ejecución con memoria propia y aislada; un <strong>hilo</strong> es un flujo de ejecución dentro de él.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los hilos de un proceso <strong>comparten montón y globales</strong> pero <strong>cada uno tiene su pila</strong>. El estado compartido vive en el montón.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>PHP-FPM es <strong>multiproceso</strong>: una petición por worker, sin memoria compartida. Robusto y sin race conditions, pero el estado compartido se externaliza a Redis o BBDD.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Hilos son más baratos de crear y de conmutar que procesos; pero compartir memoria sin sincronizar abre la puerta a las <em>race conditions</em>.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="numeros-flotantes.html">
+              <small>← Anterior</small>
+              <b>Números: enteros y coma flotante</b>
+            </a>
+            <a href="../index.html" class="next">
+              <small>Volver →</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/roadmap.js"></script>
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

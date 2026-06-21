@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Memoria: stack, heap, memoria virtual y caché — MentorAI</title>
+    <meta
+      name="description"
+      content="La diferencia entre stack y heap, qué es la memoria virtual y por qué cada proceso cree tener la RAM para él solo, qué es la caché de CPU y la localidad de referencia, y cómo todo esto se nota en PHP (memory_limit, copy-on-write, recorrer datos en orden)."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%235b5bf5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>M</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark">M</span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>El sistema por debajo</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Memoria: stack, heap, memoria virtual y caché</h1>
+        <p class="tutorial-hero__lead">
+          "La memoria" no es un sitio único. Hay una zona rapidísima y ordenada
+          donde viven las variables locales, otra flexible donde crecen los objetos,
+          una ilusión que hace creer a cada proceso que tiene toda la RAM, y una
+          jerarquía de cachés que decide si tu bucle vuela o se arrastra.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">La memoria no es un sitio único</a></li>
+            <li><a href="#stack">El stack: rápido y ordenado</a></li>
+            <li><a href="#heap">El heap: flexible y con coste</a></li>
+            <li><a href="#virtual">Memoria virtual: la gran ilusión</a></li>
+            <li><a href="#cache">Caché de CPU y localidad</a></li>
+            <li><a href="#php">Cómo se nota en PHP</a></li>
+            <li><a href="#errores">Errores comunes</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Cuando un proceso arranca, el sistema operativo le da un espacio de
+            memoria organizado en zonas con reglas distintas. Conocer esas zonas
+            explica por qué una recursión infinita peta de una forma, por qué olvidar
+            liberar memoria peta de otra, y por qué recorrer datos en orden puede ser
+            diez veces más rápido.
+          </p>
+
+          <h2 id="idea">
+            La memoria no es un sitio único
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Dentro del espacio de direcciones de un proceso (el que viste en
+            <a href="procesos-hilos.html">procesos vs hilos</a>) conviven varias
+            regiones. Las dos protagonistas para el día a día son el
+            <strong>stack</strong> (la pila) y el <strong>heap</strong> (el montón):
+            la misma RAM física, pero gestionada con dos filosofías opuestas.
+          </p>
+
+          <h2 id="stack">
+            El stack: rápido y ordenado
+            <a href="#stack" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El <strong>stack</strong> es una pila en el sentido literal: las cosas se
+            apilan y se desapilan por el final, en orden estricto
+            <strong>LIFO</strong>. Cada vez que llamas a una función, se apila un
+            <em>stack frame</em> con sus variables locales y la dirección de retorno.
+            Cuando la función termina, su frame se desapila de golpe.
+          </p>
+          <p>
+            Eso lo hace <strong>rapidísimo</strong>: reservar memoria es mover un
+            puntero una posición; liberarla, moverlo de vuelta. No hay que buscar
+            hueco ni decidir nada. El precio es la rigidez: es pequeño (unos pocos MB)
+            y su contenido vive solo mientras dura la función. Si la recursión no para,
+            apilas frames sin fin hasta el desbordamiento: el <strong>stack
+            overflow</strong>.
+          </p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Cada hilo, su propio stack</p>
+              <p>
+                Como vimos, los hilos comparten el heap pero cada uno tiene su
+                <strong>propia pila</strong>. Por eso pueden recorrer ramas distintas
+                del código a la vez sin pisarse las variables locales.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="heap">
+            El heap: flexible y con coste
+            <a href="#heap" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El <strong>heap</strong> es la zona para lo que no cabe en el molde del
+            stack: datos cuyo tamaño no conoces de antemano o que deben
+            <strong>sobrevivir a la función que los creó</strong>. Los objetos, los
+            arrays que crecen, todo lo que reservas dinámicamente vive aquí.
+          </p>
+          <p>
+            A cambio de esa flexibilidad, gestionarlo cuesta: el sistema debe
+            <strong>buscar un hueco</strong> del tamaño pedido y, sobre todo, decidir
+            cuándo liberarlo. Ahí hay dos escuelas: liberación manual (tú lo pides y
+            tú lo devuelves, como en C) o un <strong>recolector de basura</strong> que
+            libera lo que ya no se usa (PHP, Java, Go). Olvidar liberar —o mantener una
+            referencia viva sin querer— es la <strong>fuga de memoria</strong>: el heap
+            crece y crece hasta agotarse.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th></th><th>Stack</th><th>Heap</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Qué guarda</td><td>Variables locales, retornos</td><td>Objetos, datos dinámicos</td></tr>
+                <tr><td>Velocidad</td><td>Máxima (mover un puntero)</td><td>Menor (buscar hueco)</td></tr>
+                <tr><td>Tamaño</td><td>Pequeño y fijo</td><td>Grande y elástico</td></tr>
+                <tr><td>Vida</td><td>Mientras dura la función</td><td>Hasta que se libera</td></tr>
+                <tr><td>Fallo típico</td><td>Stack overflow</td><td>Fuga de memoria</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="virtual">
+            Memoria virtual: la gran ilusión
+            <a href="#virtual" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cada proceso cree tener un espacio de direcciones enorme y continuo para
+            él solo, empezando en cero. Es mentira, y es una mentira deliberada:
+            la <strong>memoria virtual</strong>. Las direcciones que tu programa usa
+            son <strong>virtuales</strong>; el sistema operativo y la CPU las traducen
+            a direcciones <strong>físicas</strong> de RAM por debajo.
+          </p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Tu programa usa una dirección virtual</b><small>cree que la RAM es suya y continua</small></span>
+              </div>
+              <div class="flow__arrow" data-label="la CPU traduce (MMU)"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Tabla de páginas</b><small>mapea cada página virtual a una física</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Dirección física real</b><small>en RAM… o en disco si fue paginada</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">La memoria se reparte en páginas (típicamente 4 KB) que se mapean a RAM física bajo demanda.</p>
+          </div>
+          <p>
+            Esta ilusión da tres regalos. <strong>Aislamiento</strong>: un proceso no
+            puede nombrar la memoria de otro, porque sus direcciones virtuales mapean a
+            zonas físicas distintas. <strong>Simplicidad</strong>: cada programa se
+            escribe como si tuviera la máquina entera. Y <strong>flexibilidad</strong>:
+            si falta RAM, el sistema puede mover páginas poco usadas al disco
+            (<em>swap</em>). Eso evita el "out of memory", pero ir al disco es miles de
+            veces más lento que la RAM: si la máquina <em>swapea</em> mucho, todo se
+            arrastra.
+          </p>
+
+          <h2 id="cache">
+            Caché de CPU y localidad
+            <a href="#cache" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Hay un último escalón, y es el que más sorprende. La CPU es tan rápida que
+            la RAM, comparada, le resulta <strong>lenta</strong>: esperar un dato de la
+            RAM son cientos de ciclos parado. Para taparlo, entre la CPU y la RAM hay
+            varios niveles de <strong>caché</strong> (L1, L2, L3), memoria diminuta
+            pero velocísima.
+          </p>
+          <p>
+            La caché no trae bytes sueltos: trae <strong>líneas de caché</strong>
+            (unos 64 bytes) de golpe, apostando a que si usas un dato pronto usarás los
+            de al lado. Esa apuesta se llama <strong>localidad de referencia</strong>,
+            y tiene una consecuencia práctica enorme: <strong>recorrer datos contiguos
+            en orden es mucho más rápido</strong> que saltar por la memoria, aunque el
+            número de operaciones sea el mismo.
+          </p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Por qué un array contiguo bate a una lista enlazada</p>
+              <p>
+                Aquí conecta con <a href="estructuras-datos.html">estructuras de
+                datos</a>: un array guarda sus elementos pegados en memoria, así que la
+                caché los precarga y el recorrido vuela. Una lista enlazada los
+                dispersa por el heap, y cada salto puede ser un fallo de caché. Misma
+                O(n), rendimiento real muy distinto.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="php">
+            Cómo se nota en PHP
+            <a href="#php" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            PHP te abstrae de casi todo esto —no reservas ni liberas a mano— pero las
+            consecuencias asoman. La más visible es <code>memory_limit</code>: el tope
+            de heap que cada proceso puede usar. Cargar un millón de filas en un array
+            lo revienta; por eso se itera en streaming o por lotes en lugar de traerlo
+            todo de golpe.
+          </p>
+          <p>
+            PHP además usa <strong>copy-on-write</strong> para no malgastar heap: al
+            asignar o pasar un array, no lo copia; comparte los mismos datos y solo
+            hace la copia real si alguien <strong>escribe</strong>. Por eso pasar un
+            array grande a una función es barato… hasta que lo modificas dentro.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · copy-on-write.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$grande = range(1, 1000000);
+$copia = $grande;
+
+$copia[0] = 99;</code></pre>
+          </div>
+          <p>
+            Hasta la última línea, <code>$grande</code> y <code>$copia</code> comparten
+            los mismos datos en el heap: no se duplicó nada. La escritura del final
+            fuerza por fin la copia. Saber esto evita duplicar arrays enormes sin
+            querer y disparar el <code>memory_limit</code>.
+          </p>
+          <p>
+            Y la localidad también aparece: recorrer un array indexado en orden
+            aprovecha la caché; saltar entre estructuras dispersas la desperdicia.
+            Incluso <a href="opcache.html">OPcache</a> es memoria bien usada: mantiene
+            el bytecode compilado en RAM compartida para no recompilar en cada
+            petición.
+          </p>
+
+          <h2 id="errores">
+            Errores comunes
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <strong>Cargar en memoria lo que cabría en streaming.</strong> Traer un
+            millón de filas a un array para recorrerlas una vez agota el heap. Itera
+            por lotes o con un cursor; no necesitas todo a la vez.
+          </p>
+          <p>
+            <strong>Olvidar referencias que no liberas.</strong> Un array estático o un
+            registro global que va acumulando objetos es una fuga: aunque haya
+            recolector, lo que sigue referenciado no se libera. En procesos de larga
+            vida (workers), la memoria sube sin parar.
+          </p>
+          <p>
+            <strong>Ignorar la localidad en lo que importa.</strong> Para el 99 % del
+            código no lo pienses; pero en un bucle caliente sobre millones de
+            elementos, recorrer datos contiguos en orden frente a saltar por el heap es
+            la diferencia entre rápido y lentísimo.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El <strong>stack</strong> es rápido y ordenado (variables locales, LIFO, una pila por hilo); el <strong>heap</strong> es flexible pero costoso (objetos, datos dinámicos, riesgo de fugas).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La <strong>memoria virtual</strong> da a cada proceso la ilusión de tener toda la RAM, en páginas que se mapean a memoria física; eso aporta aislamiento, pero <em>swapear</em> a disco es lentísimo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La <strong>caché de CPU</strong> trae líneas contiguas: por <strong>localidad de referencia</strong>, recorrer datos en orden gana a saltar por la memoria, aunque sea la misma O(n).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En PHP esto se traduce en <code>memory_limit</code>, <strong>copy-on-write</strong> de arrays y la ventaja de iterar en streaming y en orden.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="async-event-loop.html">
+              <small>← Anterior</small>
+              <b>Async y el event loop</b>
+            </a>
+            <a href="../index.html" class="next">
+              <small>Volver →</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/roadmap.js"></script>
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

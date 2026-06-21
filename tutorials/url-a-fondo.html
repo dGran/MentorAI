@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Qué pasa al escribir una URL: DNS, TCP, TLS y HTTP — MentorAI</title>
+    <meta
+      name="description"
+      content="El viaje completo de una petición web: la anatomía de una URL, cómo el DNS traduce el nombre a una IP, cómo se abre la conexión TCP, qué hace el handshake TLS de HTTPS y cómo se envía por fin la petición HTTP."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%235b5bf5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>M</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark">M</span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Cómo viaja un dato</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Qué pasa al escribir una URL</h1>
+        <p class="tutorial-hero__lead">
+          Pulsas Enter y la página aparece en medio segundo. Entremedias han pasado
+          cuatro etapas bien distintas: traducir el nombre a una dirección, abrir una
+          conexión, cifrarla y, por fin, pedir el contenido. Es la pregunta de
+          entrevista de toda la vida, y entenderla de verdad ordena media carrera.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">El viaje en cuatro etapas</a></li>
+            <li><a href="#anatomia">Anatomía de una URL</a></li>
+            <li><a href="#dns">DNS: del nombre a la IP</a></li>
+            <li><a href="#tcp">TCP: abrir la conexión</a></li>
+            <li><a href="#tls">TLS: cifrar el canal</a></li>
+            <li><a href="#http">HTTP: pedir el contenido</a></li>
+            <li><a href="#errores">Errores comunes</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Una URL es solo texto. Para convertir ese texto en una página hace falta
+            encontrar la máquina correcta, hablar con ella por un canal fiable y
+            seguro, y usar un idioma común para pedir el recurso. Cada etapa la
+            resuelve una pieza distinta, y verlas en orden quita la magia.
+          </p>
+
+          <h2 id="idea">
+            El viaje en cuatro etapas
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cuando escribes <code>https://www.ejemplo.com/precios</code> y pulsas
+            Enter, el navegador recorre cuatro pasos antes de tener un solo byte de la
+            página. Este es el mapa; el resto del tutorial es cada parada con detalle.
+          </p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>DNS</b><small>www.ejemplo.com → 93.184.216.34</small></span>
+              </div>
+              <div class="flow__arrow" data-label="ya tengo la IP"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>TCP</b><small>abrir conexión con esa IP, puerto 443</small></span>
+              </div>
+              <div class="flow__arrow" data-label="canal abierto"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>TLS</b><small>cifrar el canal y verificar el certificado</small></span>
+              </div>
+              <div class="flow__arrow" data-label="canal seguro"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>HTTP</b><small>GET /precios → la respuesta con el HTML</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">DNS → TCP → TLS → HTTP. Cada capa se apoya en la anterior.</p>
+          </div>
+
+          <h2 id="anatomia">
+            Anatomía de una URL
+            <a href="#anatomia" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Antes de viajar, el navegador descompone la URL en sus partes. Cada una le
+            dice algo distinto: el protocolo a usar, con qué máquina hablar y qué
+            pedirle.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Parte</th><th>Ejemplo</th><th>Para qué sirve</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Esquema</td><td><code>https</code></td><td>Protocolo: HTTP sobre TLS</td></tr>
+                <tr><td>Host</td><td><code>www.ejemplo.com</code></td><td>El nombre a resolver por DNS</td></tr>
+                <tr><td>Puerto</td><td><code>443</code> (implícito)</td><td>La puerta en esa máquina (80 para http, 443 para https)</td></tr>
+                <tr><td>Ruta</td><td><code>/precios</code></td><td>El recurso concreto que pides</td></tr>
+                <tr><td>Query</td><td><code>?orden=asc</code></td><td>Parámetros para el servidor</td></tr>
+                <tr><td>Fragmento</td><td><code>#planes</code></td><td>Posición dentro de la página; no se envía al servidor</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Un detalle que sorprende: el <strong>fragmento</strong> (lo que va tras
+            <code>#</code>) nunca sale del navegador. Es cosa del cliente: a qué
+            sección saltar. El servidor no lo ve.
+          </p>
+
+          <h2 id="dns">
+            DNS: del nombre a la IP
+            <a href="#dns" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Las máquinas no se localizan por nombre sino por <strong>dirección IP</strong>.
+            El <strong>DNS</strong> (Domain Name System) es la agenda de internet:
+            traduce <code>www.ejemplo.com</code> a algo como <code>93.184.216.34</code>.
+            Sin esta traducción, el navegador no sabría a dónde conectarse.
+          </p>
+          <p>
+            La resolución va por niveles de caché: primero el propio navegador y el
+            sistema operativo, luego el <em>resolver</em> de tu proveedor, y si nadie
+            lo sabe, se pregunta a los servidores autoritativos del dominio. Como
+            cambia poco, se cachea con un <strong>TTL</strong>; por eso un cambio de
+            DNS tarda en propagarse. Puedes verlo a mano:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · terminal</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">dig +short www.ejemplo.com
+
+# 93.184.216.34</code></pre>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">"No me funciona, pero hago ping y va"</p>
+              <p>
+                Muchos fallos "de red" son en realidad de DNS: el nombre no resuelve.
+                Si <code>dig</code> no devuelve IP pero la IP directa sí responde, el
+                problema está en la resolución, no en la conexión.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="tcp">
+            TCP: abrir la conexión
+            <a href="#tcp" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Con la IP en mano, el navegador abre una conexión <strong>TCP</strong> con
+            esa máquina en el puerto correspondiente (443 para HTTPS). TCP es el
+            protocolo que garantiza que los bytes llegan <strong>completos y en
+            orden</strong>, aunque la red pierda paquetes por el camino.
+          </p>
+          <p>
+            Esa conexión no es gratis: requiere un saludo de ida y vuelta entre cliente
+            y servidor —el <em>three-way handshake</em>— antes de poder enviar nada.
+            Es una de las razones por las que la primera petición a un servidor lejano
+            "tarda en arrancar". Cómo funciona ese handshake por dentro es el tema del
+            tutorial de <a href="tcp-ip.html">TCP/IP</a>.
+          </p>
+
+          <h2 id="tls">
+            TLS: cifrar el canal
+            <a href="#tls" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Si la URL es <code>https</code>, sobre la conexión TCP se monta otra capa:
+            <strong>TLS</strong> (lo que pone la "S" en HTTPS y el candado en el
+            navegador). Antes de intercambiar datos, cliente y servidor hacen el
+            <strong>handshake TLS</strong>, que resuelve dos cosas a la vez.
+          </p>
+          <p>
+            Primero, <strong>identidad</strong>: el servidor presenta un
+            <strong>certificado</strong> firmado por una autoridad de confianza, y el
+            navegador comprueba que de verdad es <code>ejemplo.com</code> y no un
+            impostor. Segundo, <strong>secreto</strong>: ambos acuerdan una clave para
+            cifrar todo lo que venga después, de modo que quien espíe la red solo vea
+            ruido. A partir de aquí, el canal es privado y autenticado.
+          </p>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El candado no dice que el sitio sea legítimo</p>
+              <p>
+                TLS garantiza que hablas con quien dice el certificado y que nadie
+                espía, pero no que ese sitio sea de fiar. Un phishing también puede
+                tener su candado. El candado es sobre el <em>canal</em>, no sobre las
+                intenciones.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="http">
+            HTTP: pedir el contenido
+            <a href="#http" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Recién ahora, sobre el canal seguro, viaja la petición <strong>HTTP</strong>:
+            un mensaje de texto con un método (<code>GET</code>), la ruta
+            (<code>/precios</code>) y unas cabeceras. El servidor responde con un código
+            de estado y el cuerpo (el HTML). Puedes ver el viaje entero con
+            <code>curl</code>:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · terminal</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">curl -v https://www.ejemplo.com/precios
+
+# * Resolviendo www.ejemplo.com (DNS)
+# * Conectado a 93.184.216.34 puerto 443 (TCP)
+# * Handshake TLS correcto, certificado verificado
+# &gt; GET /precios HTTP/2
+# &lt; HTTP/2 200</code></pre>
+          </div>
+          <p>
+            Ahí están las cuatro etapas en una sola orden: resolver, conectar, cifrar,
+            pedir. El navegador hace exactamente esto, y luego lee el HTML, descubre que
+            necesita CSS, imágenes y scripts, y repite el proceso para cada uno (a
+            menudo reutilizando la conexión ya abierta). Qué dice esa petición y esa
+            respuesta por dentro lo desgrana <a href="http-a-fondo.html">HTTP a fondo</a>.
+          </p>
+
+          <h2 id="errores">
+            Errores comunes
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <strong>Confundir un fallo de DNS con uno de servidor.</strong> Si el nombre
+            no resuelve, nunca llegas a conectar: el servidor puede estar perfecto. Mira
+            primero si hay IP.
+          </p>
+          <p>
+            <strong>Creer que HTTPS protege el contenido en el servidor.</strong> TLS
+            cifra los datos <em>en tránsito</em>, entre tu navegador y el servidor. Una
+            vez allí, el servidor los ve en claro; protegerlos en reposo es otra cosa.
+          </p>
+          <p>
+            <strong>Esperar que un cambio de DNS sea instantáneo.</strong> El TTL hace
+            que las IP viejas sigan cacheadas un tiempo. Tras mover un dominio, parte
+            del mundo lo verá donde estaba hasta que caduque la caché.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una petición web son cuatro etapas en orden: <strong>DNS → TCP → TLS → HTTP</strong>, cada una apoyada en la anterior.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El <strong>DNS</strong> traduce el nombre a una IP y se cachea con un TTL; muchos fallos "de red" son en realidad de resolución.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>TCP</strong> abre un canal fiable con un handshake; <strong>TLS</strong> lo cifra y verifica el certificado del servidor.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Solo sobre ese canal seguro viaja la petición <strong>HTTP</strong> que pide el recurso; <code>curl -v</code> te enseña las cuatro etapas de golpe.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+            <a href="http-a-fondo.html" class="next">
+              <small>Siguiente →</small>
+              <b>HTTP a fondo</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/roadmap.js"></script>
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

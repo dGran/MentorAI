@@ -182,6 +182,88 @@ Proyecto con scaffold `.agents/` siguiendo la convención del flujo:
 - Decisión del usuario: NO se usa el flujo GitHub (spec/implement/...); no hace
   falta. No proponer `/new-project`.
 
+## Pilar 4 — El sistema por debajo (2026-06-21) — COMPLETO
+Categoría `sistemas` (label nuevo en `CATEGORY_LABELS`: "El sistema por debajo"),
+icon `code`, 4 tutoriales. Catálogo: 16 publicados, 2 soon.
+- **P4.1 `procesos-hilos.html`** (Intermedio, 14 min): programa/proceso/hilo,
+  aislamiento del proceso (`pcntl_fork`, copia de memoria), hilos comparten
+  montón/globales pero cada uno su pila, tabla comparten/no, por qué PHP-FPM es
+  multiproceso (worker por petición, estado fuera → Redis/BBDD), coste creación
+  + cambio de contexto. 1 php + 1 bash.
+- **P4.2 `concurrencia.html`** (Avanzado, 15 min): race condition (read-modify-
+  write, lost update con diagrama), sección crítica + mutex, atomicidad, en PHP
+  vía BBDD/Redis (`UPDATE … SET stock = stock - 1 WHERE … AND stock > 0`,
+  `SELECT … FOR UPDATE`), deadlock + orden de bloqueo consistente. 1 php + 2 sql.
+- **P4.3 `async-event-loop.html`** (Avanzado, 14 min): I/O-bound vs CPU-bound, un
+  hilo por conexión no escala, event loop por dentro (pseudocódigo sin data-lang),
+  I/O no bloqueante + callbacks/promesas, cuándo brilla / no bloquear el loop,
+  PHP-FPM síncrono vs Swoole/ReactPHP. 1 php + 1 bloque pseudocódigo (sin
+  data-lang, sin resaltar a propósito).
+- **P4.4 `memoria.html`** (Intermedio, 15 min): stack (LIFO, rápido, pila por
+  hilo, overflow) vs heap (dinámico, fugas), tabla, memoria virtual (páginas,
+  aislamiento, swap), caché de CPU + localidad de referencia (líneas de 64B,
+  array contiguo vs lista enlazada), en PHP `memory_limit` + copy-on-write +
+  streaming. 1 php. Es el `featured` actual (se quitó de procesos-hilos).
+Verificado todo: `node --check`, escapado (script python, 0 crudos), TOC↔h2,
+derivación de catálogo + roadmap (chip sistemas=4, ruta encadena
+procesos→concurrencia→async→memoria→opcache, related correcto).
+
+## Pilar 5 — Cómo viaja un dato (redes) (2026-06-21) — COMPLETO
+Categoría `redes` (label nuevo en `CATEGORY_LABELS`: "Cómo viaja un dato", igual
+criterio que `sistemas` = el topic del pilar), icon `signal`, topic "Cómo viaja
+un dato", 3 tutoriales. Catálogo: 19 publicados, 2 soon.
+- **P5.1 `url-a-fondo.html`** (Intermedio, 14 min): el viaje de pulsar Enter a ver
+  la página. Anatomía de la URL, DNS (recursivo/raíz/TLD/autoritativo, caché),
+  handshake TCP, TLS (cert + clave de sesión), petición HTTP final, errores por
+  eslabón. ids TOC: idea, anatomia, dns, tcp, tls, http, errores, resumen. 2 bash
+  (dig, curl -v).
+- **P5.2 `http-a-fondo.html`** (Intermedio, 16 min): protocolo de texto. Anatomía
+  petición/respuesta, métodos (seguros/idempotentes), status reales, caché por
+  cabeceras (Cache-Control/ETag), sin estado (cookies vs tokens), errores. ids:
+  idea, mensaje, metodos, status, cache, estado, errores, resumen. 1 bloque sin
+  data-lang (HTTP crudo, no lo resalta el highlighter; `&lt;!DOCTYPE…` escapado).
+- **P5.3 `tcp-ip.html`** (Avanzado, 15 min): el cartero fiable sobre red no
+  fiable. Capas TCP/IP, IP+puerto, handshake de 3 pasos, fiabilidad (números de
+  secuencia, ACK, retransmisión, ventana/control de flujo), por qué "se queda
+  colgado" (SYN sin respuesta, firewall que descarta, puerto cerrado). ids: idea,
+  capas, ip, puertos, handshake, fiabilidad, colgado, resumen. 2 bash (ss, nc).
+  Es el `featured` actual (se quitó de memoria).
+Verificado todo: `node --check` manifest + main.js, escapado (script python, 0
+crudos en los 3), TOC↔h2, stub de catálogo+roadmap (featured=1 → tcp-ip, chip
+redes=3, ruta encadena url-a-fondo→http-a-fondo→tcp-ip→opcache).
+
+## Rebrand + interfaz (2026-06-21) — HECHO
+- **Renombrado Academia → MentorAI** en toda la UI (títulos, brand mark `A`→`M`,
+  favicon, footer, breadcrumbs). Case-sensitive: se conservan las claves
+  funcionales `academia-*` de `localStorage` y el global `ACADEMIA_TUTORIALS`
+  (API interna; no se tocan).
+- **Ruta de aprendizaje (plan de carrera).** Nueva fuente de orden:
+  `tutorials/roadmap.js` → `window.MENTORAI_ROADMAP` (8 pilares con `steps` que
+  referencian slugs del manifest). Mismo patrón file:// (`.js` que setea global,
+  `<script>` antes de `main.js`). El manifest sigue siendo la verdad de cada
+  tutorial; el roadmap solo aporta secuencia.
+- **Home con conmutador de vistas** (`.view-toggle`, `data-view=catalog|roadmap`):
+  Catálogo (lo de siempre) vs Ruta. Módulo `Roadmap` en `main.js` cruza
+  roadmap × manifest × `Progress` y pinta pilares con barra de progreso; cada
+  paso = enlace (publicado) / "Próximamente" (soon) / "Planificado" (no existe).
+  `initViewToggle()` alterna los `[data-view-panel]`.
+- **Progreso de lectura.** Módulo `Progress` (`localStorage` `academia-progress`,
+  array de slugs completados), misma forma que `Bookmarks`. Alimenta la ruta.
+- **Página de tutorial enriquecida por JS** (`initTutorialPage`, slug del
+  filename, **sin editar los 14 HTML a mano**): botón **Escuchar** (Web Speech
+  nativo, voz `es`, play/stop; offline, file://), botón **Marcar como completado**
+  (toggle `Progress`), y **navegación de ruta** (anterior/siguiente = vecinos
+  publicados en la secuencia global del roadmap + "Más en este pilar"); oculta la
+  `.tutorial-nav` manual cuando el tutorial está en el roadmap.
+- CSS nuevo en `styles.css` (todo con tokens): `.view-toggle*`, `.roadmap`/
+  `.pillar*`/`.steps`/`.step*`, `.tutorial-actions`/`.tutorial-action*`,
+  `.route-nav*`/`.route-related*` + responsive.
+- Decisiones del usuario: audio = **Web Speech nativo** (no TTS neural, rompería
+  file://); ruta = **sección en la home** (no página aparte).
+- **Repo GitHub privado `MentorAI`** ya creado (acción de cara afuera). Regla
+  fijada: crear/borrar repos y `push` se **confirman explícitamente** antes de
+  lanzarlos, no se infieren de una pregunta.
+
 ## Planes pendientes (detalle en notes)
 - `plan-curriculum-fundamentos.md` — currículum de fundamentos CS para backend
   autodidacta (7 pilares). **Decidido:** arrancar por el pilar Bases de datos,

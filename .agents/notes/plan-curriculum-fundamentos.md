@@ -100,13 +100,13 @@ Marcar al publicar. 22 tutoriales en total.
 - [x] P3.1 indices-btree  (publicado 2026-06-21)
 - [x] P3.2 transacciones-acid  (publicado 2026-06-21)
 - [x] P3.3 modelado-relacional  (publicado 2026-06-21) ← Pilar 3 COMPLETO
-- [ ] P4.1 procesos-hilos
-- [ ] P4.2 concurrencia
-- [ ] P4.3 async-event-loop
-- [ ] P4.4 memoria
-- [ ] P5.1 url-a-fondo
-- [ ] P5.2 http-a-fondo
-- [ ] P5.3 tcp-ip
+- [x] P4.1 procesos-hilos  (publicado 2026-06-21)
+- [x] P4.2 concurrencia  (publicado 2026-06-21)
+- [x] P4.3 async-event-loop  (publicado 2026-06-21)
+- [x] P4.4 memoria  (publicado 2026-06-21) ← Pilar 4 COMPLETO
+- [x] P5.1 url-a-fondo  (publicado 2026-06-21)
+- [x] P5.2 http-a-fondo  (publicado 2026-06-21)
+- [x] P5.3 tcp-ip  (publicado 2026-06-21) ← Pilar 5 COMPLETO
 - [ ] P6.1 idempotencia
 - [ ] P6.2 cap-consistencia
 - [ ] P6.3 redis-cache
@@ -119,7 +119,7 @@ Marcar al publicar. 22 tutoriales en total.
 - `algoritmos` → "Algoritmos".
 - `bbdd` → "Base de datos".
 - `sistemas` → "Sistemas" (SO/concurrencia).
-- `redes` → "Redes".
+- `redes` → "Cómo viaja un dato" (label = el topic del pilar, igual que `sistemas`).
 - `distribuidos` → "Sistemas distribuidos".
 - `seguridad` → ya existe en CATEGORY_LABELS.
 - `infra` / `mensajeria` → ya existen (pilar 6 los reusa).

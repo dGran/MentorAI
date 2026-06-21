@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Async y el event loop: un hilo para miles de conexiones — MentorAI</title>
+    <meta
+      name="description"
+      content="Por qué el modelo de un hilo por conexión no escala, qué es el event loop, qué significa I/O no bloqueante, cuándo el async brilla y cuándo bloquear el loop lo arruina, y dónde encaja PHP entre FPM síncrono y Swoole/ReactPHP."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%235b5bf5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>M</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark">M</span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>El sistema por debajo</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Async y el event loop: un hilo para miles de conexiones</h1>
+        <p class="tutorial-hero__lead">
+          Un servidor Node atiende diez mil conexiones con un solo hilo. No es que
+          sea más rápido que PHP: es que casi nunca está trabajando. Está
+          <em>esperando</em> a la red y al disco, y mientras espera atiende a otro.
+          Ese truco se llama <em>event loop</em>.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">El cuello de botella es esperar</a></li>
+            <li><a href="#bloqueante">Un hilo por conexión no escala</a></li>
+            <li><a href="#loop">El event loop por dentro</a></li>
+            <li><a href="#nobloqueante">I/O no bloqueante</a></li>
+            <li><a href="#cuando">Cuándo brilla y cuándo no</a></li>
+            <li><a href="#php">Dónde encaja PHP</a></li>
+            <li><a href="#errores">Errores comunes</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            La mayoría de los servidores no se pasan el día calculando: se lo pasan
+            <strong>esperando</strong>. Esperan la respuesta de la base de datos, de
+            una API, del disco. El modelo asíncrono parte de una idea simple: si vas a
+            esperar, no bloquees a nadie; ponte a atender otra cosa mientras tanto.
+          </p>
+
+          <h2 id="idea">
+            El cuello de botella es esperar
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Conviene distinguir dos tipos de trabajo. El trabajo
+            <strong>CPU-bound</strong> tiene a la máquina calculando sin parar
+            (comprimir, ordenar, cifrar). El trabajo <strong>I/O-bound</strong> se
+            pasa la vida esperando a algo externo: una consulta SQL, una llamada
+            HTTP, leer un fichero. La inmensa mayoría de las webs son I/O-bound: por
+            cada milisegundo de CPU hay decenas de espera.
+          </p>
+          <p>
+            Y aquí está la clave: mientras esperas a la red, <strong>la CPU está
+            libre</strong>. Desaprovecharla teniendo un hilo parado de brazos cruzados
+            es justo lo que el modelo asíncrono quiere evitar.
+          </p>
+
+          <h2 id="bloqueante">
+            Un hilo por conexión no escala
+            <a href="#bloqueante" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El modelo tradicional asigna <strong>un hilo (o proceso) a cada
+            conexión</strong>. Es el de PHP-FPM o Apache prefork: cada petición tiene
+            su worker, que ejecuta de arriba abajo de forma <strong>síncrona</strong>.
+            Cuando llega a una consulta, el worker se <em>bloquea</em>: se queda
+            dormido esperando la respuesta, sin hacer nada más.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · síncrono.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$usuario = $api-&gt;obtenerUsuario($id);
+$pedidos = $api-&gt;obtenerPedidos($id);
+
+echo render($usuario, $pedidos);</code></pre>
+          </div>
+          <p>
+            La segunda llamada no empieza hasta que la primera termina, y el worker
+            está bloqueado durante ambas esperas. Con un hilo por conexión, atender
+            diez mil conexiones lentas exige diez mil hilos: gigas de RAM y un sistema
+            ahogado en cambios de contexto. El modelo es robusto y fácil de razonar,
+            pero la espera se paga en hilos parados.
+          </p>
+
+          <h2 id="loop">
+            El event loop por dentro
+            <a href="#loop" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El modelo asíncrono le da la vuelta: <strong>un solo hilo</strong> y un
+            bucle infinito que reparte el tiempo entre todas las conexiones. En lugar
+            de bloquearse en cada espera, registra "cuando esto termine, llámame" y
+            sigue. Ese bucle es el <strong>event loop</strong>.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">pseudocódigo · el bucle</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>mientras (haya trabajo) {
+    eventos = preguntar_al_SO_qué_está_listo()
+
+    para cada evento listo {
+        ejecutar su callback   // un trozo corto, sin bloquear
+    }
+}</code></pre>
+          </div>
+          <p>
+            En cada vuelta, el hilo le pregunta al sistema operativo qué operaciones
+            de I/O ya han terminado y ejecuta los <strong>callbacks</strong>
+            asociados. Cada callback es un trozo corto de trabajo; al acabar, devuelve
+            el control al bucle, que pasa al siguiente evento. Nadie se bloquea
+            esperando: se espera <strong>en conjunto</strong>, y el hilo solo trabaja
+            cuando hay algo listo que hacer.
+          </p>
+
+          <h2 id="nobloqueante">
+            I/O no bloqueante
+            <a href="#nobloqueante" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Para que el truco funcione, las operaciones de entrada/salida tienen que
+            ser <strong>no bloqueantes</strong>. En vez de "lee este socket y duérmeme
+            hasta que haya datos", el async dice "avísame cuando este socket tenga
+            datos". El hilo lanza la petición y se desentiende; el sistema operativo le
+            avisará. Mientras tanto, el event loop atiende a los demás.
+          </p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Conexión A pide a la BBDD</b><small>el loop no espera: registra un callback</small></span>
+              </div>
+              <div class="flow__arrow" data-label="mientras A espera"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>El loop atiende a B y a C</b><small>la CPU no se queda parada</small></span>
+              </div>
+              <div class="flow__arrow" data-label="la BBDD responde a A"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>El loop ejecuta el callback de A</b><small>retoma justo donde lo dejó</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Las esperas se solapan. Con I/O no bloqueante, un hilo da servicio a miles de conexiones casi siempre ociosas.</p>
+          </div>
+          <p>
+            Los <code>callbacks</code> anidados se vuelven ilegibles enseguida (el
+            famoso <em>callback hell</em>), así que encima se construyen abstracciones
+            más cómodas: <strong>promesas</strong> y <strong>async/await</strong>, que
+            dejan escribir código asíncrono con aspecto secuencial. Por debajo, siguen
+            siendo el mismo event loop.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo brilla y cuándo no
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El async gana cuando el trabajo es <strong>I/O-bound</strong>: muchas
+            conexiones que sobre todo esperan (websockets, chats, gateways de API,
+            proxies). Un solo hilo las sostiene todas porque casi ninguna está
+            trabajando a la vez.
+          </p>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">No bloquees el event loop</p>
+              <p>
+                Como hay un solo hilo, una tarea CPU-bound larga (un bucle pesado, un
+                hash costoso) lo <strong>congela entero</strong>: mientras tu callback
+                calcula, ninguna otra conexión se atiende. El pecado capital del async
+                es meter trabajo de CPU en el loop. Eso va en otro hilo o en otro
+                proceso (un <em>worker</em>).
+              </p>
+            </div>
+          </div>
+          <p>
+            Para trabajo CPU-bound puro, el async no aporta: ahí lo que quieres es
+            repartir el cálculo entre <strong>varios núcleos</strong> (varios procesos
+            o hilos), no concentrarlo en uno. Async y multiproceso no compiten: se
+            combinan (varios event loops, uno por núcleo).
+          </p>
+
+          <h2 id="php">
+            Dónde encaja PHP
+            <a href="#php" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            PHP nació con el modelo síncrono de un proceso por petición, y para el 95 %
+            de las webs eso está <strong>perfectamente bien</strong>: es simple,
+            robusto y aislado. No todo tiene que ser asíncrono.
+          </p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>PHP-FPM (síncrono)</h4>
+              <ul>
+                <li>Un proceso por petición, de arriba abajo</li>
+                <li>Simple de razonar, sin estado compartido</li>
+                <li>Ideal para webs y APIs normales</li>
+                <li>La espera se paga en procesos parados</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Swoole / ReactPHP (async)</h4>
+              <ul>
+                <li>Event loop: un proceso, muchísimas conexiones</li>
+                <li>Brilla en websockets y alta concurrencia I/O</li>
+                <li>Estado en memoria entre peticiones (cuidado)</li>
+                <li>Si bloqueas el loop, lo paras todo</li>
+              </ul>
+            </div>
+          </div>
+          <p>
+            Cuando de verdad necesitas miles de conexiones persistentes o latencias
+            muy bajas, PHP también tiene event loop con <strong>Swoole</strong> o
+            <strong>ReactPHP</strong>. Pero entonces heredas las reglas del async:
+            estado compartido en memoria (con sus race conditions) y la prohibición de
+            bloquear el loop.
+          </p>
+
+          <h2 id="errores">
+            Errores comunes
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <strong>Creer que async es "más rápido".</strong> No acelera una operación
+            individual: una consulta tarda lo mismo. Lo que hace es no
+            desperdiciar la espera, así que escala mejor con muchas conexiones
+            I/O-bound. Para una sola petición de cálculo, no cambia nada.
+          </p>
+          <p>
+            <strong>Meter un cálculo pesado en un callback.</strong> Congelas el loop y
+            todas las conexiones se atascan a la vez. El trabajo de CPU se delega fuera
+            del hilo del event loop.
+          </p>
+          <p>
+            <strong>Mezclar I/O bloqueante en código async.</strong> Una sola llamada
+            síncrona (un <code>sleep</code>, una librería que bloquea) dentro del loop
+            anula toda la ventaja: durante esa espera nadie más avanza.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La mayoría de los servidores son <strong>I/O-bound</strong>: se pasan la vida esperando. El async aprovecha esa espera en vez de bloquear un hilo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El <strong>event loop</strong> es un hilo que, en bucle, ejecuta los callbacks de las operaciones de I/O que ya terminaron; con <strong>I/O no bloqueante</strong> las esperas se solapan.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Brilla con <strong>muchas conexiones I/O-bound</strong>; para trabajo CPU-bound quieres varios núcleos, no un solo loop.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>PHP-FPM síncrono basta para casi todo; Swoole/ReactPHP traen el event loop a PHP, con su regla de oro: <strong>nunca bloquees el loop</strong>.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="concurrencia.html">
+              <small>← Anterior</small>
+              <b>Concurrencia: el bug que solo pasa en prod</b>
+            </a>
+            <a href="../index.html" class="next">
+              <small>Volver →</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/roadmap.js"></script>
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>
