@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RabbitMQ a fondo: exchanges, colas y durabilidad — Academia</title>
+    <meta
+      name="description"
+      content="Cómo enruta RabbitMQ con exchanges, las propiedades de las colas, qué hace falta de verdad para no perder mensajes (durable + persistente + confirms), acks, DLX y los tipos de cola: classic, quorum y streams."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%235b5bf5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>A</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark">A</span>
+          Academia
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Academia</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Mensajería</span>
+        </nav>
+        <h1 class="tutorial-hero__title">RabbitMQ a fondo: exchanges, colas y durabilidad</h1>
+        <p class="tutorial-hero__lead">
+          Un broker no es "una cola y ya". Entender cómo enruta, qué propiedades
+          tienen las colas y qué hace falta <em>de verdad</em> para no perder un
+          mensaje es la diferencia entre una integración que aguanta y una que te
+          despierta de madrugada.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            18 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#modelo">El modelo: nadie publica en una cola</a></li>
+            <li><a href="#exchanges">Tipos de exchange: cómo enruta</a></li>
+            <li><a href="#colas">La cola y sus propiedades</a></li>
+            <li><a href="#durabilidad">Durabilidad de verdad</a></li>
+            <li><a href="#ack">Acks, prefetch y entrega</a></li>
+            <li><a href="#dlx">Reintentos: DLX y TTL</a></li>
+            <li><a href="#tipos-cola">Classic, quorum y streams</a></li>
+            <li><a href="#errores">Errores comunes</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            RabbitMQ desacopla a quien produce un mensaje de quien lo procesa: el
+            productor publica y sigue a lo suyo; el consumidor trabaja a su ritmo.
+            Pero entre ambos hay más piezas de las que parece, y casi todos los
+            problemas en producción nacen de no entenderlas.
+          </p>
+
+          <h2 id="modelo">
+            El modelo: nadie publica en una cola
+            <a href="#modelo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El error mental más común es pensar que el productor "mete cosas en
+            una cola". No: <strong>el productor publica en un exchange</strong>, y
+            el exchange decide a qué cola (o colas) va el mensaje según las reglas
+            de enrutado. La cola es solo el buzón donde el mensaje espera a ser
+            consumido.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Productor</b><small>publica con una <code>routing key</code></small></span>
+              </div>
+              <div class="flow__arrow" data-label="publish"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Exchange</b><small>aplica los <code>bindings</code> y enruta</small></span>
+              </div>
+              <div class="flow__arrow" data-label="binding"></div>
+              <div class="flow__node flow__node--cache">
+                <span class="flow__num">3</span>
+                <span><b>Cola</b><small>guarda el mensaje hasta que se consume</small></span>
+              </div>
+              <div class="flow__arrow" data-label="deliver"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>Consumidor</b><small>procesa y confirma (ack)</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Productor → exchange → (binding) → cola → consumidor. El enrutado
+              ocurre en el exchange, no en la cola.
+            </p>
+          </div>
+
+          <p>
+            Las cuatro piezas: el <strong>exchange</strong> (punto de entrada y
+            enrutador), el <strong>binding</strong> (la regla que liga un exchange
+            con una cola), la <strong>cola</strong> (el almacén) y la
+            <strong>routing key</strong> (la etiqueta que lleva cada mensaje y que
+            el exchange usa para decidir). Cambia el tipo de exchange y cambia por
+            completo cómo se reparten los mensajes.
+          </p>
+
+          <h2 id="exchanges">
+            Tipos de exchange: cómo enruta
+            <a href="#exchanges" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El tipo de exchange es la primera decisión de diseño. Determina si un
+            mensaje llega a una cola, a todas, o a las que encajan con un patrón.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Exchange</th><th>Enruta según</th><th>Uso típico</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>direct</code></td>
+                  <td>Routing key exacta = binding key</td>
+                  <td>Enrutado 1:1 por clave (p. ej. <code>order.created</code>)</td>
+                </tr>
+                <tr>
+                  <td><code>fanout</code></td>
+                  <td>Ignora la routing key: copia a <em>todas</em> las colas ligadas</td>
+                  <td>Broadcast / publish-subscribe</td>
+                </tr>
+                <tr>
+                  <td><code>topic</code></td>
+                  <td>Patrón con comodines <code>*</code> (una palabra) y <code>#</code> (varias)</td>
+                  <td>Temas jerárquicos (<code>order.*.eu</code>)</td>
+                </tr>
+                <tr>
+                  <td><code>headers</code></td>
+                  <td>Cabeceras del mensaje, no la routing key</td>
+                  <td>Enrutado por metadatos (poco frecuente)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El default exchange engaña</p>
+              <p>
+                Cuando publicas "directamente a una cola" por su nombre, en
+                realidad usas el <strong>default exchange</strong>: un
+                <code>direct</code> sin nombre al que toda cola está ligada por su
+                propio nombre como routing key. Por eso parece que publicas en la
+                cola; sigues pasando por un exchange.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            Con <code>topic</code> está casi todo cubierto: una cola ligada a
+            <code>order.#</code> recibe <code>order.created</code> y
+            <code>order.eu.shipped</code>; otra ligada a <code>*.eu.*</code>
+            filtra por región. Es el más flexible y el que usarás la mayoría de
+            las veces que necesites algo más que 1:1.
+          </p>
+
+          <h2 id="colas">
+            La cola y sus propiedades
+            <a href="#colas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Al declarar una cola fijas propiedades que no podrás cambiar después
+            sin borrarla y recrearla. Las tres que importan:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Propiedad</th><th>Qué hace</th><th>Cuándo</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>durable</code></td>
+                  <td>La <em>definición</em> de la cola sobrevive a un reinicio del broker</td>
+                  <td>Producción: casi siempre <code>true</code></td>
+                </tr>
+                <tr>
+                  <td><code>exclusive</code></td>
+                  <td>Solo la conexión que la creó puede usarla; se borra al cerrarla</td>
+                  <td>Colas privadas y temporales (RPC, respuestas)</td>
+                </tr>
+                <tr>
+                  <td><code>auto-delete</code></td>
+                  <td>Se borra cuando se va su último consumidor</td>
+                  <td>Colas efímeras ligadas a un consumidor concreto</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Durable ≠ tus mensajes a salvo</p>
+              <p>
+                <code>durable: true</code> hace que <strong>la cola</strong>
+                exista tras un reinicio, no que sus mensajes sobrevivan. Una cola
+                durable llena de mensajes no persistentes se reinicia… vacía. La
+                durabilidad real necesita más piezas, y es la siguiente sección.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="durabilidad">
+            Durabilidad de verdad
+            <a href="#durabilidad" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Para que un mensaje sobreviva a la caída del broker tienen que
+            alinearse <strong>tres piezas</strong>. Si falta una, hay un agujero
+            por el que se pierden mensajes justo cuando peor viene:
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--cache">
+                <span class="flow__num">1</span>
+                <span><b>Cola durable</b><small>la definición sobrevive al reinicio</small></span>
+              </div>
+              <div class="flow__arrow" data-label="y además"></div>
+              <div class="flow__node flow__node--cache">
+                <span class="flow__num">2</span>
+                <span><b>Mensaje persistente</b><small><code>delivery_mode = 2</code>: se escribe a disco</small></span>
+              </div>
+              <div class="flow__arrow" data-label="y además"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Publisher confirms</b><small>el broker confirma que lo guardó</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Las tres juntas. Cola durable + mensaje persistente + confirmación
+              de que el broker lo escribió a disco.
+            </p>
+          </div>
+
+          <p>
+            La cola durable conserva la <em>estructura</em>. El mensaje
+            persistente (<code>delivery_mode = 2</code>) pide que se escriba en
+            disco en lugar de vivir solo en memoria. Y los <strong>publisher
+            confirms</strong> cierran el círculo: sin ellos, <code>basic_publish</code>
+            es "dispara y olvida": tu app cree que envió, pero el mensaje podía
+            estar aún en un buffer cuando el broker cayó.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · productor durable (php-amqplib)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+use PhpAmqpLib\Connection\AMQPStreamConnection;
+use PhpAmqpLib\Message\AMQPMessage;
+
+$connection = new AMQPStreamConnection('localhost', 5672, 'guest', 'guest');
+$channel = $connection->channel();
+
+// exchange_declare(nombre, tipo, passive, durable, autoDelete)
+$channel->exchange_declare('orders', 'topic', false, true, false);
+
+// queue_declare(nombre, passive, durable, exclusive, autoDelete)
+$channel->queue_declare('orders.email', false, true, false, false);
+$channel->queue_bind('orders.email', 'orders', 'order.created');
+
+// Confirmamos cada publicación con el broker
+$channel->confirm_select();
+
+$message = new AMQPMessage(
+    json_encode(['orderId' => 42]),
+    ['delivery_mode' => AMQPMessage::DELIVERY_MODE_PERSISTENT],
+);
+
+$channel->basic_publish($message, 'orders', 'order.created');
+$channel->wait_for_pending_acks();
+
+$channel->close();
+$connection->close();</code></pre>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Ni con las tres tienes "exactly once"</p>
+              <p>
+                Persistencia y confirms te dan durabilidad, pero el reparto sigue
+                siendo <strong>at-least-once</strong>: un mensaje puede entregarse
+                más de una vez (un consumidor que cae tras procesar pero antes de
+                confirmar lo recibirá de nuevo). La regla de oro es hacer tus
+                consumidores <strong>idempotentes</strong>: procesar dos veces el
+                mismo mensaje no debe duplicar el efecto.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="ack">
+            Acks, prefetch y entrega
+            <a href="#ack" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Del lado del consumidor, dos ajustes deciden la fiabilidad y el
+            rendimiento. El primero es el <strong>acknowledgement manual</strong>:
+            si auto-confirmas (auto-ack), RabbitMQ da el mensaje por entregado en
+            cuanto lo manda, y si tu proceso muere a mitad, lo pierdes. Con ack
+            manual confirmas <em>después</em> de procesar; si caes antes, el
+            mensaje se reentrega.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · consumidor con ack manual y prefetch</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+use PhpAmqpLib\Message\AMQPMessage;
+
+// No repartas más de 10 mensajes sin confirmar a este consumidor
+$channel->basic_qos(0, 10, false);
+
+$channel->basic_consume(
+    'orders.email',
+    '',
+    false,
+    false, // autoAck = false: confirmamos a mano
+    false,
+    false,
+    function (AMQPMessage $message): void {
+        $payload = json_decode($message->getBody(), true);
+
+        // ... enviar el email (operación idempotente) ...
+
+        $message->ack();
+    },
+);
+
+while ($channel->is_consuming()) {
+    $channel->wait();
+}</code></pre>
+          </div>
+
+          <p>
+            El segundo ajuste es el <strong>prefetch</strong>
+            (<code>basic_qos</code>): cuántos mensajes sin confirmar reparte
+            RabbitMQ a un consumidor a la vez. Por defecto es ilimitado, y eso es
+            una trampa: un consumidor acapara toda la cola, se le dispara la
+            memoria y el reparto entre varios workers se desequilibra. Un prefetch
+            bajo (entre 1 y unas decenas, según lo que cueste procesar cada
+            mensaje) reparte el trabajo de forma justa.
+          </p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">nack y requeue</p>
+              <p>
+                Si no puedes procesar un mensaje, <code>nack</code> con
+                <code>requeue = true</code> lo devuelve a la cola para reintentar.
+                Pero ojo: si el fallo es permanente (un mensaje corrupto), el
+                requeue infinito crea un bucle. Para eso está el siguiente paso:
+                mandar lo que falla a una cola aparte.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="dlx">
+            Reintentos: DLX y TTL
+            <a href="#dlx" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un <strong>Dead Letter Exchange</strong> (DLX) es el exchange al que
+            RabbitMQ envía los mensajes que "mueren": los rechazados con
+            <code>nack</code> sin requeue, los que superan su TTL o los que
+            desbordan una cola con límite. Combinando un DLX con un
+            <strong>TTL</strong> se montan reintentos con espera sin escribir un
+            solo bucle.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · cola con dead-lettering y TTL</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+use PhpAmqpLib\Wire\AMQPTable;
+
+// Los mensajes muertos de orders.email van al exchange orders.dlx;
+// y si pasan 60s sin consumirse, también se consideran muertos.
+$channel->queue_declare('orders.email', false, true, false, false, false, new AMQPTable([
+    'x-dead-letter-exchange' => 'orders.dlx',
+    'x-message-ttl' => 60000,
+]));</code></pre>
+          </div>
+
+          <p>
+            El patrón de <strong>retry con backoff</strong> se construye así: la
+            cola de trabajo manda lo que falla a una cola de espera con TTL; al
+            expirar el TTL, esa cola de espera tiene a su vez como DLX el exchange
+            original, devolviendo el mensaje a la cola de trabajo pasado ese
+            tiempo. Encadenando colas de espera con TTL crecientes consigues
+            reintentos espaciados. Y lo que agota todos los intentos acaba en una
+            <strong>cola de fallidos</strong> que <em>alguien tiene que revisar</em>:
+            una failed queue que nadie mira es un agujero silencioso.
+          </p>
+
+          <h2 id="tipos-cola">
+            Classic, quorum y streams
+            <a href="#tipos-cola" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            No todas las colas son iguales por dentro. RabbitMQ ofrece tres tipos,
+            y elegir bien evita sorpresas de fiabilidad o de rendimiento.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Tipo</th><th>Qué es</th><th>Cuándo</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>classic</code></td>
+                  <td>La cola tradicional, en un solo nodo</td>
+                  <td>Casos simples; sin alta disponibilidad por sí sola</td>
+                </tr>
+                <tr>
+                  <td><code>quorum</code></td>
+                  <td>Cola replicada por consenso (Raft) en varios nodos</td>
+                  <td>Durabilidad y HA en producción: la opción por defecto hoy</td>
+                </tr>
+                <tr>
+                  <td><code>stream</code></td>
+                  <td>Log inmutable y reproducible, los consumidores leen por offset</td>
+                  <td>Alto volumen, varios lectores, repetir el histórico</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · declarar una quorum queue</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+use PhpAmqpLib\Wire\AMQPTable;
+
+$channel->queue_declare('orders.email', false, true, false, false, false, new AMQPTable([
+    'x-queue-type' => 'quorum',
+]));</code></pre>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Quorum sustituye a las mirror queues</p>
+              <p>
+                Las antiguas <em>classic mirrored queues</em> están obsoletas: si
+                buscas réplicas y supervivencia ante la caída de un nodo, hoy la
+                respuesta son las <strong>quorum queues</strong>. Replican por
+                consenso y son la base recomendada para colas críticas.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="errores">
+            Errores comunes
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Síntoma</th><th>Por qué duele</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Cola durable con mensajes no persistentes</td>
+                  <td>La cola sobrevive al reinicio, pero vacía: se pierden los mensajes.</td>
+                </tr>
+                <tr>
+                  <td>Publicar sin confirms</td>
+                  <td>Crees que enviaste; el mensaje podía estar en un buffer al caer el broker.</td>
+                </tr>
+                <tr>
+                  <td>auto-ack en trabajo importante</td>
+                  <td>Si el consumidor muere a mitad, el mensaje ya estaba dado por entregado.</td>
+                </tr>
+                <tr>
+                  <td>Prefetch ilimitado</td>
+                  <td>Un consumidor acapara la cola, dispara su memoria y desequilibra el reparto.</td>
+                </tr>
+                <tr>
+                  <td>Consumidor no idempotente</td>
+                  <td>Con entrega at-least-once, un reintento duplica el efecto (doble cobro, doble email).</td>
+                </tr>
+                <tr>
+                  <td><code>nack</code> con requeue ante fallo permanente</td>
+                  <td>Bucle infinito de reintentos. Usa un DLX y una cola de fallidos.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Se publica en un <strong>exchange</strong>, no en una cola; el tipo de exchange (direct, fanout, topic, headers) decide el enrutado.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>durable</code> salva la <em>cola</em>, no sus mensajes: hace falta cola durable + mensaje persistente + publisher confirms, las tres.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La entrega es <strong>at-least-once</strong>: haz tus consumidores idempotentes y usa ack manual tras procesar.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Fija el <strong>prefetch</strong>: ilimitado por defecto desequilibra el reparto y dispara la memoria.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>DLX + TTL dan reintentos con espera y una cola de fallidos (que alguien debe vigilar). Para HA, <strong>quorum queues</strong>.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+            <a href="opcache.html" class="next">
+              <small>Relacionado →</small>
+              <b>OPcache en PHP</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>Academia</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

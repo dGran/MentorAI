@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bits y bytes: cómo cuenta de verdad un ordenador — Academia</title>
+    <meta
+      name="description"
+      content="Qué es un bit, por qué ocho forman un byte, cómo se cuenta en binario y hexadecimal, y las operaciones bit a bit (AND, OR, XOR, shifts) que hacen falta para entender máscaras, permisos y casi todo lo demás."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%235b5bf5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>A</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark">A</span>
+          Academia
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Academia</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Representación de datos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Bits y bytes: cómo cuenta de verdad un ordenador</h1>
+        <p class="tutorial-hero__lead">
+          Un número, un texto, una imagen, este tutorial: para la máquina todo es
+          lo mismo, una tira de ceros y unos. Entender ese nivel no es trivia
+          académica; es lo que hace que de pronto cobren sentido los permisos en
+          octal, las máscaras de flags, los colores en hex y por qué a veces los
+          datos "no caben".
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#bit-byte">Del bit al byte</a></li>
+            <li><a href="#binario">Contar en binario</a></li>
+            <li><a href="#hex">Hexadecimal: binario para humanos</a></li>
+            <li><a href="#operaciones">Operaciones bit a bit</a></li>
+            <li><a href="#mascaras">Flags y máscaras: el caso real</a></li>
+            <li><a href="#errores">Errores comunes</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Por debajo de todos los tipos de tu lenguaje —enteros, cadenas,
+            booleanos— hay una única cosa: bits agrupados en bytes. Casi cada
+            "rareza" que te encuentras (permisos <code>0644</code>, un color
+            <code>#ff8800</code>, un <code>&amp;</code> que no es <code>&amp;&amp;</code>)
+            es transparente en cuanto ves la tira de bits que hay debajo.
+          </p>
+
+          <h2 id="bit-byte">
+            Del bit al byte
+            <a href="#bit-byte" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un <strong>bit</strong> es la unidad mínima de información: vale
+            <code>0</code> o <code>1</code>, nada más. Con un solo bit distingues
+            dos estados (encendido/apagado, sí/no). El truco está en agruparlos:
+            cada bit que añades <em>duplica</em> las combinaciones posibles. Con
+            2 bits hay 4 combinaciones; con 3, ocho; con <em>n</em> bits,
+            <code>2ⁿ</code>.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Bit</b><small>1 dígito: 0 o 1 (2 estados)</small></span>
+              </div>
+              <div class="flow__arrow" data-label="×4 bits"></div>
+              <div class="flow__node">
+                <span class="flow__num">4</span>
+                <span><b>Nibble</b><small>4 bits: 16 valores (un dígito hex)</small></span>
+              </div>
+              <div class="flow__arrow" data-label="×2 nibbles"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">8</span>
+                <span><b>Byte</b><small>8 bits: 256 valores (0–255)</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              La unidad de trabajo es el byte: 8 bits, 2⁸ = 256 valores posibles.
+            </p>
+          </div>
+
+          <p>
+            El <strong>byte</strong> (8 bits) es la unidad direccionable de
+            memoria: cuando un lenguaje dice que un <code>char</code> ocupa 1 byte
+            o que un entero ocupa 4 u 8, habla de cuántos de estos grupos de 8
+            bits reserva. Un byte cubre del <code>0</code> al <code>255</code>: por
+            eso ese número aparece por todas partes (un canal de color RGB, un
+            octeto de una IP <code>192.168.0.1</code>…).
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">¿Por qué 8 y no 10?</p>
+              <p>
+                Porque el hardware no tiene diez dedos: un transistor está
+                conducido o cortado, hay tensión o no la hay. Dos estados, no
+                diez. Toda la electrónica digital se construye sobre esa decisión
+                física, y por eso contamos en base 2, no en base 10.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="binario">
+            Contar en binario
+            <a href="#binario" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El sistema decimal es <strong>posicional</strong>: en <code>237</code>
+            el <code>2</code> vale 200 porque está en la posición de las centenas
+            (10²). El binario funciona igual, pero cada posición vale el doble que
+            la anterior en vez de diez veces más: son potencias de 2.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Posición</th><th>2⁷</th><th>2⁶</th><th>2⁵</th><th>2⁴</th><th>2³</th><th>2²</th><th>2¹</th><th>2⁰</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Vale</td><td>128</td><td>64</td><td>32</td><td>16</td><td>8</td><td>4</td><td>2</td><td>1</td></tr>
+                <tr><td><code>0110 0101</code></td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td><td>1</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            Sumas las posiciones que tienen un <code>1</code>:
+            <code>64 + 32 + 4 + 1 = 101</code>. Así de mecánico es leer binario.
+            Para ir y volver no hace falta hacerlo a mano: todo lenguaje trae
+            conversiones, y verlas escritas ayuda a fijar la idea.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · binario ⇄ decimal</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$value = 101;
+
+echo decbin($value);            // "1100101"
+echo bindec('1100101');         // 101
+
+printf('%08b', $value);         // "01100101" (8 bits, con ceros a la izquierda)
+
+$literal = 0b01100101;          // binario directo en el código
+var_dump($literal === 101);     // bool(true)</code></pre>
+          </div>
+
+          <h2 id="hex">
+            Hexadecimal: binario para humanos
+            <a href="#hex" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El binario es fiel a la máquina pero ilegible para nosotros:
+            <code>11111111</code> cuesta de leer. El <strong>hexadecimal</strong>
+            (base 16) es el atajo: como 16 es 2⁴, <em>cada dígito hex equivale
+            exactamente a 4 bits</em> (un nibble). Un byte son siempre dos dígitos
+            hex, sin ambigüedad. Por eso lo verás en colores, hashes, direcciones
+            de memoria y volcados de bytes.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Hex</th><th>Binario (nibble)</th><th>Decimal</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>0</code></td><td><code>0000</code></td><td>0</td></tr>
+                <tr><td><code>8</code></td><td><code>1000</code></td><td>8</td></tr>
+                <tr><td><code>A</code></td><td><code>1010</code></td><td>10</td></tr>
+                <tr><td><code>F</code></td><td><code>1111</code></td><td>15</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Leer un color de un vistazo</p>
+              <p>
+                <code>#FF8800</code> son tres bytes: <code>FF</code> = 255 de
+                rojo, <code>88</code> = 136 de verde, <code>00</code> = 0 de azul.
+                Cada par hex es un byte, cada byte un canal de 0 a 255. No hay
+                magia: es el mismo conteo de siempre, escrito compacto.
+              </p>
+            </div>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · hexadecimal y bytes</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+echo dechex(255);               // "ff"
+echo hexdec('ff');              // 255
+
+$red = hexdec('FF');            // 255
+$green = hexdec('88');          // 136
+
+$literal = 0xFF;                // hex directo en el código
+var_dump($literal === 255);     // bool(true)</code></pre>
+          </div>
+
+          <h2 id="operaciones">
+            Operaciones bit a bit
+            <a href="#operaciones" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Los operadores <em>bitwise</em> trabajan sobre cada bit por separado,
+            sin acarreo. Son la base de las máscaras de la siguiente sección, así
+            que conviene tenerlos claros. Hay cinco que importan:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Operador</th><th>Hace</th><th>Ejemplo (4 bits)</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>&amp;</code> AND</td>
+                  <td>1 solo si <em>ambos</em> bits son 1</td>
+                  <td><code>1100 &amp; 1010 = 1000</code></td>
+                </tr>
+                <tr>
+                  <td><code>|</code> OR</td>
+                  <td>1 si <em>alguno</em> de los dos es 1</td>
+                  <td><code>1100 | 1010 = 1110</code></td>
+                </tr>
+                <tr>
+                  <td><code>^</code> XOR</td>
+                  <td>1 si los dos bits <em>difieren</em></td>
+                  <td><code>1100 ^ 1010 = 0110</code></td>
+                </tr>
+                <tr>
+                  <td><code>~</code> NOT</td>
+                  <td>Invierte todos los bits</td>
+                  <td><code>~1100 = …0011</code></td>
+                </tr>
+                <tr>
+                  <td><code>&lt;&lt;</code> / <code>&gt;&gt;</code> shift</td>
+                  <td>Desplaza los bits a izq./der.</td>
+                  <td><code>0001 &lt;&lt; 2 = 0100</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            Un detalle útil: desplazar a la izquierda una posición
+            (<code>&lt;&lt; 1</code>) equivale a multiplicar por 2, y a la derecha
+            (<code>&gt;&gt; 1</code>) a dividir entre 2 descartando el resto. No es
+            casualidad: en base 2 mover la coma es multiplicar o dividir por la
+            base, igual que añadir un cero en decimal multiplica por 10.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · los cinco operadores</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+printf('%04b', 12 &amp; 10);        // "1000"  (AND)
+printf('%04b', 12 | 10);        // "1110"  (OR)
+printf('%04b', 12 ^ 10);        // "0110"  (XOR)
+
+echo 1 &lt;&lt; 4;                    // 16   (1 desplazado 4 posiciones)
+echo 20 &gt;&gt; 2;                   // 5    (20 / 4)</code></pre>
+          </div>
+
+          <h2 id="mascaras">
+            Flags y máscaras: el caso real
+            <a href="#mascaras" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Aquí es donde todo lo anterior se vuelve práctico. Una
+            <strong>máscara de bits</strong> guarda muchos booleanos
+            independientes en un solo entero: cada bit es un flag. Es el patrón de
+            los permisos de Unix (<code>rwx</code> → 3 bits), de las opciones de
+            muchas funciones de PHP (<code>JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE</code>)
+            y de cualquier conjunto de opciones que quepa en un número.
+          </p>
+
+          <p>
+            El idioma es siempre el mismo: cada flag es una potencia de 2 (un único
+            bit a 1), se <strong>combinan con OR</strong>, se <strong>comprueban
+            con AND</strong> y se <strong>quitan con AND del complemento</strong>
+            (<code>&amp; ~flag</code>).
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · permisos como máscara de bits</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+const READ = 1 &lt;&lt; 0;            // 0b001 = 1
+const WRITE = 1 &lt;&lt; 1;           // 0b010 = 2
+const DELETE = 1 &lt;&lt; 2;          // 0b100 = 4
+
+$permissions = READ | WRITE;    // 0b011 = 3: lectura y escritura
+
+$canWrite = ($permissions &amp; WRITE) !== 0;     // true
+$canDelete = ($permissions &amp; DELETE) !== 0;   // false
+
+$permissions = $permissions &amp; ~WRITE;         // quita WRITE -> 0b001
+$permissions = $permissions | DELETE;          // añade DELETE -> 0b101</code></pre>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Una máscara entera frente a varias columnas booleanas</p>
+              <p>
+                Guardar 8 flags en un solo <code>INT</code> es compacto y rápido de
+                combinar, pero ilegible en la base de datos y difícil de indexar o
+                consultar (<code>WHERE permisos &amp; 2</code> no usa índice). Para
+                pocas opciones muy consultadas, columnas o un enum suelen ganar; la
+                máscara brilla cuando son muchas y se manejan en bloque.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="errores">
+            Errores comunes
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Error</th><th>Por qué duele</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Confundir <code>&amp;</code> con <code>&amp;&amp;</code></td>
+                  <td><code>&amp;</code> opera bit a bit; <code>&amp;&amp;</code> es lógico (AND booleano). <code>6 &amp; 1</code> es 0; <code>6 &amp;&amp; 1</code> es <code>true</code>.</td>
+                </tr>
+                <tr>
+                  <td>Flags que no son potencias de 2</td>
+                  <td>Si dos flags comparten un bit, se pisan: comprobar uno da positivos falsos. Cada flag = un único bit (<code>1 &lt;&lt; n</code>).</td>
+                </tr>
+                <tr>
+                  <td>Olvidar el <code>!== 0</code> al comprobar</td>
+                  <td><code>$x &amp; FLAG</code> devuelve el valor del bit (p. ej. 4), no <code>true</code>. Funciona por casualidad hasta que comparas o sumas.</td>
+                </tr>
+                <tr>
+                  <td>Asumir que un entero es infinito</td>
+                  <td>Cabe en un número fijo de bits; al desbordar, se rompe o cambia de signo. Es justo el siguiente tutorial.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un <strong>bit</strong> es 0 o 1; ocho forman un <strong>byte</strong> (256 valores). Cada bit que añades duplica las combinaciones (2ⁿ).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El <strong>binario</strong> es posicional con potencias de 2; el <strong>hex</strong> es su atajo legible: un dígito hex = 4 bits, un byte = dos dígitos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los operadores <strong>bit a bit</strong> (AND, OR, XOR, NOT, shifts) trabajan cada bit por su cuenta; <code>&lt;&lt; 1</code> multiplica por 2.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Las <strong>máscaras</strong> guardan muchos flags en un entero: combinar con <code>|</code>, comprobar con <code>&amp;</code>, quitar con <code>&amp; ~flag</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>&amp;</code> no es <code>&amp;&amp;</code>, los flags deben ser potencias de 2, y un entero no es infinito: cabe en sus bits.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+            <a href="opcache.html" class="next">
+              <small>Relacionado →</small>
+              <b>OPcache en PHP</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>Academia</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

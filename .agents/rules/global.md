@@ -1,0 +1,83 @@
+# Academia — Reglas del proyecto
+
+Plataforma visual de tutoriales técnicos en HTML estático, pensada para crecer
+tutorial a tutorial, iterando el contenido con IA. Estas reglas se cargan en
+cada sesión: capturan lo propio del proyecto. Los estándares de código generales
+(clean code, no `else`, booleanos `is/has/should`, etc.) ya llegan por la config
+global del agente y no se duplican aquí.
+
+## Arquitectura — invariantes que no se rompen
+
+- **Sin build, sin dependencias, sin servidor obligatorio.** `index.html` abre
+  con doble clic (`file://`) y funciona, incluso offline. Cualquier propuesta que
+  exija un bundler, un framework o un paquete npm está fuera de alcance salvo que
+  el usuario lo apruebe explícitamente.
+- **`file://` manda.** Nada de `fetch` de ficheros `.json`: CORS lo bloquea al
+  abrir por `file://`. Los datos se cargan como `.js` que asignan a un global
+  (`tutorials/manifest.js` → `window.ACADEMIA_TUTORIALS`). Cualquier dato nuevo
+  (p. ej. un índice de búsqueda) sigue ese patrón: un `.js` que setea `window.X`,
+  incluido con `<script>` antes de `main.js`.
+- **`tutorials/manifest.js` es la única fuente de verdad del catálogo.** La
+  portada no se edita a mano: `index.html` solo tiene contenedores vacíos
+  (`#filters`, `#cards`, `#cards-empty`) y el módulo `Catalog` de `main.js` los
+  rellena. Añadir/cambiar un tutorial = tocar su `.html` y su entrada en el
+  manifest, nunca el HTML del catálogo.
+- **Las categorías se auto-catalogan.** Los chips de filtro y sus conteos salen
+  de las `categories` del manifest. Categoría nueva → chip automático; nombre
+  bonito opcional en `CATEGORY_LABELS` (`main.js`).
+- **Todo en design tokens.** Colores, espacios y radios son variables CSS en
+  `:root` / `[data-theme]`. Cambiar marca o paleta es tocar tokens, no recorrer
+  el CSS. Tema claro/oscuro con `data-theme` en `<html>`, persistido en
+  `localStorage` y aplicado antes del render para evitar parpadeo.
+- **Resaltado de sintaxis propio y offline** (`SyntaxHighlighter` en `main.js`):
+  una pasada con regex combinado por lenguaje (`php`/`bash`/`ini`). Dentro de los
+  `<code data-lang=...>` hay que escapar `<`, `>` y `&` (`&lt;?php`).
+- **El puente (`server/bridge.js`) es opcional.** Añade generar y refinar
+  tutoriales con `claude -p` headless (usa la sesión de Claude Code, **sin API
+  key**). Regla de oro: **el servidor escribe los ficheros**, no Claude (evita
+  prompts de permisos y mantiene el control). Node puro, sin dependencias.
+
+## Convenciones de contenido
+
+- Un tutorial = `tutorials/<slug>.html` + una entrada en `manifest.js`. El slug
+  es el nombre del fichero.
+- Se parte de `tutorials/_PLANTILLA.html`, que reúne el vocabulario de
+  componentes: callouts (`--info/--tip/--warning/--danger`), diagramas en CSS
+  puro (`.diagram .flow`), comparativas (`.compare`), tablas, `.keypoints`,
+  bloques de código.
+- Cada `<h2 id="...">` debe tener un `id` que coincida con su enlace en el TOC:
+  de ahí dependen el scrollspy y el resaltado del índice.
+- Persistencia de usuario (tema, marcadores y futuros resaltados): siempre
+  `localStorage`, claves con prefijo `academia-`. Uso individual, sin login.
+
+## Frontend (`main.js`)
+
+- Un IIFE sin dependencias, dividido en módulos por responsabilidad
+  (`Catalog`, `Bookmarks`, `SyntaxHighlighter`, `init*`). Mantener esa forma.
+- **Comentarios:** el estándar global es "sin comentarios". Convención propia de
+  este repo: se conservan las **cabeceras de sección** `/* ---------- X ---------- */`
+  como navegación del fichero (es la estructura del archivo), pero **nada de
+  comentarios explicativos dentro de las funciones**: el naming se explica solo.
+  No introducir comentarios nuevos de prosa.
+- Escapado: cualquier dato del manifest que se inyecta como HTML pasa por
+  `escapeHtml`. Las búsquedas normalizan sin acentos ni mayúsculas (`normalize`).
+
+## Mantenimiento y continuidad
+
+- Editar reglas y skills **solo** en `.agents/` (las herramientas las leen por
+  symlink: `AGENTS.md` y `CLAUDE.md` apuntan aquí; `.claude/skills` → `.agents/skills`).
+- **Al inicio de sesión:** leer `.agents/notes/estado.md` y los `plan-*.md` para
+  retomar lo en curso.
+- **Al cerrar una unidad de trabajo:** volcar a una note el estado (qué se hizo,
+  qué quedó a medias, decisiones y porqué, siguiente paso). Si emerge una
+  convención, va a este fichero de rules, no a una note.
+- **Decisión deliberada:** este proyecto **no usa** el flujo `spec → implement →
+  review → qa → deploy` ni tablero de GitHub; no lo necesita. No proponer
+  `/new-project`. La continuidad vive en `.agents/notes/` y basta.
+
+## Planes abiertos
+
+Detalle en `.agents/notes/`:
+- `plan-buscador-fulltext.md` — búsqueda dentro del contenido (índice por el puente).
+- `plan-resaltado-texto.md` — subrayar texto dentro de los tutoriales.
+- `plan-autocategorizacion.md` — que la IA proponga las categorías al generar.

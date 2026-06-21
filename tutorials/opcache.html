@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OPcache: cómo PHP deja de releer tu código — Academia</title>
+    <meta
+      name="description"
+      content="Tutorial profundo y entendible sobre OPcache en PHP: qué es, cómo funciona la caché de opcodes, cómo configurarlo y los errores típicos."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%235b5bf5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>A</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <!-- ===================== Navbar ===================== -->
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark">A</span>
+          Academia
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button
+            class="icon-btn theme-toggle"
+            aria-label="Cambiar tema"
+            title="Cambiar tema"
+          >
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- ===================== Hero del tutorial ===================== -->
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Academia</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>PHP · Rendimiento</span>
+        </nav>
+        <h1 class="tutorial-hero__title">
+          OPcache: cómo PHP deja de releer tu código
+        </h1>
+        <p class="tutorial-hero__lead">
+          PHP recompila tu aplicación entera en cada petición. OPcache rompe ese
+          desperdicio guardando el código ya compilado en memoria. Veamos qué
+          hace exactamente, por qué multiplica el rendimiento y cómo configurarlo
+          sin pegarte un tiro en el pie.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            PHP 7.x / 8.x
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== Layout: TOC + contenido ===================== -->
+    <div class="container">
+      <div class="tutorial-layout">
+        <!-- Índice -->
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">El problema</a></li>
+            <li><a href="#que-es">Qué es OPcache</a></li>
+            <li><a href="#ciclo">El ciclo, comparado</a></li>
+            <li><a href="#memoria">Memoria compartida</a></li>
+            <li><a href="#configuracion">Configuración esencial</a></li>
+            <li><a href="#timestamps">El truco de los timestamps</a></li>
+            <li><a href="#errores">Errores comunes</a></li>
+            <li><a href="#monitorizar">Monitorizar OPcache</a></li>
+            <li><a href="#jit">Un paso más: JIT</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <!-- Artículo -->
+        <article class="prose">
+          <p class="lead">
+            Imagina que cada vez que alguien entra en tu web, un traductor coge
+            tu libro entero, lo traduce de cero a un idioma que la máquina
+            entiende, lee la traducción una sola vez y luego la tira a la basura.
+            En la siguiente visita, vuelve a traducir el libro completo desde la
+            primera página. Eso es exactamente lo que hace PHP sin OPcache.
+          </p>
+
+          <!-- ============ El problema ============ -->
+          <h2 id="problema">
+            El problema: PHP recompila en cada petición
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            PHP es un lenguaje interpretado, pero no ejecuta tu código fuente
+            directamente. Antes pasa por una fase de <strong>compilación</strong>
+            interna que transforma tu <code>.php</code> en
+            <strong>opcodes</strong>: instrucciones de bajo nivel que la máquina
+            virtual de PHP (la <em>Zend VM</em>) sí sabe ejecutar.
+          </p>
+          <p>Ese proceso tiene varias fases por cada fichero involucrado:</p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Llega la petición HTTP</b><small>El usuario pide una página</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Lexing</b><small>Trocea el código fuente en tokens</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Parsing</b><small>Construye el árbol de sintaxis (AST)</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">4</span>
+                <span><b>Compilación</b><small>El AST se convierte en opcodes</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">5</span>
+                <span><b>Ejecución</b><small>La Zend VM ejecuta los opcodes</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">6</span>
+                <span><b>Respuesta + se tira todo</b><small>Los opcodes se descartan al terminar</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Ciclo de una petición <strong>sin</strong> OPcache. Los pasos 2, 3
+              y 4 se repiten enteros en cada visita, para cada archivo cargado.
+            </p>
+          </div>
+
+          <p>
+            En una aplicación real con un framework moderno, una sola petición
+            puede cargar <strong>cientos o miles de ficheros PHP</strong>
+            (Symfony, Laravel, sus dependencias…). Compilar todos esos archivos,
+            en cada request, solo para tirarlos al acabar, es puro trabajo
+            desperdiciado. Y lo peor: el resultado de compilar es
+            <strong>siempre idéntico</strong> mientras no cambies el código.
+          </p>
+
+          <!-- ============ Qué es OPcache ============ -->
+          <h2 id="que-es">
+            Qué es OPcache
+            <a href="#que-es" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            OPcache es una extensión que viene incluida con PHP desde la versión
+            5.5. Su idea es tan simple como potente: <strong>compila cada fichero
+            una sola vez y guarda los opcodes resultantes en memoria
+            compartida</strong>. A partir de ahí, las siguientes peticiones se
+            saltan el lexing, el parsing y la compilación, y van directas a
+            ejecutar.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">"Opcode" en una frase</p>
+              <p>
+                Un opcode es una instrucción elemental de la Zend VM, parecida al
+                bytecode de Java o de Python. Tu <code>$a + $b</code> se convierte
+                en un opcode <code>ADD</code> con dos operandos. OPcache cachea
+                justamente ese resultado ya cocinado.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ El ciclo comparado ============ -->
+          <h2 id="ciclo">
+            El ciclo de una petición, comparado
+            <a href="#ciclo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Con OPcache activo, lo primero que hace PHP al cargar un fichero es
+            preguntar: <em>¿ya tengo los opcodes de este archivo en memoria?</em>
+            La respuesta marca dos caminos muy distintos.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Llega la petición HTTP</b></span>
+              </div>
+              <div class="flow__arrow" data-label="¿opcodes en memoria?"></div>
+            </div>
+
+            <div class="compare">
+              <div class="compare__col compare__col--good">
+                <h4>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  Cache HIT
+                </h4>
+                <ul>
+                  <li>Lee los opcodes directos de la memoria compartida</li>
+                  <li>Se salta lexing, parsing y compilación</li>
+                  <li>Pasa directo a la ejecución</li>
+                  <li><strong>Coste: microsegundos</strong></li>
+                </ul>
+              </div>
+              <div class="compare__col compare__col--bad">
+                <h4>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/><circle cx="12" cy="12" r="10"/></svg>
+                  Cache MISS
+                </h4>
+                <ul>
+                  <li>Compila el fichero (lexing + parsing + compilación)</li>
+                  <li>Guarda los opcodes en la memoria compartida</li>
+                  <li>Luego ejecuta</li>
+                  <li><strong>Solo la 1ª vez o si el fichero cambió</strong></li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="flow">
+              <div class="flow__arrow" data-label="ambos caminos"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">2</span>
+                <span><b>Ejecución + Respuesta</b></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Ciclo <strong>con</strong> OPcache. Tras la primera petición que
+              "calienta" la caché, prácticamente todas las demás son HIT.
+            </p>
+          </div>
+
+          <p>
+            La clave es que el coste de compilar se paga <strong>una vez</strong>
+            y lo amortizan todas las peticiones siguientes. En producción, con la
+            caché caliente, el ahorro de CPU es enorme: es habitual ver mejoras
+            de <strong>2× a 3×</strong> en tiempo de respuesta solo con activarlo.
+          </p>
+
+          <!-- ============ Memoria compartida ============ -->
+          <h2 id="memoria">
+            La memoria compartida: el detalle que lo hace brillar
+            <a href="#memoria" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En producción, PHP no corre como un único proceso. Con
+            <strong>PHP-FPM</strong> hay un pool de <em>workers</em>: varios
+            procesos hijos atendiendo peticiones en paralelo. Aquí está la
+            jugada: OPcache guarda los opcodes en un segmento de
+            <strong>memoria compartida (SHM)</strong> al que acceden
+            <strong>todos</strong> los workers.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--cache" style="min-width: 280px">
+                <span class="flow__num">★</span>
+                <span><b>Memoria compartida de OPcache</b><small>Opcodes compilados, una sola copia</small></span>
+              </div>
+              <div class="flow__arrow" data-label="todos leen de aquí"></div>
+            </div>
+            <div class="compare" style="grid-template-columns: 1fr 1fr 1fr">
+              <div class="compare__col">
+                <h4>Worker #1</h4>
+                <ul><li>Atiende peticiones</li><li>Lee opcodes del SHM</li></ul>
+              </div>
+              <div class="compare__col">
+                <h4>Worker #2</h4>
+                <ul><li>Atiende peticiones</li><li>Lee opcodes del SHM</li></ul>
+              </div>
+              <div class="compare__col">
+                <h4>Worker #3</h4>
+                <ul><li>Atiende peticiones</li><li>Lee opcodes del SHM</li></ul>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Compilas una vez; se benefician todos los procesos del pool. No hay
+              una copia de opcodes por worker, sino una compartida.
+            </p>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Por eso CLI es distinto</p>
+              <p>
+                Un script de consola (<code>php script.php</code>) es un proceso
+                que arranca, ejecuta y muere. No hay procesos persistentes que
+                compartan memoria, así que cachear ahí rara vez compensa. Por eso
+                <code>opcache.enable_cli</code> está desactivado por defecto.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Configuración ============ -->
+          <h2 id="configuracion">
+            Configuración esencial
+            <a href="#configuracion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            OPcache se configura en <code>php.ini</code> (o en un fichero como
+            <code>10-opcache.ini</code> dentro de <code>conf.d/</code>). Estas son
+            las directivas que de verdad importan:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Directiva</th>
+                  <th>Por defecto</th>
+                  <th>Qué hace</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>opcache.enable</code></td>
+                  <td><code>1</code></td>
+                  <td>Activa OPcache para peticiones web (FPM/Apache).</td>
+                </tr>
+                <tr>
+                  <td><code>opcache.memory_consumption</code></td>
+                  <td><code>128</code></td>
+                  <td>MB de memoria compartida para opcodes. Si te quedas corto, OPcache empieza a expulsar y a recompilar.</td>
+                </tr>
+                <tr>
+                  <td><code>opcache.interned_strings_buffer</code></td>
+                  <td><code>8</code></td>
+                  <td>MB para cadenas "internadas" (deduplicadas). Subirlo ayuda en apps grandes.</td>
+                </tr>
+                <tr>
+                  <td><code>opcache.max_accelerated_files</code></td>
+                  <td><code>10000</code></td>
+                  <td>Número máximo de ficheros cacheables. Debe ser mayor que el total de <code>.php</code> de tu app.</td>
+                </tr>
+                <tr>
+                  <td><code>opcache.validate_timestamps</code></td>
+                  <td><code>1</code></td>
+                  <td>Si comprueba la fecha de los ficheros para detectar cambios. Clave en prod (ver más abajo).</td>
+                </tr>
+                <tr>
+                  <td><code>opcache.revalidate_freq</code></td>
+                  <td><code>2</code></td>
+                  <td>Cada cuántos segundos revisa esa fecha (si la anterior está activa).</td>
+                </tr>
+                <tr>
+                  <td><code>opcache.save_comments</code></td>
+                  <td><code>1</code></td>
+                  <td>Mantiene los docblocks. <strong>No lo desactives</strong> si usas anotaciones (Doctrine, etc.).</td>
+                </tr>
+                <tr>
+                  <td><code>opcache.enable_cli</code></td>
+                  <td><code>0</code></td>
+                  <td>Activa OPcache también en consola. Normalmente innecesario salvo preload.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Una configuración de producción razonable se vería así:</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ini · 10-opcache.ini</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="ini">; Activar la caché de opcodes
+opcache.enable=1
+opcache.enable_cli=0
+
+; Memoria: súbela si tu app es grande
+opcache.memory_consumption=256
+opcache.interned_strings_buffer=16
+
+; Más alto que el número total de ficheros .php del proyecto
+opcache.max_accelerated_files=20000
+
+; PRODUCCIÓN: no revalidar por fecha (máximo rendimiento)
+opcache.validate_timestamps=0
+
+; Conservar comentarios (necesario para anotaciones)
+opcache.save_comments=1</code></pre>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">¿Cuántos ficheros tiene mi app?</p>
+              <p>
+                Una forma rápida de contar los <code>.php</code> para dimensionar
+                <code>max_accelerated_files</code>:
+              </p>
+            </div>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash"># Cuenta todos los ficheros PHP del proyecto
+find . -type f -name "*.php" | wc -l</code></pre>
+          </div>
+
+          <!-- ============ Timestamps ============ -->
+          <h2 id="timestamps">
+            El truco de los timestamps (dev vs producción)
+            <a href="#timestamps" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Aquí está el ajuste que más confusión genera, y el que más
+            rendimiento (o más dolores de cabeza) puede darte:
+            <code>opcache.validate_timestamps</code>.
+          </p>
+          <p>
+            Cuando está a <code>1</code>, OPcache mira la fecha de modificación
+            de cada fichero cada <code>revalidate_freq</code> segundos. Si el
+            archivo cambió, lo recompila. Cómodo: tocas el código y se refleja
+            solo. Pero ese <code>stat()</code> al sistema de ficheros tiene un
+            coste.
+          </p>
+          <p>
+            Cuando está a <code>0</code>, OPcache <strong>nunca</strong> mira las
+            fechas. Asume que el código no cambia. Máximo rendimiento… pero si
+            despliegas una versión nueva, <strong>los workers seguirán
+            ejecutando el código viejo cacheado</strong> hasta que vacíes la
+            caché.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Desarrollo</h4>
+              <ul>
+                <li><code>validate_timestamps=1</code></li>
+                <li><code>revalidate_freq=0</code> (revisa siempre)</li>
+                <li>Cambias un fichero y se ve al instante</li>
+                <li>Te da igual el coste del <code>stat()</code></li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Producción</h4>
+              <ul>
+                <li><code>validate_timestamps=0</code></li>
+                <li>Cero comprobaciones de fecha</li>
+                <li>Máximo rendimiento</li>
+                <li><strong>Debes vaciar la caché en cada deploy</strong></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El error clásico de deploy</p>
+              <p>
+                "Subí el fix a producción pero el bug sigue ahí." Con
+                <code>validate_timestamps=0</code>, OPcache se quedó con el código
+                antiguo. La solución es recargar PHP-FPM al desplegar, lo que
+                resetea la caché de forma limpia:
+              </p>
+            </div>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash"># Recarga suave de PHP-FPM tras desplegar: limpia OPcache
+sudo systemctl reload php8.3-fpm
+
+# Alternativa desde código (p. ej. un endpoint protegido de deploy)
+# opcache_reset();  vacía toda la caché
+# opcache_invalidate('/ruta/al/fichero.php', true);  invalida uno</code></pre>
+          </div>
+
+          <!-- ============ Errores comunes ============ -->
+          <h2 id="errores">
+            Errores comunes que anulan OPcache
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Memoria demasiado pequeña</p>
+              <p>
+                Si <code>memory_consumption</code> no cubre todos tus opcodes,
+                OPcache se llena, expulsa entradas y vuelve a compilarlas: pierdes
+                el beneficio. Vigila el estado y dale margen.
+              </p>
+            </div>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Desactivar <code>save_comments</code></p>
+              <p>
+                Parece que ahorra memoria, pero rompe cualquier librería que lea
+                anotaciones desde los docblocks por reflexión (Doctrine ORM,
+                algunos validadores…). En la práctica, déjalo a <code>1</code>.
+              </p>
+            </div>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Pocos <code>max_accelerated_files</code></p>
+              <p>
+                Si tu app tiene 12.000 ficheros y el límite está en 10.000, 2.000
+                quedan fuera de la caché y se recompilan siempre. El valor real se
+                redondea al siguiente número primo, así que sé generoso.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Monitorizar ============ -->
+          <h2 id="monitorizar">
+            Monitorizar OPcache
+            <a href="#monitorizar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            No configures a ciegas. PHP expone el estado real de la caché con
+            <code>opcache_get_status()</code>. Un script mínimo para verlo:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · opcache-status.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$status = opcache_get_status();
+$memory = $status['memory_usage'];
+$stats = $status['opcache_statistics'];
+
+$usedMb = round($memory['used_memory'] / 1024 / 1024, 1);
+$freeMb = round($memory['free_memory'] / 1024 / 1024, 1);
+$hitRate = round($stats['opcache_hit_rate'], 2);
+
+echo "Memoria usada:  {$usedMb} MB\n";
+echo "Memoria libre:  {$freeMb} MB\n";
+echo "Ratio de acierto: {$hitRate}%\n";
+echo "Ficheros cacheados: {$stats['num_cached_scripts']}\n";
+echo "Reinicios por falta de memoria: {$stats['oom_restarts']}\n";</code></pre>
+          </div>
+
+          <p>Las tres cifras que más debes vigilar:</p>
+          <ul>
+            <li>
+              <strong>Ratio de acierto (<code>hit rate</code>):</strong> en
+              producción con la caché caliente debería estar muy cerca del
+              <strong>99%</strong>. Si es bajo, algo está invalidando o expulsando
+              entradas.
+            </li>
+            <li>
+              <strong>Memoria libre:</strong> si tiende a cero, sube
+              <code>memory_consumption</code>.
+            </li>
+            <li>
+              <strong><code>oom_restarts</code></strong> (reinicios por
+              <em>out of memory</em>): si crece, te falta memoria. Cada reinicio
+              vacía la caché y obliga a recompilar todo.
+            </li>
+          </ul>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Herramientas visuales</p>
+              <p>
+                Para un panel cómodo en lugar de un script, paneles como
+                <code>opcache-gui</code> o <code>cachetool</code> muestran el
+                estado, los ficheros cacheados y permiten resetear la caché desde
+                el navegador o la CLI.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ JIT ============ -->
+          <h2 id="jit">
+            Un paso más: JIT (PHP 8+)
+            <a href="#jit" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            OPcache evita recompilar a opcodes, pero esos opcodes aún los ejecuta
+            la Zend VM interpretándolos uno a uno. PHP 8 añadió el
+            <strong>JIT</strong> (<em>Just-In-Time</em>), que va un paso más allá:
+            traduce ciertos opcodes a <strong>código máquina nativo</strong> que
+            la CPU ejecuta directamente, sin pasar por la VM.
+          </p>
+          <p>
+            El JIT vive dentro de OPcache (lo necesita para funcionar) y se activa
+            con su propio buffer:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ini</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="ini">opcache.jit_buffer_size=100M
+opcache.jit=tracing</code></pre>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El JIT no es magia para webs</p>
+              <p>
+                El JIT brilla en código <strong>intensivo en CPU</strong>
+                (cálculo, procesamiento de imágenes, criptografía). En una app web
+                típica, donde el cuello de botella suele ser la base de datos o la
+                red, su ganancia es modesta. OPcache "normal" sigue siendo el que
+                te da el gran salto; el JIT es la guinda para cargas concretas.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Resumen ============ -->
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>PHP compila tu código a <strong>opcodes</strong> en cada petición; OPcache los cachea para no repetir ese trabajo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los opcodes viven en <strong>memoria compartida</strong>: se compila una vez y lo aprovechan todos los workers de PHP-FPM.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En <strong>producción</strong>: <code>validate_timestamps=0</code> + recargar PHP-FPM en cada deploy. En <strong>desarrollo</strong>: revalidación activa.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Dimensiona <strong>memoria</strong> y <strong>max_accelerated_files</strong> con holgura, y vigila el <strong>hit rate</strong> y los <code>oom_restarts</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El <strong>JIT</strong> de PHP 8 va un paso más allá (código nativo), pero su impacto real es alto solo en cargas intensivas de CPU.</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Navegación entre tutoriales -->
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+            <a href="../index.html#catalogo" class="next">
+              <small>Siguiente (próximamente) →</small>
+              <b>Preload en PHP</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <!-- ===================== Footer ===================== -->
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>Academia</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

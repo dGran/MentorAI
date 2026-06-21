@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Números: enteros, complemento a dos y coma flotante — Academia</title>
+    <meta
+      name="description"
+      content="Por qué un entero no es infinito, cómo se guardan los negativos con complemento a dos, qué es el overflow y por qué 0.1 + 0.2 no da 0.3: la coma flotante IEEE-754 explicada, y por qué el dinero nunca va en float."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%235b5bf5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>A</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark">A</span>
+          Academia
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Academia</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Representación de datos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Números: enteros, complemento a dos y coma flotante</h1>
+        <p class="tutorial-hero__lead">
+          <code>0.1 + 0.2</code> no es <code>0.3</code>, y no es un bug de tu
+          lenguaje: es física de cómo caben los números en un número fijo de bits.
+          Entender enteros y flotantes te ahorra el peor tipo de error, el que
+          parece imposible y aparece justo en la factura del cliente.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#enteros">Enteros: tamaño fijo</a></li>
+            <li><a href="#signo">Negativos: complemento a dos</a></li>
+            <li><a href="#overflow">Overflow: cuando no cabe</a></li>
+            <li><a href="#flotante">Coma flotante: IEEE-754</a></li>
+            <li><a href="#decimales">Por qué 0.1 + 0.2 ≠ 0.3</a></li>
+            <li><a href="#dinero">Dinero: nunca en float</a></li>
+            <li><a href="#errores">Errores comunes</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Un número en un ordenador no es el número abstracto de las matemáticas:
+            es un patrón de bits de tamaño fijo. Esa frontera —cuántos bits— define
+            qué valores caben, qué pasa al pasarse y por qué los decimales mienten.
+            Todo lo de aquí sale de la misma idea: el espacio es finito.
+          </p>
+
+          <h2 id="enteros">
+            Enteros: tamaño fijo
+            <a href="#enteros" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un entero ocupa un número fijo de bits (hoy casi siempre 32 o 64), y
+            eso fija cuántos valores distintos puede representar: <code>2ⁿ</code>.
+            Con 8 bits hay 256 patrones. Si solo guardas positivos (<em>sin
+            signo</em>), van del <code>0</code> al <code>255</code>. Si necesitas
+            negativos (<em>con signo</em>), ese mismo rango se reparte entre
+            positivos y negativos.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Bits</th><th>Sin signo</th><th>Con signo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>8</td><td>0 … 255</td><td>−128 … 127</td></tr>
+                <tr><td>16</td><td>0 … 65.535</td><td>−32.768 … 32.767</td></tr>
+                <tr><td>32</td><td>0 … ~4,29 mil millones</td><td>±~2,14 mil millones</td></tr>
+                <tr><td>64</td><td>0 … ~1,8·10¹⁹</td><td>±~9,2·10¹⁸</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">PHP solo tiene enteros con signo</p>
+              <p>
+                En PHP no existe el entero sin signo: el tamaño es
+                <code>PHP_INT_SIZE</code> (8 bytes en sistemas de 64 bits) y el
+                máximo, <code>PHP_INT_MAX</code>. En SQL sí existe
+                <code>UNSIGNED</code>, que dobla el techo positivo de una columna a
+                cambio de no admitir negativos: útil para un <code>id</code>
+                autoincremental que nunca será negativo.
+              </p>
+            </div>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · los límites del entero</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+echo PHP_INT_SIZE;       // 8  -> 8 bytes = entero de 64 bits
+echo PHP_INT_MAX;        // 9223372036854775807
+
+$overflow = PHP_INT_MAX + 1;
+var_dump($overflow);     // float(9.2233720368548E+18) -> deja de ser int</code></pre>
+          </div>
+
+          <h2 id="signo">
+            Negativos: complemento a dos
+            <a href="#signo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            ¿Cómo se guarda un <code>−5</code> si solo hay ceros y unos? La idea
+            ingenua (reservar un bit para el signo) trae dos ceros (<code>+0</code>
+            y <code>−0</code>) y complica la resta. La solución universal es el
+            <strong>complemento a dos</strong>: el negativo de un número se obtiene
+            <em>invirtiendo todos sus bits y sumando 1</em>.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Paso</th><th>Bits (8)</th><th>Valor</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>5</code></td><td><code>0000 0101</code></td><td>5</td></tr>
+                <tr><td>Invertir</td><td><code>1111 1010</code></td><td>—</td></tr>
+                <tr><td>Sumar 1</td><td><code>1111 1011</code></td><td><strong>−5</strong></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            El bit más a la izquierda acaba siendo el <strong>signo</strong>: si es
+            <code>1</code>, el número es negativo. La gracia es que sumar y restar
+            funcionan con el mismo circuito sin tratar el signo aparte:
+            <code>5 + (−5)</code> en estos 8 bits da <code>1 0000 0000</code>, el
+            <code>1</code> se desborda fuera y queda <code>0</code>. Exacto.
+          </p>
+
+          <h2 id="overflow">
+            Overflow: cuando no cabe
+            <a href="#overflow" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Si sumas <code>1</code> al valor máximo, el resultado no cabe en los
+            bits disponibles. Qué pasa entonces depende del lenguaje, y conviene
+            saber cuál es el tuyo:
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Wraparound (C, Java, Go…)</h4>
+              <ul>
+                <li>El bit que sobra se descarta y el número "da la vuelta".</li>
+                <li><code>127 + 1</code> en un <code>int8</code> = <code>−128</code>.</li>
+                <li>Silencioso: ni error ni aviso. El bug más traicionero.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Promoción a float (PHP, Python…)</h4>
+              <ul>
+                <li>Al pasarse, el entero se convierte en coma flotante.</li>
+                <li>No se rompe el orden de magnitud, pero se pierde precisión exacta.</li>
+                <li>Un <code>id</code> gigante puede dejar de ser comparable al céntimo.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El overflow vive en la base de datos, no solo en el código</p>
+              <p>
+                Una columna <code>INT</code> de MySQL desborda a los ~2.147
+                millones. Más de un sistema de contadores o de IDs ha muerto ahí:
+                el lenguaje calculaba bien con 64 bits, pero la columna era de 32.
+                Para claves que crecen, <code>BIGINT</code>.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="flotante">
+            Coma flotante: IEEE-754
+            <a href="#flotante" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Para representar decimales y números enormes con los mismos bits se usa
+            la <strong>coma flotante</strong>, estandarizada como
+            <strong>IEEE-754</strong>. La idea es la notación científica en binario:
+            en vez de fijar la coma, se guarda un valor y dónde va la coma. Un
+            <code>double</code> (lo que usa PHP siempre) reparte sus 64 bits así:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Parte</th><th>Double (64 bits)</th><th>Qué guarda</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Signo</td><td>1 bit</td><td>Positivo o negativo</td></tr>
+                <tr><td>Exponente</td><td>11 bits</td><td>Dónde va la coma (la magnitud)</td></tr>
+                <tr><td>Mantisa</td><td>52 bits</td><td>Los dígitos significativos (la precisión)</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            De ahí salen dos límites: el <strong>rango</strong> (enorme, gracias al
+            exponente) y la <strong>precisión</strong> (finita: unos 15–17 dígitos
+            decimales, por la mantisa). Un double representa de maravilla números
+            gigantes… pero solo con 52 bits de detalle. Y ahí está la trampa de la
+            siguiente sección.
+          </p>
+
+          <h2 id="decimales">
+            Por qué 0.1 + 0.2 ≠ 0.3
+            <a href="#decimales" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En base 10, <code>1/3</code> es <code>0,333…</code>: periódico,
+            imposible de escribir exacto con dígitos finitos. En base 2 pasa lo
+            mismo con <code>0,1</code>: en binario es una fracción periódica que
+            <em>no cabe exacta</em> en 52 bits. El ordenador guarda el valor más
+            cercano que puede, y ese minúsculo redondeo se arrastra en la suma.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · la imprecisión, al descubierto</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+echo 0.1 + 0.2;                  // "0.3"  -> echo redondea a 14 dígitos y engaña
+var_dump(0.1 + 0.2);             // float(0.30000000000000004) -> la verdad
+var_dump(0.1 + 0.2 === 0.3);     // bool(false)
+
+$epsilon = 0.00001;
+var_dump(abs((0.1 + 0.2) - 0.3) &lt; $epsilon);  // bool(true) -> así se compara</code></pre>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Nunca compares floats con ===</p>
+              <p>
+                Dos cálculos que "deberían" dar lo mismo pueden diferir en el
+                último bit. Compara si la diferencia es menor que un margen pequeño
+                (<em>epsilon</em>), no por igualdad exacta. La igualdad exacta entre
+                floats casi siempre es un bug esperando a ocurrir.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="dinero">
+            Dinero: nunca en float
+            <a href="#dinero" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El corolario práctico más importante: <strong>no representes dinero con
+            <code>float</code></strong>. Esos redondeos invisibles se acumulan
+            factura a factura hasta que el total no cuadra por un céntimo, y un
+            céntimo descuadrado en contabilidad es un incidente. Hay dos caminos
+            buenos:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · dinero sin perder un céntimo</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+// Opción A: enteros en la unidad mínima (céntimos). Exacto y rápido.
+$priceCents = 1999;                         // 19,99 €
+$taxCents = (int) round($priceCents * 0.21);
+$totalCents = $priceCents + $taxCents;
+echo number_format($totalCents / 100, 2, ',', '.');  // "24,19"
+
+// Opción B: aritmética decimal con BCMath, en cadenas.
+echo bcadd('0.10', '0.20', 2);              // "0.30" -> exacto, sin float</code></pre>
+          </div>
+
+          <p>
+            En la base de datos, lo mismo: una columna <code>DECIMAL(10,2)</code>
+            guarda el valor exacto, frente a <code>FLOAT</code>/<code>DOUBLE</code>,
+            que arrastran el mismo error que en el código. Para importes,
+            <code>DECIMAL</code> o enteros; <code>float</code> jamás.
+          </p>
+
+          <h2 id="errores">
+            Errores comunes
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Error</th><th>Por qué duele</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Dinero en <code>float</code> / <code>DOUBLE</code></td>
+                  <td>Los redondeos se acumulan y el total descuadra céntimos. Usa enteros o <code>DECIMAL</code>.</td>
+                </tr>
+                <tr>
+                  <td>Comparar floats con <code>===</code></td>
+                  <td>El último bit puede diferir entre cálculos equivalentes. Compara con un epsilon.</td>
+                </tr>
+                <tr>
+                  <td>Columna <code>INT</code> para algo que crece sin fin</td>
+                  <td>Desborda a los ~2.147 millones. Para IDs y contadores grandes, <code>BIGINT</code>.</td>
+                </tr>
+                <tr>
+                  <td>Asumir wraparound en PHP (o no asumirlo en C)</td>
+                  <td>PHP promociona a float; C/Java dan la vuelta en silencio. Saber cuál usas evita sorpresas.</td>
+                </tr>
+                <tr>
+                  <td><code>(int)</code> sobre un float "redondo"</td>
+                  <td><code>(int)(0.1 + 0.7) * 10</code> puede dar 7, no 8: truncas un 7,999…. Redondea antes con <code>round</code>.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un entero ocupa bits fijos, así que tiene un <strong>techo</strong>: el rango sale de cuántos bits y de si lleva signo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los negativos se guardan en <strong>complemento a dos</strong> (invertir y sumar 1); el bit alto hace de signo y la resta sale gratis.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Al pasarse hay <strong>overflow</strong>: wraparound silencioso (C/Java) o promoción a float (PHP). En BBDD, <code>BIGINT</code> para lo que crece.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La <strong>coma flotante</strong> (IEEE-754) tiene rango enorme pero precisión finita: <code>0.1</code> no cabe exacto, por eso <code>0.1 + 0.2 ≠ 0.3</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>Dinero nunca en float</strong>: enteros de céntimos o <code>DECIMAL</code>/BCMath; y compara floats con epsilon, no con <code>===</code>.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="texto-unicode.html">
+              <small>← Anterior</small>
+              <b>Texto: ASCII a UTF-8</b>
+            </a>
+            <a href="../index.html" class="next">
+              <small>Volver →</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>Academia</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

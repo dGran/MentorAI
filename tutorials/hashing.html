@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hashing: cómo un hashmap busca en O(1) — Academia</title>
+    <meta
+      name="description"
+      content="Qué hace una función hash, cómo convierte una clave en una posición, qué son las colisiones y cómo se resuelven, el factor de carga y el rehashing, y por qué un hashmap es O(1) de media pero O(n) en el peor caso."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%235b5bf5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>A</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark">A</span>
+          Academia
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Academia</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Algoritmos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Hashing: cómo un hashmap busca en O(1)</h1>
+        <p class="tutorial-hero__lead">
+          El hashmap parece magia: le das una clave y te devuelve el valor al
+          instante, da igual que guarde diez elementos o diez millones. No es
+          magia, es <em>hashing</em>: convertir la clave en una dirección. Abrir
+          esa caja explica también por qué a veces el truco falla.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">El problema: de la clave a la posición</a></li>
+            <li><a href="#funcion">La función hash</a></li>
+            <li><a href="#colisiones">Colisiones: dos claves, un sitio</a></li>
+            <li><a href="#carga">Factor de carga y rehashing</a></li>
+            <li><a href="#peor-caso">Por qué O(1)… casi siempre</a></li>
+            <li><a href="#usos">Más allá del hashmap</a></li>
+            <li><a href="#errores">Errores comunes</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            En el tutorial anterior el hashmap era una caja negra que buscaba por
+            clave en <code>O(1)</code>. Aquí la abrimos. La idea central es simple
+            y elegante: en vez de buscar la clave, <strong>calcular</strong> dónde
+            tendría que estar.
+          </p>
+
+          <h2 id="idea">
+            El problema: de la clave a la posición
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un array accede a la posición <code>i</code> al instante, pero solo
+            sabe de índices numéricos. ¿Y si quiero guardar por una clave como
+            <code>'ana'</code>? La idea del hashing es convertir esa clave en un
+            número, y usar ese número como índice del array interno. Si la
+            conversión es siempre la misma, para guardar y para recuperar calculo el
+            mismo sitio: no busco, voy directo.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Clave</b><small><code>"ana"</code></small></span>
+              </div>
+              <div class="flow__arrow" data-label="función hash"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Número</b><small><code>crc32 → 1402437568</code></small></span>
+              </div>
+              <div class="flow__arrow" data-label="% capacidad"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Posición</b><small>índice <code>0</code> del array interno</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              La clave se transforma en un número y este se ajusta al tamaño de la
+              tabla con el módulo. Mismo camino al guardar y al leer.
+            </p>
+          </div>
+
+          <h2 id="funcion">
+            La función hash
+            <a href="#funcion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una <strong>función hash</strong> toma datos de cualquier tamaño y
+            devuelve un número de tamaño fijo. Para servir a un hashmap necesita
+            tres propiedades: ser <strong>determinista</strong> (la misma clave da
+            siempre el mismo número), <strong>repartir uniforme</strong> (claves
+            distintas caen en posiciones distintas, sin amontonarse) y ser
+            <strong>rápida</strong> (se llama en cada acceso). Con el número, el
+            <code>módulo</code> sobre la capacidad lo encaja en un índice válido.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · de la clave a la posición</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+function bucketIndex(string $key, int $capacity): int
+{
+    return crc32($key) % $capacity;
+}
+
+$capacity = 8;
+
+echo bucketIndex('ana', $capacity);   // siempre la misma posición para 'ana'
+echo bucketIndex('leo', $capacity);   // otra posición, repartida</code></pre>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Hash de tabla ≠ hash criptográfico</p>
+              <p>
+                El hash de un hashmap (<code>crc32</code>, FNV, el interno de PHP)
+                busca velocidad y buen reparto, no seguridad. Los hashes
+                criptográficos (<code>SHA-256</code>, bcrypt) buscan justo lo
+                contrario: ser lentos e imposibles de revertir. Misma palabra,
+                propósitos opuestos; no uses uno donde toca el otro. La parte
+                criptográfica es un tutorial del pilar de seguridad.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="colisiones">
+            Colisiones: dos claves, un sitio
+            <a href="#colisiones" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Como infinitas claves se reducen a un número finito de posiciones, tarde
+            o temprano dos claves caen en la misma: es una <strong>colisión</strong>.
+            No es un error, es inevitable, y toda tabla hash necesita un plan para
+            resolverlas. Hay dos familias:
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Encadenamiento</h4>
+              <ul>
+                <li>Cada posición guarda una pequeña lista de entradas.</li>
+                <li>Si dos claves chocan, conviven en el mismo "cubo" (bucket).</li>
+                <li>Simple y robusto; es lo que usa PHP.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Direccionamiento abierto</h4>
+              <ul>
+                <li>Si la posición está ocupada, se busca la siguiente libre.</li>
+                <li>Todo vive en el array, sin listas aparte.</li>
+                <li>Más rápido en caché, pero sensible al factor de carga.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · mini tabla hash con encadenamiento</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+function put(array &amp;$buckets, string $key, mixed $value): void
+{
+    $index = crc32($key) % count($buckets);
+    $buckets[$index][$key] = $value;        // el bucket guarda varias entradas
+}
+
+function get(array $buckets, string $key): mixed
+{
+    $index = crc32($key) % count($buckets);
+
+    return $buckets[$index][$key] ?? null;  // dentro del bucket, por clave
+}
+
+$buckets = array_fill(0, 8, []);
+put($buckets, 'ana', 30);
+echo get($buckets, 'ana');                  // 30</code></pre>
+          </div>
+
+          <h2 id="carga">
+            Factor de carga y rehashing
+            <a href="#carga" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El <strong>factor de carga</strong> es cuán llena está la tabla:
+            elementos dividido entre capacidad. Cuanto más se llena, más colisiones
+            y más largas las cadenas, así que el <code>O(1)</code> se degrada. Por
+            eso, al superar un umbral (típicamente <strong>0,75</strong>), la tabla
+            hace <strong>rehashing</strong>: crea un array interno más grande
+            (suele doblar) y recoloca todos los elementos con el nuevo módulo.
+          </p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El rehashing es O(n), pero amortizado O(1)</p>
+              <p>
+                Recolocar todo cuesta <code>O(n)</code>, pero ocurre muy de vez en
+                cuando (al doblar). Repartido entre todas las inserciones, el coste
+                medio por inserción sigue siendo <code>O(1)</code>. A esto se le
+                llama <em>coste amortizado</em>: caro de golpe, barato de media.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="peor-caso">
+            Por qué O(1)… casi siempre
+            <a href="#peor-caso" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El <code>O(1)</code> del hashmap es <strong>el caso medio</strong>, y
+            depende de que el hash reparta bien. En el <strong>peor caso</strong>
+            —si todas las claves colisionan en el mismo bucket— la tabla degenera en
+            una lista y buscar pasa a ser <code>O(n)</code>. Con un buen hash y un
+            factor de carga sano, ese peor caso no se da por azar… pero sí puede
+            provocarse a propósito.
+          </p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Hash flooding: el peor caso como ataque</p>
+              <p>
+                Si un atacante conoce la función hash, puede enviar miles de claves
+                diseñadas para colisionar todas en el mismo bucket (por ejemplo, en
+                los campos de un formulario o un JSON). El hashmap se vuelve
+                <code>O(n²)</code> al procesarlas y el servidor se ahoga: un
+                <em>denial of service</em>. Por eso los lenguajes modernos (PHP
+                incluido) <strong>aleatorizan</strong> el hash con una semilla por
+                proceso, para que el atacante no pueda predecir las colisiones.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="usos">
+            Más allá del hashmap
+            <a href="#usos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El hashing no vive solo dentro de los diccionarios. La misma idea —
+            resumir un dato en un número manejable— aparece por todas partes:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Uso</th><th>Para qué sirve el hash</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Deduplicar</td><td>Detectar repetidos comparando hashes en vez de los datos enteros.</td></tr>
+                <tr><td>Particionado / sharding</td><td><code>hash(clave) % nº de nodos</code> decide en qué servidor vive cada dato.</td></tr>
+                <tr><td>Checksums</td><td>Verificar que un fichero o mensaje no se ha corrompido al viajar.</td></tr>
+                <tr><td>Cachés</td><td>Convertir una petición compleja en una clave corta y estable.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="errores">
+            Errores comunes
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Error</th><th>Por qué duele</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Usar <code>crc32</code>/<code>md5</code> para contraseñas</td>
+                  <td>Son rápidos: justo lo que un atacante quiere para probar millones por segundo. Las contraseñas piden hash lento (bcrypt/argon2).</td>
+                </tr>
+                <tr>
+                  <td>Asumir <code>O(1)</code> garantizado</td>
+                  <td>Es el caso medio. Con un hash malo o un ataque de colisiones, degrada a <code>O(n)</code>.</td>
+                </tr>
+                <tr>
+                  <td>Hashear objetos mutables como clave</td>
+                  <td>Si la clave cambia tras insertarla, su hash ya no apunta a su bucket y "desaparece".</td>
+                </tr>
+                <tr>
+                  <td>Confiar en el orden de un hashmap</td>
+                  <td>Salvo que el lenguaje lo garantice (PHP sí, por inserción), el orden de recorrido no es de fiar.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un hashmap no busca la clave: <strong>calcula</strong> su posición con una función hash. Por eso accede en tiempo constante.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una buena función hash es <strong>determinista, uniforme y rápida</strong>; el módulo encaja su número en la capacidad de la tabla.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Las <strong>colisiones</strong> son inevitables; se resuelven con encadenamiento o direccionamiento abierto.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Al pasar el <strong>factor de carga</strong> (~0,75) hay <strong>rehashing</strong>: <code>O(n)</code> puntual, pero <code>O(1)</code> amortizado.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El <code>O(1)</code> es <strong>el caso medio</strong>: el peor es <code>O(n)</code>, y puede forzarse (hash flooding). Por eso se aleatoriza el hash.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="estructuras-datos.html">
+              <small>← Anterior</small>
+              <b>Estructuras de datos</b>
+            </a>
+            <a href="../index.html" class="next">
+              <small>Volver →</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>Academia</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

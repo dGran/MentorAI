@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Estructuras de datos: cuál usar y cuándo — Academia</title>
+    <meta
+      name="description"
+      content="Array, lista enlazada, hashmap, set, árbol y grafo: qué hace cada uno barato y qué hace caro, cómo elegir por la operación que domina y por qué el array de PHP es un caso especial."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%235b5bf5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>A</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark">A</span>
+          Academia
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Academia</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Algoritmos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Estructuras de datos: cuál usar y cuándo</h1>
+        <p class="tutorial-hero__lead">
+          No hay una estructura "mejor": hay una que hace barata <em>la operación
+          que tú repites</em> y cara el resto. Elegir bien es casi todo el
+          rendimiento, y se reduce a una pregunta: ¿qué voy a hacer con estos datos
+          mil veces?
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">Elegir por la operación que domina</a></li>
+            <li><a href="#array">Array: acceso por índice</a></li>
+            <li><a href="#lista">Lista enlazada: insertar y borrar</a></li>
+            <li><a href="#mapa">Hashmap y set: buscar por clave</a></li>
+            <li><a href="#arbol">Árbol: mantener el orden</a></li>
+            <li><a href="#grafo">Grafo: relaciones</a></li>
+            <li><a href="#tabla">La chuleta de costes</a></li>
+            <li><a href="#errores">Errores comunes</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Una estructura de datos es una forma de organizar valores en memoria
+            que hace ciertas operaciones rápidas a cambio de otras lentas. Conocer
+            ese canje —qué abarata y qué encarece cada una— es lo que convierte el
+            Big-O del tutorial anterior en decisiones concretas.
+          </p>
+
+          <h2 id="idea">
+            Elegir por la operación que domina
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La pregunta no es "¿cuál es la mejor estructura?", sino "¿qué operación
+            voy a hacer muchas veces?". ¿Accedo por una posición concreta? ¿Busco
+            por un identificador? ¿Necesito que estén ordenados? ¿Inserto y borro
+            por el medio constantemente? Cada respuesta señala una estructura
+            distinta, y la equivocada convierte un bucle inocente en
+            <code>O(n²)</code>.
+          </p>
+
+          <h2 id="array">
+            Array: acceso por índice
+            <a href="#array" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El <strong>array</strong> clásico guarda los elementos en memoria
+            <em>contigua</em>, uno detrás de otro. Eso hace que acceder a la
+            posición <code>i</code> sea <code>O(1)</code>: la dirección se calcula
+            con una multiplicación. El precio lo pagas al insertar o borrar por el
+            medio: hay que desplazar todo lo que viene detrás, <code>O(n)</code>.
+          </p>
+          <ul>
+            <li><strong>Barato:</strong> acceso por índice, recorrer en orden, añadir al final.</li>
+            <li><strong>Caro:</strong> insertar o borrar por el medio; buscar un valor (hay que recorrer).</li>
+          </ul>
+
+          <h2 id="lista">
+            Lista enlazada: insertar y borrar
+            <a href="#lista" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La <strong>lista enlazada</strong> invierte el canje: cada elemento es
+            un nodo que guarda su valor y un puntero al siguiente. No están
+            contiguos, así que no hay acceso por índice barato (para llegar al
+            elemento 500 recorres 500 punteros, <code>O(n)</code>). A cambio,
+            insertar o borrar es <code>O(1)</code>… <em>si ya tienes el nodo</em>:
+            solo reenlazas punteros, sin mover nada.
+          </p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">En la práctica, el array suele ganar igualmente</p>
+              <p>
+                El Big-O dice que la lista enlazada inserta mejor, pero la realidad
+                tiene una palabra: la <strong>localidad de caché</strong>. Un array
+                contiguo se lee del caché de la CPU a ráfagas; una lista enlazada
+                salta por la memoria persiguiendo punteros y falla el caché una y
+                otra vez. Para la mayoría de cargas, el array es más rápido aunque
+                la teoría diga lo contrario. La memoria manda, y eso es un tutorial
+                aparte.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="mapa">
+            Hashmap y set: buscar por clave
+            <a href="#mapa" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El <strong>hashmap</strong> (mapa, diccionario, tabla hash) asocia
+            <em>claves</em> a <em>valores</em> y los busca en <code>O(1)</code> de
+            media: una función de hash convierte la clave en una posición directa,
+            sin recorrer nada. Es la estructura que vuelve a <code>O(n)</code>
+            tantos bucles <code>O(n²)</code>. Su pariente es el <strong>set</strong>
+            (conjunto): un mapa que solo guarda claves, perfecto para
+            <em>unicidad</em> y para preguntar "¿está esto?" en tiempo constante.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · array como lista y como mapa</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+// Como lista: índices 0,1,2... acceso por posición O(1)
+$list = ['rojo', 'verde', 'azul'];
+echo $list[1];                       // "verde"
+
+// Como mapa: clave -&gt; valor, acceso por clave O(1)
+$ages = ['ana' =&gt; 30, 'leo' =&gt; 25];
+echo $ages['ana'];                   // 30</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · set: unicidad y pertenencia O(1)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$tags = ['php', 'sql', 'php', 'redis', 'sql'];
+
+// Las claves no se repiten: el array se vuelve un set
+$set = array_flip($tags);
+
+$hasRedis = isset($set['redis']);    // true, en O(1)
+$unique = array_keys($set);          // ['php', 'sql', 'redis']</code></pre>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El "array" de PHP no es un array</p>
+              <p>
+                Lo que PHP llama <code>array</code> es en realidad un <strong>mapa
+                ordenado</strong>: por dentro es una tabla hash que además recuerda
+                el orden de inserción. Por eso sirve a la vez de lista, de mapa, de
+                set, de pila y de cola. Cómodo, pero engañoso: si esperas el acceso
+                contiguo de un array clásico, su coste de memoria y su
+                comportamiento te sorprenderán. Una clave numérica no garantiza
+                contigüidad.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="arbol">
+            Árbol: mantener el orden
+            <a href="#arbol" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El hashmap es imbatible buscando por clave exacta, pero no sabe nada de
+            orden: no puede darte "todos los valores entre 100 y 200" ni "el
+            siguiente más grande". Para eso está el <strong>árbol de búsqueda
+            balanceado</strong>: mantiene los elementos ordenados y permite buscar,
+            insertar y borrar en <code>O(log n)</code>, además de recorrer rangos de
+            forma eficiente.
+          </p>
+          <p>
+            Esa propiedad —orden + <code>O(log n)</code>— es exactamente la que usan
+            los <strong>índices de las bases de datos</strong> (un B-tree, primo de
+            estos árboles) para resolver tanto <code>WHERE id = 42</code> como
+            <code>WHERE fecha BETWEEN ...</code> sin leer toda la tabla. Es el
+            puente directo con el pilar de bases de datos.
+          </p>
+
+          <h2 id="grafo">
+            Grafo: relaciones
+            <a href="#grafo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cuando lo que importa no son los elementos sino <em>cómo se conectan</em>
+            entre sí, la estructura es el <strong>grafo</strong>: nodos (vértices)
+            unidos por relaciones (aristas). Amigos en una red social, dependencias
+            entre tareas, rutas entre ciudades, permisos que heredan de otros: todo
+            eso son grafos. La forma habitual de guardarlos en código es la
+            <strong>lista de adyacencia</strong>, un mapa de cada nodo a sus vecinos.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · grafo como lista de adyacencia</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+// Cada nodo apunta a la lista de sus vecinos
+$graph = [
+    'a' =&gt; ['b', 'c'],
+    'b' =&gt; ['d'],
+    'c' =&gt; ['d'],
+    'd' =&gt; [],
+];
+
+foreach ($graph['a'] as $neighbor) {
+    echo $neighbor;                  // vecinos directos de 'a': b, c
+}</code></pre>
+          </div>
+
+          <h2 id="tabla">
+            La chuleta de costes
+            <a href="#tabla" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Todo lo anterior cabe en una tabla. Es la que conviene tener en la
+            cabeza al diseñar:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Estructura</th><th>Acceso por índice</th><th>Buscar valor</th><th>Insertar / borrar</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Array contiguo</td><td><code>O(1)</code></td><td><code>O(n)</code></td><td><code>O(n)</code> en medio · <code>O(1)</code> al final</td></tr>
+                <tr><td>Lista enlazada</td><td><code>O(n)</code></td><td><code>O(n)</code></td><td><code>O(1)</code> con el nodo</td></tr>
+                <tr><td>Hashmap / set</td><td>—</td><td><code>O(1)</code> medio</td><td><code>O(1)</code> medio</td></tr>
+                <tr><td>Árbol balanceado</td><td><code>O(log n)</code></td><td><code>O(log n)</code></td><td><code>O(log n)</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Regla de bolsillo</p>
+              <p>
+                ¿Buscas por una clave? Hashmap. ¿Necesitas orden o rangos? Árbol.
+                ¿Solo recorres y accedes por posición? Array. ¿Te importan las
+                conexiones? Grafo. La lista enlazada pura, casi nunca: el array de
+                tu lenguaje ya cubre ese hueco mejor.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="errores">
+            Errores comunes
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Error</th><th>Por qué duele</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Buscar valores recorriendo un array</td>
+                  <td><code>in_array</code> repetido es <code>O(n)</code> cada vez. Si buscas mucho, indexa por clave en un mapa.</td>
+                </tr>
+                <tr>
+                  <td>Usar un array para garantizar unicidad a mano</td>
+                  <td>Comprobar "¿ya está?" recorriendo es <code>O(n²)</code> en total. Un set lo hace en <code>O(1)</code> por elemento.</td>
+                </tr>
+                <tr>
+                  <td>Pedirle orden a un hashmap</td>
+                  <td>El hash no conserva el orden por valor. Si necesitas rangos u ordenación, es un árbol (o un <code>ORDER BY</code> en BBDD).</td>
+                </tr>
+                <tr>
+                  <td>Modelar relaciones con tablas planas</td>
+                  <td>"Amigos de amigos" o dependencias encadenadas piden un grafo; forzarlo en filas lleva a consultas imposibles.</td>
+                </tr>
+                <tr>
+                  <td>Elegir por el Big-O ignorando el caché</td>
+                  <td>La lista enlazada "gana" en teoría y pierde en la práctica por localidad. Mide con datos reales.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>No hay estructura "mejor": elige por la <strong>operación que repites</strong> mil veces. Cada una abarata unas cosas y encarece otras.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>Array</strong>: acceso por índice <code>O(1)</code>, pero buscar e insertar por el medio es <code>O(n)</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>Hashmap / set</strong>: buscar por clave y comprobar pertenencia en <code>O(1)</code>; sin orden. La herramienta contra el <code>O(n²)</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>Árbol</strong>: orden y rangos en <code>O(log n)</code> (es lo que hace un índice). <strong>Grafo</strong>: cuando importan las relaciones.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El <code>array</code> de PHP es un <strong>mapa ordenado</strong>, no un array contiguo: hace de todo, pero no des por hecha su contigüidad ni su coste.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="big-o.html">
+              <small>← Anterior</small>
+              <b>Big-O sin matemáticas</b>
+            </a>
+            <a href="../index.html" class="next">
+              <small>Volver →</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>Academia</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

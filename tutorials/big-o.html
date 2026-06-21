@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Big-O sin matemáticas: cómo saber si tu código escala — Academia</title>
+    <meta
+      name="description"
+      content="Qué mide la notación Big-O (cómo crece el coste, no los segundos), las clases que verás en la práctica (O(1), O(log n), O(n), O(n log n), O(n²)) y cómo detectar el O(n²) escondido que mata el rendimiento."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%235b5bf5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>A</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark">A</span>
+          Academia
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Academia</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Algoritmos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Big-O sin matemáticas: cómo saber si tu código escala</h1>
+        <p class="tutorial-hero__lead">
+          El código que vuela con 100 registros puede agonizar con 100.000, y la
+          diferencia no está en la máquina: está en <em>cómo crece</em> el coste al
+          crecer los datos. Big-O es el vocabulario para ver eso de un vistazo,
+          sin cronómetro y sin fórmulas.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">La idea: cómo crece el coste</a></li>
+            <li><a href="#notacion">Leer la notación</a></li>
+            <li><a href="#clases">Las clases que verás</a></li>
+            <li><a href="#ejemplos">En código real</a></li>
+            <li><a href="#oculto">El O(n²) escondido</a></li>
+            <li><a href="#espacio">No solo tiempo: la memoria</a></li>
+            <li><a href="#errores">Errores comunes</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Big-O no mide segundos: mide cómo se multiplica el trabajo cuando los
+            datos se multiplican. Por eso es independiente de tu CPU, de tu
+            lenguaje y de lo cargado que esté el servidor. Es la pregunta correcta:
+            no "¿cuánto tarda?", sino "¿qué pasa cuando esto crece 10 veces?".
+          </p>
+
+          <h2 id="idea">
+            La idea: cómo crece el coste
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Llamamos <code>n</code> al tamaño de la entrada: el número de filas,
+            de elementos, de usuarios. Big-O describe la <strong>forma</strong> en
+            que el número de operaciones crece en función de <code>n</code>. No te
+            dice que algo tarde 3 milisegundos; te dice si, al doblar
+            <code>n</code>, el trabajo se mantiene, se dobla o se cuadruplica.
+          </p>
+          <p>
+            Esa forma es lo que decide si un sistema aguanta el crecimiento. Una
+            función que dobla su trabajo al doblar los datos escala de maravilla;
+            una que lo cuadruplica acabará cayéndose, por muy rápida que sea la
+            máquina. La constante (los milisegundos por operación) importa poco al
+            lado de la forma.
+          </p>
+
+          <h2 id="notacion">
+            Leer la notación
+            <a href="#notacion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Se escribe <code>O(...)</code> con dentro la forma de crecimiento:
+            <code>O(n)</code> (lineal), <code>O(n²)</code> (cuadrático),
+            <code>O(1)</code> (constante). Dos reglas de lectura que despejan casi
+            todo:
+          </p>
+          <ul>
+            <li>
+              <strong>Se ignoran las constantes y los términos menores.</strong>
+              Un bucle que hace <code>3n + 5</code> operaciones es <code>O(n)</code>:
+              al crecer <code>n</code>, el <code>3</code> y el <code>5</code> dejan
+              de importar frente a la forma. <code>O(2n)</code> y <code>O(n)</code>
+              son lo mismo.
+            </li>
+            <li>
+              <strong>Por defecto se habla del peor caso.</strong> Big-O describe la
+              cota superior: lo máximo que puede costar. Buscar en una lista es
+              <code>O(n)</code> porque el elemento podría ser el último (o no estar).
+            </li>
+          </ul>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Por qué se tiran las constantes</p>
+              <p>
+                Porque Big-O compara <em>tendencias</em>, no implementaciones. Una
+                operación <code>O(n)</code> con una constante grande puede ser más
+                lenta que una <code>O(n²)</code> cuando <code>n</code> es diminuto;
+                pero en cuanto <code>n</code> crece, la forma manda y la
+                <code>O(n²)</code> pierde siempre. Big-O es sobre el "a lo grande".
+              </p>
+            </div>
+          </div>
+
+          <h2 id="clases">
+            Las clases que verás
+            <a href="#clases" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En el día a día se repiten media docena. Ordenadas de mejor a peor:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Notación</th><th>Nombre</th><th>Si <code>n</code> se dobla…</th><th>Ejemplo típico</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>O(1)</code></td><td>Constante</td><td>no cambia</td><td>Acceso por clave en un hashmap</td></tr>
+                <tr><td><code>O(log n)</code></td><td>Logarítmico</td><td>sube en 1 paso</td><td>Búsqueda binaria, índice B-tree</td></tr>
+                <tr><td><code>O(n)</code></td><td>Lineal</td><td>se dobla</td><td>Recorrer una lista una vez</td></tr>
+                <tr><td><code>O(n log n)</code></td><td>Linearítmico</td><td>algo más que el doble</td><td>Ordenar (<code>sort</code>)</td></tr>
+                <tr><td><code>O(n²)</code></td><td>Cuadrático</td><td>se cuadruplica</td><td>Dos bucles anidados sobre lo mismo</td></tr>
+                <tr><td><code>O(2ⁿ)</code></td><td>Exponencial</td><td>se eleva al cuadrado</td><td>Probar todas las combinaciones</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            La tabla anterior es abstracta; esta otra la hace visceral. Son las
+            operaciones aproximadas para <code>n = 1.000.000</code>:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Clase</th><th>Operaciones con un millón de elementos</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>O(1)</code></td><td>1</td></tr>
+                <tr><td><code>O(log n)</code></td><td>~20</td></tr>
+                <tr><td><code>O(n)</code></td><td>1.000.000</td></tr>
+                <tr><td><code>O(n log n)</code></td><td>~20.000.000</td></tr>
+                <tr><td><code>O(n²)</code></td><td>1.000.000.000.000 (un billón)</td></tr>
+                <tr><td><code>O(2ⁿ)</code></td><td>impensable: no termina en la vida del universo</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            Ahí se ve el abismo: pasar de <code>O(n)</code> a <code>O(n²)</code> en
+            un millón de elementos es pasar de un millón de operaciones a un billón.
+            Por eso elegir la estructura de datos correcta no es pedantería: es la
+            diferencia entre responder al instante o no responder.
+          </p>
+
+          <h2 id="ejemplos">
+            En código real
+            <a href="#ejemplos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La forma se lee en el código casi a ojo: cuántas veces tocas los datos.
+            Sin bucle sobre <code>n</code>, suele ser <code>O(1)</code>; un bucle,
+            <code>O(n)</code>; un bucle dentro de otro sobre lo mismo,
+            <code>O(n²)</code>.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · O(n) frente a O(1)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+// O(n): in_array recorre el array hasta encontrar (o hasta el final)
+$found = in_array('target', $haystack, true);
+
+// O(1): el acceso por clave no depende del tamaño del array
+$index = array_flip($haystack);     // se prepara una vez
+$exists = isset($index['target']);  // cada consulta, coste constante</code></pre>
+          </div>
+
+          <p>
+            La búsqueda binaria es el ejemplo canónico de <code>O(log n)</code>:
+            cada comparación descarta la mitad de lo que queda, así que de un millón
+            de elementos llega al objetivo en unas 20 comparaciones. Requiere que los
+            datos estén ordenados; ese es el truco que el índice de una base de datos
+            explota.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · búsqueda binaria, O(log n)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+function binarySearch(array $sorted, int $needle): int
+{
+    $low = 0;
+    $high = count($sorted) - 1;
+
+    while ($low &lt;= $high) {
+        $mid = intdiv($low + $high, 2);
+
+        if ($sorted[$mid] === $needle) {
+            return $mid;
+        }
+
+        if ($sorted[$mid] &lt; $needle) {
+            $low = $mid + 1;
+
+            continue;
+        }
+
+        $high = $mid - 1;
+    }
+
+    return -1;
+}</code></pre>
+          </div>
+
+          <h2 id="oculto">
+            El O(n²) escondido
+            <a href="#oculto" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El error de rendimiento más común no es escribir dos bucles anidados a
+            la vista: es esconder un bucle dentro de otro sin darte cuenta. Un
+            <code>in_array</code> dentro de un <code>foreach</code> es
+            <code>O(n²)</code>, porque <code>in_array</code> ya recorre por dentro.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · de O(n²) a O(n) cambiando la estructura</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+// O(n²): por cada usuario, in_array recorre todos los baneados
+foreach ($users as $user) {
+    if (in_array($user-&gt;id, $bannedIds, true)) {
+        continue;
+    }
+
+    $active[] = $user;
+}
+
+// O(n): un set indexado por clave; comprobar es O(1)
+$bannedSet = array_flip($bannedIds);
+
+foreach ($users as $user) {
+    if (isset($bannedSet[$user-&gt;id])) {
+        continue;
+    }
+
+    $active[] = $user;
+}</code></pre>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El N+1 es un O(n²) con disfraz de base de datos</p>
+              <p>
+                Recorrer 100 pedidos y, dentro del bucle, lanzar una consulta por
+                cada uno para traer su cliente son 101 consultas: el clásico
+                problema <strong>N+1</strong>. El coste crece con los datos igual
+                que un bucle anidado. La solución es la misma idea: traer todo de
+                una (un <code>JOIN</code> o un <code>WHERE IN</code>) en vez de
+                consultar dentro del bucle.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="espacio">
+            No solo tiempo: la memoria
+            <a href="#espacio" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Big-O también describe el <strong>espacio</strong>: cuánta memoria
+            extra necesita un algoritmo según <code>n</code>. Hay un canje
+            constante entre los dos. En el ejemplo de los baneados, pasamos de
+            <code>O(n²)</code> en tiempo a <code>O(n)</code> a cambio de gastar
+            <code>O(n)</code> de memoria en el set. Casi siempre vale la pena: la
+            memoria es barata, el tiempo cuadrático no.
+          </p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Cambiar tiempo por memoria es el truco más usado</p>
+              <p>
+                Un índice, una caché, un hashmap precalculado: todos gastan memoria
+                para convertir una búsqueda <code>O(n)</code> en
+                <code>O(1)</code>. Reconocer cuándo aplicar ese canje es media
+                optimización de rendimiento; la otra media es medir antes de
+                tocar.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="errores">
+            Errores comunes
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Malentendido</th><th>La realidad</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>"<code>O(1)</code> significa rápido"</td>
+                  <td>Significa que <em>no crece</em> con <code>n</code>. Una constante grande puede ser lenta; Big-O no habla de velocidad absoluta.</td>
+                </tr>
+                <tr>
+                  <td>Optimizar la forma con <code>n</code> diminuto</td>
+                  <td>Con 10 elementos, <code>O(n²)</code> va sobrado. Vale la pena pelear la forma cuando <code>n</code> es o será grande.</td>
+                </tr>
+                <tr>
+                  <td>No ver el bucle escondido</td>
+                  <td><code>in_array</code>, <code>array_search</code> o una consulta dentro de un <code>foreach</code> añaden un factor <code>n</code> invisible.</td>
+                </tr>
+                <tr>
+                  <td>Olvidar el coste de ordenar</td>
+                  <td>"Ordeno y luego busco binario" incluye un <code>O(n log n)</code> previo: solo compensa si buscas muchas veces.</td>
+                </tr>
+                <tr>
+                  <td>Razonar en vez de medir</td>
+                  <td>Big-O guía, pero el cuello de botella real se confirma con un profiler. La forma orienta; la medición decide.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Big-O mide <strong>cómo crece</strong> el coste con <code>n</code>, no los segundos. La pregunta es "¿y si esto crece 10×?".</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Se ignoran constantes y términos menores, y se habla del <strong>peor caso</strong>: importa la forma, no la implementación.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Memoriza la escala: <code>O(1)</code> &lt; <code>O(log n)</code> &lt; <code>O(n)</code> &lt; <code>O(n log n)</code> &lt; <code>O(n²)</code>. El salto a cuadrático es un abismo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El <code>O(n²)</code> suele esconderse en un <code>in_array</code> dentro de un bucle o en un <strong>N+1</strong> de consultas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Cambiar <strong>tiempo por memoria</strong> (un set, un índice, una caché) convierte búsquedas <code>O(n)</code> en <code>O(1)</code>. Y mide antes de optimizar.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="numeros-flotantes.html">
+              <small>← Anterior</small>
+              <b>Números y coma flotante</b>
+            </a>
+            <a href="../index.html" class="next">
+              <small>Volver →</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>Academia</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Texto: de ASCII a Unicode y UTF-8 — Academia</title>
+    <meta
+      name="description"
+      content="Por qué un byte se queda corto para el texto, qué resuelve Unicode separando el carácter de sus bytes, cómo UTF-8 lo codifica en 1 a 4 bytes y por qué se rompen los acentos y los emojis."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%235b5bf5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>A</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark">A</span>
+          Academia
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Academia</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Representación de datos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Texto: de ASCII a Unicode y UTF-8</h1>
+        <p class="tutorial-hero__lead">
+          "Es solo texto" es la frase que precede a casi todos los bugs de
+          codificación: la <code>é</code> que sale como <code>Ã©</code>, el emoji
+          que tu base de datos rechaza, el <code>strlen</code> que devuelve un
+          número raro. Todo eso se entiende —y se evita— en cuanto separas dos
+          ideas que casi todos mezclan: el <em>carácter</em> y sus <em>bytes</em>.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#ascii">ASCII: el punto de partida</a></li>
+            <li><a href="#caos">El problema: más allá del inglés</a></li>
+            <li><a href="#unicode">Unicode: un número por carácter</a></li>
+            <li><a href="#utf8">UTF-8: del número a los bytes</a></li>
+            <li><a href="#practica">Texto en la práctica</a></li>
+            <li><a href="#errores">Errores comunes</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Un ordenador solo guarda bytes (esto es justo el tutorial anterior). El
+            texto es un acuerdo sobre <strong>qué carácter representa cada
+            número</strong>. La historia de ese acuerdo —de 128 símbolos en inglés
+            a cualquier signo de cualquier idioma más los emojis— explica casi
+            todos los problemas de codificación que te encontrarás.
+          </p>
+
+          <h2 id="ascii">
+            ASCII: el punto de partida
+            <a href="#ascii" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En 1963, <strong>ASCII</strong> fijó una tabla de 128 caracteres
+            numerados del <code>0</code> al <code>127</code>: letras inglesas,
+            dígitos, signos de puntuación y unos códigos de control. 128 valores
+            entran en <strong>7 bits</strong>, así que cada carácter cabía de sobra
+            en un byte y aún sobraba un bit. La <code>A</code> es el
+            <code>65</code>, la <code>a</code> el <code>97</code>, el espacio el
+            <code>32</code>.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Por qué mayúsculas y minúsculas se llevan 32</p>
+              <p>
+                <code>A</code> = 65 y <code>a</code> = 97: difieren exactamente en
+                32, que es <code>2⁵</code>, un único bit. Pasar de una a otra es
+                cambiar ese bit. No es casualidad: la tabla se diseñó así para que
+                cambiar de caja fuera una operación de bits trivial.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="caos">
+            El problema: más allá del inglés
+            <a href="#caos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            ASCII deja libre el octavo bit, así que durante años cada región lo usó
+            para meter sus 128 caracteres extra: del <code>128</code> al
+            <code>255</code>. El resultado fue un caos de <strong>páginas de
+            código</strong> incompatibles: en Latin-1 (Europa occidental) el byte
+            <code>233</code> es <code>é</code>; en otra página, el mismo byte es
+            otra cosa. El texto no llevaba dentro qué tabla usar, así que abrir un
+            fichero con la página equivocada lo convertía en jeroglíficos.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>ASCII</b><small>128 caracteres, 7 bits, solo inglés</small></span>
+              </div>
+              <div class="flow__arrow" data-label="el 8.º bit"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Páginas de código</b><small>256 por región, incompatibles entre sí</small></span>
+              </div>
+              <div class="flow__arrow" data-label="unificar"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Unicode + UTF-8</b><small>un número por carácter, bytes variables</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              El salto clave: dejar de atar el carácter a un único byte de una
+              tabla regional.
+            </p>
+          </div>
+
+          <p>
+            Y aun con 256 valores no caben a la vez el español, el ruso, el griego
+            y el chino, no digamos todos juntos. Un byte se queda corto. Hacía
+            falta separar dos cosas que las páginas de código mezclaban: <em>qué
+            carácter es</em> y <em>con qué bytes se guarda</em>.
+          </p>
+
+          <h2 id="unicode">
+            Unicode: un número por carácter
+            <a href="#unicode" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <strong>Unicode</strong> resuelve la primera mitad: asigna a cada
+            carácter imaginable un número único y permanente llamado <strong>code
+            point</strong>, que se escribe <code>U+</code> y su valor en hex. La
+            <code>A</code> es <code>U+0041</code> (el mismo 65 de ASCII, por
+            compatibilidad), la <code>é</code> es <code>U+00E9</code>, el euro
+            <code>€</code> es <code>U+20AC</code> y la cara sonriente
+            <code>😀</code> es <code>U+1F600</code>. Hay espacio para más de un
+            millón de code points; se usan unos 150.000.
+          </p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Unicode es el catálogo, no los bytes</p>
+              <p>
+                Unicode dice "la <code>é</code> es el número U+00E9", pero
+                <em>no</em> cómo guardarlo en disco. Esa es la otra mitad del
+                problema, y la resuelve una <strong>codificación</strong> como
+                UTF-8: el puente entre el code point y los bytes reales.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="utf8">
+            UTF-8: del número a los bytes
+            <a href="#utf8" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <strong>UTF-8</strong> es la codificación que ganó (es la del 98% de la
+            web), y su diseño es elegante: usa <strong>de 1 a 4 bytes</strong>
+            según el code point, y los primeros bits de cada byte dicen cuántos
+            bytes ocupa el carácter. Lo mejor: los code points de 0 a 127 se
+            codifican en un solo byte idéntico a ASCII, así que <em>todo fichero
+            ASCII ya es UTF-8 válido</em>. Por eso se adoptó sin romper nada.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Code point</th><th>Bytes</th><th>Patrón binario</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>U+0000 – U+007F</td><td>1</td><td><code>0xxxxxxx</code></td></tr>
+                <tr><td>U+0080 – U+07FF</td><td>2</td><td><code>110xxxxx 10xxxxxx</code></td></tr>
+                <tr><td>U+0800 – U+FFFF</td><td>3</td><td><code>1110xxxx 10xxxxxx 10xxxxxx</code></td></tr>
+                <tr><td>U+10000 – U+10FFFF</td><td>4</td><td><code>11110xxx 10xxxxxx 10xxxxxx 10xxxxxx</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            La <code>x</code> son los bits del code point repartidos. Un byte que
+            empieza por <code>0</code> es ASCII de 1 byte; uno que empieza por
+            <code>11</code> abre un carácter multibyte; uno que empieza por
+            <code>10</code> es continuación. Por eso UTF-8 se
+            <strong>autosincroniza</strong>: si caes en mitad de un carácter,
+            sabes que ese byte es continuación y retrocedes hasta el de cabecera.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Carácter</th><th>Code point</th><th>Bytes UTF-8 (hex)</th><th>Nº bytes</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>A</code></td><td>U+0041</td><td><code>41</code></td><td>1</td></tr>
+                <tr><td><code>é</code></td><td>U+00E9</td><td><code>c3 a9</code></td><td>2</td></tr>
+                <tr><td><code>€</code></td><td>U+20AC</td><td><code>e2 82 ac</code></td><td>3</td></tr>
+                <tr><td><code>😀</code></td><td>U+1F600</td><td><code>f0 9f 98 80</code></td><td>4</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="practica">
+            Texto en la práctica
+            <a href="#practica" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La consecuencia diaria: en UTF-8 <strong>un carácter no es un
+            byte</strong>. Cualquier función que cuente, corte o recorra texto
+            tiene dos versiones: la que trabaja con bytes y la que respeta
+            caracteres (en PHP, las <code>mb_*</code>). Confundirlas es el origen
+            del 90% de los bugs de acentos.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · bytes vs caracteres</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$text = 'áéí';
+
+echo strlen($text);        // 6  -> cuenta BYTES (cada vocal son 2)
+echo mb_strlen($text);     // 3  -> cuenta CARACTERES
+
+echo bin2hex('é');         // "c3a9"     -> 2 bytes
+echo bin2hex('€');         // "e282ac"   -> 3 bytes
+echo bin2hex('😀');        // "f09f9880" -> 4 bytes</code></pre>
+          </div>
+
+          <p>
+            Del code point a los bytes y vuelta, en código: <code>mb_ord</code> da
+            el number Unicode y <code>mb_chr</code> hace el camino inverso.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · code points</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+echo mb_ord('€');              // 8364
+echo dechex(mb_ord('€'));      // "20ac"  -> U+20AC
+echo mb_chr(0x1F600);          // "😀"    -> de code point a carácter</code></pre>
+          </div>
+
+          <p>
+            Y la trampa clásica: cortar por bytes parte un carácter por la mitad y
+            produce basura. Usa siempre la versión que respeta caracteres.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · cortar sin romper</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$text = 'café';            // 5 bytes: c a f + (é = 2 bytes)
+
+echo substr($text, 0, 4);     // "caf" + medio byte -> carácter roto
+echo mb_substr($text, 0, 4);  // "café" -> respeta el carácter completo</code></pre>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El "utf8" de MySQL no es UTF-8</p>
+              <p>
+                Durante años, el charset <code>utf8</code> de MySQL guardaba como
+                mucho <strong>3 bytes</strong> por carácter, así que los emojis y
+                otros caracteres de 4 bytes (U+10000 en adelante) reventaban con un
+                error o se truncaban. El UTF-8 completo es
+                <strong><code>utf8mb4</code></strong>: úsalo siempre en tablas y
+                conexión. Es el error de codificación más caro de descubrir en
+                producción.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="errores">
+            Errores comunes
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Síntoma</th><th>Causa</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>é</code> se ve como <code>Ã©</code> (mojibake)</td>
+                  <td>Bytes UTF-8 leídos como si fueran Latin-1. Falta declarar UTF-8 al leer o servir.</td>
+                </tr>
+                <tr>
+                  <td><code>Ã©</code> guardado tal cual en la base de datos</td>
+                  <td>Doble codificación: se codificó texto ya codificado. Casi imposible de revertir limpio.</td>
+                </tr>
+                <tr>
+                  <td>El emoji se trunca o da error al guardar</td>
+                  <td>Columna/conexión en <code>utf8</code> (3 bytes) en vez de <code>utf8mb4</code>.</td>
+                </tr>
+                <tr>
+                  <td><code>strlen</code> devuelve más de lo esperado</td>
+                  <td>Cuenta bytes, no caracteres. Para longitud visible usa <code>mb_strlen</code>.</td>
+                </tr>
+                <tr>
+                  <td>Texto cortado termina en <code>�</code></td>
+                  <td>Se cortó por bytes a mitad de un carácter. Usa <code>mb_substr</code>.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>ASCII</strong> (128 caracteres, 7 bits) solo cubría el inglés; las <strong>páginas de código</strong> de 1 byte fueron un caos incompatible.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Separa dos ideas: <strong>Unicode</strong> da un número (code point <code>U+…</code>) a cada carácter; una <strong>codificación</strong> decide sus bytes.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>UTF-8</strong> usa 1–4 bytes, es compatible con ASCII en el rango 0–127 y se autosincroniza. Por eso ganó.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un carácter <strong>no es un byte</strong>: cuenta y corta con funciones que respetan caracteres (<code>mb_strlen</code>, <code>mb_substr</code>).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En MySQL usa <strong><code>utf8mb4</code></strong>, no <code>utf8</code>, o los emojis (4 bytes) se romperán.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="bits-y-bytes.html">
+              <small>← Anterior</small>
+              <b>Bits y bytes</b>
+            </a>
+            <a href="../index.html" class="next">
+              <small>Volver →</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>Academia</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>
