@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Índices y B-tree: por qué tu query es lenta — Academia</title>
+    <meta
+      name="description"
+      content="Por qué una consulta sin índice lee la tabla entera, cómo un B-tree encuentra una fila en pocos saltos, cómo leer un EXPLAIN, el orden de columnas en índices compuestos y cuándo un índice no se usa."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%235b5bf5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>A</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark">A</span>
+          Academia
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Academia</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Bases de datos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Índices y B-tree: por qué tu query es lenta</h1>
+        <p class="tutorial-hero__lead">
+          La misma consulta tarda 2 milisegundos con diez filas y 8 segundos con
+          diez millones. No es que la base de datos sea lenta: es que sin un índice
+          no le has dado más opción que leerlo todo. Entender el <em>B-tree</em> que
+          hay detrás es entender por qué.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">El problema: leerlo todo</a></li>
+            <li><a href="#btree">Anatomía de un B-tree</a></li>
+            <li><a href="#explain">Leer un EXPLAIN</a></li>
+            <li><a href="#compuestos">Índices compuestos y orden</a></li>
+            <li><a href="#cuando-no">Cuándo un índice NO se usa</a></li>
+            <li><a href="#coste">El índice no es gratis</a></li>
+            <li><a href="#errores">Errores comunes</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Un índice de base de datos es, en el fondo, el mismo truco que el índice
+            alfabético de un diccionario: en vez de leer página a página, saltas
+            directo a la letra. La estructura que lo hace posible casi siempre es un
+            <strong>B-tree</strong>, primo del árbol que viste en estructuras de datos.
+          </p>
+
+          <h2 id="idea">
+            El problema: leerlo todo
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cuando consultas una columna sin índice, la base de datos no tiene por
+            dónde empezar: debe mirar <strong>todas</strong> las filas para ver
+            cuáles cumplen. Es un <strong>full table scan</strong>, y su coste es
+            <code>O(n)</code>: dobla las filas y dobla el tiempo. Con mil filas no lo
+            notas; con diez millones, cada consulta se arrastra.
+          </p>
+          <p>
+            Un índice cambia el juego: mantiene los valores de una columna
+            <strong>ordenados</strong> en una estructura aparte que apunta a la fila
+            real. Buscar deja de ser <code>O(n)</code> y pasa a <code>O(log n)</code>:
+            en una tabla de diez millones de filas son unos 23 saltos, no diez
+            millones de lecturas.
+          </p>
+
+          <h2 id="btree">
+            Anatomía de un B-tree
+            <a href="#btree" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un <strong>B-tree</strong> es un árbol ordenado y equilibrado, pensado
+            para el disco. Cada nodo no guarda un solo valor sino <strong>muchos</strong>,
+            y reparte el rango entre sus hijos. Buscar es descender preguntando «¿en
+            qué rango cae mi valor?» hasta llegar a la hoja, que apunta a la fila.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Raíz</b><small>rangos: …–M, M–Z</small></span>
+              </div>
+              <div class="flow__arrow" data-label="¿en qué rango?"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Rama</b><small>acota: P–R</small></span>
+              </div>
+              <div class="flow__arrow" data-label="afina"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Hoja</b><small>puntero a la fila</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Cada salto descarta una porción enorme de los datos. Por eso un árbol
+              de pocos niveles cubre millones de filas.
+            </p>
+          </div>
+
+          <p>
+            La clave es que el árbol es <strong>poco profundo y muy ancho</strong>:
+            como cada nodo ramifica en cientos de hijos, tres o cuatro niveles bastan
+            para millones de filas. Y las hojas están enlazadas entre sí en orden, así
+            que un <code>BETWEEN</code> o un <code>ORDER BY</code> sobre la columna
+            indexada se sirve recorriéndolas en fila, sin reordenar nada.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">B-tree para rangos, hash para igualdad</p>
+              <p>
+                Un índice <em>hash</em> (el del tutorial anterior) es <code>O(1)</code>
+                para <code>=</code>, pero no sabe de orden: no sirve para <code>&lt;</code>,
+                <code>BETWEEN</code> ni <code>ORDER BY</code>. El B-tree es algo más
+                lento en la igualdad pero mantiene el orden, y por eso es el índice por
+                defecto en casi todos los motores relacionales.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="explain">
+            Leer un EXPLAIN
+            <a href="#explain" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            No adivines si un índice se usa: pregúntaselo a la base de datos.
+            <code>EXPLAIN</code> delante de una consulta te muestra el <strong>plan
+            de ejecución</strong>: cómo piensa resolverla, qué índice elige y cuántas
+            filas estima leer.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · antes y después del índice</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">-- Sin índice: escanea la tabla entera
+EXPLAIN SELECT * FROM usuarios WHERE email = 'ana@example.com';
+-- type: ALL      rows: 1000000   (lee el millón de filas)
+
+CREATE INDEX idx_usuarios_email ON usuarios (email);
+
+-- Con índice: baja por el árbol hasta la fila
+EXPLAIN SELECT * FROM usuarios WHERE email = 'ana@example.com';
+-- type: ref      rows: 1         (un solo recorrido del B-tree)</code></pre>
+          </div>
+
+          <p>
+            La columna <code>type</code> es la que delata el plan. De peor a mejor,
+            estos son los valores que más verás:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th><code>type</code></th><th>Qué significa</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>ALL</code></td><td>Full scan: lee toda la tabla. La señal de alarma.</td></tr>
+                <tr><td><code>index</code></td><td>Recorre el índice entero (mejor que la tabla, pero aún todo).</td></tr>
+                <tr><td><code>range</code></td><td>Usa el índice para un rango (<code>BETWEEN</code>, <code>&gt;</code>, <code>IN</code>).</td></tr>
+                <tr><td><code>ref</code></td><td>Usa el índice para una igualdad no única. Muy bueno.</td></tr>
+                <tr><td><code>eq_ref</code> / <code>const</code></td><td>Una sola fila por clave única o primaria. Lo óptimo.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="compuestos">
+            Índices compuestos y orden
+            <a href="#compuestos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un índice puede cubrir <strong>varias columnas</strong>. El detalle que
+            casi nadie tiene claro: el orden de las columnas importa, y mucho. Un
+            índice compuesto se ordena por la primera columna; dentro de cada valor,
+            por la segunda; y así. Es como una guía telefónica ordenada por apellido y
+            luego por nombre.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · prefijo izquierdo</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">CREATE INDEX idx_pedidos_cliente_fecha
+    ON pedidos (cliente_id, fecha);
+
+-- USA el índice: arranca por cliente_id (la primera columna)
+SELECT * FROM pedidos
+WHERE cliente_id = 42 AND fecha &gt;= '2026-01-01';
+
+-- USA el índice: filtra por cliente_id (el prefijo izquierdo basta)
+SELECT * FROM pedidos WHERE cliente_id = 42;
+
+-- NO lo usa: salta la primera columna y filtra solo por fecha
+SELECT * FROM pedidos WHERE fecha &gt;= '2026-01-01';</code></pre>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La regla del prefijo izquierdo</p>
+              <p>
+                Un índice compuesto <code>(a, b, c)</code> sirve para filtrar por
+                <code>a</code>, por <code>a, b</code> o por <code>a, b, c</code>, pero
+                <strong>no</strong> por <code>b</code> suelto ni por <code>c</code>.
+                Pon primero la columna por la que <em>siempre</em> filtras, y deja para
+                el final la que usas en rangos.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="cuando-no">
+            Cuándo un índice NO se usa
+            <a href="#cuando-no" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Tener el índice no garantiza usarlo. El error más común: envolver la
+            columna indexada en una función o un cálculo. El índice guarda el valor
+            <em>crudo</em> de la columna, no el resultado de la función, así que el
+            motor no puede aprovecharlo y vuelve al full scan.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · que la consulta sea sargable</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">-- NO usa el índice: la función envuelve la columna
+SELECT * FROM eventos WHERE YEAR(creado_en) = 2026;
+
+-- SÍ lo usa: el mismo filtro reescrito como rango sobre la columna cruda
+SELECT * FROM eventos
+WHERE creado_en &gt;= '2026-01-01'
+  AND creado_en &lt;  '2027-01-01';</code></pre>
+          </div>
+
+          <p>
+            Una consulta que deja la columna «desnuda» a un lado del operador se llama
+            <strong>sargable</strong> (de <em>Search ARGument ABLE</em>): es la que el
+            optimizador puede resolver con el índice. Otros casos en los que el índice
+            se ignora: comodín al principio de un <code>LIKE '%texto'</code>, un
+            <code>OR</code> sobre columnas distintas, o una columna con poquísimos
+            valores distintos (un booleano) donde el full scan sale más barato.
+          </p>
+
+          <h2 id="coste">
+            El índice no es gratis
+            <a href="#coste" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un índice acelera las lecturas, pero hay que pagarlo. Ocupa espacio en
+            disco y, sobre todo, cada <code>INSERT</code>, <code>UPDATE</code> o
+            <code>DELETE</code> debe <strong>actualizar también el árbol</strong> para
+            mantenerlo ordenado. Indexar de más no es gratis: ralentiza justo las
+            escrituras.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Indexa cuando</h4>
+              <ul>
+                <li>La columna aparece mucho en <code>WHERE</code>, <code>JOIN</code> u <code>ORDER BY</code>.</li>
+                <li>Tiene muchos valores distintos (alta cardinalidad: email, DNI).</li>
+                <li>La tabla se lee mucho más de lo que se escribe.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Piénsatelo cuando</h4>
+              <ul>
+                <li>La columna tiene pocos valores (un estado con 3 opciones).</li>
+                <li>La tabla recibe escrituras a ráfagas y se lee poco.</li>
+                <li>Ya hay cinco índices: cada uno frena cada escritura.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="errores">
+            Errores comunes
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Error</th><th>Por qué duele</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Envolver la columna en una función</td>
+                  <td><code>WHERE YEAR(fecha) = 2026</code> ignora el índice. Reescríbelo como rango.</td>
+                </tr>
+                <tr>
+                  <td>Orden equivocado en un índice compuesto</td>
+                  <td>Si filtras siempre por <code>b</code> pero el índice es <code>(a, b)</code>, no se usa.</td>
+                </tr>
+                <tr>
+                  <td>Indexarlo todo «por si acaso»</td>
+                  <td>Cada índice frena las escrituras y ocupa espacio. Indexa lo que se consulta.</td>
+                </tr>
+                <tr>
+                  <td>Confiar en la query, no en el <code>EXPLAIN</code></td>
+                  <td>El optimizador decide con estadísticas; lo único fiable es mirar el plan real.</td>
+                </tr>
+                <tr>
+                  <td><code>LIKE '%texto'</code> para buscar</td>
+                  <td>El comodín inicial impide usar el B-tree; eso pide un índice de texto completo.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Sin índice, filtrar es un <strong>full scan</strong> <code>O(n)</code>: la base de datos lee la tabla entera.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un <strong>B-tree</strong> es ancho y poco profundo: encuentra una fila en <code>O(log n)</code> y mantiene el orden para rangos y <code>ORDER BY</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>EXPLAIN</code> te dice la verdad: mira <code>type</code> y huye de <code>ALL</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En un índice compuesto manda el <strong>prefijo izquierdo</strong>: pon primero la columna por la que siempre filtras.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Mantén las consultas <strong>sargable</strong> (columna desnuda) y no indexes de más: cada índice frena las escrituras.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="estructuras-datos.html">
+              <small>← Anterior</small>
+              <b>Estructuras de datos</b>
+            </a>
+            <a href="../index.html" class="next">
+              <small>Volver →</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>Academia</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

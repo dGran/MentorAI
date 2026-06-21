@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modelado relacional: normalizar sin dogma — Academia</title>
+    <meta
+      name="description"
+      content="Claves primarias y foráneas, relaciones uno a muchos y muchos a muchos, normalización de la 1FN a la 3FN explicada sin dogma y cuándo desnormalizar a propósito."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%235b5bf5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>A</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark">A</span>
+          Academia
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Academia</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Bases de datos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Modelado relacional: normalizar sin dogma</h1>
+        <p class="tutorial-hero__lead">
+          Una base de datos relacional bien modelada hace que los datos imposibles
+          sean, literalmente, imposibles de escribir. El secreto no es saberse las
+          formas normales de memoria, sino una idea sencilla: que cada hecho viva en
+          un único sitio.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">La idea: un hecho, un sitio</a></li>
+            <li><a href="#claves">Claves: primaria y foránea</a></li>
+            <li><a href="#relaciones">Relaciones: 1:N y N:M</a></li>
+            <li><a href="#normalizacion">Normalizar: de la 1FN a la 3FN</a></li>
+            <li><a href="#desnormalizar">Cuándo desnormalizar</a></li>
+            <li><a href="#errores">Errores comunes</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            El modelo relacional organiza los datos en <strong>tablas</strong> que se
+            relacionan entre sí. Modelar bien es decidir qué tablas existen, qué
+            columnas lleva cada una y cómo se enlazan, de forma que la redundancia y
+            las incoherencias no quepan.
+          </p>
+
+          <h2 id="idea">
+            La idea: un hecho, un sitio
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Imagina una tabla de pedidos que guarda, en cada fila, el nombre y el
+            email del cliente. Si un cliente tiene 200 pedidos, su email está repetido
+            200 veces. El día que lo cambie, o actualizas las 200 filas sin fallar
+            ninguna, o te quedas con datos que se contradicen. Eso es una
+            <strong>anomalía de actualización</strong>, y nace de un único pecado:
+            haber guardado el mismo hecho en muchos sitios.
+          </p>
+          <p>
+            La regla que guía todo el modelado es esta: <strong>cada hecho debe vivir
+            en un solo lugar</strong>. El email del cliente es un hecho del cliente, no
+            del pedido; va en la tabla <code>clientes</code> y el pedido solo guarda una
+            <em>referencia</em> a ese cliente.
+          </p>
+
+          <h2 id="claves">
+            Claves: primaria y foránea
+            <a href="#claves" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La <strong>clave primaria</strong> identifica de forma única cada fila de
+            una tabla. La <strong>clave foránea</strong> es una columna que apunta a la
+            clave primaria de otra tabla: es el hilo que cose las relaciones y el que
+            impide referencias a filas que no existen.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · primaria, única y foránea</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">CREATE TABLE clientes (
+    id     BIGINT PRIMARY KEY AUTO_INCREMENT,
+    email  VARCHAR(255) NOT NULL UNIQUE      -- no se repite ningún email
+);
+
+CREATE TABLE pedidos (
+    id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+    cliente_id  BIGINT NOT NULL,
+    total       DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (cliente_id) REFERENCES clientes (id)
+);</code></pre>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Clave natural vs clave surrogate</p>
+              <p>
+                Una clave <em>natural</em> usa un dato del dominio (el email, el DNI);
+                una <em>surrogate</em> es un <code>id</code> artificial sin significado.
+                La práctica habitual es usar un <code>id</code> surrogate como clave
+                primaria —nunca cambia, ocupa poco en los índices— y proteger el dato
+                natural con un <code>UNIQUE</code> aparte, como arriba con el email.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="relaciones">
+            Relaciones: 1:N y N:M
+            <a href="#relaciones" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Casi todo lo que modelas cae en uno de dos patrones. En el
+            <strong>uno a muchos (1:N)</strong>, un cliente tiene muchos pedidos pero
+            cada pedido es de un solo cliente: la clave foránea vive en el lado
+            «muchos» (en <code>pedidos.cliente_id</code>). Es lo que acabas de ver.
+          </p>
+          <p>
+            En el <strong>muchos a muchos (N:M)</strong>, un pedido tiene muchos
+            productos y un producto está en muchos pedidos. Eso no se puede resolver
+            con una columna: necesita una <strong>tabla intermedia</strong> que junte
+            las dos claves.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>pedidos</b><small>id</small></span>
+              </div>
+              <div class="flow__arrow" data-label="1:N"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>pedido_producto</b><small>pedido_id · producto_id</small></span>
+              </div>
+              <div class="flow__arrow" data-label="N:1"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>productos</b><small>id</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              La tabla intermedia convierte un N:M en dos relaciones 1:N, una a cada
+              lado. Su clave primaria es la pareja de claves foráneas.
+            </p>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · tabla intermedia N:M</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">CREATE TABLE pedido_producto (
+    pedido_id    BIGINT NOT NULL,
+    producto_id  BIGINT NOT NULL,
+    cantidad     INT NOT NULL,
+    PRIMARY KEY (pedido_id, producto_id),          -- la pareja es única
+    FOREIGN KEY (pedido_id)   REFERENCES pedidos (id),
+    FOREIGN KEY (producto_id) REFERENCES productos (id)
+);</code></pre>
+          </div>
+
+          <h2 id="normalizacion">
+            Normalizar: de la 1FN a la 3FN
+            <a href="#normalizacion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La <strong>normalización</strong> es el proceso de repartir las columnas en
+            tablas para que no haya redundancia. Las «formas normales» suenan a teoría,
+            pero las tres primeras se resumen en tres preguntas prácticas:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Forma</th><th>Pregunta</th><th>Arreglo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>1FN</strong></td><td>¿Hay columnas con varios valores (una lista de teléfonos en una celda)?</td><td>Una fila por valor; nada de listas dentro de una celda.</td></tr>
+                <tr><td><strong>2FN</strong></td><td>¿Hay columnas que dependen solo de parte de la clave compuesta?</td><td>Sácalas a su propia tabla.</td></tr>
+                <tr><td><strong>3FN</strong></td><td>¿Hay columnas que dependen de otra columna que no es la clave?</td><td>Esa dependencia va a otra tabla (el email depende del cliente, no del pedido).</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · el hecho repetido vuelve a su sitio</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">-- ANTES (sin normalizar): el email del cliente repetido en cada pedido
+--   pedidos(id, cliente_email, total)
+--   cambiar el email = tocar N filas y rezar para no dejar ninguna atrás
+
+-- DESPUES (3FN): el email vive solo en clientes; el pedido lo referencia
+SELECT p.id, c.email, p.total
+FROM pedidos p
+JOIN clientes c ON c.id = p.cliente_id;</code></pre>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">No te aprendas las formas, entiende el porqué</p>
+              <p>
+                Si cada columna no clave describe «la clave, toda la clave y nada más
+                que la clave», estás en 3FN sin haberlo calculado. La 3FN cubre el 99 %
+                de los casos: subir a formas más altas (BCNF, 4FN) es raro fuera de
+                esquemas muy particulares.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="desnormalizar">
+            Cuándo desnormalizar
+            <a href="#desnormalizar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Normalizar evita incoherencias, pero reparte el dato en muchas tablas y eso
+            obliga a hacer <code>JOIN</code> para recomponerlo. Cuando una consulta es
+            crítica y muy frecuente, a veces compensa <strong>desnormalizar a
+            propósito</strong>: duplicar un dato para ahorrarse el <code>JOIN</code>.
+            Es una decisión consciente, con un coste que asumes a cambio de velocidad.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Normalizado (por defecto)</h4>
+              <ul>
+                <li>Cada hecho en un sitio: sin anomalías de actualización.</li>
+                <li>Escrituras simples y seguras.</li>
+                <li>Coste: más <code>JOIN</code> al leer.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Desnormalizado (a propósito)</h4>
+              <ul>
+                <li>Datos duplicados para evitar <code>JOIN</code> caros.</li>
+                <li>Lecturas muy rápidas en consultas calientes.</li>
+                <li>Coste: mantener la copia sincronizada, o se corrompe.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Normaliza primero, desnormaliza con datos</p>
+              <p>
+                Desnormalizar antes de tener un problema real de rendimiento es
+                optimización prematura: pagas la complejidad de sincronizar sin
+                necesidad. Parte siempre de un modelo normalizado y desnormaliza solo
+                cuando una consulta concreta lo pida, medida en mano.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="errores">
+            Errores comunes
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Error</th><th>Por qué duele</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Guardar listas en una celda (CSV en un <code>VARCHAR</code>)</td>
+                  <td>Rompe la 1FN: no puedes consultar ni unir por esos valores sin trucos frágiles.</td>
+                </tr>
+                <tr>
+                  <td>Repetir el mismo dato en muchas filas</td>
+                  <td>Anomalías de actualización: cambias un sitio y olvidas otro, y los datos se contradicen.</td>
+                </tr>
+                <tr>
+                  <td>Resolver un N:M sin tabla intermedia</td>
+                  <td>No cabe en una columna; acabas con datos duplicados o columnas «producto1, producto2…».</td>
+                </tr>
+                <tr>
+                  <td>No declarar las claves foráneas</td>
+                  <td>La base de datos deja de protegerte: aparecen pedidos de clientes que no existen.</td>
+                </tr>
+                <tr>
+                  <td>Desnormalizar «por si acaso»</td>
+                  <td>Asumes el coste de sincronizar sin un problema real de rendimiento que lo justifique.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La regla madre del modelado: <strong>cada hecho en un solo sitio</strong>. Lo demás se deriva de ahí.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La <strong>clave primaria</strong> identifica la fila; la <strong>foránea</strong> enlaza tablas e impide referencias rotas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El <strong>1:N</strong> lleva la foránea en el lado «muchos»; el <strong>N:M</strong> necesita una <strong>tabla intermedia</strong>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La <strong>3FN</strong> («la clave, toda la clave y nada más que la clave») cubre casi todos los casos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>Desnormaliza</strong> solo a propósito y con datos: ganas lecturas, pagas en sincronización.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="transacciones-acid.html">
+              <small>← Anterior</small>
+              <b>Transacciones y ACID</b>
+            </a>
+            <a href="../index.html" class="next">
+              <small>Volver →</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>Academia</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

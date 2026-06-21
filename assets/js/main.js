@@ -592,6 +592,16 @@
         { cls: "keyword", src: "\\b(?:On|Off|true|false)\\b" },
         { cls: "number", src: "\\b\\d+[MKG]?\\b" },
       ],
+      sql: [
+        { cls: "comment", src: "--[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/" },
+        { cls: "string", src: "'(?:\\\\.|[^'\\\\])*'" },
+        {
+          cls: "keyword",
+          src: "\\b(?:SELECT|FROM|WHERE|JOIN|INNER|LEFT|RIGHT|FULL|OUTER|CROSS|ON|USING|AND|OR|NOT|IN|AS|ORDER|BY|GROUP|HAVING|LIMIT|OFFSET|UNION|ALL|DISTINCT|INSERT|INTO|VALUES|UPDATE|SET|DELETE|CREATE|TABLE|INDEX|UNIQUE|DROP|ALTER|ADD|COLUMN|PRIMARY|KEY|FOREIGN|REFERENCES|DEFAULT|AUTO_INCREMENT|NULL|IS|LIKE|BETWEEN|EXISTS|CASE|WHEN|THEN|ELSE|END|EXPLAIN|ANALYZE|BEGIN|START|TRANSACTION|COMMIT|ROLLBACK|SAVEPOINT|LOCK|FOR|SHARE|NOWAIT|ISOLATION|LEVEL|READ|WRITE|COMMITTED|UNCOMMITTED|REPEATABLE|SERIALIZABLE|ASC|DESC|INT|INTEGER|BIGINT|SMALLINT|TINYINT|DECIMAL|NUMERIC|VARCHAR|CHAR|TEXT|DATE|DATETIME|TIMESTAMP|BOOLEAN)\\b",
+        },
+        { cls: "function", src: "\\b[a-zA-Z_]\\w*(?=\\s*\\()" },
+        { cls: "number", src: "\\b\\d+(?:\\.\\d+)?\\b" },
+      ],
     };
 
     function highlight(rawCode, language) {

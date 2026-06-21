@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Transacciones y ACID: todo o nada — Academia</title>
+    <meta
+      name="description"
+      content="Qué garantiza una transacción (ACID), cómo deshacer un cambio a medias con ROLLBACK, los niveles de aislamiento, las lecturas sucias, no repetibles y fantasma, y por qué aparecen los deadlocks."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%235b5bf5'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>A</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark">A</span>
+          Academia
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Academia</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Bases de datos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Transacciones y ACID: todo o nada</h1>
+        <p class="tutorial-hero__lead">
+          Transfieres 100 € de una cuenta a otra: restar de una y sumar a la otra
+          son dos pasos, pero el mundo no debe verlos nunca por separado. Si el
+          servidor se cae entre ambos, el dinero no puede evaporarse. De eso van las
+          transacciones, y ACID es la promesa que las respalda.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            16 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">El problema: dos pasos, un resultado</a></li>
+            <li><a href="#acid">ACID: las cuatro garantías</a></li>
+            <li><a href="#transaccion">Una transacción en SQL</a></li>
+            <li><a href="#fenomenos">Lo que sale mal en concurrencia</a></li>
+            <li><a href="#aislamiento">Niveles de aislamiento</a></li>
+            <li><a href="#locks">Locks y deadlocks</a></li>
+            <li><a href="#errores">Errores comunes</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Una <strong>transacción</strong> agrupa varias operaciones en una sola
+            unidad indivisible: o se aplican todas, o ninguna. Es la herramienta con
+            la que la base de datos te protege de dos enemigos: los <em>fallos</em> a
+            mitad de camino y la <em>concurrencia</em> de muchos usuarios a la vez.
+          </p>
+
+          <h2 id="idea">
+            El problema: dos pasos, un resultado
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La transferencia bancaria es el ejemplo canónico porque deja el problema
+            desnudo: restar de la cuenta A y sumar a la B son dos escrituras
+            distintas. Si el proceso muere justo entre ambas, el dinero desaparece de
+            A sin llegar a B. La cuenta no cuadra, y «a veces» no es una opción cuando
+            hablamos de dinero, reservas o inventario.
+          </p>
+          <p>
+            Sin transacción, cada <code>UPDATE</code> se confirma por su cuenta y no
+            hay vuelta atrás. Con transacción, los dos pasos viven dentro de un
+            paréntesis: hasta que no dices <code>COMMIT</code>, nada es definitivo, y
+            siempre puedes <code>ROLLBACK</code> para dejarlo como estaba.
+          </p>
+
+          <h2 id="acid">
+            ACID: las cuatro garantías
+            <a href="#acid" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            ACID es el acrónimo de las cuatro propiedades que una transacción
+            promete. No son jerga académica: cada letra resuelve un fallo concreto del
+            mundo real.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Letra</th><th>Garantía</th><th>Qué evita</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>A</strong>tomicidad</td><td>Todo o nada: o se aplican todos los pasos o ninguno.</td><td>Que la transferencia se quede a medias.</td></tr>
+                <tr><td><strong>C</strong>onsistencia</td><td>La transacción lleva de un estado válido a otro válido (respeta reglas y claves).</td><td>Saldos negativos prohibidos, claves foráneas rotas.</td></tr>
+                <tr><td><strong>I</strong>slamiento</td><td>Las transacciones concurrentes no se pisan: cada una se ejecuta como si estuviera sola.</td><td>Que otra transacción vea tus datos a medio escribir.</td></tr>
+                <tr><td><strong>D</strong>urabilidad</td><td>Tras el <code>COMMIT</code>, el cambio sobrevive a un corte de luz.</td><td>Perder una venta confirmada por un reinicio.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La «I» es la que da guerra</p>
+              <p>
+                Atomicidad y durabilidad son casi binarias: las tienes o no. El
+                aislamiento, en cambio, es un <strong>dial</strong>: más aislamiento
+                significa menos sorpresas pero también menos concurrencia. El resto del
+                tutorial gira en torno a ese dial.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="transaccion">
+            Una transacción en SQL
+            <a href="#transaccion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En SQL, una transacción se abre con <code>BEGIN</code> y se cierra con
+            <code>COMMIT</code> (confirmar) o <code>ROLLBACK</code> (deshacer). Entre
+            medias, ningún otro cliente ve tus cambios a medias.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · la transferencia, atómica</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">BEGIN;
+
+UPDATE cuentas SET saldo = saldo - 100 WHERE id = 1;
+UPDATE cuentas SET saldo = saldo + 100 WHERE id = 2;
+
+-- Si algo falla entre medias, una sola orden lo deshace todo:
+ROLLBACK;   -- nadie pierde 100 sin que el otro los reciba
+
+-- Si las dos escrituras fueron bien:
+COMMIT;     -- ahora sí, permanente y visible para todos</code></pre>
+          </div>
+
+          <h2 id="fenomenos">
+            Lo que sale mal en concurrencia
+            <a href="#fenomenos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cuando dos transacciones se solapan, aparecen tres anomalías clásicas. El
+            estándar SQL las define para luego decir, por niveles, cuáles permite cada
+            uno:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Anomalía</th><th>Qué pasa</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Lectura sucia <em>(dirty read)</em></td><td>Lees un cambio de otra transacción que aún no ha hecho <code>COMMIT</code>… y que puede acabar en <code>ROLLBACK</code>.</td></tr>
+                <tr><td>Lectura no repetible <em>(non-repeatable read)</em></td><td>Lees una fila dos veces en tu transacción y obtienes valores distintos porque otra la modificó y confirmó en medio.</td></tr>
+                <tr><td>Lectura fantasma <em>(phantom read)</em></td><td>Repites una consulta con <code>WHERE</code> y aparecen filas nuevas que otra transacción insertó.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="aislamiento">
+            Niveles de aislamiento
+            <a href="#aislamiento" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El nivel de aislamiento es el dial que decide <strong>qué anomalías
+            toleras</strong> a cambio de más concurrencia. De menos a más estricto:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Nivel</th><th>Lectura sucia</th><th>No repetible</th><th>Fantasma</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>READ UNCOMMITTED</td><td>posible</td><td>posible</td><td>posible</td></tr>
+                <tr><td>READ COMMITTED</td><td>no</td><td>posible</td><td>posible</td></tr>
+                <tr><td>REPEATABLE READ</td><td>no</td><td>no</td><td>posible*</td></tr>
+                <tr><td>SERIALIZABLE</td><td>no</td><td>no</td><td>no</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            <small>* En el estándar, REPEATABLE READ permite fantasmas; el InnoDB de
+            MySQL los evita con su mecanismo de snapshots.</small>
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · fijar el nivel de la transacción</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
+BEGIN;
+SELECT saldo FROM cuentas WHERE id = 1;   -- 500
+-- ... otra transacción cambia el saldo y hace COMMIT ...
+SELECT saldo FROM cuentas WHERE id = 1;   -- sigue 500: lectura repetible
+COMMIT;</code></pre>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Más aislamiento no es gratis</p>
+              <p>
+                <code>SERIALIZABLE</code> elimina toda anomalía, pero a costa de más
+                bloqueos, menos paralelismo y más probabilidad de que una transacción
+                tenga que reintentarse. Por eso casi nadie lo usa por defecto: PostgreSQL
+                y Oracle vienen en <code>READ COMMITTED</code>; MySQL/InnoDB, en
+                <code>REPEATABLE READ</code>. Sube el dial solo donde el dato lo exija.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="locks">
+            Locks y deadlocks
+            <a href="#locks" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Para aislar, la base de datos usa <strong>bloqueos (locks)</strong>:
+            mientras una transacción modifica una fila, otra que quiera tocarla espera.
+            Puedes pedir el bloqueo por adelantado con <code>FOR UPDATE</code>, y así
+            reservar las filas que vas a cambiar.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · bloqueo pesimista con FOR UPDATE</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">BEGIN;
+
+-- Reserva las dos filas: nadie más las modifica hasta tu COMMIT
+SELECT * FROM cuentas WHERE id IN (1, 2) FOR UPDATE;
+
+UPDATE cuentas SET saldo = saldo - 100 WHERE id = 1;
+UPDATE cuentas SET saldo = saldo + 100 WHERE id = 2;
+
+COMMIT;</code></pre>
+          </div>
+
+          <p>
+            El riesgo de los bloqueos es el <strong>deadlock</strong>: dos
+            transacciones esperando, cada una, una fila que la otra tiene bloqueada.
+            Ninguna avanza. El motor lo detecta, mata a una (verás un error de
+            <em>deadlock</em>) y deja seguir a la otra; tu código debe reintentar la
+            que murió.
+          </p>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El antídoto del deadlock: orden consistente</p>
+              <p>
+                Si todas tus transacciones bloquean las filas <strong>en el mismo
+                orden</strong> (por ejemplo, siempre por <code>id</code> ascendente),
+                el ciclo de espera no puede formarse. La mayoría de los deadlocks de
+                producción se curan ordenando los accesos, no subiendo el aislamiento.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            Frente al bloqueo <strong>pesimista</strong> (reservo antes de tocar)
+            existe el <strong>optimista</strong>: no bloqueo, pero al guardar compruebo
+            que la fila no ha cambiado desde que la leí (con una columna de versión).
+            Cada uno encaja en un escenario distinto:
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Pesimista (FOR UPDATE)</h4>
+              <ul>
+                <li>Bloquea desde el principio; cero conflictos al guardar.</li>
+                <li>Bueno con mucha contención sobre las mismas filas.</li>
+                <li>Coste: más esperas y riesgo de deadlock.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Optimista (versión)</h4>
+              <ul>
+                <li>No bloquea; valida al hacer <code>COMMIT</code>.</li>
+                <li>Bueno con poca contención: máxima concurrencia.</li>
+                <li>Coste: si hubo conflicto, toca reintentar.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="errores">
+            Errores comunes
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Error</th><th>Por qué duele</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Transacciones largas y «gordas»</td>
+                  <td>Mantienen bloqueos mucho tiempo y frenan a todos. Abre tarde, confirma pronto.</td>
+                </tr>
+                <tr>
+                  <td>No reintentar tras un deadlock</td>
+                  <td>El motor mata una transacción por diseño; si no la reintentas, pierdes la operación.</td>
+                </tr>
+                <tr>
+                  <td>Subir a <code>SERIALIZABLE</code> «por seguridad»</td>
+                  <td>Estrangulas la concurrencia. Elige el nivel mínimo que tu caso tolera.</td>
+                </tr>
+                <tr>
+                  <td>Lógica de negocio entre <code>BEGIN</code> y <code>COMMIT</code></td>
+                  <td>Llamar a una API o esperar entrada del usuario con la transacción abierta bloquea filas eternamente.</td>
+                </tr>
+                <tr>
+                  <td>Confiar el «todo o nada» a la aplicación</td>
+                  <td>Sin transacción real, un fallo a media tanda deja datos inconsistentes que nadie deshace.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una transacción agrupa varios pasos en una unidad <strong>atómica</strong>: <code>COMMIT</code> confirma, <code>ROLLBACK</code> deshace.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>ACID</strong> = atomicidad, consistencia, aislamiento y durabilidad; cada letra cubre un fallo concreto.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La concurrencia provoca lecturas <strong>sucias, no repetibles y fantasma</strong>; el nivel de aislamiento decide cuáles toleras.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Más aislamiento = menos anomalías pero menos concurrencia. Usa el <strong>mínimo</strong> que tu caso tolere.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los <strong>deadlocks</strong> se previenen bloqueando siempre en el mismo orden; cuando ocurren, se reintenta.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="indices-btree.html">
+              <small>← Anterior</small>
+              <b>Índices y B-tree</b>
+            </a>
+            <a href="../index.html" class="next">
+              <small>Volver →</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>Academia</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

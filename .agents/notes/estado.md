@@ -72,10 +72,37 @@ orden lógico bottom-up, arranque por Representación de datos, ejemplos PHP+SQL
   hash de tabla ≠ hash criptográfico (puente al pilar 7). 2 bloques php (bucketIndex
   con crc32%capacidad; mini tabla hash con encadenamiento por referencia). Chip
   `algoritmos` ahora 3. Es el `featured` actual. **Pilar 2 COMPLETO.**
-- Dep. técnica pendiente para el pilar 3 (BBDD): añadir `sql` al highlighter
-  (`LANGUAGES` en main.js) antes del 1er tutorial BBDD (`indices-btree`).
-- Siguiente en la ruta: Pilar 3 (BBDD) → primero añadir `sql` al highlighter, luego
-  P3.1 `indices-btree` y P3.2 `transacciones-acid`.
+- **Highlighter SQL añadido** (`SyntaxHighlighter.LANGUAGES.sql` en main.js):
+  comentarios `--`/`/* */`, strings con comilla simple, keywords en MAYÚSCULA
+  (el motor comparte un único flag `gm` sin `i`, así que el SQL de los tutoriales
+  se escribe con keywords en mayúscula), funciones `nombre(` y números. Probado con
+  muestra: tokeniza keywords/strings/números/funciones OK.
+- Iniciado y **completado Pilar 3 — Bases de datos** (chip `bbdd` = "Bases de
+  datos", ya existía en CATEGORY_LABELS; ahora 3). Los tres con `icon: "database"`
+  y ejemplos SQL:
+  - **P3.1 `indices-btree.html`** (Intermedio, 15 min): full scan O(n) vs índice
+    O(log n), anatomía del B-tree (ancho y poco profundo, hojas enlazadas para
+    rangos/ORDER BY), leer un EXPLAIN (tabla de `type`: ALL→eq_ref), índices
+    compuestos y regla del prefijo izquierdo, cuándo NO se usa (función sobre la
+    columna = no sargable, LIKE '%x', baja cardinalidad), el índice no es gratis
+    (penaliza escrituras). 3 bloques sql.
+  - **P3.2 `transacciones-acid.html`** (Avanzado, 16 min): el problema (transferencia
+    a dos pasos), ACID (tabla letra→garantía→qué evita), BEGIN/COMMIT/ROLLBACK,
+    anomalías (dirty/non-repeatable/phantom), niveles de aislamiento (tabla
+    nivel×anomalía; nota InnoDB evita fantasmas en REPEATABLE READ), locks +
+    FOR UPDATE, deadlocks (antídoto: bloquear en orden consistente), pesimista vs
+    optimista. 3 bloques sql.
+  - **P3.3 `modelado-relacional.html`** (Intermedio, 14 min): regla madre "cada
+    hecho en un sitio", claves primaria/foránea (+ natural vs surrogate), relaciones
+    1:N y N:M (tabla intermedia, diagrama), normalización 1FN→3FN sin dogma (tabla
+    de preguntas prácticas), cuándo desnormalizar a propósito (compare + warning de
+    optimización prematura). 3 bloques sql. Es el `featured` actual.
+- Subido a GitHub: repo privado **dGran/MentorAI** (git init + primer commit con
+  todo; symlinks AGENTS.md/CLAUDE.md/.claude/skills versionados como symlink).
+  `.gitignore` mínimo (cruft SO, .idea/.vscode, temporales).
+- Siguiente en la ruta: **Pilar 4 — El sistema por debajo** (`procesos-hilos`,
+  `concurrencia`, `async-event-loop`, `memoria`). Sin dep. de highlighter (PHP +
+  pseudocódigo; ojo: PHP flojo en hilos → ejemplos mixtos).
 
 ## Cómo añadir un tutorial
 Ver README.md → "Añadir un tutorial nuevo" (copiar plantilla, rellenar, añadir

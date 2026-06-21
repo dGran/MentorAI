@@ -97,9 +97,9 @@ Marcar al publicar. 22 tutoriales en total.
 - [x] P2.1 big-o  (publicado 2026-06-21)
 - [x] P2.2 estructuras-datos  (publicado 2026-06-21)
 - [x] P2.3 hashing  (publicado 2026-06-21) ← Pilar 2 COMPLETO
-- [ ] P3.1 indices-btree
-- [ ] P3.2 transacciones-acid
-- [ ] P3.3 modelado-relacional
+- [x] P3.1 indices-btree  (publicado 2026-06-21)
+- [x] P3.2 transacciones-acid  (publicado 2026-06-21)
+- [x] P3.3 modelado-relacional  (publicado 2026-06-21) ← Pilar 3 COMPLETO
 - [ ] P4.1 procesos-hilos
 - [ ] P4.2 concurrencia
 - [ ] P4.3 async-event-loop

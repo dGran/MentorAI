@@ -24,6 +24,52 @@
 
 window.ACADEMIA_TUTORIALS = [
   {
+    slug: "modelado-relacional",
+    title: "Modelado relacional: normalizar sin dogma",
+    description:
+      "Claves primarias y foráneas, relaciones uno a muchos y muchos a muchos, normalización de la 1FN a la 3FN explicada sin dogma y cuándo desnormalizar a propósito.",
+    href: "tutorials/modelado-relacional.html",
+    categories: ["bbdd"],
+    topic: "Bases de datos",
+    tags: ["Normalización", "Claves", "Relaciones"],
+    level: "Intermedio",
+    minutes: 14,
+    icon: "database",
+    status: "published",
+    date: "2026-06-21",
+    featured: true,
+  },
+  {
+    slug: "transacciones-acid",
+    title: "Transacciones y ACID: todo o nada",
+    description:
+      "Qué garantiza una transacción (ACID), cómo deshacer un cambio a medias con ROLLBACK, los niveles de aislamiento, las lecturas sucias, no repetibles y fantasma, y por qué aparecen los deadlocks.",
+    href: "tutorials/transacciones-acid.html",
+    categories: ["bbdd"],
+    topic: "Bases de datos",
+    tags: ["ACID", "Transacciones", "Aislamiento"],
+    level: "Avanzado",
+    minutes: 16,
+    icon: "database",
+    status: "published",
+    date: "2026-06-21",
+  },
+  {
+    slug: "indices-btree",
+    title: "Índices y B-tree: por qué tu query es lenta",
+    description:
+      "Por qué una consulta sin índice lee la tabla entera, cómo un B-tree encuentra una fila en pocos saltos, cómo leer un EXPLAIN, el orden de columnas en índices compuestos y cuándo un índice no se usa.",
+    href: "tutorials/indices-btree.html",
+    categories: ["bbdd"],
+    topic: "Bases de datos",
+    tags: ["Índices", "B-tree", "EXPLAIN"],
+    level: "Intermedio",
+    minutes: 15,
+    icon: "database",
+    status: "published",
+    date: "2026-06-21",
+  },
+  {
     slug: "hashing",
     title: "Hashing: cómo un hashmap busca en O(1)",
     description:
@@ -37,7 +83,6 @@ window.ACADEMIA_TUTORIALS = [
     icon: "code",
     status: "published",
     date: "2026-06-21",
-    featured: true,
   },
   {
     slug: "estructuras-datos",
