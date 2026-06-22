@@ -412,18 +412,19 @@ window.ACADEMIA_TUTORIALS = [
   },
   {
     slug: "preload",
+    featured: true,
     title: "Preload: precargar clases al arrancar PHP",
     description:
-      "El siguiente paso después de OPcache: dejar tu framework cargado en memoria desde el arranque del proceso.",
+      "El paso siguiente a OPcache: dejar las clases del framework cargadas y enlazadas en memoria desde el arranque, sin pasar por el autoload. Cómo funciona, cómo se configura, su gran pega (congela el código) y cómo lo dan Symfony y Laravel.",
     href: "tutorials/preload.html",
     categories: ["php", "rendimiento"],
     topic: "PHP",
-    tags: ["PHP", "Rendimiento"],
+    tags: ["Preload", "OPcache", "Rendimiento"],
     level: "Avanzado",
     minutes: 12,
     icon: "signal",
-    status: "soon",
-    date: "2026-06-20",
+    status: "published",
+    date: "2026-06-22",
   },
   {
     slug: "redis-cache",

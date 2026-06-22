@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Preload: precargar clases al arrancar PHP — MentorAI</title>
+    <meta
+      name="description"
+      content="Tutorial profundo y entendible sobre preload en PHP: qué es, en qué se diferencia de OPcache, cómo deja tu framework cargado en memoria desde el arranque y cuándo compensa de verdad."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <!-- ===================== Navbar ===================== -->
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button
+            class="icon-btn theme-toggle"
+            aria-label="Cambiar tema"
+            title="Cambiar tema"
+          >
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- ===================== Hero del tutorial ===================== -->
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>PHP · Rendimiento</span>
+        </nav>
+        <h1 class="tutorial-hero__title">
+          Preload: precargar clases al arrancar PHP
+        </h1>
+        <p class="tutorial-hero__lead">
+          OPcache evita recompilar tu código, pero cada worker todavía lo carga
+          y enlaza la primera vez que lo necesita. Preload da el siguiente paso:
+          deja tu framework <strong>ya cargado en memoria desde que arranca
+          PHP</strong>, disponible para todas las peticiones sin pasar por el
+          autoload. Veamos cómo, y cuándo de verdad merece la pena.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            12 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            PHP 7.4+
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== Layout: TOC + contenido ===================== -->
+    <div class="container">
+      <div class="tutorial-layout">
+        <!-- Índice -->
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">Lo que OPcache deja sin resolver</a></li>
+            <li><a href="#que-es">Qué es preload</a></li>
+            <li><a href="#como-funciona">Cómo funciona por dentro</a></li>
+            <li><a href="#fichero">El fichero de preload</a></li>
+            <li><a href="#configuracion">Configuración</a></li>
+            <li><a href="#limitaciones">Limitaciones y la gran pega</a></li>
+            <li><a href="#frameworks">Preload en frameworks reales</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <!-- Artículo -->
+        <article class="prose">
+          <p class="lead">
+            Imagina un restaurante que cada noche, antes de abrir, deja las
+            salsas base ya hechas y calientes. Cuando entra un cliente, no se
+            empieza de cero: la mitad del trabajo está hecho desde antes de que
+            llegara nadie. Eso es preload para PHP: preparar las clases
+            <em>antes</em> de la primera petición, no durante ella.
+          </p>
+
+          <!-- ============ El problema ============ -->
+          <h2 id="problema">
+            Lo que OPcache deja sin resolver
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Con <a href="opcache.html">OPcache</a> activo, PHP ya no recompila
+            tus ficheros a opcodes en cada petición: los compila una vez y los
+            guarda en memoria compartida. Es la mayor ganancia que puedes darle
+            a una app PHP con un solo ajuste. Pero queda un coste que OPcache
+            <strong>no</strong> elimina.
+          </p>
+          <p>
+            Cuando un <em>worker</em> de PHP-FPM atiende su primera petición,
+            todavía tiene que <strong>cargar y enlazar</strong> las clases que
+            esa petición usa: resolver el autoload (encontrar el fichero de cada
+            clase), ejecutar su definición, vincular cada clase con su clase
+            padre, sus interfaces y sus <em>traits</em>. OPcache le ahorra
+            recompilar, pero el trabajo de <em>«traer esta clase a la memoria de
+            este proceso y dejarla lista para usar»</em> sigue ocurriendo, clase
+            a clase, la primera vez que cada worker la necesita.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Cachear opcodes ≠ tener la clase lista</p>
+              <p>
+                OPcache guarda los <em>opcodes</em> de un fichero. Pero una clase
+                no «existe» para el proceso hasta que ese fichero se ejecuta y la
+                clase se enlaza con sus dependencias. Preload se ocupa
+                justamente de ese segundo paso.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Qué es preload ============ -->
+          <h2 id="que-es">
+            Qué es preload
+            <a href="#que-es" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Preload, introducido en <strong>PHP 7.4</strong>, le dice al motor:
+            <em>«al arrancar, antes de atender ninguna petición, carga este
+            conjunto de ficheros y deja sus clases, funciones e interfaces
+            permanentemente disponibles»</em>. Esas clases pasan a formar parte
+            del propio motor: están en memoria desde el minuto cero y
+            <strong>todas las peticiones las ven sin tener que cargarlas</strong>.
+          </p>
+          <p>
+            La diferencia clave con una caché normal es <em>cuándo</em> y
+            <em>para quién</em>:
+          </p>
+
+          <div class="compare">
+            <div class="compare__col">
+              <h4>OPcache (solo opcodes)</h4>
+              <ul>
+                <li>Cachea el resultado de compilar cada fichero</li>
+                <li>La clase se carga y enlaza <strong>por petición</strong>, la primera vez que se usa</li>
+                <li>Vive en memoria compartida como bytecode</li>
+                <li>No necesita que toques tu código</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Preload</h4>
+              <ul>
+                <li>Carga y <strong>enlaza</strong> las clases al arrancar PHP</li>
+                <li>Quedan listas <strong>para todas las peticiones</strong>, sin autoload</li>
+                <li>Pasan a ser parte del motor, como si fueran clases internas</li>
+                <li>Exige un fichero de preload y reiniciar para cambiarlas</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            Por eso preload se construye <strong>encima</strong> de OPcache: lo
+            necesita para funcionar. No es un sustituto, es la capa siguiente.
+          </p>
+
+          <!-- ============ Cómo funciona ============ -->
+          <h2 id="como-funciona">
+            Cómo funciona por dentro
+            <a href="#como-funciona" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cuando PHP-FPM arranca, el proceso <strong>maestro</strong> ejecuta
+            una sola vez el fichero que le indiques en
+            <code>opcache.preload</code>. Ese fichero carga las clases que
+            quieras precargar. El motor las compila, las enlaza con sus
+            dependencias y las guarda en la memoria compartida de OPcache, ya
+            <strong>vinculadas</strong>. A partir de ahí, cada worker que el
+            maestro crea las hereda listas para usar.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Arranca PHP-FPM</b><small>El proceso maestro inicia</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Ejecuta el fichero de preload</b><small>Una sola vez, antes de aceptar peticiones</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--cache">
+                <span class="flow__num">★</span>
+                <span><b>Clases enlazadas en memoria compartida</b><small>Listas y vinculadas, no solo compiladas</small></span>
+              </div>
+              <div class="flow__arrow" data-label="cada worker las hereda"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Los workers atienden peticiones</b><small>Sin autoload para lo precargado</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              El trabajo se hace <strong>una vez al arrancar</strong>, no en la
+              primera petición de cada worker. Cambiar lo precargado obliga a
+              repetir el paso 2: hay que reiniciar.
+            </p>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El enlazado es la clave</p>
+              <p>
+                Una clase precargada no necesita resolver su jerarquía en cada
+                petición: ya sabe quién es su padre, qué interfaces implementa y
+                qué <em>traits</em> usa. Ese vínculo, que normalmente se rehace
+                por proceso, queda hecho de una vez para siempre.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ El fichero de preload ============ -->
+          <h2 id="fichero">
+            El fichero de preload
+            <a href="#fichero" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El fichero que apuntas con <code>opcache.preload</code> es PHP
+            normal. Su trabajo es decidir <strong>qué</strong> clases entran. Hay
+            dos formas de cargarlas, con una diferencia importante:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mecanismo</th>
+                  <th>Qué hace</th>
+                  <th>Cuándo usarlo</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>opcache_compile_file()</code></td>
+                  <td>Compila y precarga el fichero, pero <strong>no ejecuta</strong> su código de nivel superior.</td>
+                  <td>Para clases sueltas cuyas dependencias quizá aún no están cargadas.</td>
+                </tr>
+                <tr>
+                  <td><code>require_once</code></td>
+                  <td>Ejecuta el fichero de verdad, resolviendo y enlazando sus dependencias en el acto.</td>
+                  <td>Cuando controlas el orden y quieres el enlazado completo.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            Un fichero de preload mínimo que recorre un directorio y precarga sus
+            clases podría verse así:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · preload.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$directory = new RecursiveDirectoryIterator(__DIR__ . '/src');
+$iterator = new RecursiveIteratorIterator($directory);
+
+foreach ($iterator as $file) {
+
+    if ($file-&gt;getExtension() !== 'php') {
+
+        continue;
+    }
+
+    opcache_compile_file($file-&gt;getRealPath());
+}</code></pre>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Dependencias sin resolver se quedan fuera</p>
+              <p>
+                Si precargas una clase pero su clase padre o una interfaz que
+                implementa <strong>no</strong> está disponible, PHP no puede
+                enlazarla y la <strong>omite</strong>, avisando por el log al
+                arrancar. Por eso lo habitual es precargar el proyecto entero (o
+                apoyarse en el fichero que genera el framework), no clases
+                sueltas a mano.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Configuración ============ -->
+          <h2 id="configuracion">
+            Configuración
+            <a href="#configuracion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Preload se activa con dos directivas en <code>php.ini</code> (o en un
+            fichero de <code>conf.d/</code>). Necesita OPcache activo de base:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ini · 11-preload.ini</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="ini">; Preload necesita OPcache activo
+opcache.enable=1
+
+; Fichero que se ejecuta al arrancar para precargar clases
+opcache.preload=/var/www/app/preload.php
+
+; Usuario con el que se ejecuta el preload (no puede ser root)
+opcache.preload_user=www-data</code></pre>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Directiva</th>
+                  <th>Qué hace</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>opcache.preload</code></td>
+                  <td>Ruta absoluta al fichero PHP que se ejecuta al arrancar. Vacío = preload desactivado.</td>
+                </tr>
+                <tr>
+                  <td><code>opcache.preload_user</code></td>
+                  <td>Usuario bajo el que corre el preload. Obligatorio si arrancas como root; suele ser el mismo del pool (<code>www-data</code>).</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            Para comprobar que funciona, <code>opcache_get_status()</code> incluye
+            una sección <code>preload_statistics</code> con las clases, funciones
+            y <em>scripts</em> precargados y la memoria que ocupan:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · preload-status.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$status = opcache_get_status();
+$preload = $status['preload_statistics'];
+
+$memoryMb = round($preload['memory_consumption'] / 1024 / 1024, 1);
+
+echo "Clases precargadas:   " . count($preload['classes']) . "\n";
+echo "Funciones precargadas: " . count($preload['functions']) . "\n";
+echo "Memoria de preload:    {$memoryMb} MB\n";</code></pre>
+          </div>
+
+          <!-- ============ Limitaciones ============ -->
+          <h2 id="limitaciones">
+            Limitaciones y la gran pega
+            <a href="#limitaciones" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Preload tiene una contrapartida que define cuándo usarlo: lo
+            precargado <strong>se congela al arrancar</strong>.
+          </p>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Cambiar el código exige reiniciar PHP-FPM</p>
+              <p>
+                A diferencia de OPcache con <code>validate_timestamps=1</code>,
+                aquí no hay revalidación por fecha: las clases precargadas no se
+                refrescan solas. Si editas una clase que está en el preload, el
+                cambio <strong>no se ve</strong> hasta que reinicies (no recargues)
+                PHP-FPM. Por eso preload es una técnica de <strong>producción</strong>,
+                no de desarrollo: en local te haría la vida imposible.
+              </p>
+            </div>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Reload no basta: tiene que ser restart</p>
+              <p>
+                Un <code>reload</code> de PHP-FPM no vuelve a ejecutar el preload.
+                Para que entre el código nuevo necesitas
+                <code>systemctl restart php8.3-fpm</code>. Tenlo en cuenta en el
+                script de despliegue, justo como ya haces con OPcache.
+              </p>
+            </div>
+          </div>
+
+          <p>Otras cosas que conviene saber:</p>
+          <ul>
+            <li>
+              <strong>No precargues lo que cambia mucho</strong>: el código de
+              tu app evoluciona en cada deploy, pero el del framework y las
+              librerías es estable. Cuanto más estable, mejor candidato.
+            </li>
+            <li>
+              <strong>Cuesta memoria por proceso compartida</strong>: las clases
+              ocupan sitio en la memoria de OPcache desde el arranque, las use o
+              no esta petición. Es un intercambio: memoria a cambio de latencia.
+            </li>
+            <li>
+              <strong>La ganancia es real pero acotada</strong>: ahorra el
+              autoload y el enlazado, no la lógica de tu petición. Brilla cuando
+              cargas muchas clases por request, típico de frameworks grandes.
+            </li>
+          </ul>
+
+          <!-- ============ Frameworks ============ -->
+          <h2 id="frameworks">
+            Preload en frameworks reales
+            <a href="#frameworks" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La buena noticia: rara vez escribirás el fichero de preload a mano.
+            Los frameworks modernos lo generan por ti, resolviendo el orden de
+            dependencias para que no se quede nada fuera.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Stack</th>
+                  <th>Cómo lo da</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Symfony</strong></td>
+                  <td>Al compilar el contenedor genera un <code>var/cache/prod/App_KernelProdContainer.preload.php</code>. Apuntas <code>opcache.preload</code> ahí y listo.</td>
+                </tr>
+                <tr>
+                  <td><strong>Composer</strong></td>
+                  <td>El <em>classmap</em> optimizado (<code>composer dump-autoload --optimize</code>) es la base para saber qué ficheros precargar.</td>
+                </tr>
+                <tr>
+                  <td><strong>Laravel</strong></td>
+                  <td>No trae preload propio; el camino habitual hacia el «framework en memoria» es <strong>Octane</strong> (Swoole/RoadRunner), que mantiene la app viva entre peticiones.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Preload no es lo mismo que «long-running»</p>
+              <p>
+                Preload sigue el modelo clásico de PHP: cada petición empieza
+                limpia, solo que con las clases ya cargadas. Swoole, RoadRunner
+                u Octane van más allá y mantienen <strong>la aplicación entera</strong>
+                viva entre peticiones (estado incluido), lo que es más rápido pero
+                rompe el <em>shared-nothing</em> de PHP y exige escribir el código
+                con cuidado. Son herramientas distintas para problemas distintos.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Resumen ============ -->
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>OPcache cachea <strong>opcodes</strong>; preload va más allá y deja las clases <strong>cargadas y enlazadas</strong> en memoria desde el arranque.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Se configura con <code>opcache.preload</code> (el fichero) y <code>opcache.preload_user</code>, y se ejecuta <strong>una vez al arrancar</strong> PHP-FPM.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Su gran pega: lo precargado <strong>se congela</strong>. Cambiar el código exige <strong>reiniciar</strong> (restart, no reload) FPM. Es técnica de producción.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Precarga lo <strong>estable</strong> (framework, librerías), no lo que cambia cada deploy. Brilla cuando cada petición carga muchas clases.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Symfony genera el fichero de preload por ti; Laravel busca el mismo objetivo por otra vía (<strong>Octane</strong>, modelo long-running).</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Navegación entre tutoriales -->
+          <nav class="tutorial-nav">
+            <a href="opcache.html">
+              <small>← Anterior</small>
+              <b>OPcache: cómo PHP deja de releer tu código</b>
+            </a>
+            <a href="php-fpm.html" class="next">
+              <small>Siguiente →</small>
+              <b>SAPIs y PHP-FPM a fondo</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <!-- ===================== Footer ===================== -->
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/roadmap.js"></script>
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>
