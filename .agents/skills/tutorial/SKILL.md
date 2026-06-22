@@ -46,8 +46,9 @@ Profundo pero entendible: del "por qué" antes que del "cómo".
 - **IDs del TOC:** cada `<h2 id="x">` tiene su enlace `#x` en `.toc__list`. Sin
   esto, scrollspy y resaltado del índice no funcionan.
 - **Lenguajes soportados:** si el código usa un lenguaje que el resaltador no
-  conoce (solo `php`/`bash`/`ini`), o lo añades a `LANGUAGES` en `main.js`, o lo
-  dejas sin `data-lang`. No lo dejes mal resaltado.
+  conoce (solo `php`/`bash`/`ini`), o lo añades a `LANGUAGES` en
+  `assets/js/modules/syntax.js`, o lo dejas sin `data-lang`. No lo dejes mal
+  resaltado.
 - **Entrada en manifest coherente:** `slug` = nombre del fichero; `href`
   correcto; `categories` reutilizando las existentes cuando encajen (mira los
   chips actuales) y creando una nueva solo si hace falta; `icon` de la lista
@@ -71,5 +72,5 @@ Profundo pero entendible: del "por qué" antes que del "cómo".
 
 - El catálogo (filtros, tarjetas, conteos): se auto-genera del manifest, no se
   toca a mano.
-- El sistema de diseño (`styles.css`) y los módulos de `main.js`: son
+- El sistema de diseño (`styles.css`) y los módulos de `assets/js/modules/`: son
   infraestructura; cambiarlos es otra tarea, no "un tutorial".

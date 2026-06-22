@@ -16,20 +16,27 @@ global del agente y no se duplican aquí.
   abrir por `file://`. Los datos se cargan como `.js` que asignan a un global
   (`tutorials/manifest.js` → `window.ACADEMIA_TUTORIALS`). Cualquier dato nuevo
   (p. ej. un índice de búsqueda) sigue ese patrón: un `.js` que setea `window.X`,
-  incluido con `<script>` antes de `main.js`.
+  incluido con `<script>` antes de los módulos de `assets/js/modules/`.
+- **Una vista = una página.** Inicio (`index.html`), Cursos (`cursos.html`) y
+  Artículos (`articulos.html`) son páginas HTML reales con navegación por
+  `<a href>`, **no** pestañas conmutadas por JS sobre una sola página (eso
+  provocaba el destello del inicio en cada recarga). Cada `init*`/módulo hace
+  early-return si su contenedor no está, así el mismo bundle de JS sirve para
+  todas las páginas.
 - **`tutorials/manifest.js` es la única fuente de verdad del catálogo.** La
   portada no se edita a mano: `index.html` solo tiene contenedores vacíos
-  (`#filters`, `#cards`, `#cards-empty`) y el módulo `Catalog` de `main.js` los
-  rellena. Añadir/cambiar un tutorial = tocar su `.html` y su entrada en el
-  manifest, nunca el HTML del catálogo.
+  (`#filters`, `#cards`, `#cards-empty`) y el módulo `Catalog`
+  (`assets/js/modules/catalog.js`) los rellena. Añadir/cambiar un tutorial =
+  tocar su `.html` y su entrada en el manifest, nunca el HTML del catálogo.
 - **Las categorías se auto-catalogan.** Los chips de filtro y sus conteos salen
   de las `categories` del manifest. Categoría nueva → chip automático; nombre
-  bonito opcional en `CATEGORY_LABELS` (`main.js`).
+  bonito opcional en `CATEGORY_LABELS` (`assets/js/modules/catalog.js`).
 - **Todo en design tokens.** Colores, espacios y radios son variables CSS en
   `:root` / `[data-theme]`. Cambiar marca o paleta es tocar tokens, no recorrer
   el CSS. Tema claro/oscuro con `data-theme` en `<html>`, persistido en
   `localStorage` y aplicado antes del render para evitar parpadeo.
-- **Resaltado de sintaxis propio y offline** (`SyntaxHighlighter` en `main.js`):
+- **Resaltado de sintaxis propio y offline** (`SyntaxHighlighter`,
+  `assets/js/modules/syntax.js`):
   una pasada con regex combinado por lenguaje (`php`/`bash`/`ini`). Dentro de los
   `<code data-lang=...>` hay que escapar `<`, `>` y `&` (`&lt;?php`).
 - **El puente (`server/bridge.js`) es opcional.** Añade generar y refinar
@@ -50,10 +57,20 @@ global del agente y no se duplican aquí.
 - Persistencia de usuario (tema, marcadores y futuros resaltados): siempre
   `localStorage`, claves con prefijo `academia-`. Uso individual, sin login.
 
-## Frontend (`main.js`)
+## Frontend (`assets/js/modules/`)
 
-- Un IIFE sin dependencias, dividido en módulos por responsabilidad
-  (`Catalog`, `Bookmarks`, `SyntaxHighlighter`, `init*`). Mantener esa forma.
+- El JS está partido en un fichero por responsabilidad dentro de
+  `assets/js/modules/`, cada uno su propio IIFE sin dependencias que cuelga lo
+  suyo de `window.MentorAI`: `core.js` (tema, progreso, scrollspy, copiar, año),
+  `storage.js` (`Bookmarks`/`Progress`/`Reading`), `catalog.js` (`Catalog`),
+  `courses.js` (`Courses`), `home.js` (dashboard + buscador del index),
+  `syntax.js` (`SyntaxHighlighter`), `bridge.js` (compositor/refinador),
+  `tutorial.js` (mejoras de la página de tutorial) e `init.js` (arranque, va el
+  **último** en cada página). Las funciones de arranque se exponen en
+  `MentorAI.*` para que `init.js` las orqueste. Mantener esa forma: un módulo
+  nuevo = un fichero nuevo + su `<script>` antes de `init.js` en cada página.
+- Referencias entre módulos siempre vía `MentorAI.X` (se resuelven en runtime,
+  no importa el orden de carga salvo que `init.js` sea el último).
 - **Comentarios:** el estándar global es "sin comentarios". Convención propia de
   este repo: se conservan las **cabeceras de sección** `/* ---------- X ---------- */`
   como navegación del fichero (es la estructura del archivo), pero **nada de

@@ -16,7 +16,8 @@
    "artículos" sueltos.
 
    Mismo patrón que el manifest: un .js que asigna a un global,
-   incluido con <script> antes de main.js (funciona en file://).
+   incluido con <script> antes de los módulos de assets/js/modules/
+   (funciona en file://).
    ============================================================ */
 
 window.MENTORAI_COURSES = [

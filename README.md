@@ -10,13 +10,15 @@ Son ficheros HTML estáticos: no hay build, ni servidor, ni dependencias. Abres
 
 ```
 elearning/
-├── index.html               # Catálogo: la portada con las tarjetas
+├── index.html               # Inicio: dashboard + buscador
+├── cursos.html              # Cursos: colecciones temáticas
+├── articulos.html           # Artículos: catálogo con filtros
 ├── tutorials/
 │   ├── opcache.html         # Un tutorial = una página
 │   └── _PLANTILLA.html      # Plantilla para crear nuevos (no se enlaza)
 ├── assets/
 │   ├── css/styles.css       # Sistema de diseño (tokens + componentes)
-│   └── js/main.js           # Tema, progreso, TOC, copiar código, resaltado
+│   └── js/modules/          # JS por responsabilidad (core, catalog, home… init.js arranca)
 └── README.md
 ```
 
@@ -69,7 +71,8 @@ Dos pasos:
 
    **Las categorías se auto-catalogan**: si usas una categoría nueva, su chip
    (con conteo) aparece solo en los filtros. Para que salga con nombre bonito en
-   vez de capitalizado, añádela al mapa `CATEGORY_LABELS` de `assets/js/main.js`.
+   vez de capitalizado, añádela al mapa `CATEGORY_LABELS` de
+   `assets/js/modules/catalog.js`.
 
 ## Generar tutoriales desde la web (puente local)
 
@@ -134,10 +137,10 @@ Todos están listos en `_PLANTILLA.html` para copiar y pegar:
 
 ### Resaltado de código
 
-Pon el lenguaje en el `<code>` con `data-lang`. El resaltador (en `main.js`)
-soporta `php`, `bash` e `ini`. Recuerda escapar `<`, `>` y `&` en el HTML
-(`&lt;?php`, por ejemplo). Para añadir otro lenguaje, amplía el objeto
-`LANGUAGES` en `assets/js/main.js`.
+Pon el lenguaje en el `<code>` con `data-lang`. El resaltador
+(`assets/js/modules/syntax.js`) soporta `php`, `bash` e `ini`. Recuerda escapar
+`<`, `>` y `&` en el HTML (`&lt;?php`, por ejemplo). Para añadir otro lenguaje,
+amplía el objeto `LANGUAGES` en `assets/js/modules/syntax.js`.
 
 ## Decisiones de diseño
 

@@ -16,7 +16,7 @@
      tags         etiquetas decorativas de la tarjeta
      level         "Principiante" | "Intermedio" | "Avanzado"
      minutes      minutos de lectura
-     icon         clave de icono (ver ICONS en main.js)
+     icon         clave de icono (ver ICONS en assets/js/modules/catalog.js)
      status       "published" | "soon"
      date         fecha ISO (ordena el catálogo, más nuevo arriba)
      featured     true para resaltar como "Nuevo" (el más reciente)

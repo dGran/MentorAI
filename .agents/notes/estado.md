@@ -452,6 +452,85 @@ Tres mejoras de UX pedidas por el usuario.
   pause/resume y el % no se prueban headless (requieren TTS real), pero la lógica
   parsea y el cableado está verificado.
 
+## Inicio/Cursos/Artículos = páginas reales + buscador en Inicio + fix overflow (2026-06-22) — HECHO (sin commit)
+Tres cosas en una tanda, pedidas por el usuario (frustrado: "no nos hemos
+entendido", "main.js +2000 loc").
+- **Fix overflow móvil del artículo** (era lo de "rota completamente"): NO era la
+  barra de audio. El grid `.tutorial-layout` en `@media(max-width:900px)` usaba
+  `grid-template-columns: 1fr` (= `minmax(auto,1fr)`); el `auto` dejaba que los
+  `<pre>` de código estiraran la columna (~602px) dentro de un contenedor de
+  ~445px → scroll horizontal de página. Fix: `minmax(0, 1fr)`. Verificado con
+  probe headless: `scrollW(485) < vw(500)` → sin overflow (la tabla queda en su
+  `.table-wrap` con scroll propio, correcto).
+- **Tabs → páginas independientes** (era el "destello" al recargar: el toggle JS
+  arrancaba siempre en Inicio). Decidido con el usuario: navegación en la **navbar**
+  (no control segmentado); **hero solo en Inicio**. Ahora:
+  - `index.html` = Inicio: hero + buscador + dashboard (`#home-results` + shelves
+    continue/new/popular/route) + "Sobre". Sin `.view-toggle`, sin paneles
+    catálogo/cursos, sin modales.
+  - `cursos.html` (NUEVO) = `.page-header` + `#courses`.
+  - `articulos.html` (NUEVO) = `.section__head` (título + "Añadir artículo" +
+    búsqueda + `#filters`) + `#subfilters` + `#cards` + `#cards-empty` + los dos
+    modales (composer/refiner). El "Añadir artículo" vive aquí.
+  - Navbar unificada en las 3 + curso.html + **los 33 tutoriales**: `Inicio /
+    Cursos / Artículos` con `.is-active` por página. (En tutoriales era 1 link
+    "Contenido"→index#catalogo; perl+python para arreglar el byte latin-1 de "í".)
+  - Funciona porque cada módulo (`Catalog/Courses/Home/initComposer/initRefiner`)
+    ya hace early-return si falta su contenedor → cada página corre solo lo suyo.
+- **Buscador prominente en Inicio** (petición extra, UX): input grande en el hero
+  (`#home-search`). Búsqueda instantánea (`input`) sobre TODO el contenido
+  publicado (artículos + lecciones) por title/description/topic/categories/tags
+  (normalizado sin acentos). Con query: oculta las shelves y pinta `#home-results`
+  (mini-cards reutilizadas); vacío: re-render del dashboard. Implementado dentro
+  del módulo `Home` (refactor: `render` pasa a función nombrada; expone
+  `render` + `initSearch`). Verificado: "redis" → 2 coincidencias, shelves ocultas.
+- **main.js cambios**: eliminado `initViewToggle` (los tabs ya no existen; el
+  `[data-view-jump]` tampoco se usaba) → sustituido por `initHeroStat()` (fija el
+  stat "Publicados" del hero, que antes dependía de `Catalog.render`, ahora ausente
+  en Inicio). `DOMContentLoaded`: +`Home.initSearch()` +`initHeroStat()`,
+  -`initViewToggle()`.
+- **CSS nuevo**: `.hero-search*`, `.home-results`, `.page-header*`,
+  `.nav__link.is-active`; quitado `display:none` de `.nav__link` en ≤900 (ahora es
+  la navegación principal, debe verse en móvil) + ajuste navbar en ≤560. La CSS de
+  `.view-toggle` queda **muerta** (sin uso) pero no se borró.
+- Verificado headless: index/cursos/articulos (1100px) + index móvil (sin overflow)
+  + tutorial móvil (fix) + búsqueda. PNGs en /tmp.
+
+## Partir main.js en módulos (2026-06-22) — HECHO (sin commit)
+El usuario señaló con alarma "main.js +2000 loc" y eligió "un fichero por módulo".
+- **`assets/js/main.js` (2365 LOC) ELIMINADO** y partido en `assets/js/modules/`,
+  cada fichero su propio IIFE que cuelga lo suyo de `window.MentorAI` (NO ES ES
+  modules: `import/export` muere por CORS en `file://`; el namespace resuelve las
+  refs cruzadas en runtime, así el orden de carga no importa salvo init.js):
+  `core.js` (tema, progreso lectura, scrollspy, copiar, año + `applyTheme` temprano),
+  `storage.js` (Bookmarks/Progress/Reading), `catalog.js` (Catalog + CATEGORY_LABELS),
+  `courses.js` (Courses), `home.js` (dashboard + buscador + initHeroStat),
+  `syntax.js` (SyntaxHighlighter + LANGUAGES), `bridge.js` (compositor/refinador),
+  `tutorial.js` (initTutorialPage + currentTutorialSlug), `init.js` (arranque, **último**).
+- Las funciones de arranque (initTheme, initReadingProgress, initScrollSpy,
+  initCopyButtons, initYear, initHeroStat, initComposer, initRefiner,
+  initTutorialPage) se exponen en `MentorAI.*`; `init.js` las orquesta en
+  DOMContentLoaded igual que antes.
+- **38 HTML actualizados** (index/cursos/articulos/curso + 33 tutoriales incl.
+  _PLANTILLA): el `<script src=".../main.js">` único → los 9 `<script>` en orden,
+  init.js el último. Prefijo `assets/js/modules/` en raíz, `../assets/js/modules/`
+  en tutoriales.
+- **server/bridge.js**: 2 líneas de prompt que decían `../assets/js/main.js` →
+  `../assets/js/modules/*.js`. La plantilla que se inyecta (`_PLANTILLA.html`) ya
+  trae los scripts correctos.
+- **Docs actualizados**: `.agents/rules/global.md` (sección "Frontend
+  (assets/js/modules/)" reescrita + nueva invariante "Una vista = una página" +
+  refs main.js→módulo concreto), README.md (árbol + refs), SKILL.md (refs LANGUAGES
+  → syntax.js).
+- Verificado: `node --check` en los 9 módulos + bridge.js (todo OK); render headless
+  (--dump-dom) de index (9 card-titles en shelves + 10 shelf), articulos (10 cards +
+  21 chips), cursos (8 course-cards), curso.html?slug=fundamentos (10 module), opcache
+  (tutorial-actions inyectado + tokens tok-* del highlighter); 0 errores JS
+  (uncaught/ReferenceError/TypeError) en index/articulos/cursos/curso/2 tutoriales.
+- **PENDIENTE**: (1) Nada commiteado aún (todo el bloque "páginas reales + buscador
+  + overflow + split" espera OK del usuario para commit/push). (2) La CSS de
+  `.view-toggle` sigue **muerta** (sin uso) pero no se borró.
+
 ## Planes pendientes (detalle en notes)
 - `plan-curriculum-fundamentos.md` — currículum de fundamentos CS para backend
   autodidacta (7 pilares). **Decidido:** arrancar por el pilar Bases de datos,
@@ -470,5 +549,8 @@ Opcional: encajar en `roadmap.js` los tutoriales nuevos que aún no están en
 ningún pilar (PHP por dentro, redis-a-fondo, jerga).
 
 ## Notas técnicas
-- Para añadir un lenguaje al resaltado: ampliar `LANGUAGES` en `main.js`.
+- Para añadir un lenguaje al resaltado: ampliar `LANGUAGES` en
+  `assets/js/modules/syntax.js`.
 - Escapar `<`, `>`, `&` dentro de los `<code data-lang=...>` (ej. `&lt;?php`).
+- El JS vive en `assets/js/modules/` (un fichero por módulo, namespace
+  `window.MentorAI`, `init.js` el último). `main.js` ya no existe.

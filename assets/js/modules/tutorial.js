@@ -1,0 +1,471 @@
+/* ============================================================
+   MentorAI — Página de tutorial: audio, progreso y navegación de ruta
+   Sin dependencias. Funciona por file://. Parte de window.MentorAI.
+   ============================================================ */
+
+(function () {
+  "use strict";
+
+  var MentorAI = (window.MentorAI = window.MentorAI || {});
+
+  /* ---------- Página de tutorial: audio, progreso y ruta ----------
+     Mejoras inyectadas por JS según el slug del fichero, para no editar
+     a mano cada tutorial: lector por voz (Web Speech), marca de
+     completado (Progress) y navegación dentro de la ruta de aprendizaje. */
+  function initTutorialPage() {
+    const prose = document.querySelector("article.prose");
+
+    if (!prose) {
+      return;
+    }
+
+    const slug = MentorAI.currentTutorialSlug();
+
+    injectTutorialActions(slug, prose);
+    injectRouteNav(slug, prose);
+  }
+
+  function escapeAttr(text) {
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  MentorAI.currentTutorialSlug = function () {
+    const path = window.location.pathname;
+    const file = path.substring(path.lastIndexOf("/") + 1);
+
+    return file.replace(/\.html$/, "");
+  }
+
+  function basename(href) {
+    return String(href || "").substring(String(href || "").lastIndexOf("/") + 1);
+  }
+
+  const PLAY_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 4 20 12 6 20 6 4"/></svg>';
+  const STOP_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+  const PAUSE_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="4" x2="9" y2="20"/><line x1="15" y1="4" x2="15" y2="20"/></svg>';
+  const DONE_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+  function injectTutorialActions(slug, prose) {
+    const host = document.querySelector(".tutorial-hero .container");
+
+    if (!host) {
+      return;
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "tutorial-actions";
+
+    const hasSpeech = "speechSynthesis" in window;
+
+    const audioBtn = hasSpeech ? buildAudioButton(prose) : null;
+    const doneBtn = buildDoneButton(slug);
+
+    if (audioBtn) {
+      actions.appendChild(audioBtn);
+    }
+
+    actions.appendChild(doneBtn);
+    host.appendChild(actions);
+  }
+
+  function speechChunks(prose) {
+    const sources = [];
+    const title = document.querySelector(".tutorial-hero__title");
+    const lead = document.querySelector(".tutorial-hero__lead");
+
+    if (title) {
+      sources.push(title);
+    }
+
+    if (lead) {
+      sources.push(lead);
+    }
+
+    prose.querySelectorAll("h2, p, li").forEach(function (node) {
+      sources.push(node);
+    });
+
+    return sources
+      .map(function (node) {
+        return node.textContent.replace(/\s+/g, " ").trim();
+      })
+      .filter(function (text) {
+        return text.length > 0;
+      });
+  }
+
+  function pickSpanishVoice() {
+    const voices = window.speechSynthesis.getVoices();
+
+    return voices.filter(function (voice) {
+      return voice.lang && voice.lang.toLowerCase().indexOf("es") === 0;
+    })[0];
+  }
+
+  function buildAudioButton(prose) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tutorial-action";
+
+    let panel = null;
+    let toggleButton = null;
+    let barFill = null;
+    let percentLabel = null;
+
+    let totalChars = 0;
+    let completedChars = 0;
+    let currentChars = 0;
+    let isPaused = false;
+
+    const setIdle = function () {
+      button.classList.remove("is-playing");
+      button.innerHTML = PLAY_SVG + "<span>Escuchar</span>";
+    };
+
+    const setPlaying = function () {
+      button.classList.add("is-playing");
+      button.innerHTML = STOP_SVG + "<span>Detener</span>";
+    };
+
+    setIdle();
+
+    const renderPercent = function () {
+      const ratio = totalChars
+        ? Math.min(1, (completedChars + currentChars) / totalChars)
+        : 0;
+      const percent = Math.round(ratio * 100);
+
+      if (barFill) {
+        barFill.style.width = percent + "%";
+      }
+
+      if (percentLabel) {
+        percentLabel.textContent = percent + "%";
+      }
+    };
+
+    const removePanel = function () {
+      if (panel) {
+        panel.remove();
+        panel = null;
+        toggleButton = null;
+        barFill = null;
+        percentLabel = null;
+      }
+    };
+
+    const stop = function () {
+      window.speechSynthesis.cancel();
+      completedChars = 0;
+      currentChars = 0;
+      isPaused = false;
+      setIdle();
+      removePanel();
+    };
+
+    const setToggleLabel = function () {
+      toggleButton.innerHTML = isPaused
+        ? PLAY_SVG + "<span>Reanudar</span>"
+        : PAUSE_SVG + "<span>Pausa</span>";
+    };
+
+    const togglePause = function () {
+      if (isPaused) {
+        window.speechSynthesis.resume();
+        isPaused = false;
+        setToggleLabel();
+        return;
+      }
+
+      window.speechSynthesis.pause();
+      isPaused = true;
+      setToggleLabel();
+    };
+
+    const buildPanel = function () {
+      panel = document.createElement("div");
+      panel.className = "audio-bar";
+
+      toggleButton = document.createElement("button");
+      toggleButton.type = "button";
+      toggleButton.className = "audio-bar__toggle";
+
+      const meta = document.createElement("div");
+      meta.className = "audio-bar__meta";
+      meta.innerHTML =
+        '<div class="audio-bar__label"><span>Escuchando</span>' +
+        '<span class="audio-bar__percent">0%</span></div>' +
+        '<div class="audio-bar__track"><span></span></div>';
+      percentLabel = meta.querySelector(".audio-bar__percent");
+      barFill = meta.querySelector(".audio-bar__track span");
+
+      const closeButton = document.createElement("button");
+      closeButton.type = "button";
+      closeButton.className = "audio-bar__close";
+      closeButton.setAttribute("aria-label", "Detener");
+      closeButton.innerHTML = STOP_SVG;
+
+      panel.appendChild(toggleButton);
+      panel.appendChild(meta);
+      panel.appendChild(closeButton);
+      document.body.appendChild(panel);
+
+      toggleButton.addEventListener("click", togglePause);
+      closeButton.addEventListener("click", stop);
+      setToggleLabel();
+    };
+
+    const play = function () {
+      const chunks = speechChunks(prose);
+
+      if (chunks.length === 0) {
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+      completedChars = 0;
+      currentChars = 0;
+      isPaused = false;
+      totalChars = chunks.reduce(function (sum, text) {
+        return sum + text.length;
+      }, 0);
+
+      const voice = pickSpanishVoice();
+
+      chunks.forEach(function (text, index) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "es-ES";
+        utterance.rate = 1;
+
+        if (voice) {
+          utterance.voice = voice;
+        }
+
+        utterance.onboundary = function (event) {
+          currentChars = event.charIndex || 0;
+          renderPercent();
+        };
+
+        utterance.onend = function () {
+          completedChars += text.length;
+          currentChars = 0;
+          renderPercent();
+
+          if (index === chunks.length - 1) {
+            stop();
+          }
+        };
+
+        window.speechSynthesis.speak(utterance);
+      });
+
+      buildPanel();
+      renderPercent();
+      setPlaying();
+    };
+
+    button.addEventListener("click", function () {
+      if (button.classList.contains("is-playing")) {
+        stop();
+        return;
+      }
+
+      play();
+    });
+
+    window.addEventListener("beforeunload", function () {
+      window.speechSynthesis.cancel();
+    });
+
+    return button;
+  }
+
+  function buildDoneButton(slug) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tutorial-action tutorial-action--done";
+
+    const paint = function (isDone) {
+      button.classList.toggle("is-done", isDone);
+      button.innerHTML = isDone
+        ? DONE_SVG + "<span>Completado</span>"
+        : DONE_SVG + "<span>Marcar como completado</span>";
+    };
+
+    paint(MentorAI.Progress.has(slug));
+
+    button.addEventListener("click", function () {
+      paint(MentorAI.Progress.toggle(slug));
+    });
+
+    return button;
+  }
+
+  function courseSequence() {
+    const sequence = [];
+
+    (window.MENTORAI_COURSES || []).forEach(function (course) {
+      const modules = Array.isArray(course.modules)
+        ? course.modules
+        : [{ title: "", lessons: course.lessons || [] }];
+
+      modules.forEach(function (module) {
+        (module.lessons || []).forEach(function (slug, position) {
+          sequence.push({
+            slug: slug,
+            course: course,
+            module: module,
+            position: position,
+          });
+        });
+      });
+    });
+
+    return sequence;
+  }
+
+  function manifestBySlug() {
+    const map = {};
+
+    (window.ACADEMIA_TUTORIALS || []).forEach(function (tutorial) {
+      map[tutorial.slug] = tutorial;
+    });
+
+    return map;
+  }
+
+  function isPublishedTutorial(tutorial) {
+    return Boolean(tutorial) && tutorial.status !== "soon";
+  }
+
+  function neighborLink(manifest, sequence, fromIndex, direction) {
+    for (let index = fromIndex + direction; index >= 0 && index < sequence.length; index += direction) {
+      const tutorial = manifest[sequence[index].slug];
+
+      if (isPublishedTutorial(tutorial)) {
+        return tutorial;
+      }
+    }
+
+    return null;
+  }
+
+  function relatedInModule(manifest, module, slug) {
+    return (module.lessons || [])
+      .filter(function (lessonSlug) {
+        return lessonSlug !== slug && isPublishedTutorial(manifest[lessonSlug]);
+      })
+      .map(function (lessonSlug) {
+        return manifest[lessonSlug];
+      });
+  }
+
+  function buildRouteNav(manifest, sequence, index) {
+    const current = sequence[index];
+    const course = current.course;
+    const module = current.module;
+    const prev = neighborLink(manifest, sequence, index, -1);
+    const next = neighborLink(manifest, sequence, index, 1);
+
+    const moduleLabel = module.title
+      ? escapeAttr(course.title) + " · " + escapeAttr(module.title)
+      : escapeAttr(course.title);
+    const crumb =
+      '<p class="route-nav__crumb"><a href="../curso.html?slug=' +
+      encodeURIComponent(course.slug) +
+      '">' +
+      moduleLabel +
+      "</a> · lección " +
+      (current.position + 1) +
+      " de " +
+      (module.lessons || []).length +
+      "</p>";
+
+    const prevLink = prev
+      ? '<a href="' +
+        escapeAttr(basename(prev.href)) +
+        '"><small>← Anterior</small><b>' +
+        escapeAttr(prev.title) +
+        "</b></a>"
+      : "";
+
+    const nextLink = next
+      ? '<a href="' +
+        escapeAttr(basename(next.href)) +
+        '" class="next"><small>Siguiente →</small><b>' +
+        escapeAttr(next.title) +
+        "</b></a>"
+      : '<a href="../curso.html?slug=' +
+        encodeURIComponent(course.slug) +
+        '" class="next"><small>Fin del curso →</small><b>Volver al curso</b></a>';
+
+    const related = relatedInModule(manifest, module, current.slug);
+
+    const relatedBlock =
+      related.length === 0
+        ? ""
+        : '<div class="route-related"><p class="route-related__title">Más en «' +
+          escapeAttr(module.title || course.title) +
+          '»</p><ul>' +
+          related
+            .map(function (tutorial) {
+              return (
+                '<li><a href="' +
+                escapeAttr(basename(tutorial.href)) +
+                '">' +
+                escapeAttr(tutorial.title) +
+                '<span>' +
+                escapeAttr(tutorial.minutes) +
+                " min</span></a></li>"
+              );
+            })
+            .join("") +
+          "</ul></div>";
+
+    return (
+      '<nav class="route-nav">' +
+      crumb +
+      '<div class="tutorial-nav">' +
+      prevLink +
+      nextLink +
+      "</div>" +
+      relatedBlock +
+      "</nav>"
+    );
+  }
+
+  function injectRouteNav(slug, prose) {
+    const sequence = courseSequence();
+    const index = sequence
+      .map(function (step) {
+        return step.slug;
+      })
+      .indexOf(slug);
+
+    if (index === -1) {
+      return;
+    }
+
+    const manifest = manifestBySlug();
+    const manualNav = prose.querySelector(".tutorial-nav");
+    const html = buildRouteNav(manifest, sequence, index);
+
+    if (manualNav) {
+      manualNav.insertAdjacentHTML("beforebegin", html);
+      manualNav.hidden = true;
+      return;
+    }
+
+    prose.insertAdjacentHTML("beforeend", html);
+  }
+
+  MentorAI.initTutorialPage = initTutorialPage;
+})();
