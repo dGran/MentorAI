@@ -382,7 +382,7 @@ con IA=4 (`ia`), Hexagonal=2 (`arquitectura`), DDD=4 (`arquitectura`), CQRS=2
 (transversales) → hexagonal → DDD → CQRS. **Pendiente: decidir si se arranca la
 autoría o quedan en cola.**
 
-## Cursos + Artículos (infraestructura) (2026-06-22) — HECHO (sin commit pusheado)
+## Cursos + Artículos (infraestructura) (2026-06-22) — HECHO (pusheado: 602ba2f, a580a2f)
 Cambio de modelo de contenido pedido por el usuario: dos tipos de primera clase,
 **artículo** (pieza suelta) y **curso** (colección con módulos→lecciones).
 Decisiones: fusionar (una sola taxonomía, `roadmap.js`→`courses.js`, se elimina la
@@ -424,13 +424,12 @@ cola (siguen en `cola-arquitectura-y-practica.md`, ahora serán cursos).
   crumb enlaza al curso, siguiente=texto-unicode). PNGs en /tmp/mentorai_shots.
 - **Pendiente al retomar**: (1) `.agents/rules/global.md` añadir invariante
   cursos+artículos; (2) actualizar `cola-arquitectura-y-practica.md` y
-  `plan-curriculum-fundamentos.md` para hablar de cursos; (3) detalle visual menor:
-  en curso.html el back-link y el eyebrow "Curso" salen pegados en línea (hacer el
-  back `display:block` o separar); (4) revisar vistas Cursos/Artículos en navegador
-  real (el screenshot solo capturó la vista Inicio por defecto); (5) cuando se
-  escriban los 16 tutoriales de la cola, crear sus cursos en courses.js.
+  `plan-curriculum-fundamentos.md` para hablar de cursos; (3) revisar vistas
+  Cursos/Artículos en navegador real (el screenshot solo capturó la vista Inicio por
+  defecto); (4) cuando se escriban los 16 tutoriales de la cola, crear sus cursos en
+  courses.js. (El detalle del back-link pegado al eyebrow ya está resuelto en a580a2f.)
 
-## Reinicio de progreso + barra flotante de audio (2026-06-22) — HECHO (sin commit)
+## Reinicio de progreso + barra flotante de audio (2026-06-22) — HECHO (pusheado: cb77e2b)
 Tres mejoras de UX pedidas por el usuario.
 - **Botón "Reiniciar progreso"** en la página de curso (`curso.html`). Decisión:
   **por curso** (resetea solo las lecciones de ese curso) y borra **completadas +
