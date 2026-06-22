@@ -25,6 +25,22 @@
 
 window.ACADEMIA_TUTORIALS = [
   {
+    slug: "jerga",
+    featured: true,
+    title: "La jerga del desarrollo, traducida",
+    description:
+      "Un glosario para entender a tu equipo: parsear, runtime, deploy y rollback; bug, edge case, race condition y memory leak; merge, rebase, PR y deuda técnica; payload, endpoint, idempotente y latencia; y la cultura (yak shaving, bikeshedding, rubber duck).",
+    href: "tutorials/jerga.html",
+    categories: ["cultura"],
+    topic: "Cultura dev",
+    tags: ["Glosario", "Vocabulario", "Cultura"],
+    level: "Principiante",
+    minutes: 14,
+    icon: "code",
+    status: "published",
+    date: "2026-06-22",
+  },
+  {
     slug: "extensiones-php",
     featured: true,
     title: "Extensiones de PHP: qué son y cuáles importan",
