@@ -1,5 +1,17 @@
 # Estado — Academia (plataforma de formación)
 
+## Despliegue (2026-06-21)
+- Repo: `github.com/dGran/MentorAI` (rama `main`), **público**.
+- Hosting: **GitHub Pages** (Deploy from branch `main` / root) →
+  `https://dgran.github.io/MentorAI/`. Gratis por ser público.
+- **PWA instalable**: `manifest.webmanifest` (display standalone) + iconos en
+  `assets/icons/` + metas Apple en `index.html`. Las metas/manifest están **solo
+  en index.html** (define el scope); si iOS sale a Safari al navegar tutoriales,
+  replicar las metas en los 21 `tutorials/*.html`.
+- Estado de usuario (tema, marcadores, progreso, "seguir viendo") es `localStorage`
+  **por dispositivo**: no sincroniza móvil↔escritorio. Decisión consciente (sin
+  login/servidor). Si molesta, primer paso sería export/import manual (no backend).
+
 ## Qué es
 Plataforma visual de tutoriales técnicos en HTML estático (sin build, sin
 servidor, sin dependencias). Objetivo: ir **añadiendo tutoriales iterados con
@@ -264,15 +276,67 @@ redes=3, ruta encadena url-a-fondo→http-a-fondo→tcp-ip→opcache).
   fijada: crear/borrar repos y `push` se **confirman explícitamente** antes de
   lanzarlos, no se infieren de una pregunta.
 
+## Vaciado de la cola de tutoriales (2026-06-22) — COMPLETO
+Sesión de autoría autónoma ("subir todos los tutoriales en cola hasta el límite
+de sesión"). Se vaciaron las dos colas de ideas + el placeholder `preload`.
+Catálogo: **27 publicados, 0 soon**. Commits LOCALES (sin push, por la regla de
+acciones de cara afuera). Tres commits: `da8c04f` (PHP por dentro), `8a1c29f`
+(Redis), `d94ae3d` (jerga), `c5dc1ad` (preload).
+- **Bloque "PHP por dentro"** (`ideas-php-por-dentro.md`, ya consumido) — nueva
+  categoría `runtime` (label "PHP por dentro" en CATEGORY_LABELS), combinada con
+  `php`; topic "PHP por dentro". 4 tutoriales, todos `date: 2026-06-22`:
+  - `extensiones-php.html` (Intermedio, 13 min, icon code): extensión = módulo C
+    (.so/.dll), core vs PECL, `extension=` vs `zend_extension=`, orden de
+    conf.d/, `php -m`, CLI vs FPM, tabla de imprescindibles, FPM es un SAPI no
+    una extensión, instalar (apt + docker-php-ext). Enlaza php-fpm.
+  - `php-fpm.html` (Avanzado, 16 min, icon bolt): SAPI = Server API,
+    `php_sapi_name()`, tabla CLI/CGI/mod_php/FPM, FastCGI, ciclo (RINIT/RSHUTDOWN),
+    pm static/dynamic/ondemand, www.conf, dimensionar max_children (RAM ÷ memoria
+    por worker), shared-nothing. Enlaza extensiones (prev) y memoria-php (next).
+  - `memoria-php.html` (Avanzado, 16 min, icon code): arena de Zend MM por request
+    (emalloc/efree), memory_limit por request, zval, refcounting, copy-on-write,
+    recolector de ciclos, gc_collect_cycles, streaming/generators. Enlaza memoria
+    (fundamentos), php-fpm (prev), workers-php (next).
+  - `workers-php.html` (Avanzado, 15 min, icon bolt): los dos sentidos de worker
+    (FPM vs cola), queue:work/messenger:consume, supervisor.conf, Swoole/RoadRunner
+    long-running, fugas de memoria, reinicio por --max-jobs/--max-time. Enlaza
+    memoria-php (prev).
+- **Bloque Redis** (`ideas-tutoriales.md`, parte) — `date: 2026-06-22`:
+  - `redis-a-fondo.html` (categorías `["infra","bbdd"]`, icon database): single-
+    thread/in-memory, strings/INCR, listas/BRPOP, sets/zsets, hashes,
+    bitmaps/HLL/streams/pubsub, TTL, naming con `:`, MULTI vs pipeline, RDB vs AOF.
+    **Añadido lexer `redis` a LANGUAGES** en main.js (comandos en MAYÚSCULA). Usa
+    `data-lang="redis"` y `data-lang="php"`. Enlaza concurrencia y redis-cache.
+  - `redis-cache.html` (cierra el placeholder soon; `["infra","rendimiento"]`,
+    icon database, Intermedio, 15 min): cache-aside, TTL obligatorio, invalidar
+    borrando (no reescribir), tolerancia a obsolescencia, los tres fallos
+    (penetration/avalanche/breakdown) + cache stampede y su lock SET NX. Enlaza
+    redis-a-fondo (prev).
+- **jerga.html** (`ideas-tutoriales.md`, parte) — nueva categoría `cultura`
+  (label "Cultura dev"); topic "Cultura dev", Principiante, 14 min, icon code,
+  sin bloques de código (glosario en tablas). Términos por tema:
+  ejecución (parsear/runtime/deploy/rollback), errores (bug/edge case/race
+  condition/memory leak/flaky), flujo git (merge/rebase/PR/deuda técnica), datos
+  (payload/endpoint/idempotente/latencia), cultura (yak shaving/bikeshedding/
+  rubber duck). Callout "stack overflow" → memoria.html. Sin prev/next (categoría
+  suelta): ambos enlaces a la portada.
+- **preload.html** (placeholder soon → publicado; `["php","rendimiento"]`, topic
+  "PHP", icon signal, Avanzado, 12 min): el paso siguiente a OPcache. OPcache
+  cachea opcodes pero la clase aún se carga/enlaza por proceso; preload
+  (PHP 7.4+) deja clases enlazadas en memoria al arrancar FPM. Fichero de preload
+  (opcache_compile_file vs require_once), opcache.preload/preload_user, la gran
+  pega (congela el código → restart, no reload; técnica de prod no de dev),
+  Symfony lo genera / Laravel via Octane. Enlaza opcache (prev) y php-fpm (next);
+  se actualizó la tutorial-nav de `opcache.html` (apuntaba a "próximamente").
+- Verificación por tanda: `node --check`, TOC↔h2 id, balance `<code`/`</code>`,
+  escapado y render headless (memoria-php, redis-a-fondo, preload revisados en
+  PNG: highlighting OK). Se movió el badge `featured` de tcp-ip a los nuevos.
+- **roadmap.js NO tocado**: `preload` (pilar monográficos) y `redis-cache` (pilar
+  distribuidos) ya estaban referenciados; ahora resuelven a publicado. Los demás
+  tutoriales nuevos no están en ningún pilar del roadmap (quedan solo en catálogo);
+  encajarlos en la ruta es una tarea aparte si se quiere.
+
 ## Planes pendientes (detalle en notes)
-- `ideas-tutoriales.md` — ideas sueltas (pedido 2026-06-21): **Redis a fondo**
-  (estructuras: sets/hashes/sorted sets…, distinto de `redis-cache` que es el
-  patrón de caché) y **jerga del desarrollo** (glosario: parsear, stack
-  overflow, deploy…).
-- `ideas-php-por-dentro.md` — cola de tutoriales **aplicados a PHP** (pedido
-  2026-06-21): extensiones de PHP, SAPIs/PHP-FPM, gestión de memoria de PHP
-  (Zend, zvals, GC) y workers/long-running. Profundizan memoria/procesos-hilos/
-  async; cruzar con enlaces, no duplicar.
 - `plan-curriculum-fundamentos.md` — currículum de fundamentos CS para backend
   autodidacta (7 pilares). **Decidido:** arrancar por el pilar Bases de datos,
   ejemplos PHP+SQL/bash. Dep. técnica: añadir `sql` al highlighter antes del 1er
@@ -282,9 +346,12 @@ redes=3, ruta encadena url-a-fondo→http-a-fondo→tcp-ip→opcache).
 - `plan-autocategorizacion.md` — que la IA proponga las categorías al generar.
 
 ## Siguiente paso sugerido
-Cuando se pida otro tutorial, los placeholders del catálogo apuntan a "Preload
-en PHP" y "Redis como caché". Reusar la plantilla y el vocabulario de
-componentes ya definido.
+La cola de ideas está vacía y no quedan placeholders soon (27 publicados, 0 soon).
+Los 4 commits de tutoriales de esta sesión están **en local sin pushear** (la
+regla obliga a confirmar el push explícitamente). Próximo tutorial = idea nueva
+del usuario o retomar `plan-curriculum-fundamentos.md` (pilares 6-7 pendientes).
+Opcional: encajar en `roadmap.js` los tutoriales nuevos que aún no están en
+ningún pilar (PHP por dentro, redis-a-fondo, jerga).
 
 ## Notas técnicas
 - Para añadir un lenguaje al resaltado: ampliar `LANGUAGES` en `main.js`.
