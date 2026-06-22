@@ -10,6 +10,7 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     MentorAI.initTheme();
+    MentorAI.initMobileNav();
     MentorAI.initReadingProgress();
     MentorAI.initScrollSpy();
     MentorAI.initCopyButtons();

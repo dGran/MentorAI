@@ -294,16 +294,24 @@
       }
     }
 
+    const filterChipContainers = [];
+
+    function syncChipActive(activeFilter) {
+      filterChipContainers.forEach(function (container) {
+        Array.from(container.querySelectorAll(".chip")).forEach(function (chip) {
+          chip.classList.toggle("is-active", chip.dataset.filter === activeFilter);
+        });
+      });
+    }
+
     function wireFilters(filtersEl) {
+      filterChipContainers.push(filtersEl);
       const chips = Array.from(filtersEl.querySelectorAll(".chip"));
 
       chips.forEach(function (chip) {
         chip.addEventListener("click", function () {
-          chips.forEach(function (other) {
-            other.classList.toggle("is-active", other === chip);
-          });
-
           state.category = chip.dataset.filter;
+          syncChipActive(state.category);
           applyFilters();
         });
       });
@@ -476,8 +484,16 @@
           return String(b.date || "").localeCompare(String(a.date || ""));
         });
 
+        const chipsHtml = buildChips(tutorials, counts, categories);
+
         if (filtersEl) {
-          filtersEl.innerHTML = buildChips(tutorials, counts, categories);
+          filtersEl.innerHTML = chipsHtml;
+        }
+
+        const drawerFiltersEl = document.getElementById("drawer-filters");
+
+        if (drawerFiltersEl) {
+          drawerFiltersEl.innerHTML = chipsHtml;
         }
 
         cardsEl.innerHTML = ordered.map(buildCard).join("");
@@ -493,20 +509,72 @@
         }
 
         const subfiltersEl = document.getElementById("subfilters");
+        const drawerSubfiltersEl = document.getElementById("drawer-subfilters");
 
         if (subfiltersEl) {
           buildSubfilters(subfiltersEl, tutorials);
           wireSubfilters(subfiltersEl);
         }
 
+        if (drawerSubfiltersEl) {
+          buildSubfilters(drawerSubfiltersEl, tutorials);
+          wireSubfilters(drawerSubfiltersEl);
+        }
+
         if (filtersEl) {
           wireFilters(filtersEl);
         }
 
+        if (drawerFiltersEl) {
+          wireFilters(drawerFiltersEl);
+        }
+
         wireSearch();
-        wireBookmarks(filtersEl);
+        wireBookmarks(filtersEl || drawerFiltersEl);
         applyFilters();
+        wireFilterDrawer();
       },
     };
   })();
+
+  function wireFilterDrawer() {
+    const openBtn = document.getElementById("open-filters");
+    const closeBtn = document.getElementById("close-filters");
+    const backdrop = document.getElementById("filter-drawer-backdrop");
+    const drawer = document.getElementById("filter-drawer");
+
+    if (!openBtn || !drawer) {
+      return;
+    }
+
+    const open = function () {
+      drawer.classList.add("is-open");
+
+      if (backdrop) {
+        backdrop.classList.add("is-open");
+      }
+
+      document.body.style.overflow = "hidden";
+    };
+
+    const close = function () {
+      drawer.classList.remove("is-open");
+
+      if (backdrop) {
+        backdrop.classList.remove("is-open");
+      }
+
+      document.body.style.overflow = "";
+    };
+
+    openBtn.addEventListener("click", open);
+
+    if (closeBtn) {
+      closeBtn.addEventListener("click", close);
+    }
+
+    if (backdrop) {
+      backdrop.addEventListener("click", close);
+    }
+  }
 })();

@@ -186,11 +186,98 @@
     }
   }
 
+  /* ---------- Hamburger + nav drawer (mobile) ---------- */
+  const BURGER_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
+  const CLOSE_NAV_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  const MOON_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+  const SUN_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+
+  function drawerThemeIcon() {
+    return document.documentElement.getAttribute("data-theme") === "dark"
+      ? SUN_SVG
+      : MOON_SVG;
+  }
+
+  function initMobileNav() {
+    const navActions = document.querySelector(".nav__actions");
+
+    if (!navActions) {
+      return;
+    }
+
+    const path = window.location.pathname;
+    const page = path.substring(path.lastIndexOf("/") + 1).replace(/\.html$/, "");
+    const isRoot = path.endsWith("/") || path.endsWith("/index.html") || page === "" || page === "index";
+
+    function activeClass(id) {
+      return (page === id || (isRoot && id === "index")) ? " is-active" : "";
+    }
+
+    const burger = document.createElement("button");
+    burger.className = "icon-btn nav__burger";
+    burger.setAttribute("aria-label", "Menú");
+    burger.innerHTML = BURGER_SVG;
+    navActions.appendChild(burger);
+
+    const backdrop = document.createElement("div");
+    backdrop.className = "nav-drawer-backdrop";
+    document.body.appendChild(backdrop);
+
+    const prefix = path.includes("/tutorials/") ? "../" : "";
+    const drawer = document.createElement("div");
+    drawer.className = "nav-drawer";
+    drawer.innerHTML =
+      '<div class="nav-drawer__head">' +
+      '<span class="nav-drawer__title">MentorAI</span>' +
+      '<button class="icon-btn nav-drawer__close" aria-label="Cerrar">' + CLOSE_NAV_SVG + "</button>" +
+      "</div>" +
+      '<nav class="nav-drawer__links">' +
+      '<a class="nav-drawer__link' + activeClass("index") + '" href="' + prefix + 'index.html">Inicio</a>' +
+      '<a class="nav-drawer__link' + activeClass("cursos") + '" href="' + prefix + 'cursos.html">Cursos</a>' +
+      '<a class="nav-drawer__link' + activeClass("articulos") + '" href="' + prefix + 'articulos.html">Artículos</a>' +
+      "</nav>" +
+      '<div class="nav-drawer__footer">' +
+      '<div class="nav-drawer__theme"><span>Tema</span></div>' +
+      '<button class="icon-btn nav-drawer__theme-toggle" aria-label="Cambiar tema">' +
+      drawerThemeIcon() +
+      "</button>" +
+      "</div>";
+    document.body.appendChild(drawer);
+
+    const closeDrawer = function () {
+      drawer.classList.remove("is-open");
+      backdrop.classList.remove("is-open");
+      document.body.style.overflow = "";
+    };
+
+    const openDrawer = function () {
+      drawer.classList.add("is-open");
+      backdrop.classList.add("is-open");
+      document.body.style.overflow = "hidden";
+    };
+
+    burger.addEventListener("click", openDrawer);
+    backdrop.addEventListener("click", closeDrawer);
+    drawer.querySelector(".nav-drawer__close").addEventListener("click", closeDrawer);
+
+    const themeToggle = drawer.querySelector(".nav-drawer__theme-toggle");
+    themeToggle.addEventListener("click", function () {
+      const current = document.documentElement.getAttribute("data-theme");
+      applyTheme(current === "dark" ? "light" : "dark");
+      themeToggle.innerHTML = drawerThemeIcon();
+    });
+  }
+
   MentorAI.initTheme = initTheme;
   MentorAI.initReadingProgress = initReadingProgress;
   MentorAI.initScrollSpy = initScrollSpy;
   MentorAI.initCopyButtons = initCopyButtons;
   MentorAI.initYear = initYear;
+  MentorAI.initMobileNav = initMobileNav;
 
   applyTheme(getPreferredTheme());
 })();

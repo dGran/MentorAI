@@ -23,6 +23,7 @@
 
     injectTutorialActions(slug, prose);
     injectRouteNav(slug, prose);
+    initTocToggle();
   }
 
   function escapeAttr(text) {
@@ -54,6 +55,83 @@
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   const CLOSE_SVG =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  const ZOOM_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>';
+  const RESET_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>';
+  const CHEVRON_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+  const FONT_KEY = "academia-font-size";
+
+  function initTocToggle() {
+    const toc = document.querySelector(".toc");
+
+    if (!toc) {
+      return;
+    }
+
+    const title = toc.querySelector(".toc__title");
+    const list = toc.querySelector(".toc__list");
+
+    if (!title || !list) {
+      return;
+    }
+
+    const toggle = document.createElement("button");
+    toggle.className = "toc__toggle";
+    toggle.innerHTML = title.textContent + CHEVRON_SVG;
+    toc.insertBefore(toggle, title);
+    title.hidden = true;
+
+    toggle.addEventListener("click", function () {
+      toc.classList.toggle("is-open");
+    });
+  }
+
+  function buildZoomButton(prose) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tutorial-action tutorial-action--zoom";
+
+    const isLarge = localStorage.getItem(FONT_KEY) === "large";
+
+    if (isLarge) {
+      prose.classList.add("is-large");
+    }
+
+    function update(large) {
+      button.innerHTML = ZOOM_SVG + "<span>" + (large ? "Normal" : "Grande") + "</span>";
+    }
+
+    update(isLarge);
+
+    button.addEventListener("click", function () {
+      const nowLarge = prose.classList.toggle("is-large");
+      localStorage.setItem(FONT_KEY, nowLarge ? "large" : "normal");
+      update(nowLarge);
+    });
+
+    return button;
+  }
+
+  function buildResetButton(slug, doneBtn) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tutorial-action tutorial-action--reset";
+    button.innerHTML = RESET_SVG + "<span>Reiniciar</span>";
+
+    button.addEventListener("click", function () {
+      MentorAI.Progress.remove([slug]);
+      MentorAI.Reading.clear([slug]);
+      doneBtn.click();
+
+      if (MentorAI.Progress.has(slug)) {
+        doneBtn.click();
+      }
+    });
+
+    return button;
+  }
 
   function injectTutorialActions(slug, prose) {
     const host = document.querySelector(".tutorial-hero .container");
@@ -66,15 +144,18 @@
     actions.className = "tutorial-actions";
 
     const hasSpeech = "speechSynthesis" in window;
-
     const audioBtn = hasSpeech ? buildAudioButton(prose) : null;
     const doneBtn = buildDoneButton(slug);
+    const zoomBtn = buildZoomButton(prose);
+    const resetBtn = buildResetButton(slug, doneBtn);
 
     if (audioBtn) {
       actions.appendChild(audioBtn);
     }
 
     actions.appendChild(doneBtn);
+    actions.appendChild(zoomBtn);
+    actions.appendChild(resetBtn);
     host.appendChild(actions);
   }
 
