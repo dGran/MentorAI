@@ -758,11 +758,16 @@
       render: function () {
         const cardsEl = document.getElementById("cards");
         const filtersEl = document.getElementById("filters");
-        const tutorials = window.ACADEMIA_TUTORIALS;
+        const all = window.ACADEMIA_TUTORIALS;
 
-        if (!cardsEl || !Array.isArray(tutorials)) {
+        if (!cardsEl || !Array.isArray(all)) {
           return;
         }
+
+        const lessonSlugs = Courses.lessonSlugs();
+        const tutorials = all.filter(function (tutorial) {
+          return !lessonSlugs[tutorial.slug];
+        });
 
         const counts = {};
 
@@ -797,7 +802,7 @@
         const publishedEl = document.querySelector("[data-stat-published]");
 
         if (publishedEl) {
-          publishedEl.textContent = tutorials.filter(function (tutorial) {
+          publishedEl.textContent = all.filter(function (tutorial) {
             return !isSoon(tutorial);
           }).length;
         }
@@ -820,10 +825,12 @@
     };
   })();
 
-  /* ---------- Ruta de aprendizaje (vista de la home) ----------
-     Lee window.MENTORAI_ROADMAP (orden por pilares) y lo cruza con el
-     manifest (estado y metadatos) y con Progress (lo ya completado). */
-  const Roadmap = (function () {
+  /* ---------- Cursos (colecciones temáticas) ----------
+     Lee window.MENTORAI_COURSES (cursos con módulos y lecciones) y lo
+     cruza con el manifest (estado y metadatos) y con Progress (lo ya
+     completado). Pinta las tarjetas de curso de la home y, por separado,
+     la página de un curso (curso.html?slug=...). */
+  const Courses = (function () {
     const CHECK_SVG =
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 
@@ -849,12 +856,51 @@
       return Boolean(tutorial) && tutorial.status !== "soon";
     }
 
-    function buildStep(step, manifest, position) {
-      const tutorial = manifest[step.slug];
+    function modulesOf(course) {
+      if (Array.isArray(course.modules)) {
+        return course.modules;
+      }
+
+      return [{ title: "", summary: "", lessons: course.lessons || [] }];
+    }
+
+    function lessonSlugsOf(course) {
+      const slugs = [];
+
+      modulesOf(course).forEach(function (module) {
+        (module.lessons || []).forEach(function (slug) {
+          slugs.push(slug);
+        });
+      });
+
+      return slugs;
+    }
+
+    function progressOf(course, manifest) {
+      const slugs = lessonSlugsOf(course);
+      const published = slugs.filter(function (slug) {
+        return isPublished(manifest[slug]);
+      });
+      const done = published.filter(function (slug) {
+        return Progress.has(slug);
+      });
+
+      return {
+        total: slugs.length,
+        published: published.length,
+        done: done.length,
+        percent: published.length
+          ? Math.round((done.length / published.length) * 100)
+          : 0,
+      };
+    }
+
+    function buildLesson(slug, manifest, position, fromRoot) {
+      const tutorial = manifest[slug];
       const published = isPublished(tutorial);
       const soon = Boolean(tutorial) && tutorial.status === "soon";
-      const done = published && Progress.has(step.slug);
-      const title = escapeHtml((tutorial && tutorial.title) || step.title || step.slug);
+      const done = published && Progress.has(slug);
+      const title = escapeHtml((tutorial && tutorial.title) || slug);
 
       const marker = done
         ? '<span class="step__marker step__marker--done">' + CHECK_SVG + "</span>"
@@ -864,7 +910,10 @@
       let tag;
 
       if (published) {
-        body = '<a class="step__title" href="' + escapeHtml(tutorial.href) + '">' + title + "</a>";
+        const href = fromRoot
+          ? tutorial.href
+          : tutorial.href.substring(tutorial.href.lastIndexOf("/") + 1);
+        body = '<a class="step__title" href="' + escapeHtml(href) + '">' + title + "</a>";
         tag = done
           ? '<span class="step__tag step__tag--done">Completado</span>'
           : '<span class="step__meta">' + escapeHtml(tutorial.minutes) + " min</span>";
@@ -892,12 +941,12 @@
       );
     }
 
-    function buildPillar(pillar, manifest, index) {
-      const published = pillar.steps.filter(function (step) {
-        return isPublished(manifest[step.slug]);
+    function buildModule(module, manifest, index) {
+      const published = (module.lessons || []).filter(function (slug) {
+        return isPublished(manifest[slug]);
       });
-      const done = published.filter(function (step) {
-        return Progress.has(step.slug);
+      const done = published.filter(function (slug) {
+        return Progress.has(slug);
       });
       const percent = published.length
         ? Math.round((done.length / published.length) * 100)
@@ -906,29 +955,32 @@
         ? done.length + " / " + published.length
         : "Próximamente";
 
-      const rows = pillar.steps
-        .map(function (step, position) {
-          return buildStep(step, manifest, position + 1);
+      const rows = (module.lessons || [])
+        .map(function (slug, position) {
+          return buildLesson(slug, manifest, position + 1, true);
         })
         .join("");
 
+      const heading = module.title
+        ? '<span class="pillar__num">' +
+          (index + 1) +
+          "</span>" +
+          '<div class="pillar__headings">' +
+          '<h3 class="pillar__title">' +
+          escapeHtml(module.title) +
+          "</h3>" +
+          (module.summary
+            ? '<p class="pillar__summary">' + escapeHtml(module.summary) + "</p>"
+            : "") +
+          "</div>" +
+          '<span class="pillar__progress">' +
+          label +
+          "</span>"
+        : "";
+
       return (
         '<section class="pillar">' +
-        '<header class="pillar__head">' +
-        '<span class="pillar__num">' +
-        (index + 1) +
-        "</span>" +
-        '<div class="pillar__headings">' +
-        '<h3 class="pillar__title">' +
-        escapeHtml(pillar.title) +
-        "</h3>" +
-        '<p class="pillar__summary">' +
-        escapeHtml(pillar.summary) +
-        "</p></div>" +
-        '<span class="pillar__progress">' +
-        label +
-        "</span>" +
-        "</header>" +
+        (heading ? '<header class="pillar__head">' + heading + "</header>" : "") +
         '<div class="pillar__bar"><span style="width:' +
         percent +
         '%"></span></div>' +
@@ -939,22 +991,128 @@
       );
     }
 
-    return {
-      render: function () {
-        const host = document.getElementById("roadmap");
-        const pillars = window.MENTORAI_ROADMAP;
+    function buildCourseCard(course, manifest) {
+      const stats = progressOf(course, manifest);
+      const icon = Catalog.iconFor(course.icon);
+      const lessonsLabel =
+        stats.published === stats.total
+          ? stats.total + " lecciones"
+          : stats.published + " de " + stats.total + " lecciones";
 
-        if (!host || !Array.isArray(pillars)) {
+      return (
+        '<a class="course-card" href="curso.html?slug=' +
+        encodeURIComponent(course.slug) +
+        '"><div class="course-card__top"><span class="course-card__icon">' +
+        icon +
+        '</span><span class="course-card__progress">' +
+        stats.done +
+        " / " +
+        stats.published +
+        "</span></div>" +
+        '<h3 class="course-card__title">' +
+        escapeHtml(course.title) +
+        "</h3>" +
+        '<p class="course-card__desc">' +
+        escapeHtml(course.summary) +
+        "</p>" +
+        '<div class="course-card__bar"><span style="width:' +
+        stats.percent +
+        '%"></span></div>' +
+        '<div class="course-card__meta"><span>' +
+        escapeHtml(lessonsLabel) +
+        "</span><span>" +
+        escapeHtml(course.level || "") +
+        "</span></div></a>"
+      );
+    }
+
+    function courseBySlug(slug) {
+      return (window.MENTORAI_COURSES || []).filter(function (course) {
+        return course.slug === slug;
+      })[0];
+    }
+
+    return {
+      lessonSlugs: function () {
+        const slugs = {};
+
+        (window.MENTORAI_COURSES || []).forEach(function (course) {
+          lessonSlugsOf(course).forEach(function (slug) {
+            slugs[slug] = true;
+          });
+        });
+
+        return slugs;
+      },
+      render: function () {
+        const host = document.getElementById("courses");
+        const courses = window.MENTORAI_COURSES;
+
+        if (!host || !Array.isArray(courses)) {
           return;
         }
 
         const manifest = manifestMap();
 
-        host.innerHTML = pillars
-          .map(function (pillar, index) {
-            return buildPillar(pillar, manifest, index);
+        host.innerHTML = courses
+          .map(function (course) {
+            return buildCourseCard(course, manifest);
           })
           .join("");
+      },
+      renderCoursePage: function () {
+        const host = document.getElementById("course");
+
+        if (!host) {
+          return;
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const course = courseBySlug(params.get("slug"));
+
+        if (!course) {
+          host.innerHTML =
+            '<p class="course-empty">No encontramos ese curso. <a href="index.html">Volver al inicio</a>.</p>';
+          return;
+        }
+
+        const manifest = manifestMap();
+        const stats = progressOf(course, manifest);
+
+        document.title = course.title + " — MentorAI";
+
+        const modulesHtml = modulesOf(course)
+          .map(function (module, index) {
+            return buildModule(module, manifest, index);
+          })
+          .join("");
+
+        host.innerHTML =
+          '<header class="course-hero">' +
+          '<a class="course-hero__back" href="index.html">← Todos los cursos</a>' +
+          '<span class="eyebrow">Curso</span>' +
+          '<h1 class="course-hero__title">' +
+          escapeHtml(course.title) +
+          "</h1>" +
+          '<p class="course-hero__lead">' +
+          escapeHtml(course.summary) +
+          "</p>" +
+          '<div class="course-hero__meta"><span>' +
+          stats.published +
+          " lecciones</span><span>" +
+          escapeHtml(course.level || "") +
+          "</span><span>" +
+          stats.done +
+          " / " +
+          stats.published +
+          " completadas</span></div>" +
+          '<div class="course-hero__bar"><span style="width:' +
+          stats.percent +
+          '%"></span></div>' +
+          "</header>" +
+          '<div class="course-modules">' +
+          modulesHtml +
+          "</div>";
       },
     };
   })();
@@ -1128,29 +1286,44 @@
       );
     }
 
-    function pendingPillar(map) {
-      const pillars = window.MENTORAI_ROADMAP || [];
+    function courseLessonSlugs(course) {
+      const slugs = [];
+      const modules = Array.isArray(course.modules)
+        ? course.modules
+        : [{ lessons: course.lessons || [] }];
+
+      modules.forEach(function (module) {
+        (module.lessons || []).forEach(function (slug) {
+          slugs.push(slug);
+        });
+      });
+
+      return slugs;
+    }
+
+    function pendingCourse(map) {
+      const courses = window.MENTORAI_COURSES || [];
       let target = null;
 
-      pillars.forEach(function (pillar) {
+      courses.forEach(function (course) {
         if (target) {
           return;
         }
 
-        const publishedSteps = pillar.steps.filter(function (step) {
-          const tutorial = map[step.slug];
+        const publishedLessons = courseLessonSlugs(course).filter(function (slug) {
+          const tutorial = map[slug];
           return tutorial && tutorial.status !== "soon";
         });
-        const pending = publishedSteps.filter(function (step) {
-          return !Progress.has(step.slug);
+        const pending = publishedLessons.filter(function (slug) {
+          return !Progress.has(slug);
         });
 
-        if (publishedSteps.length > 0 && pending.length > 0) {
+        if (publishedLessons.length > 0 && pending.length > 0) {
           target = {
-            pillar: pillar,
-            next: map[pending[0].slug],
-            done: publishedSteps.length - pending.length,
-            total: publishedSteps.length,
+            course: course,
+            next: map[pending[0]],
+            done: publishedLessons.length - pending.length,
+            total: publishedLessons.length,
           };
         }
       });
@@ -1165,7 +1338,7 @@
         return;
       }
 
-      const target = pendingPillar(map);
+      const target = pendingCourse(map);
 
       if (!target) {
         hideShelf("home-route");
@@ -1175,22 +1348,23 @@
       host.hidden = false;
       host.innerHTML =
         '<div class="route-banner"><div class="route-banner__body">' +
-        '<span class="route-banner__eyebrow">Ruta de aprendizaje</span>' +
+        '<span class="route-banner__eyebrow">Curso en marcha</span>' +
         '<h3 class="route-banner__title">' +
-        escapeHtml(target.pillar.title) +
+        escapeHtml(target.course.title) +
         '</h3><p class="route-banner__sub">' +
-        escapeHtml(target.pillar.summary) +
+        escapeHtml(target.course.summary) +
         '</p><p class="route-banner__progress">' +
         target.done +
         " / " +
         target.total +
-        " completados</p></div>" +
+        " completadas</p></div>" +
         '<div class="route-banner__cta"><a class="btn btn--primary" href="' +
         escapeHtml(target.next.href) +
         '">Continuar: ' +
         escapeHtml(target.next.title) +
-        '</a><button class="btn btn--ghost" type="button" data-view-jump="roadmap">' +
-        "Ver la ruta completa</button></div></div>";
+        '</a><a class="btn btn--ghost" href="curso.html?slug=' +
+        encodeURIComponent(target.course.slug) +
+        '">Ver el curso</a></div></div>';
     }
 
     return {
@@ -1801,16 +1975,22 @@
     return button;
   }
 
-  function roadmapSequence() {
+  function courseSequence() {
     const sequence = [];
 
-    (window.MENTORAI_ROADMAP || []).forEach(function (pillar) {
-      pillar.steps.forEach(function (step, position) {
-        sequence.push({
-          slug: step.slug,
-          title: step.title,
-          pillar: pillar,
-          position: position,
+    (window.MENTORAI_COURSES || []).forEach(function (course) {
+      const modules = Array.isArray(course.modules)
+        ? course.modules
+        : [{ title: "", lessons: course.lessons || [] }];
+
+      modules.forEach(function (module) {
+        (module.lessons || []).forEach(function (slug, position) {
+          sequence.push({
+            slug: slug,
+            course: course,
+            module: module,
+            position: position,
+          });
         });
       });
     });
@@ -1844,29 +2024,35 @@
     return null;
   }
 
-  function relatedInPillar(manifest, pillar, slug) {
-    return pillar.steps
-      .filter(function (step) {
-        return step.slug !== slug && isPublishedTutorial(manifest[step.slug]);
+  function relatedInModule(manifest, module, slug) {
+    return (module.lessons || [])
+      .filter(function (lessonSlug) {
+        return lessonSlug !== slug && isPublishedTutorial(manifest[lessonSlug]);
       })
-      .map(function (step) {
-        return manifest[step.slug];
+      .map(function (lessonSlug) {
+        return manifest[lessonSlug];
       });
   }
 
   function buildRouteNav(manifest, sequence, index) {
     const current = sequence[index];
-    const pillar = current.pillar;
+    const course = current.course;
+    const module = current.module;
     const prev = neighborLink(manifest, sequence, index, -1);
     const next = neighborLink(manifest, sequence, index, 1);
 
+    const moduleLabel = module.title
+      ? escapeAttr(course.title) + " · " + escapeAttr(module.title)
+      : escapeAttr(course.title);
     const crumb =
-      '<p class="route-nav__crumb">Ruta · <strong>' +
-      escapeAttr(pillar.title) +
-      "</strong> · paso " +
+      '<p class="route-nav__crumb"><a href="../curso.html?slug=' +
+      encodeURIComponent(course.slug) +
+      '">' +
+      moduleLabel +
+      "</a> · lección " +
       (current.position + 1) +
       " de " +
-      pillar.steps.length +
+      (module.lessons || []).length +
       "</p>";
 
     const prevLink = prev
@@ -1883,15 +2069,17 @@
         '" class="next"><small>Siguiente →</small><b>' +
         escapeAttr(next.title) +
         "</b></a>"
-      : '<a href="../index.html" class="next"><small>Fin de la ruta →</small><b>Volver al catálogo</b></a>';
+      : '<a href="../curso.html?slug=' +
+        encodeURIComponent(course.slug) +
+        '" class="next"><small>Fin del curso →</small><b>Volver al curso</b></a>';
 
-    const related = relatedInPillar(manifest, pillar, current.slug);
+    const related = relatedInModule(manifest, module, current.slug);
 
     const relatedBlock =
       related.length === 0
         ? ""
         : '<div class="route-related"><p class="route-related__title">Más en «' +
-          escapeAttr(pillar.title) +
+          escapeAttr(module.title || course.title) +
           '»</p><ul>' +
           related
             .map(function (tutorial) {
@@ -1921,7 +2109,7 @@
   }
 
   function injectRouteNav(slug, prose) {
-    const sequence = roadmapSequence();
+    const sequence = courseSequence();
     const index = sequence
       .map(function (step) {
         return step.slug;
@@ -1961,7 +2149,8 @@
     initScrollSpy();
     initCopyButtons();
     Catalog.render();
-    Roadmap.render();
+    Courses.render();
+    Courses.renderCoursePage();
     Home.render();
     initViewToggle();
     initTutorialPage();

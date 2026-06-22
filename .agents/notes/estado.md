@@ -382,6 +382,54 @@ con IA=4 (`ia`), Hexagonal=2 (`arquitectura`), DDD=4 (`arquitectura`), CQRS=2
 (transversales) → hexagonal → DDD → CQRS. **Pendiente: decidir si se arranca la
 autoría o quedan en cola.**
 
+## Cursos + Artículos (infraestructura) (2026-06-22) — HECHO (sin commit pusheado)
+Cambio de modelo de contenido pedido por el usuario: dos tipos de primera clase,
+**artículo** (pieza suelta) y **curso** (colección con módulos→lecciones).
+Decisiones: fusionar (una sola taxonomía, `roadmap.js`→`courses.js`, se elimina la
+vista "Ruta"); artículo y lección **disjuntos** (Artículos solo muestra piezas que
+no son de ningún curso); detalle de curso en **página dedicada** `curso.html?slug=`
+auto-generada; monográficos (opcache/preload/inyeccion-dependencias/rabbitmq) →
+artículos sueltos. Plan aprobado en `~/.claude/plans/quirky-weaving-backus.md`.
+Esta tanda es **solo infraestructura**, NO incluye escribir los 16 tutoriales de la
+cola (siguen en `cola-arquitectura-y-practica.md`, ahora serán cursos).
+- **`tutorials/courses.js`** (`window.MENTORAI_COURSES`) sustituye a `roadmap.js`
+  (eliminado). Un curso: `{slug,title,summary,level,icon,modules:[{title,summary,
+  lessons:[slug]}]}` o `lessons` plano (módulo único). Único curso por ahora:
+  `fundamentos` (los 7 pilares del roadmap → 7 módulos, 22 lecciones). Referencia
+  slugs, no duplica metadatos (manifest sigue siendo la verdad).
+- **main.js**: módulo `Roadmap`→`Courses` (tarjetas de curso en `#courses` +
+  `renderCoursePage()` que lee `?slug=`); `buildPillar`→`buildModule`,
+  `buildStep`→`buildLesson`. `Catalog.render` filtra a artículos (excluye
+  `Courses.lessonSlugs()`); stat de publicados cuenta TODO (`all`). `Home`:
+  `renderRoute`→curso en marcha (`pendingCourse`). `initViewToggle` vistas
+  home/courses/catalog. Route-nav: `roadmapSequence`→`courseSequence`
+  (cursos→módulos→lecciones), crumb "Curso · módulo" enlaza a `../curso.html?slug=`;
+  artículo suelto = sin course-nav (conserva su nav manual). Nuevo
+  `Courses.renderCoursePage()` en el arranque.
+- **index.html**: view-toggle Inicio/Cursos/Artículos; panel `#roadmap`→`#courses`;
+  textos (navbar "Contenido", "Artículos", "Añadir artículo", hero, stat
+  "Publicados"); `<script>` roadmap.js→courses.js.
+- **curso.html** (NUEVO, raíz): plantilla única; navbar/footer como index;
+  `<div id="course">` que rellena `renderCoursePage`. Carga manifest+courses+main.
+- **styles.css**: `.courses` (grid), `.course-card*`, `.course-hero*`,
+  `.course-modules`, `.course-empty`. Reutiliza `.pillar`/`.steps`/`.step` para
+  módulos/lecciones (sin renombrar).
+- **33 tutoriales** (`tutorials/*.html`): `sed` cambió `roadmap.js`→`courses.js` en
+  los `<script>` y el navbar "Tutoriales"→"Contenido".
+- Verificado: `node --check` main.js; script node que cruza courses×manifest (0
+  slugs huérfanos, 22 lecciones, **10 artículos sueltos**: jerga, extensiones-php,
+  php-fpm, memoria-php, workers-php, redis-a-fondo, rabbitmq, inyeccion-dependencias,
+  opcache, preload); render headless de index (3 vistas, Novedades/Destacados),
+  curso.html?slug=fundamentos (hero + 7 módulos) y una lección (course-nav inyectada,
+  crumb enlaza al curso, siguiente=texto-unicode). PNGs en /tmp/mentorai_shots.
+- **Pendiente al retomar**: (1) `.agents/rules/global.md` añadir invariante
+  cursos+artículos; (2) actualizar `cola-arquitectura-y-practica.md` y
+  `plan-curriculum-fundamentos.md` para hablar de cursos; (3) detalle visual menor:
+  en curso.html el back-link y el eyebrow "Curso" salen pegados en línea (hacer el
+  back `display:block` o separar); (4) revisar vistas Cursos/Artículos en navegador
+  real (el screenshot solo capturó la vista Inicio por defecto); (5) cuando se
+  escriban los 16 tutoriales de la cola, crear sus cursos en courses.js.
+
 ## Planes pendientes (detalle en notes)
 - `plan-curriculum-fundamentos.md` — currículum de fundamentos CS para backend
   autodidacta (7 pilares). **Decidido:** arrancar por el pilar Bases de datos,
