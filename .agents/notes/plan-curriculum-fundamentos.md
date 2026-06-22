@@ -107,12 +107,12 @@ Marcar al publicar. 22 tutoriales en total.
 - [x] P5.1 url-a-fondo  (publicado 2026-06-21)
 - [x] P5.2 http-a-fondo  (publicado 2026-06-21)
 - [x] P5.3 tcp-ip  (publicado 2026-06-21) ← Pilar 5 COMPLETO
-- [ ] P6.1 idempotencia
-- [ ] P6.2 cap-consistencia
-- [ ] P6.3 redis-cache
-- [ ] P7.1 hashing-vs-cifrado
-- [ ] P7.2 autenticacion
-- [ ] P7.3 owasp
+- [x] P6.1 idempotencia  (publicado 2026-06-22)
+- [x] P6.2 cap-consistencia  (publicado 2026-06-22)
+- [x] P6.3 redis-cache  (publicado 2026-06-22) ← Pilar 6 COMPLETO
+- [x] P7.1 hashing-vs-cifrado  (publicado 2026-06-22)
+- [x] P7.2 autenticacion  (publicado 2026-06-22)
+- [x] P7.3 owasp  (publicado 2026-06-22) ← Pilar 7 COMPLETO — **CURRÍCULUM COMPLETO (22/22)**
 
 ## Categorías nuevas que aparecerán (chips auto-generados)
 - `representacion` → label "Representación de datos".

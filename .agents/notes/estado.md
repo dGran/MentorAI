@@ -336,6 +336,52 @@ acciones de cara afuera). Tres commits: `da8c04f` (PHP por dentro), `8a1c29f`
   tutoriales nuevos no están en ningún pilar del roadmap (quedan solo en catálogo);
   encajarlos en la ruta es una tarea aparte si se quiere.
 
+## Pilares 6 y 7 — currículum COMPLETO (2026-06-22)
+Se cerró el `plan-curriculum-fundamentos.md`: **22/22 tutoriales**. Faltaban 5
+(redis-cache P6.3 ya estaba del vaciado de cola). Commit LOCAL `86e7c37`
+("Completa el currículum: pilares 6 y 7"). Catálogo: **32 publicados, 0 soon**.
+- **Pilar 6 — Sistemas distribuidos** (`distribuidos`, label nuevo "Sistemas
+  distribuidos" en CATEGORY_LABELS), icon `signal`:
+  - `idempotencia.html` (Avanzado, 15 min, `["distribuidos","mensajeria"]`): la red
+    miente (lost-request vs lost-response), operación idempotente, at-most/at-least/
+    exactly-once, por qué gana at-least-once + idempotencia, clave de idempotencia
+    del productor, implementación con constraint UNIQUE (`processed_operations` +
+    INSERT IGNORE + rowCount), errores (check-then-act, efecto externo no
+    transaccional, tabla de claves sin poda). Cruza rabbitmq, concurrencia.
+  - `cap-consistencia.html` (Avanzado, 15 min, `["distribuidos"]`): por qué replicar,
+    las tres letras CAP, "elegir 2 de 3 está mal — P pasa, eliges C vs A en partición",
+    CP vs AP, consistencia eventual + resolución de conflictos (LWW/merge/CRDT),
+    quórum R+W>N, PACELC, decidir por dato. Sin código. Cruza url-a-fondo,
+    idempotencia, redis-cache.
+- **Pilar 7 — Seguridad de fundamentos** (`seguridad`, ya existía), icon `shield`:
+  - `hashing-vs-cifrado.html` (Intermedio, 14 min): cifrado (reversible) vs hashing
+    (un sentido), simétrico/asimétrico, propiedades del hash cripto, por qué las
+    contraseñas se hashean no se cifran, sal + por qué MD5/SHA fallan (rápidos,
+    rainbow), bcrypt/argon2id, PHP PasswordService (password_hash ARGON2ID, verify,
+    needs_rehash). Cruza url-a-fondo, hashing.
+  - `autenticacion.html` (Intermedio, 16 min): authN vs authZ, HTTP sin estado,
+    sesiones por cookie (HttpOnly/Secure/SameSite), JWT (header.payload.firma),
+    firmado≠cifrado, sesión vs JWT (la revocación es la pega del JWT → access+refresh),
+    OAuth2 = autorización delegada, OIDC = "entrar con Google". Cruza http-a-fondo.
+  - `owasp.html` (Intermedio, 16 min): OWASP Top 10, raíz común (fiarse del input),
+    inyección SQL (concat vulnerable vs prepared), XSS (escapar la salida por
+    contexto + CSP), CSRF (token + SameSite), principios transversales. Es el
+    `featured` actual (se quitó de los 7 anteriores → un solo "Nuevo"). Cruza
+    autenticacion.
+- Verificación: `node --check`, TOC↔h2, balance `<code`/`</code>`, escapado (se
+  corrigió un `->` crudo en el bloque bash de autenticacion → `-&gt;`), render
+  headless. `roadmap.js` NO tocado: los 5 slugs ya estaban referenciados en los
+  pilares `distribuidos` y `seguridad`; ahora resuelven a publicado.
+
+## Cola siguiente — Testing, IA y arquitectura (2026-06-22)
+Análisis previo encolado en `cola-arquitectura-y-practica.md` (pedido del usuario:
+TDD, programar con IA, hexagonal, DDD, CQRS, "con previo análisis para ver cuántos
+salen"). Resultado: **16 tutoriales** (rango 14-18). TDD=4 (`testing`), Programar
+con IA=4 (`ia`), Hexagonal=2 (`arquitectura`), DDD=4 (`arquitectura`), CQRS=2
+(`arquitectura`). 2 chips nuevos: `testing`, `ia`. Orden sugerido: TDD e IA
+(transversales) → hexagonal → DDD → CQRS. **Pendiente: decidir si se arranca la
+autoría o quedan en cola.**
+
 ## Planes pendientes (detalle en notes)
 - `plan-curriculum-fundamentos.md` — currículum de fundamentos CS para backend
   autodidacta (7 pilares). **Decidido:** arrancar por el pilar Bases de datos,
