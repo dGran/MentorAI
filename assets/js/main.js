@@ -371,6 +371,7 @@
       algoritmos: "Algoritmos",
       sistemas: "El sistema por debajo",
       redes: "Cómo viaja un dato",
+      distribuidos: "Sistemas distribuidos",
     };
 
     const CLOCK_SVG =

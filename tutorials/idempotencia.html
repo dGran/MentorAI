@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Idempotencia y entrega at-least-once — MentorAI</title>
+    <meta
+      name="description"
+      content="Por qué en sistemas distribuidos los reintentos duplican, qué es una operación idempotente, las garantías de entrega (at-most/at-least/exactly-once) y cómo deduplicar con una clave de idempotencia."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <!-- ===================== Navbar ===================== -->
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button
+            class="icon-btn theme-toggle"
+            aria-label="Cambiar tema"
+            title="Cambiar tema"
+          >
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- ===================== Hero del tutorial ===================== -->
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Sistemas distribuidos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">
+          Idempotencia y entrega at-least-once
+        </h1>
+        <p class="tutorial-hero__lead">
+          En una sola máquina, llamar a una función una vez significa que se
+          ejecuta una vez. En cuanto hay red de por medio, esa certeza
+          desaparece: un mensaje puede llegar dos veces, o no saber tú si llegó.
+          La idempotencia es la herramienta que convierte ese caos en algo
+          seguro: que repetir una operación no haga daño.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Distribuidos
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== Layout: TOC + contenido ===================== -->
+    <div class="container">
+      <div class="tutorial-layout">
+        <!-- Índice -->
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">El problema: la red miente</a></li>
+            <li><a href="#que-es">Qué es idempotente</a></li>
+            <li><a href="#garantias">Las tres garantías de entrega</a></li>
+            <li><a href="#por-que">Por qué at-least-once gana</a></li>
+            <li><a href="#clave">La clave de idempotencia</a></li>
+            <li><a href="#implementar">Implementarlo en la práctica</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <!-- Artículo -->
+        <article class="prose">
+          <p class="lead">
+            Estás pagando online, pulsas «Confirmar», la rueda gira… y no pasa
+            nada. ¿Se ha cobrado? ¿Lo intento otra vez? Si pulsas de nuevo,
+            ¿pagas dos veces? Toda la incomodidad de ese momento es el problema
+            que resuelve la idempotencia, y aparece en cuanto dos máquinas
+            hablan por una red.
+          </p>
+
+          <!-- ============ El problema ============ -->
+          <h2 id="problema">
+            El problema: la red miente
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cuando el servicio A llama al servicio B por la red y no recibe
+            respuesta, se enfrenta a una pregunta sin respuesta:
+            <strong>¿se perdió mi petición de ida, o se perdió la respuesta de
+            vuelta?</strong> Los dos casos se ven idénticos desde A: silencio.
+            Pero son opuestos.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Se perdió la ida</h4>
+              <ul>
+                <li>B nunca recibió nada</li>
+                <li>La operación <strong>no</strong> ocurrió</li>
+                <li>Reintentar es <strong>obligatorio</strong></li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Se perdió la vuelta</h4>
+              <ul>
+                <li>B sí ejecutó la operación</li>
+                <li>Solo se perdió la confirmación</li>
+                <li>Reintentar la <strong>duplica</strong></li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            A no puede distinguir los dos escenarios, así que solo le quedan dos
+            estrategias: <em>no reintentar</em> (y arriesgarse a perder la
+            operación) o <em>reintentar</em> (y arriesgarse a ejecutarla dos
+            veces). Esto no es un caso raro: es el día a día de las colas de
+            mensajes, las llamadas entre microservicios y los <em>webhooks</em>.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo viste en RabbitMQ</p>
+              <p>
+                El <a href="rabbitmq.html">ack manual y el at-least-once</a> son
+                exactamente esto: si el consumidor cae antes de confirmar, el
+                mensaje se reentrega. Aquí generalizamos esa idea a cualquier
+                comunicación, no solo a una cola.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Qué es idempotente ============ -->
+          <h2 id="que-es">
+            Qué es una operación idempotente
+            <a href="#que-es" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una operación es <strong>idempotente</strong> si ejecutarla una vez
+            o muchas veces deja el sistema <strong>en el mismo estado</strong>.
+            No dice que no se ejecute dos veces: dice que, aunque se ejecute dos
+            veces, el resultado final es como si se hubiera ejecutado una.
+          </p>
+          <p>
+            El interruptor de la luz lo ilustra bien: pulsar «apagar» diez veces
+            deja la luz apagada igual que pulsarlo una. En cambio, «cambia el
+            estado de la luz» (toggle) <strong>no</strong> es idempotente:
+            repetirlo da un resultado distinto cada vez.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Operación</th>
+                  <th>¿Idempotente?</th>
+                  <th>Por qué</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>saldo = 100</code></td>
+                  <td>Sí</td>
+                  <td>Asignar un valor absoluto: repetirlo no cambia nada.</td>
+                </tr>
+                <tr>
+                  <td><code>saldo = saldo + 10</code></td>
+                  <td>No</td>
+                  <td>Cada repetición suma otra vez: estado distinto.</td>
+                </tr>
+                <tr>
+                  <td><code>DELETE pedido 42</code></td>
+                  <td>Sí</td>
+                  <td>Borrar lo ya borrado no hace nada nuevo.</td>
+                </tr>
+                <tr>
+                  <td><code>HTTP PUT</code> de un recurso</td>
+                  <td>Sí</td>
+                  <td>Reemplaza el recurso por un valor fijo (por diseño del método).</td>
+                </tr>
+                <tr>
+                  <td><code>HTTP POST</code> (crear)</td>
+                  <td>No</td>
+                  <td>Cada llamada crea un recurso nuevo: dos POST, dos pedidos.</td>
+                </tr>
+                <tr>
+                  <td>Enviar un email</td>
+                  <td>No</td>
+                  <td>Cada ejecución manda otro correo. Efecto externo, no revertible.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La regla mental rápida</p>
+              <p>
+                Si la operación <strong>fija un valor</strong> («pon esto así»),
+                suele ser idempotente. Si <strong>aplica un incremento</strong>
+                o <strong>tiene un efecto externo</strong> («suma», «manda»,
+                «cobra»), no lo es y habrá que protegerla.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Garantías ============ -->
+          <h2 id="garantias">
+            Las tres garantías de entrega
+            <a href="#garantias" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Ante un mensaje que viaja por la red, un sistema puede prometer tres
+            niveles de entrega. Conviene tenerlos claros porque marcan toda la
+            estrategia:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Garantía</th>
+                  <th>Qué promete</th>
+                  <th>Riesgo</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>At-most-once</strong></td>
+                  <td>Cada mensaje se entrega 0 o 1 veces. Nunca duplica.</td>
+                  <td>Puede <strong>perder</strong> mensajes (no reintenta).</td>
+                </tr>
+                <tr>
+                  <td><strong>At-least-once</strong></td>
+                  <td>Cada mensaje se entrega 1 o más veces. Nunca pierde.</td>
+                  <td>Puede <strong>duplicar</strong> (reintenta ante la duda).</td>
+                </tr>
+                <tr>
+                  <td><strong>Exactly-once</strong></td>
+                  <td>Exactamente 1 vez. El ideal.</td>
+                  <td>Imposible de garantizar de extremo a extremo solo con la red.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">"Exactly-once" es marketing si lo lees mal</p>
+              <p>
+                No existe una entrega exactamente-una-vez real solo a nivel de
+                red: el emisor nunca sabe con certeza si el receptor procesó el
+                mensaje. Lo que sí se consigue es el <strong>efecto</strong> de
+                exactly-once: <em>at-least-once</em> en el transporte +
+                <strong>idempotencia</strong> en el procesado. Esa es la
+                receta real.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Por qué at-least-once ============ -->
+          <h2 id="por-que">
+            Por qué at-least-once es lo que quieres
+            <a href="#por-que" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Puestos a elegir entre perder o duplicar, casi siempre es preferible
+            <strong>duplicar</strong>: una duplicación la puedes detectar y
+            descartar, pero un mensaje perdido a menudo no deja ni rastro de que
+            existió. Por eso la inmensa mayoría de sistemas serios eligen
+            at-least-once en el transporte y resuelven los duplicados arriba.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Productor envía</b><small>Operación con una clave única</small></span>
+              </div>
+              <div class="flow__arrow" data-label="sin respuesta → reintenta"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Llega 2 veces</b><small>La red duplicó el mensaje</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--cache">
+                <span class="flow__num">★</span>
+                <span><b>¿Ya vi esta clave?</b><small>Consulta el registro de procesados</small></span>
+              </div>
+              <div class="flow__arrow" data-label="sí → descartar / no → procesar"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Efecto: una sola vez</b><small>El segundo intento no hace daño</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              El transporte garantiza «al menos una vez»; el consumidor, gracias
+              a la clave, lo convierte en «efecto de una sola vez».
+            </p>
+          </div>
+
+          <!-- ============ Clave de idempotencia ============ -->
+          <h2 id="clave">
+            La clave de idempotencia
+            <a href="#clave" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La herramienta central es la <strong>clave de idempotencia</strong>
+            (<em>idempotency key</em>): un identificador único que el
+            <strong>productor</strong> genera para cada operación lógica y manda
+            con cada intento. Lo importante: si reintenta, manda
+            <strong>la misma clave</strong>. El consumidor la usa para reconocer
+            «esto ya lo hice».
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Quién genera la clave importa</p>
+              <p>
+                La clave la pone el <strong>emisor</strong>, no el receptor, y
+                debe identificar la <em>operación de negocio</em> («el pago del
+                pedido 42»), no el intento de red. Stripe, por ejemplo, acepta
+                una cabecera <code>Idempotency-Key</code> que tú generas: si
+                reenvías la misma, te devuelve el resultado del primer cobro en
+                vez de cobrar otra vez.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Implementar ============ -->
+          <h2 id="implementar">
+            Implementarlo en la práctica
+            <a href="#implementar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La forma más sólida de deduplicar se apoya en una
+            <strong>restricción de unicidad</strong> de la base de datos: dejas
+            que el motor rechace el duplicado por ti, de forma atómica, sin
+            carreras. Primero, la tabla:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">CREATE TABLE processed_operations (
+    idempotency_key VARCHAR(64) NOT NULL,
+    result_status   VARCHAR(20) NOT NULL,
+    processed_at    DATETIME    NOT NULL,
+    PRIMARY KEY (idempotency_key)
+);</code></pre>
+          </div>
+
+          <p>
+            Y el consumidor intenta «reclamar» la clave antes de hacer el
+            trabajo. Si la clave ya existe, la restricción salta y sabemos que es
+            un duplicado:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · ProcessPayment.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class ProcessPayment
+{
+    public function __construct(
+        private readonly PDO $database,
+        private readonly PaymentGateway $gateway,
+    ) {
+    }
+
+    public function handle(string $idempotencyKey, Money $amount): void
+    {
+        if ($this-&gt;alreadyProcessed($idempotencyKey)) {
+
+            return;
+        }
+
+        $this-&gt;database-&gt;beginTransaction();
+
+        $claimed = $this-&gt;claimKey($idempotencyKey);
+
+        if ($claimed === false) {
+
+            $this-&gt;database-&gt;rollBack();
+
+            return;
+        }
+
+        $this-&gt;gateway-&gt;charge($amount);
+        $this-&gt;database-&gt;commit();
+    }
+
+    private function claimKey(string $idempotencyKey): bool
+    {
+        $statement = $this-&gt;database-&gt;prepare(
+            'INSERT IGNORE INTO processed_operations
+             (idempotency_key, result_status, processed_at)
+             VALUES (?, ?, NOW())'
+        );
+
+        $statement-&gt;execute([$idempotencyKey, 'done']);
+
+        return $statement-&gt;rowCount() === 1;
+    }
+}</code></pre>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Deja que la BBDD gane la carrera</p>
+              <p>
+                La clave del patrón es que <code>INSERT</code> sobre una columna
+                única es <strong>atómico</strong>: si dos copias del mensaje
+                llegan a la vez (lo viste en <a href="concurrencia.html">concurrencia</a>),
+                solo una consigue insertar; la otra recibe el rechazo y se
+                retira. No hace falta un <code>SELECT</code> previo que abriría
+                una ventana de carrera.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Errores típicos ============ -->
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Comprobar y actuar en dos pasos</p>
+              <p>
+                Hacer <code>SELECT</code> «¿existe la clave?» y luego
+                <code>INSERT</code> deja una ventana entre ambos en la que un
+                duplicado se cuela. Resuélvelo con una operación atómica
+                (restricción única, <code>INSERT ... ON CONFLICT</code>) o un
+                <em>lock</em>, no con dos pasos sueltos.
+              </p>
+            </div>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Efectos externos no transaccionales</p>
+              <p>
+                Cobrar en una pasarela o mandar un email no entra en tu
+                transacción de BBDD: si confirmas la clave pero el proceso muere
+                antes del cobro (o al revés), te quedas inconsistente. Por eso el
+                efecto externo debe ser él mismo idempotente (clave en la
+                pasarela) o registrarse con un patrón <em>outbox</em>.
+              </p>
+            </div>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Guardar las claves para siempre</p>
+              <p>
+                La tabla de procesados crece sin fin si no la podas. Define una
+                <strong>ventana de deduplicación</strong> realista (horas o
+                días, según cuánto puede tardar un reintento) y limpia las claves
+                viejas con un TTL o un trabajo periódico.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Resumen ============ -->
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En cuanto hay red, un «sin respuesta» no te dice si la operación ocurrió: reintentar puede <strong>duplicar</strong>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una operación <strong>idempotente</strong> deja el mismo estado se ejecute una vez o muchas. Fijar un valor lo es; sumar o mandar un email, no.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El <strong>exactly-once</strong> real = transporte <strong>at-least-once</strong> + procesado <strong>idempotente</strong>. No lo busques solo en la red.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La <strong>clave de idempotencia</strong> la genera el emisor por operación de negocio y se repite en cada reintento.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Deduplica con una <strong>restricción única</strong> atómica (no SELECT+INSERT), cuida los efectos externos y poda las claves viejas.</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Navegación entre tutoriales -->
+          <nav class="tutorial-nav">
+            <a href="rabbitmq.html">
+              <small>← Relacionado</small>
+              <b>RabbitMQ a fondo</b>
+            </a>
+            <a href="cap-consistencia.html" class="next">
+              <small>Siguiente →</small>
+              <b>CAP y consistencia eventual</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <!-- ===================== Footer ===================== -->
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/roadmap.js"></script>
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

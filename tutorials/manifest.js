@@ -25,8 +25,83 @@
 
 window.ACADEMIA_TUTORIALS = [
   {
-    slug: "jerga",
+    slug: "owasp",
     featured: true,
+    title: "OWASP imprescindible: inyección, XSS y CSRF",
+    description:
+      "Las vulnerabilidades web más comunes y su raíz común (confiar en la entrada): inyección SQL y consultas preparadas, XSS y el escapado de salida, CSRF con token y SameSite, más los principios que cubren el resto del Top 10.",
+    href: "tutorials/owasp.html",
+    categories: ["seguridad"],
+    topic: "Seguridad de fundamentos",
+    tags: ["OWASP", "XSS", "CSRF"],
+    level: "Intermedio",
+    minutes: 16,
+    icon: "shield",
+    status: "published",
+    date: "2026-06-22",
+  },
+  {
+    slug: "autenticacion",
+    title: "Autenticación: sesiones, JWT y OAuth",
+    description:
+      "Autenticar vs autorizar, las sesiones con cookie (estado en el servidor), el JWT autocontenido y su pega de revocación, y qué resuelve de verdad OAuth 2 / OpenID Connect. Cómo elegir según tu caso.",
+    href: "tutorials/autenticacion.html",
+    categories: ["seguridad"],
+    topic: "Seguridad de fundamentos",
+    tags: ["Sesiones", "JWT", "OAuth"],
+    level: "Intermedio",
+    minutes: 16,
+    icon: "shield",
+    status: "published",
+    date: "2026-06-22",
+  },
+  {
+    slug: "hashing-vs-cifrado",
+    title: "Hashing vs cifrado: cómo se guardan las contraseñas",
+    description:
+      "La diferencia entre cifrar (reversible) y hashear (de un solo sentido), por qué las contraseñas se hashean y no se cifran, qué es la sal, por qué MD5/SHA no valen y cómo usar bcrypt o argon2 en PHP.",
+    href: "tutorials/hashing-vs-cifrado.html",
+    categories: ["seguridad"],
+    topic: "Seguridad de fundamentos",
+    tags: ["Hashing", "bcrypt", "argon2"],
+    level: "Intermedio",
+    minutes: 14,
+    icon: "shield",
+    status: "published",
+    date: "2026-06-22",
+  },
+  {
+    slug: "cap-consistencia",
+    title: "CAP y consistencia eventual",
+    description:
+      "El teorema CAP sin misticismo: como las particiones de red ocurren, la elección real es consistencia vs disponibilidad. Qué promete la consistencia eventual, cómo resolver conflictos y cómo decidir por dato (quórums, PACELC).",
+    href: "tutorials/cap-consistencia.html",
+    categories: ["distribuidos"],
+    topic: "Sistemas distribuidos",
+    tags: ["CAP", "Consistencia", "Quórum"],
+    level: "Avanzado",
+    minutes: 15,
+    icon: "signal",
+    status: "published",
+    date: "2026-06-22",
+  },
+  {
+    slug: "idempotencia",
+    title: "Idempotencia y entrega at-least-once",
+    description:
+      "Por qué en cuanto hay red los reintentos duplican, qué es una operación idempotente, las garantías de entrega (at-most/at-least/exactly-once), la clave de idempotencia y cómo deduplicar con una restricción única atómica.",
+    href: "tutorials/idempotencia.html",
+    categories: ["distribuidos", "mensajeria"],
+    topic: "Sistemas distribuidos",
+    tags: ["Idempotencia", "at-least-once", "Reintentos"],
+    level: "Avanzado",
+    minutes: 15,
+    icon: "signal",
+    status: "published",
+    date: "2026-06-22",
+  },
+  {
+    slug: "jerga",
     title: "La jerga del desarrollo, traducida",
     description:
       "Un glosario para entender a tu equipo: parsear, runtime, deploy y rollback; bug, edge case, race condition y memory leak; merge, rebase, PR y deuda técnica; payload, endpoint, idempotente y latencia; y la cultura (yak shaving, bikeshedding, rubber duck).",
@@ -42,7 +117,6 @@ window.ACADEMIA_TUTORIALS = [
   },
   {
     slug: "extensiones-php",
-    featured: true,
     title: "Extensiones de PHP: qué son y cuáles importan",
     description:
       "Qué es una extensión (un módulo en C que enchufa al motor), cómo se carga, la diferencia entre las del core y las de PECL, cómo ver las activas con php -m y el puñado que necesitas de verdad en producción.",
@@ -58,7 +132,6 @@ window.ACADEMIA_TUTORIALS = [
   },
   {
     slug: "php-fpm",
-    featured: true,
     title: "SAPIs y PHP-FPM a fondo",
     description:
       "Qué es un SAPI, en qué se diferencian CLI, mod_php, CGI y FPM, cómo FastCGI reutiliza procesos vivos, los modos de los pools (static/dynamic/ondemand), cómo dimensionar max_children y por qué PHP es shared-nothing.",
@@ -74,7 +147,6 @@ window.ACADEMIA_TUTORIALS = [
   },
   {
     slug: "memoria-php",
-    featured: true,
     title: "Cómo gestiona la memoria PHP",
     description:
       "El gestor de Zend y la arena por request, qué es memory_limit de verdad, los zvals y el refcounting, copy-on-write y el recolector de ciclos. Por qué liberar memoria en PHP es casi gratis.",
@@ -90,7 +162,6 @@ window.ACADEMIA_TUTORIALS = [
   },
   {
     slug: "workers-php",
-    featured: true,
     title: "Workers y modelos de ejecución en PHP",
     description:
       "Los dos sentidos de worker (los de FPM y los de cola), cómo se mantienen vivos con supervisor, el modelo long-running de Swoole y RoadRunner y por qué un worker que no muere se reinicia cada N jobs.",
@@ -106,7 +177,6 @@ window.ACADEMIA_TUTORIALS = [
   },
   {
     slug: "redis-a-fondo",
-    featured: true,
     title: "Redis a fondo: estructuras de datos en memoria",
     description:
       "Redis como servidor de estructuras de datos, no solo caché: strings y contadores, listas, sets y sorted sets, hashes, y los especiales (bitmaps, HyperLogLog, streams). TTL, nombrado de claves, atomicidad y persistencia RDB vs AOF.",
@@ -412,7 +482,6 @@ window.ACADEMIA_TUTORIALS = [
   },
   {
     slug: "preload",
-    featured: true,
     title: "Preload: precargar clases al arrancar PHP",
     description:
       "El paso siguiente a OPcache: dejar las clases del framework cargadas y enlazadas en memoria desde el arranque, sin pasar por el autoload. Cómo funciona, cómo se configura, su gran pega (congela el código) y cómo lo dan Symfony y Laravel.",
@@ -428,7 +497,6 @@ window.ACADEMIA_TUTORIALS = [
   },
   {
     slug: "redis-cache",
-    featured: true,
     title: "Redis como caché de aplicación",
     description:
       "El patrón cache-aside paso a paso, por qué el TTL no es opcional, cómo invalidar sin carreras (borrar mejor que reescribir) y los tres fallos clásicos (penetration, avalanche, breakdown) más el cache stampede y su lock.",

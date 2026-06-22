@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OWASP imprescindible: inyección, XSS y CSRF — MentorAI</title>
+    <meta
+      name="description"
+      content="Las vulnerabilidades web más comunes explicadas con claridad: inyección SQL, XSS y CSRF. Cómo funciona cada ataque, por qué pasa y cómo defenderse en PHP con consultas preparadas, escapado y tokens."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <!-- ===================== Navbar ===================== -->
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button
+            class="icon-btn theme-toggle"
+            aria-label="Cambiar tema"
+            title="Cambiar tema"
+          >
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- ===================== Hero del tutorial ===================== -->
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Seguridad de fundamentos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">
+          OWASP imprescindible: inyección, XSS y CSRF
+        </h1>
+        <p class="tutorial-hero__lead">
+          La mayoría de las brechas web no usan magia: explotan tres o cuatro
+          errores que se repiten desde hace décadas. Si entiendes inyección, XSS
+          y CSRF —los más frecuentes del Top 10 de OWASP— cierras la puerta a la
+          mayor parte de los ataques reales contra una aplicación.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            16 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Seguridad
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== Layout: TOC + contenido ===================== -->
+    <div class="container">
+      <div class="tutorial-layout">
+        <!-- Índice -->
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#owasp">Qué es el OWASP Top 10</a></li>
+            <li><a href="#raiz">La raíz común: confiar en la entrada</a></li>
+            <li><a href="#inyeccion">Inyección SQL</a></li>
+            <li><a href="#xss">XSS: inyección en el navegador</a></li>
+            <li><a href="#csrf">CSRF: usar tu sesión sin permiso</a></li>
+            <li><a href="#principios">Principios que cubren el resto</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <!-- Artículo -->
+        <article class="prose">
+          <p class="lead">
+            Casi todos los ataques web famosos se reducen a la misma jugada:
+            colar instrucciones donde el programa esperaba datos. El sistema
+            confunde «lo que el usuario escribió» con «lo que debe ejecutar». Una
+            vez ves ese patrón, las tres vulnerabilidades estrella dejan de ser
+            magia y se vuelven la misma idea con tres disfraces.
+          </p>
+
+          <!-- ============ OWASP ============ -->
+          <h2 id="owasp">
+            Qué es el OWASP Top 10
+            <a href="#owasp" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <strong>OWASP</strong> (Open Worldwide Application Security Project)
+            es una organización sin ánimo de lucro que publica, entre otras
+            cosas, el <strong>Top 10</strong>: una lista de las categorías de
+            riesgo más críticas en aplicaciones web, actualizada cada pocos años a
+            partir de datos reales. No es una norma legal, pero es el punto de
+            partida que todo el sector usa.
+          </p>
+          <p>
+            No vamos a recorrer las diez. Vamos a las tres que más vas a tocar
+            como backend y que comparten una misma raíz: <strong>inyección</strong>,
+            <strong>XSS</strong> y <strong>CSRF</strong>.
+          </p>
+
+          <!-- ============ Raíz común ============ -->
+          <h2 id="raiz">
+            La raíz común: confiar en la entrada
+            <a href="#raiz" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La regla de oro de la seguridad web cabe en una frase: <strong>nunca
+            confíes en datos que vienen de fuera</strong>. Parámetros de la URL,
+            campos de un formulario, cabeceras, cookies, respuestas de otra API:
+            todo eso lo controla potencialmente un atacante. El fallo aparece
+            cuando esos datos se mezclan, sin separación, con código que se
+            ejecuta o se interpreta.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Datos vs instrucciones</p>
+              <p>
+                Inyección SQL y XSS son la misma enfermedad en distintos órganos:
+                el dato del usuario acaba interpretándose como
+                <strong>instrucción</strong> (SQL en la base de datos, HTML/JS en
+                el navegador). La cura siempre es la misma idea: mantener
+                separados los datos del código.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Inyección ============ -->
+          <h2 id="inyeccion">
+            Inyección SQL
+            <a href="#inyeccion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Ocurre cuando construyes una consulta SQL pegando texto del usuario
+            directamente en la cadena. El atacante escribe algo que no es un dato,
+            sino más SQL, y tu base de datos lo ejecuta como propio.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · vulnerable</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+$email = $_POST['email'];
+
+$sql = "SELECT * FROM users WHERE email = '" . $email . "'";
+$database-&gt;query($sql);
+
+// Si el atacante manda:  ' OR '1'='1
+// la consulta pasa a ser:
+// SELECT * FROM users WHERE email = '' OR '1'='1'
+// ...que devuelve TODOS los usuarios.</code></pre>
+          </div>
+
+          <p>
+            La defensa no es «filtrar comillas»: es no construir nunca la consulta
+            por concatenación. Con <strong>consultas preparadas</strong>, el SQL y
+            los datos viajan por canales separados; el motor trata el parámetro
+            siempre como un valor, jamás como instrucción.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · seguro (consulta preparada)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$statement = $database-&gt;prepare(
+    'SELECT * FROM users WHERE email = ?'
+);
+
+$statement-&gt;execute([$_POST['email']]);
+
+$user = $statement-&gt;fetch();</code></pre>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El mismo patrón, otros intérpretes</p>
+              <p>
+                La inyección no es solo SQL: existe inyección de comandos del
+                sistema (<code>shell_exec</code> con datos del usuario), de LDAP,
+                de plantillas… Siempre que pasas entrada a un intérprete, usa la
+                API parametrizada de ese intérprete en vez de armar la cadena a
+                mano.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ XSS ============ -->
+          <h2 id="xss">
+            XSS: inyección en el navegador
+            <a href="#xss" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El <strong>Cross-Site Scripting</strong> es inyección, pero el
+            intérprete es el navegador de otra víctima. Si guardas un comentario
+            con <code>&lt;script&gt;</code> dentro y luego lo muestras tal cual,
+            ese script se ejecuta en el navegador de quien lo lee, con
+            <strong>su</strong> sesión: puede robar su cookie, actuar por él o
+            modificar la página.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>El atacante publica un comentario</b><small>Con un &lt;script&gt; dentro del texto</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Lo guardas y lo renderizas sin escapar</b><small>El navegador no distingue tu HTML del suyo</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Se ejecuta en otra víctima</b><small>Roba su cookie de sesión, actúa por ella</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              El servidor reparte el ataque a cada visitante. Por eso este tipo
+              (almacenado) es el más peligroso.
+            </p>
+          </div>
+
+          <p>
+            La defensa central es <strong>escapar la salida</strong> según el
+            contexto: al meter un dato en HTML, conviértelo para que sus
+            caracteres especiales se muestren como texto, no como etiquetas.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · escapar al renderizar</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+// Convierte &lt; &gt; &amp; " en entidades: el navegador lo ve como texto
+echo htmlspecialchars($comment, ENT_QUOTES, 'UTF-8');
+
+// Resultado de &lt;script&gt;alert(1)&lt;/script&gt; -&gt;
+// &amp;lt;script&amp;gt;alert(1)&amp;lt;/script&amp;gt;  (se muestra, no se ejecuta)</code></pre>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Escapa al salir, no al entrar</p>
+              <p>
+                El escapado depende del <em>contexto</em> donde pintas el dato
+                (HTML, atributo, JavaScript, URL son distintos). Por eso se escapa
+                <strong>al renderizar</strong>, no al guardar: el mismo dato puede
+                acabar en sitios diferentes. Los motores de plantillas (Twig,
+                Blade) escapan por defecto justo por esto. Refuerza con una
+                cabecera <strong>Content-Security-Policy</strong>.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ CSRF ============ -->
+          <h2 id="csrf">
+            CSRF: usar tu sesión sin permiso
+            <a href="#csrf" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El <strong>Cross-Site Request Forgery</strong> es distinto: no roba
+            datos, <strong>abusa de tu sesión ya iniciada</strong>. Como el
+            navegador envía tus cookies automáticamente (lo viste en
+            <a href="autenticacion.html">sesiones</a>), una web maliciosa puede
+            provocar que tu navegador haga una petición a tu banco —donde sigues
+            logueado— sin que tú lo sepas.
+          </p>
+          <p>
+            El ejemplo clásico: estás logueado en tu banco y visitas una página
+            trampa que contiene un formulario oculto que se autoenvía a
+            <code>tu-banco.com/transferir</code>. Tu navegador adjunta tu cookie,
+            y el banco cree que la orden la das tú.
+          </p>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La diferencia con XSS</p>
+              <p>
+                XSS ejecuta código del atacante en tu página; CSRF no ejecuta nada
+                en tu sitio: solo lanza una petición «legítima» desde fuera
+                aprovechando que tu cookie viaja sola. Por eso la defensa es
+                distinta: demostrar que la petición salió <em>de tu propia
+                página</em>.
+              </p>
+            </div>
+          </div>
+
+          <p>Dos defensas que se combinan:</p>
+          <ul>
+            <li>
+              <strong>Token anti-CSRF:</strong> tu formulario incluye un valor
+              secreto e impredecible que el atacante no puede conocer. El servidor
+              lo exige y lo valida; una petición desde fuera no lo lleva.
+            </li>
+            <li>
+              <strong>Cookie <code>SameSite</code>:</strong> le dice al navegador
+              que no envíe la cookie en peticiones originadas por otros sitios.
+              Con <code>SameSite=Lax</code> o <code>Strict</code> cortas la mayoría
+              de los CSRF de raíz.
+            </li>
+          </ul>
+
+          <!-- ============ Principios ============ -->
+          <h2 id="principios">
+            Principios que cubren el resto
+            <a href="#principios" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Las demás categorías del Top 10 se controlan con unos pocos hábitos
+            transversales:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Principio</th>
+                  <th>Qué evita</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Mínimo privilegio</strong></td>
+                  <td>Cada usuario y servicio solo con los permisos que necesita: limita el daño de un fallo (control de acceso roto).</td>
+                </tr>
+                <tr>
+                  <td><strong>Validar en el servidor</strong></td>
+                  <td>La validación del navegador es comodidad, no seguridad: el atacante salta el front. Revalida siempre detrás.</td>
+                </tr>
+                <tr>
+                  <td><strong>Dependencias al día</strong></td>
+                  <td>Componentes con vulnerabilidades conocidas: actualiza y audita (<code>composer audit</code>).</td>
+                </tr>
+                <tr>
+                  <td><strong>Secretos fuera del código</strong></td>
+                  <td>Claves y contraseñas en variables de entorno, nunca en el repositorio.</td>
+                </tr>
+                <tr>
+                  <td><strong>Errores sin filtrar detalles</strong></td>
+                  <td>No muestres trazas ni SQL al usuario: regalan información al atacante.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La seguridad es una capa, no un parche</p>
+              <p>
+                Ninguna defensa basta sola: consultas preparadas + escapado de
+                salida + tokens CSRF + cabeceras + mínimo privilegio se refuerzan
+                entre sí. Es la <em>defensa en profundidad</em>: si una capa
+                falla, otra te cubre.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Resumen ============ -->
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El <strong>OWASP Top 10</strong> recoge los riesgos web más críticos; casi todos nacen de <strong>confiar en la entrada</strong> del usuario.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>Inyección SQL</strong>: el dato se vuelve SQL. Defensa: <strong>consultas preparadas</strong>, nunca concatenar.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>XSS</strong>: el dato se vuelve HTML/JS en otro navegador. Defensa: <strong>escapar la salida</strong> según contexto + CSP.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>CSRF</strong>: abusan de tu sesión desde otro sitio. Defensa: <strong>token anti-CSRF</strong> + cookie <code>SameSite</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El resto se cubre con hábitos: mínimo privilegio, validar en servidor, dependencias al día, secretos fuera del código. <strong>Defensa en profundidad.</strong></span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Navegación entre tutoriales -->
+          <nav class="tutorial-nav">
+            <a href="autenticacion.html">
+              <small>← Anterior</small>
+              <b>Autenticación: sesiones, JWT y OAuth</b>
+            </a>
+            <a href="../index.html" class="next">
+              <small>Fin del pilar →</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <!-- ===================== Footer ===================== -->
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/roadmap.js"></script>
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

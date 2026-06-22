@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Autenticación: sesiones, JWT y OAuth — MentorAI</title>
+    <meta
+      name="description"
+      content="Autenticación vs autorización, cómo funcionan las sesiones con cookie, qué resuelve un JWT y cuándo, qué es OAuth 2 de verdad y cómo elegir entre ellos sin caer en los errores típicos."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <!-- ===================== Navbar ===================== -->
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button
+            class="icon-btn theme-toggle"
+            aria-label="Cambiar tema"
+            title="Cambiar tema"
+          >
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- ===================== Hero del tutorial ===================== -->
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Seguridad de fundamentos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">
+          Autenticación: sesiones, JWT y OAuth
+        </h1>
+        <p class="tutorial-hero__lead">
+          HTTP no recuerda quién eres entre una petición y la siguiente. Todo el
+          mundo de las sesiones, los tokens y «entrar con Google» existe para
+          resolver ese olvido. Veamos qué problema ataca cada mecanismo, en qué
+          se diferencian de verdad y cuál encaja en tu caso.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            16 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Seguridad
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== Layout: TOC + contenido ===================== -->
+    <div class="container">
+      <div class="tutorial-layout">
+        <!-- Índice -->
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#authn-authz">Autenticar no es autorizar</a></li>
+            <li><a href="#sin-estado">El problema: HTTP no recuerda</a></li>
+            <li><a href="#sesiones">Sesiones con cookie</a></li>
+            <li><a href="#jwt">JWT: el token autocontenido</a></li>
+            <li><a href="#sesion-vs-jwt">Sesión vs JWT</a></li>
+            <li><a href="#oauth">OAuth 2 y OpenID Connect</a></li>
+            <li><a href="#elegir">Cómo elegir</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <!-- Artículo -->
+        <article class="prose">
+          <p class="lead">
+            Entras a un hotel: en recepción enseñas el DNI una vez
+            (autenticación) y te dan una tarjeta que abre tu habitación, pero no
+            las demás (autorización). No enseñas el DNI en cada puerta: basta la
+            tarjeta. Sesiones, JWT y OAuth son distintas formas de diseñar esa
+            tarjeta y lo que abre.
+          </p>
+
+          <!-- ============ AuthN vs AuthZ ============ -->
+          <h2 id="authn-authz">
+            Autenticar no es autorizar
+            <a href="#authn-authz" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Dos palabras que se confunden y conviene separar desde el principio:
+          </p>
+
+          <div class="compare">
+            <div class="compare__col">
+              <h4>Autenticación (authN)</h4>
+              <ul>
+                <li><strong>¿Quién eres?</strong></li>
+                <li>Demostrar identidad (contraseña, huella, token)</li>
+                <li>Ocurre una vez, al entrar</li>
+              </ul>
+            </div>
+            <div class="compare__col">
+              <h4>Autorización (authZ)</h4>
+              <ul>
+                <li><strong>¿Qué puedes hacer?</strong></li>
+                <li>Permisos sobre recursos (roles, scopes)</li>
+                <li>Se comprueba en cada acción</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            Este tutorial trata sobre todo la primera mitad —cómo el servidor
+            sabe que sigues siendo tú— y cómo ese mecanismo carga también los
+            datos que luego usará la autorización.
+          </p>
+
+          <!-- ============ Sin estado ============ -->
+          <h2 id="sin-estado">
+            El problema: HTTP no recuerda
+            <a href="#sin-estado" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Como viste en <a href="http-a-fondo.html">HTTP a fondo</a>, el
+            protocolo es <strong>sin estado</strong>: cada petición es
+            independiente y el servidor no recuerda la anterior. Si te
+            autenticas en <code>/login</code>, la siguiente petición a
+            <code>/perfil</code> llega «en blanco»: nada dice que eres tú.
+          </p>
+          <p>
+            La solución, en todos los esquemas, es la misma idea: tras
+            autenticarte, el servidor te entrega una <strong>credencial</strong>
+            que el navegador reenvía en cada petición siguiente. Lo que cambia es
+            <em>qué</em> es esa credencial y <em>dónde</em> vive la información de
+            quién eres.
+          </p>
+
+          <!-- ============ Sesiones ============ -->
+          <h2 id="sesiones">
+            Sesiones con cookie
+            <a href="#sesiones" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El modelo clásico. Al autenticarte, el servidor crea una
+            <strong>sesión</strong>: guarda en su lado (memoria, Redis, BBDD) los
+            datos de quién eres, bajo un identificador aleatorio. Ese ID viaja al
+            navegador en una <strong>cookie</strong>, y se reenvía solo en cada
+            petición.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Login correcto</b><small>El servidor crea la sesión y guarda los datos</small></span>
+              </div>
+              <div class="flow__arrow" data-label="Set-Cookie: session_id"></div>
+              <div class="flow__node flow__node--cache">
+                <span class="flow__num">★</span>
+                <span><b>Cookie con el ID</b><small>El navegador la guarda y la reenvía sola</small></span>
+              </div>
+              <div class="flow__arrow" data-label="cada petición"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">2</span>
+                <span><b>El servidor busca la sesión</b><small>Por el ID recupera quién eres</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              La cookie solo lleva un identificador opaco; los datos reales viven
+              en el servidor. El estado es <em>suyo</em>.
+            </p>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Las cookies, bien puestas</p>
+              <p>
+                Una cookie de sesión debe ir con <code>HttpOnly</code> (que
+                JavaScript no la pueda leer, frena el robo por XSS),
+                <code>Secure</code> (solo por HTTPS) y <code>SameSite</code> (que
+                no se mande desde otros sitios, frena el CSRF). Tres atributos que
+                cierran la mayoría de los ataques contra la cookie.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ JWT ============ -->
+          <h2 id="jwt">
+            JWT: el token autocontenido
+            <a href="#jwt" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un <strong>JWT</strong> (JSON Web Token) le da la vuelta a la idea:
+            en lugar de guardar el estado en el servidor, lo mete
+            <strong>dentro del propio token</strong>, firmado. El token lleva los
+            datos (quién eres, tus roles, cuándo caduca) y una firma que demuestra
+            que no se han manipulado. Son tres partes separadas por puntos:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · estructura de un JWT</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash"># header . payload . firma   (cada parte en Base64Url)
+eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0MiIsInJvbGUiOiJhZG1pbiJ9.k3nF...
+
+# header  -&gt; { "alg": "HS256", "typ": "JWT" }
+# payload -&gt; { "sub": "42", "role": "admin", "exp": 1735689600 }
+# firma   -&gt; HMAC del header+payload con una clave secreta del servidor</code></pre>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Firmado no es cifrado</p>
+              <p>
+                El payload de un JWT va en Base64, <strong>no cifrado</strong>:
+                cualquiera puede leerlo. La firma solo garantiza que nadie lo ha
+                <em>modificado</em>, no que sea secreto. Nunca metas datos
+                sensibles (contraseñas, datos personales) en un JWT.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            La gran ventaja: el servidor <strong>no necesita guardar nada</strong>
+            ni consultar una base de datos para validarte. Le basta verificar la
+            firma con su clave. Eso lo hace muy cómodo para APIs y para repartir
+            la carga entre muchos servidores sin un almacén de sesiones
+            compartido.
+          </p>
+
+          <!-- ============ Sesión vs JWT ============ -->
+          <h2 id="sesion-vs-jwt">
+            Sesión vs JWT: el verdadero trade-off
+            <a href="#sesion-vs-jwt" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La diferencia de fondo es <strong>dónde vive el estado</strong>, y de
+            ahí sale todo lo demás, incluida la pega más importante del JWT:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Sesión (servidor)</th>
+                  <th>JWT (cliente)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Dónde está el estado</td>
+                  <td>En el servidor; la cookie solo lleva un ID</td>
+                  <td>Dentro del token, en el cliente</td>
+                </tr>
+                <tr>
+                  <td>Validar la petición</td>
+                  <td>Buscar la sesión (memoria/Redis/BBDD)</td>
+                  <td>Verificar una firma, sin tocar BBDD</td>
+                </tr>
+                <tr>
+                  <td>Revocar acceso (logout, ban)</td>
+                  <td><strong>Inmediato</strong>: borras la sesión</td>
+                  <td><strong>Difícil</strong>: el token vale hasta que caduca</td>
+                </tr>
+                <tr>
+                  <td>Escala horizontal</td>
+                  <td>Requiere almacén de sesiones compartido</td>
+                  <td>Sin estado compartido: cómodo</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El talón de Aquiles del JWT: la revocación</p>
+              <p>
+                Como el servidor no guarda estado, no puede «cancelar» un JWT
+                emitido: si caduca en una hora, una hora seguirá siendo válido
+                aunque eches al usuario. El patrón habitual lo mitiga: un
+                <em>access token</em> de vida corta (minutos) + un
+                <em>refresh token</em> de vida larga que sí se guarda y se puede
+                revocar. Más piezas, más complejidad.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ OAuth ============ -->
+          <h2 id="oauth">
+            OAuth 2 y OpenID Connect
+            <a href="#oauth" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Aquí hay otra confusión muy común. <strong>OAuth 2 no es para hacer
+            login</strong>: es un protocolo de <em>autorización delegada</em>.
+            Resuelve un problema concreto: «dejar que una app acceda a una parte
+            de tus datos en otro servicio <strong>sin darle tu contraseña</strong>».
+          </p>
+          <p>
+            El ejemplo clásico: una app de calendario que quiere leer tus
+            contactos de Google. En vez de pedirte tu contraseña de Google, te
+            redirige a Google, tú apruebas allí, y Google le entrega a la app un
+            <strong>token de acceso</strong> con permisos limitados (los
+            <em>scopes</em>: «leer contactos», nada más).
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>La app te redirige a Google</b><small>Pide permiso para ciertos scopes</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Apruebas en Google</b><small>Tu contraseña no sale de Google</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Google da un token a la app</b><small>Acceso limitado a lo que aprobaste</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              La app nunca ve tu contraseña; solo recibe un token acotado que
+              Google puede revocar.
+            </p>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">"Entrar con Google" es OpenID Connect</p>
+              <p>
+                El botón de login social no es OAuth a secas, sino
+                <strong>OpenID Connect</strong>: una capa fina <em>sobre</em>
+                OAuth 2 que añade lo que falta para autenticar (un
+                <em>id_token</em>, que es un JWT con tu identidad). OAuth te da
+                acceso a recursos; OIDC, encima, te dice quién es el usuario.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Elegir ============ -->
+          <h2 id="elegir">
+            Cómo elegir
+            <a href="#elegir" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Sesiones</h4>
+              <ul>
+                <li>App web clásica con servidor propio</li>
+                <li>Necesitas logout y revocación inmediatos</li>
+                <li>La opción simple y segura por defecto</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>JWT</h4>
+              <ul>
+                <li>API consumida por móvil o SPA</li>
+                <li>Varios servicios sin sesión compartida</li>
+                <li>Asumiendo el coste de la revocación</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Usa OAuth/OIDC para identidad de terceros</p>
+              <p>
+                Si quieres «entrar con Google/GitHub» o que otras apps accedan a
+                tu API en nombre del usuario, ahí van OAuth 2 + OpenID Connect.
+                Para tu propio login interno, casi siempre basta con sesiones o
+                JWT. Y en cualquier caso: <strong>no implementes el protocolo a
+                mano</strong>, usa una librería probada.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Resumen ============ -->
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>Autenticar</strong> (¿quién eres?) no es <strong>autorizar</strong> (¿qué puedes hacer?). Todo nace de que HTTP es sin estado.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>Sesión</strong>: el estado vive en el servidor, la cookie solo lleva un ID. Revocación inmediata; requiere almacén compartido para escalar.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>JWT</strong>: el estado va firmado en el token. Sin tocar BBDD y fácil de escalar, pero <strong>difícil de revocar</strong> (de ahí access + refresh tokens). Firmado ≠ cifrado.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>OAuth 2</strong> es autorización delegada (acceso sin compartir contraseña); <strong>OpenID Connect</strong> añade encima la identidad: es el «entrar con Google».</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Web clásica → sesiones; API/SPA/móvil → JWT; identidad de terceros → OAuth/OIDC. Con librerías probadas, nunca a mano.</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Navegación entre tutoriales -->
+          <nav class="tutorial-nav">
+            <a href="hashing-vs-cifrado.html">
+              <small>← Anterior</small>
+              <b>Hashing vs cifrado</b>
+            </a>
+            <a href="owasp.html" class="next">
+              <small>Siguiente →</small>
+              <b>OWASP imprescindible</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <!-- ===================== Footer ===================== -->
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/roadmap.js"></script>
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

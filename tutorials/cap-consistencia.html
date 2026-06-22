@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CAP y consistencia eventual — MentorAI</title>
+    <meta
+      name="description"
+      content="El teorema CAP sin misticismo: por qué ante una partición de red hay que elegir entre consistencia y disponibilidad, qué es la consistencia eventual y cómo decidir en tu sistema."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <!-- ===================== Navbar ===================== -->
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button
+            class="icon-btn theme-toggle"
+            aria-label="Cambiar tema"
+            title="Cambiar tema"
+          >
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- ===================== Hero del tutorial ===================== -->
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Sistemas distribuidos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">
+          CAP y consistencia eventual
+        </h1>
+        <p class="tutorial-hero__lead">
+          En cuanto replicas datos en varias máquinas para no caerte, aparece un
+          dilema que no tiene escapatoria: cuando la red entre ellas se corta,
+          tienes que elegir entre dar una respuesta posiblemente vieja o no dar
+          respuesta. El teorema CAP nombra ese dilema; la consistencia eventual
+          es una de las formas de vivir con él.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Distribuidos
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== Layout: TOC + contenido ===================== -->
+    <div class="container">
+      <div class="tutorial-layout">
+        <!-- Índice -->
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#por-que">Por qué replicamos</a></li>
+            <li><a href="#tres-letras">Las tres letras de CAP</a></li>
+            <li><a href="#eleccion">La elección que impone la partición</a></li>
+            <li><a href="#eventual">Consistencia eventual</a></li>
+            <li><a href="#espectro">No es blanco o negro</a></li>
+            <li><a href="#decidir">Cómo decidir en tu sistema</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <!-- Artículo -->
+        <article class="prose">
+          <p class="lead">
+            Dos cajeros del mismo banco, uno en Madrid y otro en Tokio,
+            comparten tu saldo. Si se corta la línea entre ellos y tú sacas
+            dinero en Madrid, el cajero de Tokio tiene un dilema: o te deja sacar
+            también allí (arriesgándose a dejarte en números rojos) o te bloquea
+            hasta que vuelva la línea. No hay una tercera opción mágica. Eso es
+            CAP.
+          </p>
+
+          <!-- ============ Por qué replicamos ============ -->
+          <h2 id="por-que">
+            Por qué replicamos los datos
+            <a href="#por-que" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una sola base de datos en una sola máquina es fácil de razonar: hay
+            una verdad y punto. Pero esa máquina puede caerse, saturarse o estar
+            lejos de tus usuarios. Por eso, en cuanto un sistema crece,
+            <strong>replicamos</strong>: copiamos los datos en varios nodos. Eso
+            nos da tolerancia a fallos y escala… y a cambio, abre la puerta a que
+            dos copias <strong>discrepen</strong>.
+          </p>
+          <p>
+            Mientras la red entre los nodos funcione, mantenerlos sincronizados
+            es manejable. El problema es que las redes <em>fallan</em>: un cable,
+            un switch, un centro de datos aislado. A ese fallo se le llama
+            <strong>partición de red</strong>, y es el corazón de CAP.
+          </p>
+
+          <!-- ============ Las tres letras ============ -->
+          <h2 id="tres-letras">
+            Las tres letras de CAP
+            <a href="#tres-letras" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El teorema CAP, formulado por Eric Brewer, habla de tres propiedades
+            de un sistema distribuido que guarda datos replicados:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Letra</th>
+                  <th>Propiedad</th>
+                  <th>Qué significa</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>C</strong></td>
+                  <td>Consistencia</td>
+                  <td>Toda lectura ve la última escritura confirmada. Todos los nodos cuentan la misma versión.</td>
+                </tr>
+                <tr>
+                  <td><strong>A</strong></td>
+                  <td>Disponibilidad</td>
+                  <td>Toda petición recibe una respuesta (no un error), aunque algún nodo esté incomunicado.</td>
+                </tr>
+                <tr>
+                  <td><strong>P</strong></td>
+                  <td>Tolerancia a particiones</td>
+                  <td>El sistema sigue operando aunque se pierdan mensajes entre nodos.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El "elige 2 de 3" está mal contado</p>
+              <p>
+                La frase popular «CAP: elige 2 de 3» es engañosa. En un sistema
+                distribuido real, las <strong>particiones (P) ocurren</strong>,
+                no son opcionales: las redes fallan. Así que P no se «elige». La
+                decisión real aparece <em>solo durante</em> una partición, y es
+                entre <strong>C y A</strong>.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ La elección ============ -->
+          <h2 id="eleccion">
+            La elección que impone la partición
+            <a href="#eleccion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Imagina dos nodos que normalmente se sincronizan y, de repente,
+            dejan de verse. Llega una escritura a uno y una lectura al otro. El
+            sistema tiene que decidir, y solo hay dos caminos:
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start" style="min-width: 280px">
+                <span class="flow__num">✂</span>
+                <span><b>Partición: los nodos no se ven</b><small>Llega una escritura a un lado, una lectura al otro</small></span>
+              </div>
+              <div class="flow__arrow" data-label="¿qué hago con la lectura?"></div>
+            </div>
+            <div class="compare">
+              <div class="compare__col compare__col--good">
+                <h4>Elijo C (consistencia)</h4>
+                <ul>
+                  <li>No puedo garantizar que el dato esté al día</li>
+                  <li>→ <strong>rechazo</strong> o bloqueo la operación</li>
+                  <li>Nunca doy un dato viejo</li>
+                  <li>Pierdo <strong>disponibilidad</strong></li>
+                </ul>
+              </div>
+              <div class="compare__col compare__col--good">
+                <h4>Elijo A (disponibilidad)</h4>
+                <ul>
+                  <li>Respondo con lo que tengo en este nodo</li>
+                  <li>→ <strong>contesto</strong> aunque sea un dato viejo</li>
+                  <li>Sigo operativo siempre</li>
+                  <li>Pierdo <strong>consistencia</strong> temporal</li>
+                </ul>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Durante la partición no hay forma de ser a la vez consistente y
+              disponible: o frenas para no mentir, o respondes asumiendo que
+              puedes ir desactualizado.
+            </p>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">CP y AP, con ejemplos</p>
+              <p>
+                A los sistemas que sacrifican disponibilidad para no mentir se
+                les llama <strong>CP</strong> (por ejemplo, una BBDD relacional
+                con replicación síncrona, o etcd/ZooKeeper). A los que siguen
+                respondiendo asumiendo datos algo viejos, <strong>AP</strong>
+                (Cassandra o DynamoDB en su modo por defecto). No hay uno
+                «mejor»: dependen de lo que cueste cada error.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Consistencia eventual ============ -->
+          <h2 id="eventual">
+            Consistencia eventual
+            <a href="#eventual" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un sistema AP elige seguir respondiendo durante la partición, lo que
+            significa que durante un rato distintos nodos pueden dar respuestas
+            distintas. La promesa que sí hace es la <strong>consistencia
+            eventual</strong>: <em>si dejan de llegar escrituras, con el tiempo
+            todos los nodos convergen al mismo valor</em>.
+          </p>
+          <p>
+            «Eventual» aquí significa «al final», no «quizás». Cuando la red se
+            recupera, los nodos se intercambian lo que se perdieron y se ponen de
+            acuerdo. La pregunta interesante es: <strong>¿y si dos nodos
+            recibieron escrituras distintas sobre el mismo dato?</strong> Hay que
+            resolver el conflicto, y las estrategias habituales son:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Estrategia</th>
+                  <th>Cómo resuelve el conflicto</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Last-write-wins</strong></td>
+                  <td>Gana la escritura con el timestamp más alto. Simple, pero puede perder datos.</td>
+                </tr>
+                <tr>
+                  <td><strong>Merge por la aplicación</strong></td>
+                  <td>El sistema guarda ambas versiones y tu código decide cómo combinarlas (p. ej. unir dos carritos).</td>
+                </tr>
+                <tr>
+                  <td><strong>CRDTs</strong></td>
+                  <td>Estructuras de datos diseñadas para converger sin conflicto (contadores, conjuntos). Matemáticamente seguras.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Ya convives con ella</p>
+              <p>
+                El DNS es eventualmente consistente: cambias un registro y tarda
+                en propagarse por las cachés del mundo (lo viste en
+                <a href="url-a-fondo.html">qué pasa al escribir una URL</a>). El
+                número de «me gusta» que sube y baja un instante, o un pedido que
+                tarda dos segundos en aparecer en «mis pedidos», son el mismo
+                fenómeno.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Espectro ============ -->
+          <h2 id="espectro">
+            No es blanco o negro
+            <a href="#espectro" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            CAP es un modelo, y como todo modelo simplifica. En la realidad,
+            «consistencia» y «disponibilidad» son <strong>graduables</strong>, y
+            la decisión casi nunca es global: se toma <em>por operación</em>.
+            Muchas bases de datos te dejan elegir el nivel en cada lectura o
+            escritura con el modelo de <strong>quórum</strong>.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La regla del quórum: R + W &gt; N</p>
+              <p>
+                Con <code>N</code> réplicas, si exiges que cada escritura
+                confirme en <code>W</code> nodos y cada lectura consulte
+                <code>R</code> nodos, y haces que <code>R + W &gt; N</code>,
+                entonces lectura y escritura <strong>siempre se solapan</strong>
+                en al menos un nodo: lees lo último escrito. Subir <code>R</code>
+                y <code>W</code> da más consistencia; bajarlos, más disponibilidad
+                y velocidad. Ajustas el dial, no eliges un extremo.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            También existe <strong>PACELC</strong>, una extensión de CAP que
+            añade la otra mitad de la historia: <em>si hay partición (P), eliges
+            entre A y C; pero el resto del tiempo (E, <em>else</em>), eliges
+            entre latencia (L) y consistencia (C)</em>. Porque mantener todo
+            sincronizado cuesta tiempo aunque la red vaya bien.
+          </p>
+
+          <!-- ============ Cómo decidir ============ -->
+          <h2 id="decidir">
+            Cómo decidir en tu sistema
+            <a href="#decidir" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La pregunta útil no es «¿CP o AP?» en abstracto, sino
+            <strong>«¿qué cuesta más en este dato concreto: dar una respuesta
+            vieja o no dar respuesta?»</strong>. Y eso cambia dentro de la misma
+            aplicación.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Prefiere consistencia (CP)</h4>
+              <ul>
+                <li>Saldo de una cuenta, stock al vender</li>
+                <li>Reserva de un asiento único</li>
+                <li>Un dato viejo causa pérdida real de dinero</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Prefiere disponibilidad (AP)</h4>
+              <ul>
+                <li>Contador de visitas, «me gusta»</li>
+                <li>Catálogo, perfil, recomendaciones</li>
+                <li>Un dato viejo unos segundos no pasa nada</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La trampa de exigir consistencia por defecto</p>
+              <p>
+                Pedir consistencia fuerte «por si acaso» en todo tiene un precio:
+                más latencia y menos disponibilidad ante el primer fallo de red.
+                Reserva la consistencia fuerte para donde un dato obsoleto duela
+                de verdad, y deja respirar al resto con consistencia eventual.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Resumen ============ -->
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Replicamos datos para tolerar fallos y escalar; el precio es que las copias pueden <strong>discrepar</strong>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>CAP = Consistencia, Disponibilidad, tolerancia a Particiones. Como las particiones <strong>ocurren</strong>, la elección real es <strong>C vs A durante una partición</strong>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La <strong>consistencia eventual</strong> (sistemas AP) promete que, sin nuevas escrituras, todos los nodos <strong>convergen</strong>; los conflictos se resuelven con LWW, merge o CRDTs.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>No es binario: con <strong>quórums</strong> (<code>R + W &gt; N</code>) gradúas consistencia vs disponibilidad por operación; PACELC añade el coste de latencia fuera de la partición.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Decide por dato: consistencia fuerte donde un valor viejo cuesta dinero (saldo, stock); eventual donde no duele (likes, catálogo).</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Navegación entre tutoriales -->
+          <nav class="tutorial-nav">
+            <a href="idempotencia.html">
+              <small>← Anterior</small>
+              <b>Idempotencia y entrega at-least-once</b>
+            </a>
+            <a href="redis-cache.html" class="next">
+              <small>Siguiente →</small>
+              <b>Redis como caché de aplicación</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <!-- ===================== Footer ===================== -->
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/roadmap.js"></script>
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

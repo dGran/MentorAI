@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hashing vs cifrado: cómo se guardan las contraseñas — MentorAI</title>
+    <meta
+      name="description"
+      content="La diferencia entre hashing y cifrado, por qué las contraseñas se hashean y nunca se cifran, qué es la sal, por qué MD5 y SHA no valen para contraseñas y cómo usar bcrypt o argon2 en PHP."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <!-- ===================== Navbar ===================== -->
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button
+            class="icon-btn theme-toggle"
+            aria-label="Cambiar tema"
+            title="Cambiar tema"
+          >
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- ===================== Hero del tutorial ===================== -->
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Seguridad de fundamentos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">
+          Hashing vs cifrado: cómo se guardan las contraseñas
+        </h1>
+        <p class="tutorial-hero__lead">
+          «Hashear» y «cifrar» suenan parecido y se confunden a diario, pero
+          resuelven problemas opuestos: uno está pensado para poder deshacerse,
+          el otro para no poder. Entender la diferencia es lo que separa guardar
+          contraseñas bien de filtrar la base de datos entera el día de una
+          brecha.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Seguridad
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== Layout: TOC + contenido ===================== -->
+    <div class="container">
+      <div class="tutorial-layout">
+        <!-- Índice -->
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#dos-mundos">Dos herramientas, dos objetivos</a></li>
+            <li><a href="#cifrado">Cifrado: reversible a propósito</a></li>
+            <li><a href="#hashing">Hashing: de un solo sentido</a></li>
+            <li><a href="#contrasenas">Por qué las contraseñas se hashean</a></li>
+            <li><a href="#sal">La sal y por qué MD5/SHA no valen</a></li>
+            <li><a href="#php">Hacerlo bien en PHP</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <!-- Artículo -->
+        <article class="prose">
+          <p class="lead">
+            Una caja fuerte tiene llave: guardas algo dentro y, con la llave
+            correcta, lo recuperas tal cual. Una trituradora de papel, no:
+            metes un documento y sale confeti del que nadie reconstruye el
+            original. El cifrado es la caja fuerte; el hashing, la trituradora. Y
+            las contraseñas, sorprendentemente, quieres triturarlas.
+          </p>
+
+          <!-- ============ Dos mundos ============ -->
+          <h2 id="dos-mundos">
+            Dos herramientas, dos objetivos
+            <a href="#dos-mundos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La confusión nace de que ambos «transforman» un dato en algo
+            ilegible. Pero la pregunta que los separa es simple:
+            <strong>¿quieres poder recuperar el original?</strong>
+          </p>
+
+          <div class="compare">
+            <div class="compare__col">
+              <h4>Cifrado</h4>
+              <ul>
+                <li><strong>Reversible</strong> con una clave</li>
+                <li>Objetivo: <em>confidencialidad</em></li>
+                <li>«Guárdalo de forma que solo yo pueda leerlo luego»</li>
+                <li>Ej.: datos de tarjeta, mensajes, ficheros</li>
+              </ul>
+            </div>
+            <div class="compare__col">
+              <h4>Hashing</h4>
+              <ul>
+                <li><strong>Irreversible</strong> por diseño</li>
+                <li>Objetivo: <em>verificación / integridad</em></li>
+                <li>«No me importa recuperarlo, solo comprobar si coincide»</li>
+                <li>Ej.: contraseñas, checksums, huellas de fichero</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- ============ Cifrado ============ -->
+          <h2 id="cifrado">
+            Cifrado: reversible a propósito
+            <a href="#cifrado" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cifrar transforma un texto claro en texto cifrado usando una
+            <strong>clave</strong>. Con la clave correcta, el proceso se deshace
+            y recuperas el original. Sin ella, el resultado es ruido. Hay dos
+            familias:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Claves</th>
+                  <th>Uso típico</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Simétrico</strong></td>
+                  <td>La misma clave cifra y descifra (AES).</td>
+                  <td>Cifrar datos en reposo: una columna sensible, un fichero.</td>
+                </tr>
+                <tr>
+                  <td><strong>Asimétrico</strong></td>
+                  <td>Clave pública cifra, privada descifra (RSA, curvas elípticas).</td>
+                  <td>Intercambiar secretos sin compartir clave antes; base de TLS.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Ya usas cifrado asimétrico</p>
+              <p>
+                El <a href="url-a-fondo.html">handshake de TLS</a> que protege
+                cada web «https» usa criptografía asimétrica para acordar una
+                clave de sesión, y luego cifra el tráfico con ella. La
+                reversibilidad ahí es el objetivo: el servidor <em>tiene</em> que
+                poder leer lo que le mandas.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Hashing ============ -->
+          <h2 id="hashing">
+            Hashing: de un solo sentido
+            <a href="#hashing" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una función hash criptográfica toma una entrada de cualquier tamaño y
+            devuelve una huella de tamaño fijo. Tiene tres propiedades que la
+            hacen útil para seguridad:
+          </p>
+          <ul>
+            <li><strong>Determinista:</strong> la misma entrada da siempre la misma huella.</li>
+            <li><strong>Irreversible:</strong> de la huella no se puede volver al original.</li>
+            <li><strong>Resistente a colisiones:</strong> es inviable encontrar dos entradas con la misma huella, y un cambio mínimo en la entrada cambia la huella por completo (efecto avalancha).</li>
+          </ul>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">No es el hash de una tabla hash</p>
+              <p>
+                Ojo con el nombre: el <a href="hashing.html">hash de una tabla
+                hash</a> busca ser rápido y repartir uniforme, y le da igual ser
+                predecible. Un hash <em>criptográfico</em> busca justo lo
+                contrario: ser caro de revertir e imposible de predecir. Mismo
+                nombre, objetivos opuestos.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Contraseñas ============ -->
+          <h2 id="contrasenas">
+            Por qué las contraseñas se hashean (y no se cifran)
+            <a href="#contrasenas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Para autenticar a un usuario no necesitas conocer su contraseña:
+            solo necesitas <strong>comprobar que la que escribe coincide con la
+            que registró</strong>. Y eso lo da el hashing sin guardar nunca el
+            original.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Registro</b><small>Hasheas la contraseña y guardas solo el hash</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Login</b><small>Hasheas lo que escribe el usuario</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Comparas hashes</b><small>Coinciden → acceso. Nunca guardaste el original</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Si te roban la base de datos, el atacante se lleva huellas, no
+              contraseñas. Con cifrado, en cambio, robar la clave revelaría todas.
+            </p>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">"¿Puedes recuperar mi contraseña?" → no, y es buena señal</p>
+              <p>
+                Si una web te puede enviar tu contraseña actual por email, es que
+                la guarda de forma reversible: lo hace mal. Una web bien hecha
+                solo puede <strong>resetearla</strong>, porque no conoce la tuya.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Sal ============ -->
+          <h2 id="sal">
+            La sal, y por qué MD5/SHA no bastan
+            <a href="#sal" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un hash a secas tiene dos debilidades para contraseñas. Primera: es
+            <strong>demasiado rápido</strong>. MD5 o SHA-256 se diseñaron para
+            ser veloces, y eso le viene de perlas a un atacante que prueba miles
+            de millones de combinaciones por segundo con una GPU
+            (<em>fuerza bruta</em>).
+          </p>
+          <p>
+            Segunda: al ser deterministas, dos usuarios con la misma contraseña
+            tienen el <strong>mismo hash</strong>. Un atacante puede precalcular
+            los hashes de las contraseñas más comunes (una <em>rainbow table</em>)
+            y cruzarlos con tu base de datos de golpe.
+          </p>
+          <p>
+            La <strong>sal</strong> (<em>salt</em>) resuelve lo segundo: es un
+            valor aleatorio único por contraseña que se añade antes de hashear.
+            Así, dos contraseñas iguales producen hashes distintos y las tablas
+            precalculadas dejan de servir. La sal se guarda junto al hash (no es
+            secreta; su valor está en ser única).
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Función</th>
+                  <th>¿Para contraseñas?</th>
+                  <th>Por qué</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>md5</code>, <code>sha1</code></td>
+                  <td>Nunca</td>
+                  <td>Rotas (colisiones) y rapidísimas. Sin sal, además.</td>
+                </tr>
+                <tr>
+                  <td><code>sha256</code></td>
+                  <td>No</td>
+                  <td>Segura como huella, pero demasiado rápida para frenar fuerza bruta.</td>
+                </tr>
+                <tr>
+                  <td><code>bcrypt</code></td>
+                  <td>Sí</td>
+                  <td>Lenta a propósito y con coste ajustable; sal incorporada.</td>
+                </tr>
+                <tr>
+                  <td><code>argon2id</code></td>
+                  <td>Sí (recomendada)</td>
+                  <td>Lenta y, además, dura en memoria: frena también a las GPU.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La idea clave: lentitud deliberada</p>
+              <p>
+                bcrypt y argon2 son <em>funciones de derivación de clave</em>:
+                hashes pensados para ser <strong>caros</strong>. Un login legítimo
+                que tarda 100 ms no te molesta, pero multiplica por mil millones
+                el coste de un ataque por fuerza bruta. Y el «coste» es un
+                parámetro que subes con los años, según mejora el hardware.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ PHP ============ -->
+          <h2 id="php">
+            Hacerlo bien en PHP
+            <a href="#php" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La buena noticia: no tienes que elegir algoritmo, generar la sal ni
+            gestionar el formato a mano. PHP trae <code>password_hash</code> y
+            <code>password_verify</code>, que hacen lo correcto por defecto.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · PasswordService.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class PasswordService
+{
+    public function hash(string $plainPassword): string
+    {
+        return password_hash($plainPassword, PASSWORD_ARGON2ID);
+    }
+
+    public function isValid(string $plainPassword, string $storedHash): bool
+    {
+        return password_verify($plainPassword, $storedHash);
+    }
+
+    public function needsRehash(string $storedHash): bool
+    {
+        return password_needs_rehash($storedHash, PASSWORD_ARGON2ID);
+    }
+}</code></pre>
+          </div>
+
+          <p>Tres detalles que marcan la diferencia:</p>
+          <ul>
+            <li>
+              <strong>La sal va dentro del hash.</strong> El resultado de
+              <code>password_hash</code> ya incluye algoritmo, coste y sal. No
+              guardes una columna de sal aparte: guarda la cadena entera y
+              <code>password_verify</code> sabe leerla.
+            </li>
+            <li>
+              <strong>Compara con <code>password_verify</code>, nunca con
+              <code>===</code>.</strong> La función compara en tiempo constante
+              para no filtrar información por el tiempo de respuesta
+              (<em>timing attack</em>).
+            </li>
+            <li>
+              <strong>Re-hashea al iniciar sesión.</strong> Si subes el coste con
+              el tiempo, <code>password_needs_rehash</code> te dice cuándo
+              regenerar el hash de un usuario que acaba de demostrar su
+              contraseña.
+            </li>
+          </ul>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">No inventes tu propio esquema</p>
+              <p>
+                «Hago SHA-256 dos veces y le concateno un secreto» es la receta
+                clásica del desastre. La criptografía hecha en casa falla por
+                sitios que no ves. Usa <code>password_hash</code>/argon2 y
+                céntrate en el resto de tu aplicación.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Resumen ============ -->
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>Cifrado</strong> es reversible con una clave (confidencialidad); <strong>hashing</strong> es de un solo sentido (verificación).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Las contraseñas se <strong>hashean</strong>, no se cifran: solo necesitas comprobar coincidencia, y así una brecha no revela las claves.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La <strong>sal</strong> (única por contraseña) mata las rainbow tables; el coste alto frena la fuerza bruta.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>MD5/SHA no valen</strong> para contraseñas (rápidas); usa <strong>bcrypt</strong> o, mejor, <strong>argon2id</strong>, lentos a propósito.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En PHP: <code>password_hash</code> + <code>password_verify</code> (sal incluida, comparación en tiempo constante). No inventes tu propio esquema.</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Navegación entre tutoriales -->
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+            <a href="autenticacion.html" class="next">
+              <small>Siguiente →</small>
+              <b>Autenticación: sesiones, JWT y OAuth</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <!-- ===================== Footer ===================== -->
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/roadmap.js"></script>
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>
