@@ -263,6 +263,13 @@
 
         return !isDone;
       },
+      remove: function (slugsToRemove) {
+        const remaining = read().filter(function (slug) {
+          return slugsToRemove.indexOf(slug) === -1;
+        });
+
+        write(remaining);
+      },
     };
   })();
 
@@ -319,6 +326,15 @@
           .sort(function (a, b) {
             return b.updatedAt - a.updatedAt;
           });
+      },
+      clear: function (slugsToClear) {
+        const map = read();
+
+        slugsToClear.forEach(function (slug) {
+          delete map[slug];
+        });
+
+        write(map);
       },
     };
   })();
@@ -1077,42 +1093,63 @@
         }
 
         const manifest = manifestMap();
-        const stats = progressOf(course, manifest);
+        const render = function () {
+          const stats = progressOf(course, manifest);
 
-        document.title = course.title + " — MentorAI";
+          document.title = course.title + " — MentorAI";
 
-        const modulesHtml = modulesOf(course)
-          .map(function (module, index) {
-            return buildModule(module, manifest, index);
-          })
-          .join("");
+          const modulesHtml = modulesOf(course)
+            .map(function (module, index) {
+              return buildModule(module, manifest, index);
+            })
+            .join("");
 
-        host.innerHTML =
-          '<header class="course-hero">' +
-          '<a class="course-hero__back" href="index.html">← Todos los cursos</a>' +
-          '<span class="eyebrow">Curso</span>' +
-          '<h1 class="course-hero__title">' +
-          escapeHtml(course.title) +
-          "</h1>" +
-          '<p class="course-hero__lead">' +
-          escapeHtml(course.summary) +
-          "</p>" +
-          '<div class="course-hero__meta"><span>' +
-          stats.published +
-          " lecciones</span><span>" +
-          escapeHtml(course.level || "") +
-          "</span><span>" +
-          stats.done +
-          " / " +
-          stats.published +
-          " completadas</span></div>" +
-          '<div class="course-hero__bar"><span style="width:' +
-          stats.percent +
-          '%"></span></div>' +
-          "</header>" +
-          '<div class="course-modules">' +
-          modulesHtml +
-          "</div>";
+          const resetButton = stats.done
+            ? '<button type="button" class="course-hero__reset">Reiniciar progreso</button>'
+            : "";
+
+          host.innerHTML =
+            '<header class="course-hero">' +
+            '<a class="course-hero__back" href="index.html">← Todos los cursos</a>' +
+            '<span class="eyebrow">Curso</span>' +
+            '<h1 class="course-hero__title">' +
+            escapeHtml(course.title) +
+            "</h1>" +
+            '<p class="course-hero__lead">' +
+            escapeHtml(course.summary) +
+            "</p>" +
+            '<div class="course-hero__meta"><span>' +
+            stats.published +
+            " lecciones</span><span>" +
+            escapeHtml(course.level || "") +
+            "</span><span>" +
+            stats.done +
+            " / " +
+            stats.published +
+            " completadas</span></div>" +
+            '<div class="course-hero__bar"><span style="width:' +
+            stats.percent +
+            '%"></span></div>' +
+            resetButton +
+            "</header>" +
+            '<div class="course-modules">' +
+            modulesHtml +
+            "</div>";
+
+          const resetEl = host.querySelector(".course-hero__reset");
+
+          if (resetEl) {
+            resetEl.addEventListener("click", function () {
+              const slugs = lessonSlugsOf(course);
+
+              Progress.remove(slugs);
+              Reading.clear(slugs);
+              render();
+            });
+          }
+        };
+
+        render();
       },
     };
   })();
@@ -1827,6 +1864,8 @@
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 4 20 12 6 20 6 4"/></svg>';
   const STOP_SVG =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
+  const PAUSE_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="4" x2="9" y2="20"/><line x1="15" y1="4" x2="15" y2="20"/></svg>';
   const DONE_SVG =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 
@@ -1892,6 +1931,16 @@
     button.type = "button";
     button.className = "tutorial-action";
 
+    let panel = null;
+    let toggleButton = null;
+    let barFill = null;
+    let percentLabel = null;
+
+    let totalChars = 0;
+    let completedChars = 0;
+    let currentChars = 0;
+    let isPaused = false;
+
     const setIdle = function () {
       button.classList.remove("is-playing");
       button.innerHTML = PLAY_SVG + "<span>Escuchar</span>";
@@ -1904,9 +1953,90 @@
 
     setIdle();
 
+    const renderPercent = function () {
+      const ratio = totalChars
+        ? Math.min(1, (completedChars + currentChars) / totalChars)
+        : 0;
+      const percent = Math.round(ratio * 100);
+
+      if (barFill) {
+        barFill.style.width = percent + "%";
+      }
+
+      if (percentLabel) {
+        percentLabel.textContent = percent + "%";
+      }
+    };
+
+    const removePanel = function () {
+      if (panel) {
+        panel.remove();
+        panel = null;
+        toggleButton = null;
+        barFill = null;
+        percentLabel = null;
+      }
+    };
+
     const stop = function () {
       window.speechSynthesis.cancel();
+      completedChars = 0;
+      currentChars = 0;
+      isPaused = false;
       setIdle();
+      removePanel();
+    };
+
+    const setToggleLabel = function () {
+      toggleButton.innerHTML = isPaused
+        ? PLAY_SVG + "<span>Reanudar</span>"
+        : PAUSE_SVG + "<span>Pausa</span>";
+    };
+
+    const togglePause = function () {
+      if (isPaused) {
+        window.speechSynthesis.resume();
+        isPaused = false;
+        setToggleLabel();
+        return;
+      }
+
+      window.speechSynthesis.pause();
+      isPaused = true;
+      setToggleLabel();
+    };
+
+    const buildPanel = function () {
+      panel = document.createElement("div");
+      panel.className = "audio-bar";
+
+      toggleButton = document.createElement("button");
+      toggleButton.type = "button";
+      toggleButton.className = "audio-bar__toggle";
+
+      const meta = document.createElement("div");
+      meta.className = "audio-bar__meta";
+      meta.innerHTML =
+        '<div class="audio-bar__label"><span>Escuchando</span>' +
+        '<span class="audio-bar__percent">0%</span></div>' +
+        '<div class="audio-bar__track"><span></span></div>';
+      percentLabel = meta.querySelector(".audio-bar__percent");
+      barFill = meta.querySelector(".audio-bar__track span");
+
+      const closeButton = document.createElement("button");
+      closeButton.type = "button";
+      closeButton.className = "audio-bar__close";
+      closeButton.setAttribute("aria-label", "Detener");
+      closeButton.innerHTML = STOP_SVG;
+
+      panel.appendChild(toggleButton);
+      panel.appendChild(meta);
+      panel.appendChild(closeButton);
+      document.body.appendChild(panel);
+
+      toggleButton.addEventListener("click", togglePause);
+      closeButton.addEventListener("click", stop);
+      setToggleLabel();
     };
 
     const play = function () {
@@ -1917,6 +2047,13 @@
       }
 
       window.speechSynthesis.cancel();
+      completedChars = 0;
+      currentChars = 0;
+      isPaused = false;
+      totalChars = chunks.reduce(function (sum, text) {
+        return sum + text.length;
+      }, 0);
+
       const voice = pickSpanishVoice();
 
       chunks.forEach(function (text, index) {
@@ -1928,13 +2065,26 @@
           utterance.voice = voice;
         }
 
-        if (index === chunks.length - 1) {
-          utterance.onend = setIdle;
-        }
+        utterance.onboundary = function (event) {
+          currentChars = event.charIndex || 0;
+          renderPercent();
+        };
+
+        utterance.onend = function () {
+          completedChars += text.length;
+          currentChars = 0;
+          renderPercent();
+
+          if (index === chunks.length - 1) {
+            stop();
+          }
+        };
 
         window.speechSynthesis.speak(utterance);
       });
 
+      buildPanel();
+      renderPercent();
       setPlaying();
     };
 

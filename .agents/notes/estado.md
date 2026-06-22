@@ -430,6 +430,29 @@ cola (siguen en `cola-arquitectura-y-practica.md`, ahora serán cursos).
   real (el screenshot solo capturó la vista Inicio por defecto); (5) cuando se
   escriban los 16 tutoriales de la cola, crear sus cursos en courses.js.
 
+## Reinicio de progreso + barra flotante de audio (2026-06-22) — HECHO (sin commit)
+Tres mejoras de UX pedidas por el usuario.
+- **Botón "Reiniciar progreso"** en la página de curso (`curso.html`). Decisión:
+  **por curso** (resetea solo las lecciones de ese curso) y borra **completadas +
+  "seguir viendo"** (no toca favoritos). En main.js: `Progress.remove(slugs)` y
+  `Reading.clear(slugs)` nuevos; `renderCoursePage` ahora envuelve el pintado en una
+  función `render()` reentrante, muestra el botón solo si `stats.done>0` y al click
+  hace remove+clear y re-renderiza. CSS `.course-hero__reset` (hover en `--danger`).
+- **Barra flotante de audio** (`.audio-bar`, fixed abajo centrada) al pulsar
+  "Escuchar": ya no se pierde con el scroll. Pausa/reanudar **reales** con
+  `speechSynthesis.pause()`/`.resume()` (antes el re-pulsar hacía cancel+reencolar y
+  reiniciaba). `buildAudioButton` reescrito: panel con botón toggle (Pausa/Reanudar),
+  barra+%, y botón cerrar (stop). `PAUSE_SVG` nuevo.
+- **% de locución** en el panel: `totalChars`=suma de longitudes de los chunks;
+  `onboundary` actualiza `currentChars=event.charIndex`, `onend` acumula
+  `completedChars`; % = (completed+current)/total. Al acabar el último chunk, `stop()`
+  cierra el panel.
+- Verificado: `node --check` OK; render headless de curso.html (sin progreso → sin
+  botón; con localStorage sembrado → "2/22 completadas" + botón "Reiniciar progreso" +
+  lecciones marcadas done) y de una lección (botón "Escuchar" inyectado). El
+  pause/resume y el % no se prueban headless (requieren TTS real), pero la lógica
+  parsea y el cableado está verificado.
+
 ## Planes pendientes (detalle en notes)
 - `plan-curriculum-fundamentos.md` — currículum de fundamentos CS para backend
   autodidacta (7 pilares). **Decidido:** arrancar por el pilar Bases de datos,
