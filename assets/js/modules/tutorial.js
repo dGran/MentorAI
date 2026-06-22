@@ -52,6 +52,8 @@
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="4" x2="9" y2="20"/><line x1="15" y1="4" x2="15" y2="20"/></svg>';
   const DONE_SVG =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  const CLOSE_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
 
   function injectTutorialActions(slug, prose) {
     const host = document.querySelector(".tutorial-hero .container");
@@ -118,12 +120,16 @@
     let panel = null;
     let toggleButton = null;
     let barFill = null;
+    let trackButton = null;
     let percentLabel = null;
 
+    let chunks = [];
+    let offsets = [];
     let totalChars = 0;
     let completedChars = 0;
     let currentChars = 0;
     let isPaused = false;
+    let playToken = 0;
 
     const setIdle = function () {
       button.classList.remove("is-playing");
@@ -158,11 +164,13 @@
         panel = null;
         toggleButton = null;
         barFill = null;
+        trackButton = null;
         percentLabel = null;
       }
     };
 
     const stop = function () {
+      playToken += 1;
       window.speechSynthesis.cancel();
       completedChars = 0;
       currentChars = 0;
@@ -172,6 +180,10 @@
     };
 
     const setToggleLabel = function () {
+      if (!toggleButton) {
+        return;
+      }
+
       toggleButton.innerHTML = isPaused
         ? PLAY_SVG + "<span>Reanudar</span>"
         : PAUSE_SVG + "<span>Pausa</span>";
@@ -203,15 +215,16 @@
       meta.innerHTML =
         '<div class="audio-bar__label"><span>Escuchando</span>' +
         '<span class="audio-bar__percent">0%</span></div>' +
-        '<div class="audio-bar__track"><span></span></div>';
+        '<button type="button" class="audio-bar__track" aria-label="Avanzar o retroceder"><span></span></button>';
       percentLabel = meta.querySelector(".audio-bar__percent");
-      barFill = meta.querySelector(".audio-bar__track span");
+      trackButton = meta.querySelector(".audio-bar__track");
+      barFill = trackButton.querySelector("span");
 
       const closeButton = document.createElement("button");
       closeButton.type = "button";
       closeButton.className = "audio-bar__close";
-      closeButton.setAttribute("aria-label", "Detener");
-      closeButton.innerHTML = STOP_SVG;
+      closeButton.setAttribute("aria-label", "Cerrar");
+      closeButton.innerHTML = CLOSE_SVG;
 
       panel.appendChild(toggleButton);
       panel.appendChild(meta);
@@ -220,27 +233,32 @@
 
       toggleButton.addEventListener("click", togglePause);
       closeButton.addEventListener("click", stop);
+      trackButton.addEventListener("click", function (event) {
+        const rect = trackButton.getBoundingClientRect();
+
+        if (rect.width === 0) {
+          return;
+        }
+
+        seekToRatio((event.clientX - rect.left) / rect.width);
+      });
       setToggleLabel();
     };
 
-    const play = function () {
-      const chunks = speechChunks(prose);
-
-      if (chunks.length === 0) {
-        return;
-      }
-
-      window.speechSynthesis.cancel();
-      completedChars = 0;
-      currentChars = 0;
-      isPaused = false;
-      totalChars = chunks.reduce(function (sum, text) {
-        return sum + text.length;
-      }, 0);
-
+    const speakFrom = function (startIndex) {
+      const token = (playToken += 1);
       const voice = pickSpanishVoice();
 
-      chunks.forEach(function (text, index) {
+      window.speechSynthesis.cancel();
+      completedChars = offsets[startIndex] || 0;
+      currentChars = 0;
+      isPaused = false;
+      renderPercent();
+      setToggleLabel();
+
+      for (let index = startIndex; index < chunks.length; index += 1) {
+        const text = chunks[index];
+        const length = text.length;
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = "es-ES";
         utterance.rate = 1;
@@ -250,12 +268,20 @@
         }
 
         utterance.onboundary = function (event) {
+          if (token !== playToken) {
+            return;
+          }
+
           currentChars = event.charIndex || 0;
           renderPercent();
         };
 
         utterance.onend = function () {
-          completedChars += text.length;
+          if (token !== playToken) {
+            return;
+          }
+
+          completedChars += length;
           currentChars = 0;
           renderPercent();
 
@@ -265,10 +291,41 @@
         };
 
         window.speechSynthesis.speak(utterance);
+      }
+    };
+
+    const seekToRatio = function (ratio) {
+      if (chunks.length === 0) {
+        return;
+      }
+
+      const targetChar = Math.max(0, Math.min(1, ratio)) * totalChars;
+      let index = 0;
+
+      while (index < chunks.length - 1 && offsets[index + 1] <= targetChar) {
+        index += 1;
+      }
+
+      speakFrom(index);
+    };
+
+    const play = function () {
+      chunks = speechChunks(prose);
+
+      if (chunks.length === 0) {
+        return;
+      }
+
+      offsets = [];
+      totalChars = 0;
+
+      chunks.forEach(function (text) {
+        offsets.push(totalChars);
+        totalChars += text.length;
       });
 
       buildPanel();
-      renderPercent();
+      speakFrom(0);
       setPlaying();
     };
 
