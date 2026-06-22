@@ -357,6 +357,8 @@
 
     const CATEGORY_LABELS = {
       php: "PHP",
+      runtime: "PHP por dentro",
+      cultura: "Cultura dev",
       rendimiento: "Rendimiento",
       infra: "Infraestructura",
       mensajeria: "Mensajería",

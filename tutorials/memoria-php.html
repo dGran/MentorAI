@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cómo gestiona la memoria PHP — MentorAI</title>
+    <meta
+      name="description"
+      content="El gestor de memoria de Zend en PHP: la arena por request, memory_limit, zvals, refcounting, copy-on-write y el recolector de ciclos. Por qué liberar es tan barato."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <!-- ===================== Navbar ===================== -->
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button
+            class="icon-btn theme-toggle"
+            aria-label="Cambiar tema"
+            title="Cambiar tema"
+          >
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- ===================== Hero del tutorial ===================== -->
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>PHP por dentro</span>
+        </nav>
+        <h1 class="tutorial-hero__title">
+          Cómo gestiona la memoria PHP
+        </h1>
+        <p class="tutorial-hero__lead">
+          PHP casi nunca te obliga a pensar en la memoria: creas variables y
+          desaparecen solas. Detrás hay un gestor propio, contadores de
+          referencias y un recolector de ciclos, todo apoyado en un truco que lo
+          hace barato: al acabar la petición, tira la memoria entera de golpe.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            16 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Zend MM
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== Layout: TOC + contenido ===================== -->
+    <div class="container">
+      <div class="tutorial-layout">
+        <!-- Índice -->
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#arena">La arena por request</a></li>
+            <li><a href="#memory-limit">memory_limit</a></li>
+            <li><a href="#zval">El zval: cómo se guarda un valor</a></li>
+            <li><a href="#refcount">Refcounting</a></li>
+            <li><a href="#cow">Copy-on-write</a></li>
+            <li><a href="#gc">El recolector de ciclos</a></li>
+            <li><a href="#practica">Qué hacer en la práctica</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <!-- Artículo -->
+        <article class="prose">
+          <p class="lead">
+            Antes de empezar: esto es la <strong>memoria en concreto dentro de
+            PHP</strong>. Los fundamentos generales (stack, heap, memoria virtual,
+            caché) están en el tutorial de <a href="memoria.html">memoria</a>. Aquí
+            bajamos al runtime: cómo el motor de PHP pide, reparte y libera esa
+            memoria petición a petición.
+          </p>
+
+          <!-- ============ Arena ============ -->
+          <h2 id="arena">
+            La arena: memoria atada al request
+            <a href="#arena" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            PHP no usa directamente el <code>malloc</code> del sistema para cada
+            variable. Tiene su propio gestor, el <strong>Zend Memory Manager</strong>,
+            que pide bloques grandes al sistema operativo y luego los reparte él en
+            trocitos con funciones internas como <code>emalloc</code> y
+            <code>efree</code> (la <code>e</code> es de <em>engine</em>).
+          </p>
+          <p>
+            La clave es que toda esa memoria es <strong>por petición</strong>: se
+            asocia a un "pool" o <em>arena</em> que nace al empezar el request y se
+            destruye al acabar. Por eso liberar es tan barato.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Empieza la petición</b><small>Se abre la arena de memoria</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Tu código pide memoria</b><small>emalloc reparte trozos de la arena</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Termina la petición</b><small>Se tira la arena ENTERA de golpe</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              No se liberan los objetos uno a uno al final: se descarta el bloque
+              completo. Limpiar es casi gratis porque no importa qué había dentro.
+            </p>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Por qué PHP "perdona" las fugas</p>
+              <p>
+                En un lenguaje long-running, olvidarte de liberar memoria es una
+                fuga que crece sin parar. En PHP clásico, da igual: aunque te
+                "olvides", la arena entera muere al acabar el request. Por eso se
+                programa sin pensar en liberar… hasta que pasas a procesos de larga
+                vida (Swoole, workers de cola), donde esa red de seguridad
+                desaparece.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ memory_limit ============ -->
+          <h2 id="memory-limit">
+            <code>memory_limit</code>: el tope por petición
+            <a href="#memory-limit" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <code>memory_limit</code> es cuánta memoria puede consumir
+            <strong>una sola petición</strong> antes de que PHP la mate con un
+            error fatal. No es la memoria del servidor ni la del pool: es un tope
+            por request, pensado para que un script desbocado no se coma la
+            máquina.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ini · php.ini</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="ini">; Tope por petición (web). 128M suele bastar para una request normal
+memory_limit = 128M
+
+; En CLI a menudo se deja sin límite para comandos pesados
+; memory_limit = -1</code></pre>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">"Allowed memory size exhausted"</p>
+              <p>
+                Casi siempre no es que falte RAM: es que cargaste demasiado en una
+                petición. El clásico: <code>SELECT</code> de medio millón de filas
+                a un array, o leer un fichero gigante de golpe. La solución no es
+                subir <code>memory_limit</code> a ciegas, sino procesar
+                <strong>en streaming</strong> (cursores, generadores, leer por
+                trozos).
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ zval ============ -->
+          <h2 id="zval">
+            El zval: cómo se guarda un valor
+            <a href="#zval" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cada valor en PHP no es "el número 5" pelado: vive en una estructura
+            interna llamada <strong>zval</strong> (<em>Zend value</em>). Un zval
+            guarda dos cosas: el <strong>tipo</strong> (entero, cadena, array,
+            objeto…) y el <strong>valor</strong> en sí (o un puntero a él, si es
+            grande como un array o un objeto).
+          </p>
+          <p>
+            Los tipos simples (int, bool, float) caben dentro del propio zval. Los
+            tipos complejos (strings, arrays, objetos) guardan en el zval un
+            puntero a una estructura aparte en el heap, y esa estructura es la que
+            lleva un <strong>contador de referencias</strong>. Ese contador es la
+            base de todo lo que viene.
+          </p>
+
+          <!-- ============ refcount ============ -->
+          <h2 id="refcount">
+            Refcounting: contar quién apunta
+            <a href="#refcount" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            PHP libera memoria principalmente por <strong>conteo de
+            referencias</strong>: cada valor compartible lleva la cuenta de cuántas
+            variables lo están usando. Cuando una variable nueva apunta al valor,
+            el contador sube; cuando una deja de hacerlo (se reasigna o sale de
+            ámbito), baja. <strong>Al llegar a cero, ese valor se libera al
+            instante</strong>, sin esperar a ningún recolector.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · refcount.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$first = "una cadena larga compartida";
+$second = $first;   // ambos apuntan al mismo valor: refcount = 2
+
+unset($second);     // refcount = 1
+unset($first);      // refcount = 0: se libera de inmediato</code></pre>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Verlo con tus ojos</p>
+              <p>
+                <code>debug_zval_refcount()</code> ya no existe, pero
+                <code>xdebug_debug_zval('var')</code> (con Xdebug) te muestra el
+                <code>refcount</code> y si el valor está marcado como
+                <code>is_ref</code>. Es la forma más didáctica de ver subir y bajar
+                el contador.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ COW ============ -->
+          <h2 id="cow">
+            Copy-on-write: copiar solo cuando hace falta
+            <a href="#cow" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Si asignar <code>$b = $a</code> con un array de un millón de elementos
+            lo duplicara en memoria al instante, PHP sería carísimo. No lo hace:
+            aplica <strong>copy-on-write</strong> (COW). Al asignar, las dos
+            variables <strong>comparten</strong> el mismo valor y suben el
+            refcount. La copia real solo ocurre cuando <strong>una de las dos
+            intenta modificarlo</strong>.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>$b = $a</b><small>Array de 1M de elementos</small></span>
+              </div>
+              <div class="flow__arrow" data-label="NO copia: comparten"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>$a y $b apuntan al mismo array</b><small>refcount = 2, cero bytes extra</small></span>
+              </div>
+              <div class="flow__arrow" data-label="$b[] = 99 (escribe)"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Ahora SÍ copia</b><small>$b se separa con su propia versión</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Mientras solo lees, compartir es gratis. La copia (cara) se pospone
+              hasta el primer cambio, y solo entonces.
+            </p>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El mito del paso por referencia "para optimizar"</p>
+              <p>
+                Pasar un array grande a una función que <em>solo lo lee</em> no lo
+                copia: COW ya lo comparte. Poner <code>&amp;</code> "para no copiar"
+                no aporta nada y puede empeorar las cosas, porque marcar un valor
+                como referencia desactiva justamente la magia del COW. Pasa por
+                valor y deja que el motor optimice.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ GC ============ -->
+          <h2 id="gc">
+            El recolector de ciclos
+            <a href="#gc" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El refcounting tiene un punto ciego: los <strong>ciclos</strong>. Si el
+            objeto A guarda una referencia a B y B guarda otra a A, sus contadores
+            nunca llegan a cero aunque nadie más los use. Se quedarían colgados en
+            memoria hasta el final del request. Para eso existe el
+            <strong>recolector de ciclos</strong> (<em>cycle collector</em>), un
+            complemento del refcount, no un sustituto.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · ciclo.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+class Node
+{
+    public ?Node $partner = null;
+}
+
+$a = new Node();
+$b = new Node();
+$a-&gt;partner = $b;   // A apunta a B
+$b-&gt;partner = $a;   // B apunta a A: ciclo
+
+unset($a, $b);      // refcount NO llega a 0: se apuntan entre ellos
+// El recolector de ciclos es quien acabará liberándolos</code></pre>
+          </div>
+
+          <p>
+            El recolector se dispara solo cuando se acumulan suficientes
+            "candidatos a ciclo" (un buffer interno con un umbral). También puedes
+            forzarlo con <code>gc_collect_cycles()</code>. En código web normal
+            casi nunca te preocupa; en procesos de larga vida sí importa, porque
+            ahí los ciclos no se limpian "gratis" al morir el request.
+          </p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Refcount + GC, no uno u otro</p>
+              <p>
+                Es un error pensar que PHP "tiene garbage collector como Java". El
+                90% del trabajo lo hace el <strong>refcount</strong>, que libera al
+                instante. El recolector de ciclos solo se ocupa del caso concreto
+                de las referencias circulares. Son dos mecanismos que colaboran.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Práctica ============ -->
+          <h2 id="practica">
+            Qué hacer en la práctica
+            <a href="#practica" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Toda esta teoría se traduce en unos pocos hábitos concretos cuando
+            tienes un problema de memoria:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · medir.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+// Memoria usada ahora mismo y pico máximo del request
+echo memory_get_usage(true), "\n";
+echo memory_get_peak_usage(true), "\n";
+
+// Procesar muchas filas SIN cargarlas todas: un generador
+function readRows(\PDOStatement $stmt): \Generator
+{
+    while ($row = $stmt-&gt;fetch()) {
+        yield $row;
+    }
+}</code></pre>
+          </div>
+
+          <ul>
+            <li><strong>Mide</strong> con <code>memory_get_peak_usage()</code>: el pico es lo que cuenta para <code>memory_limit</code>, no el momento final.</li>
+            <li><strong>Streaming</strong> en vez de cargar de golpe: generadores (<code>yield</code>), cursores de BBDD, leer ficheros por trozos.</li>
+            <li><strong>Suelta lo grande</strong> cuanto antes: reasignar o <code>unset()</code> un array enorme baja su refcount a cero y lo libera ya.</li>
+            <li><strong>En long-running</strong>: rompe ciclos manualmente o llama a <code>gc_collect_cycles()</code> entre tandas; ahí la arena no te salva.</li>
+          </ul>
+
+          <p>
+            Ese último punto enlaza con el modelo de ejecución: un worker de cola o
+            un proceso Swoole no muere por petición, así que la memoria se acumula.
+            Es justo el tema del siguiente tutorial, <a href="workers-php.html">workers
+            y modelos de ejecución</a>.
+          </p>
+
+          <!-- ============ Resumen ============ -->
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El gestor de Zend reparte memoria por <strong>arena de request</strong> y la libera entera al acabar: limpiar es casi gratis.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>memory_limit</code> es el tope <strong>por petición</strong>; "memory exhausted" suele ser cargar demasiado de golpe, no falta de RAM.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los valores viven en <strong>zvals</strong> con <strong>refcount</strong>: al llegar a cero referencias, se liberan al instante.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>Copy-on-write</strong>: asignar comparte, copiar solo al modificar. No fuerces <code>&amp;</code> "para optimizar".</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El <strong>recolector de ciclos</strong> complementa al refcount para las referencias circulares; importa sobre todo en procesos de larga vida.</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Navegación entre tutoriales -->
+          <nav class="tutorial-nav">
+            <a href="php-fpm.html">
+              <small>← Anterior</small>
+              <b>SAPIs y PHP-FPM a fondo</b>
+            </a>
+            <a href="workers-php.html" class="next">
+              <small>Siguiente →</small>
+              <b>Workers y modelos de ejecución</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <!-- ===================== Footer ===================== -->
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/roadmap.js"></script>
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

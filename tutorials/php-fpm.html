@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SAPIs y PHP-FPM a fondo — MentorAI</title>
+    <meta
+      name="description"
+      content="Qué es un SAPI, en qué se diferencian CLI, CGI, mod_php y FPM, cómo funciona FastCGI, los modos de los pools (static/dynamic/ondemand) y por qué PHP es shared-nothing."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <!-- ===================== Navbar ===================== -->
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button
+            class="icon-btn theme-toggle"
+            aria-label="Cambiar tema"
+            title="Cambiar tema"
+          >
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- ===================== Hero del tutorial ===================== -->
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>PHP por dentro</span>
+        </nav>
+        <h1 class="tutorial-hero__title">
+          SAPIs y PHP-FPM a fondo
+        </h1>
+        <p class="tutorial-hero__lead">
+          El mismo PHP corre de formas muy distintas según quién lo arranque: un
+          script de consola, Apache o el servidor que sirve tu web. Esa "puerta de
+          entrada" es el SAPI. Veamos qué es, por qué FPM se comió a los demás y
+          qué implica su modelo de que cada petición empiece de cero.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            16 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            PHP-FPM
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== Layout: TOC + contenido ===================== -->
+    <div class="container">
+      <div class="tutorial-layout">
+        <!-- Índice -->
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#sapi">Qué es un SAPI</a></li>
+            <li><a href="#zoo">El zoo: CLI, mod_php, CGI, FPM</a></li>
+            <li><a href="#fastcgi">FastCGI: por qué FPM</a></li>
+            <li><a href="#ciclo">El ciclo de una petición</a></li>
+            <li><a href="#pools">Pools y modos de pm</a></li>
+            <li><a href="#dimensionar">Dimensionar max_children</a></li>
+            <li><a href="#shared-nothing">Shared-nothing</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <!-- Artículo -->
+        <article class="prose">
+          <p class="lead">
+            Imagina un cocinero (PHP) que sabe preparar cualquier plato. Da igual
+            si trabaja en un food truck que abre y cierra para cada cliente, en un
+            restaurante con varios cocineros fijos esperando comandas o en tu casa
+            cocinando una sola cena. El cocinero es el mismo; lo que cambia es el
+            <strong>local y cómo le llegan los pedidos</strong>. Ese "local" es el
+            SAPI.
+          </p>
+
+          <!-- ============ SAPI ============ -->
+          <h2 id="sapi">
+            Qué es un SAPI
+            <a href="#sapi" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <strong>SAPI</strong> son las siglas de <em>Server API</em>. Es la
+            capa que conecta el intérprete de PHP con el mundo que lo invoca: de
+            dónde lee la petición, cómo le pasa las variables de entorno, dónde
+            escribe la salida. El núcleo que ejecuta tu código es siempre el mismo;
+            el SAPI es la <strong>interfaz de entrada y salida</strong> que lo
+            envuelve.
+          </p>
+          <p>
+            Por eso una misma instalación de PHP trae varios binarios: uno para la
+            consola, otro para el servidor web. No son "PHP distintos": son el
+            mismo motor con un SAPI distinto delante.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Cómo saber qué SAPI corre</p>
+              <p>
+                La función <code>php_sapi_name()</code> (o la constante
+                <code>PHP_SAPI</code>) te dice bajo qué SAPI se está ejecutando el
+                código: <code>cli</code> en consola, <code>fpm-fcgi</code> bajo
+                PHP-FPM, <code>apache2handler</code> con mod_php. Útil para
+                ramificar comportamiento entre web y comandos.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ El zoo ============ -->
+          <h2 id="zoo">
+            El zoo de SAPIs
+            <a href="#zoo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Históricamente ha habido varias formas de poner PHP detrás de una web.
+            Conviene conocerlas porque explican de dónde viene FPM:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>SAPI</th>
+                  <th>Cómo funciona</th>
+                  <th>Problema</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>cli</code></td>
+                  <td>Ejecuta un script y muere. Para comandos y workers.</td>
+                  <td>No sirve para la web.</td>
+                </tr>
+                <tr>
+                  <td>CGI clásico</td>
+                  <td>Arranca un proceso PHP <em>nuevo</em> por cada petición.</td>
+                  <td>Arrancar un proceso por request es carísimo.</td>
+                </tr>
+                <tr>
+                  <td><code>mod_php</code></td>
+                  <td>PHP incrustado dentro de cada proceso de Apache.</td>
+                  <td>Ata PHP al servidor web; gasta RAM hasta sirviendo imágenes.</td>
+                </tr>
+                <tr>
+                  <td><strong>PHP-FPM</strong></td>
+                  <td>Un pool de procesos PHP persistentes que hablan FastCGI.</td>
+                  <td>El estándar actual: rápido y desacoplado.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            El gran salto está entre CGI y FPM. CGI tenía la idea correcta
+            (separar PHP del servidor web) pero la pagaba carísima: levantar e
+            inicializar un proceso de PHP entero por cada petición. FastCGI
+            arregló justo eso.
+          </p>
+
+          <!-- ============ FastCGI ============ -->
+          <h2 id="fastcgi">
+            FastCGI y por qué FPM
+            <a href="#fastcgi" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <strong>FastCGI</strong> es un protocolo entre el servidor web (Nginx,
+            Apache) y el proceso que ejecuta el lenguaje. La idea: en vez de
+            arrancar un proceso por petición, mantén un conjunto de procesos
+            <strong>vivos y a la espera</strong>, y reutilízalos. El servidor web
+            recibe el HTTP, se lo pasa a un worker libre por FastCGI, y este
+            devuelve la respuesta.
+          </p>
+          <p>
+            <strong>PHP-FPM</strong> (<em>FastCGI Process Manager</em>) es la
+            implementación oficial de ese gestor para PHP. "Process Manager"
+            porque su trabajo es justo administrar ese conjunto de workers:
+            cuántos hay, cuándo nacen, cuándo se reciclan.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Navegador</b><small>Petición HTTP</small></span>
+              </div>
+              <div class="flow__arrow" data-label="HTTP"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Nginx</b><small>Sirve estáticos; lo dinámico lo delega</small></span>
+              </div>
+              <div class="flow__arrow" data-label="FastCGI"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>PHP-FPM (master)</b><small>Asigna a un worker libre</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>Worker PHP</b><small>Ejecuta y devuelve la respuesta</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Nginx no sabe ejecutar PHP: reparte. Sirve los ficheros estáticos él
+              mismo y manda lo dinámico a FPM por FastCGI.
+            </p>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Por eso Nginx + FPM es el estándar</p>
+              <p>
+                El servidor web hace lo que sabe (HTTP, TLS, estáticos) y PHP hace
+                lo suyo, cada uno en su proceso. Puedes escalar, reiniciar o
+                actualizar PHP sin tocar Nginx. Ese desacoplamiento es justo lo que
+                <code>mod_php</code> no permitía.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Ciclo ============ -->
+          <h2 id="ciclo">
+            El ciclo de vida de una petición
+            <a href="#ciclo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Dentro de un worker, cada petición pasa por las mismas fases. Esto es
+            clave para entender el modelo de ejecución de PHP:
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>El worker recibe la petición</b><small>Por FastCGI desde Nginx</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>RINIT</b><small>Inicializa el request: superglobales, sesión…</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Ejecuta tu código</b><small>Tu app responde</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">4</span>
+                <span><b>RSHUTDOWN</b><small>Libera la memoria del request entera</small></span>
+              </div>
+              <div class="flow__arrow" data-label="vuelve a esperar"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">5</span>
+                <span><b>Worker libre otra vez</b><small>Listo para la siguiente</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              El worker <strong>no muere</strong> entre peticiones (eso lo hacía el
+              CGI clásico): se limpia y espera la siguiente. Lo que sí se tira es
+              la memoria de cada request.
+            </p>
+          </div>
+
+          <!-- ============ Pools ============ -->
+          <h2 id="pools">
+            Pools y los modos de <code>pm</code>
+            <a href="#pools" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            FPM organiza los workers en <strong>pools</strong>. Un pool es un grupo
+            de procesos con su propia configuración (usuario, límites, número de
+            workers). Puedes tener varios: por ejemplo uno para la web y otro,
+            aislado y con más memoria, para el panel de administración.
+          </p>
+          <p>
+            La directiva más importante de un pool es <code>pm</code>: decide
+            <strong>cómo se gestiona el número de workers</strong>. Hay tres modos:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Modo</th>
+                  <th>Comportamiento</th>
+                  <th>Cuándo</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>static</code></td>
+                  <td>Número fijo de workers, siempre vivos.</td>
+                  <td>Carga estable y alta; máximo rendimiento.</td>
+                </tr>
+                <tr>
+                  <td><code>dynamic</code></td>
+                  <td>Mantiene un mínimo; crea y destruye según demanda.</td>
+                  <td>Por defecto; buen equilibrio.</td>
+                </tr>
+                <tr>
+                  <td><code>ondemand</code></td>
+                  <td>Cero workers en reposo; los crea solo al llegar tráfico.</td>
+                  <td>Sitios con poco tráfico; ahorrar RAM.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ini · www.conf</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="ini">[www]
+pm = dynamic
+
+; Tope absoluto de procesos atendiendo a la vez
+pm.max_children = 20
+
+; Workers vivos al arrancar
+pm.start_servers = 4
+
+; Colchón de workers libres esperando
+pm.min_spare_servers = 2
+pm.max_spare_servers = 6
+
+; Reciclar un worker tras N peticiones (evita fugas de memoria)
+pm.max_requests = 500</code></pre>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Para qué sirve <code>pm.max_requests</code></p>
+              <p>
+                Reinicia el worker tras N peticiones. Aunque PHP libera la memoria
+                de cada request, alguna extensión en C puede ir dejando pequeñas
+                fugas que se acumulan en un proceso de larga vida. Reciclar cada
+                cierto número de peticiones es el cinturón de seguridad barato
+                contra eso.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Dimensionar ============ -->
+          <h2 id="dimensionar">
+            Dimensionar <code>max_children</code>
+            <a href="#dimensionar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <code>pm.max_children</code> es el número de peticiones PHP que puedes
+            atender <strong>a la vez</strong>. Si se llena, las demás esperan en
+            cola: la web "se nota lenta" aunque la CPU esté ociosa. Pero pasarse
+            tampoco es gratis: cada worker consume RAM, y si abres más de los que
+            caben en memoria, el servidor empieza a usar swap y todo se desploma.
+          </p>
+          <p>
+            La cuenta de servilleta es sencilla: <strong>RAM disponible para PHP
+            dividida entre la memoria media de un worker</strong>.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash"># Ejemplo: 4 GB para PHP, cada worker ~80 MB de media
+#   4096 MB / 80 MB ≈ 50 workers
+#
+# Deja margen para el sistema, Nginx y la base de datos:
+#   pm.max_children = 40
+
+# Mira el consumo real de un worker en ejecución
+ps --no-headers -o rss -C php-fpm8.3 | sort -n | tail -5</code></pre>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Más workers no es más velocidad</p>
+              <p>
+                Subir <code>max_children</code> a lo bestia es el error típico. Si
+                no hay RAM, entras en swap y vas más lento que con menos workers.
+                Y si tus peticiones esperan a la base de datos, abrir 200 workers
+                solo traslada el atasco a la BBDD. Ajusta a la RAM real y mide.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Shared-nothing ============ -->
+          <h2 id="shared-nothing">
+            El modelo shared-nothing
+            <a href="#shared-nothing" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Aquí está la idea que define a PHP y que sorprende a quien viene de
+            Node o Java: <strong>cada petición empieza desde cero y no comparte
+            estado con las demás</strong>. Cuando un request termina, PHP tira
+            toda su memoria. Las variables, los objetos, lo que cargaste… nada
+            sobrevive a la siguiente petición.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>La cara buena</h4>
+              <ul>
+                <li>Una petición no puede corromper a otra</li>
+                <li>Una fuga de memoria se limpia sola al acabar</li>
+                <li>Modelo mental simple: empiezas limpio siempre</li>
+                <li>Un worker que peta no se lleva a los demás</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>La consecuencia</h4>
+              <ul>
+                <li>No hay variables "globales" entre peticiones</li>
+                <li>El estado compartido va <strong>fuera</strong></li>
+                <li>Sesiones, caché y colas: Redis o la BBDD</li>
+                <li>Cargar el framework se repite en cada request</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Por qué Redis aparece tan pronto</p>
+              <p>
+                Si el estado no vive entre peticiones, tiene que vivir en algún
+                sitio al que todos los workers accedan: ahí entran Redis (sesiones,
+                caché, contadores) y la base de datos. El modelo shared-nothing es
+                la razón de fondo de por qué casi toda app PHP acaba con un Redis
+                al lado.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            Este modelo enlaza con dos cosas que ya hemos visto en otros
+            tutoriales: que <a href="procesos-hilos.html">PHP-FPM es multiproceso</a>
+            (un worker por petición, no hilos) y que <a href="opcache.html">OPcache</a>
+            es justo lo que evita pagar la compilación del framework en cada uno de
+            esos arranques desde cero.
+          </p>
+
+          <!-- ============ Resumen ============ -->
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El <strong>SAPI</strong> es la interfaz por la que se arranca PHP: el mismo motor con distinta puerta de entrada (CLI, mod_php, FPM).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>FastCGI</strong> reutiliza procesos vivos en vez de arrancar uno por petición; <strong>PHP-FPM</strong> es su gestor oficial.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los <strong>pools</strong> agrupan workers; <code>pm</code> (static/dynamic/ondemand) decide cómo se crean y se destruyen.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>max_children</code> = peticiones a la vez. Se dimensiona por <strong>RAM ÷ memoria por worker</strong>, no a ojo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>Shared-nothing</strong>: cada petición empieza limpia y no comparte estado. Por eso el estado vive fuera, en Redis o la BBDD.</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Navegación entre tutoriales -->
+          <nav class="tutorial-nav">
+            <a href="extensiones-php.html">
+              <small>← Anterior</small>
+              <b>Extensiones de PHP</b>
+            </a>
+            <a href="memoria-php.html" class="next">
+              <small>Siguiente →</small>
+              <b>Cómo gestiona la memoria PHP</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <!-- ===================== Footer ===================== -->
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/roadmap.js"></script>
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

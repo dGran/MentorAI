@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Workers y modelos de ejecución en PHP — MentorAI</title>
+    <meta
+      name="description"
+      content="Los dos sentidos de worker en PHP: los de FPM (request-per-process) y los de cola (Laravel Queue, Symfony Messenger). Procesos long-running con Swoole/RoadRunner y por qué se reinician."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <!-- ===================== Navbar ===================== -->
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button
+            class="icon-btn theme-toggle"
+            aria-label="Cambiar tema"
+            title="Cambiar tema"
+          >
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- ===================== Hero del tutorial ===================== -->
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>PHP por dentro</span>
+        </nav>
+        <h1 class="tutorial-hero__title">
+          Workers y modelos de ejecución en PHP
+        </h1>
+        <p class="tutorial-hero__lead">
+          "Worker" se usa para dos cosas distintas que conviene no mezclar: los
+          procesos de PHP-FPM que atienden la web y los procesos de cola que
+          procesan tareas en segundo plano. Y por encima, una pregunta de fondo:
+          ¿el proceso muere por petición o vive para siempre?
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Colas y long-running
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== Layout: TOC + contenido ===================== -->
+    <div class="container">
+      <div class="tutorial-layout">
+        <!-- Índice -->
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#dos-workers">Dos sentidos de "worker"</a></li>
+            <li><a href="#colas">Workers de cola</a></li>
+            <li><a href="#supervisor">Mantenerlos vivos</a></li>
+            <li><a href="#long-running">El modelo long-running</a></li>
+            <li><a href="#fugas">Por qué se reinician</a></li>
+            <li><a href="#elegir">Cuándo usar cada modelo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <!-- Artículo -->
+        <article class="prose">
+          <p class="lead">
+            Cuando alguien dice "súbele workers", para saber qué tocar primero hay
+            que preguntar: ¿workers de qué? El de FPM que atiende peticiones web y
+            el que vacía una cola de emails son criaturas distintas, con configs y
+            problemas distintos. Empecemos por separarlos.
+          </p>
+
+          <!-- ============ Dos workers ============ -->
+          <h2 id="dos-workers">
+            Dos sentidos de "worker"
+            <a href="#dos-workers" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Worker de FPM</h4>
+              <ul>
+                <li>Atiende <strong>peticiones HTTP</strong></li>
+                <li>Una request, una respuesta, a esperar</li>
+                <li>Lo gestiona PHP-FPM (los pools)</li>
+                <li>Vive entre peticiones, pero cada una empieza limpia</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Worker de cola</h4>
+              <ul>
+                <li>Procesa <strong>tareas en segundo plano</strong></li>
+                <li>Saca un "job" de una cola y lo ejecuta</li>
+                <li>Lo lanzas tú (<code>queue:work</code>, <code>messenger:consume</code>)</li>
+                <li>Un proceso de PHP <strong>CLI</strong> en bucle</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            El de FPM ya lo vimos en <a href="php-fpm.html">SAPIs y PHP-FPM</a>:
+            request-per-process, modelo shared-nothing. El de cola es otra historia:
+            es un script de consola que arranca una vez y se queda dando vueltas,
+            esperando trabajo. Ese cambio (de "muere por petición" a "vive en
+            bucle") es el que lo cambia todo.
+          </p>
+
+          <!-- ============ Colas ============ -->
+          <h2 id="colas">
+            Workers de cola: por qué existen
+            <a href="#colas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Hay trabajo que no debe hacerse durante la petición web: enviar un
+            email, generar un PDF, llamar a una API externa lenta. Si lo haces en
+            línea, el usuario espera. La solución es <strong>encolar</strong> la
+            tarea y responder ya; un worker aparte la procesa después.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>La web encola un job</b><small>"Enviar email a X" → a la cola</small></span>
+              </div>
+              <div class="flow__arrow" data-label="responde ya al usuario"></div>
+              <div class="flow__node flow__node--cache">
+                <span class="flow__num">★</span>
+                <span><b>Cola (Redis / BBDD / RabbitMQ)</b><small>Guarda los jobs pendientes</small></span>
+              </div>
+              <div class="flow__arrow" data-label="el worker saca uno"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">2</span>
+                <span><b>Worker de cola</b><small>Procesa el job en segundo plano</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              La web no espera: encola y sigue. El worker, en otro proceso (a
+              menudo otra máquina), consume la cola a su ritmo.
+            </p>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash"># Laravel: un worker que consume la cola
+php artisan queue:work --max-jobs=1000 --max-time=3600
+
+# Symfony Messenger: equivalente
+php bin/console messenger:consume async --limit=1000 --time-limit=3600</code></pre>
+          </div>
+
+          <p>
+            Si la cola es RabbitMQ, todo lo de enrutado, durabilidad y acks que se
+            cuenta en <a href="rabbitmq.html">RabbitMQ a fondo</a> aplica aquí: el
+            worker es justo el consumidor del otro lado.
+          </p>
+
+          <!-- ============ Supervisor ============ -->
+          <h2 id="supervisor">
+            Mantenerlos vivos: supervisor
+            <a href="#supervisor" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un worker de cola es un proceso de larga vida, y los procesos de larga
+            vida se caen: un error no capturado, un <code>kill</code>, un deploy.
+            Nadie va a estar relanzándolo a mano. Para eso se usa un
+            <strong>supervisor de procesos</strong> (Supervisor, systemd) que lo
+            vuelve a arrancar si muere.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ini · supervisor.conf</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="ini">[program:queue-worker]
+command=php /app/artisan queue:work --max-jobs=1000 --max-time=3600
+numprocs=4
+autostart=true
+autorestart=true
+stopwaitsecs=3600</code></pre>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title"><code>numprocs</code> es tu paralelismo</p>
+              <p>
+                Con <code>numprocs=4</code> tienes cuatro workers consumiendo la
+                misma cola a la vez: cuádruple capacidad de procesar jobs. Es el
+                equivalente a <code>max_children</code> en FPM, pero para tareas de
+                fondo. Súbelo si la cola se acumula, vigilando la RAM.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Long-running ============ -->
+          <h2 id="long-running">
+            El modelo long-running: Swoole y RoadRunner
+            <a href="#long-running" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Hasta aquí, incluso los workers de cola arrancan PHP, hacen un job y
+            (con <code>--max-jobs</code>) acaban reiniciándose. Hay un modelo más
+            radical para servir la propia web: <strong>procesos que arrancan el
+            framework una vez y atienden miles de peticiones sin morir</strong>. Es
+            lo que hacen Swoole, RoadRunner o ReactPHP.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Clásico (FPM)</h4>
+              <ul>
+                <li>Cada petición arranca el framework</li>
+                <li>OPcache evita recompilar, pero hay que <em>bootear</em></li>
+                <li>Memoria limpia siempre (shared-nothing)</li>
+                <li>Simple y a prueba de fugas</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Long-running</h4>
+              <ul>
+                <li>El framework se carga <strong>una sola vez</strong></li>
+                <li>Peticiones muy rápidas: ya está todo en memoria</li>
+                <li>Permite corrutinas e I/O no bloqueante</li>
+                <li>Pero el estado <strong>persiste</strong>: cuidado</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            La ganancia es real: te ahorras el arranque del framework en cada
+            petición. Pero rompes la red de seguridad del modelo clásico. Lo que
+            antes se limpiaba solo al morir el request, ahora se acumula. Esto
+            conecta de lleno con <a href="async-event-loop.html">async y el event
+            loop</a>: en Swoole no puedes bloquear el loop, y con
+            <a href="memoria-php.html">la memoria de PHP</a> ya no cuentas con que
+            la arena se tire sola.
+          </p>
+
+          <!-- ============ Fugas ============ -->
+          <h2 id="fugas">
+            Por qué un worker se reinicia cada N jobs
+            <a href="#fugas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Aquí está el peligro central de cualquier proceso de larga vida en PHP:
+            las <strong>fugas de memoria</strong>. En el modelo clásico no importan
+            porque el request muere y se lleva todo. En un worker que vive horas,
+            cada pequeña fuga (un array estático que crece, referencias que no se
+            sueltan, ciclos no recogidos) se <strong>acumula</strong> hasta que el
+            proceso choca con <code>memory_limit</code> y muere.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Worker arranca</b><small>40 MB de memoria</small></span>
+              </div>
+              <div class="flow__arrow" data-label="procesa jobs"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Va subiendo</b><small>Pequeñas fugas se acumulan: 120 MB…</small></span>
+              </div>
+              <div class="flow__arrow" data-label="¿llega al límite?"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Reinicio controlado</b><small>--max-jobs lo recicla antes de petar</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              El reinicio periódico no es un parche feo: es la estrategia estándar.
+              Mata el proceso "limpio" cada N jobs o cada X tiempo y supervisor lo
+              relanza desde cero.
+            </p>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Reiniciar es la red de seguridad recuperada</p>
+              <p>
+                <code>--max-jobs=1000</code> y <code>--max-time=3600</code>
+                devuelven, a propósito, la limpieza que el modelo clásico te daba
+                gratis por petición. En vez de cazar cada fuga, aceptas que las
+                habrá y reinicias antes de que importen. Barato y robusto.
+              </p>
+            </div>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El bug del estado que persiste</p>
+              <p>
+                En un worker de larga vida, un singleton con datos del job anterior,
+                una conexión que se quedó en mal estado o una entidad cacheada del
+                ORM pueden <strong>filtrarse al siguiente job</strong>. En el modelo
+                clásico esto era imposible (memoria limpia por petición). Aquí hay
+                que limpiar a conciencia entre tareas, o reiniciar a menudo.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Elegir ============ -->
+          <h2 id="elegir">
+            Cuándo usar cada modelo
+            <a href="#elegir" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Necesitas…</th>
+                  <th>Usa</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Servir una web normal, simple y robusta</td>
+                  <td>PHP-FPM clásico</td>
+                </tr>
+                <tr>
+                  <td>Tareas de fondo (emails, PDFs, APIs lentas)</td>
+                  <td>Workers de cola + supervisor</td>
+                </tr>
+                <tr>
+                  <td>Exprimir latencia o miles de conexiones simultáneas</td>
+                  <td>Swoole / RoadRunner (long-running)</td>
+                </tr>
+                <tr>
+                  <td>I/O concurrente sin hilos (muchas APIs a la vez)</td>
+                  <td>ReactPHP / corrutinas de Swoole</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            La regla práctica: empieza por lo clásico, porque es el que menos te
+            puede morder. Pasa a colas en cuanto tengas trabajo que no debe correr
+            durante la petición. Y reserva el long-running para cuando tengas un
+            problema concreto de rendimiento que justifique perder la simplicidad
+            del shared-nothing.
+          </p>
+
+          <!-- ============ Resumen ============ -->
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>"Worker" son dos cosas: los de <strong>FPM</strong> (web, request-per-process) y los de <strong>cola</strong> (tareas de fondo en bucle).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Las <strong>colas</strong> sacan trabajo lento fuera de la petición; un <strong>supervisor</strong> mantiene vivos a los consumidores.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El modelo <strong>long-running</strong> (Swoole, RoadRunner) carga el framework una vez: muy rápido, pero el estado persiste.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En procesos de larga vida las <strong>fugas se acumulan</strong>; por eso se reinician cada N jobs o X tiempo (<code>--max-jobs</code>, <code>--max-time</code>).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Empieza por lo clásico; añade colas cuando haga falta; reserva long-running para problemas concretos de rendimiento.</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Navegación entre tutoriales -->
+          <nav class="tutorial-nav">
+            <a href="memoria-php.html">
+              <small>← Anterior</small>
+              <b>Cómo gestiona la memoria PHP</b>
+            </a>
+            <a href="../index.html#catalogo" class="next">
+              <small>Siguiente →</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <!-- ===================== Footer ===================== -->
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/roadmap.js"></script>
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

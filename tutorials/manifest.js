@@ -25,6 +25,70 @@
 
 window.ACADEMIA_TUTORIALS = [
   {
+    slug: "extensiones-php",
+    featured: true,
+    title: "Extensiones de PHP: qué son y cuáles importan",
+    description:
+      "Qué es una extensión (un módulo en C que enchufa al motor), cómo se carga, la diferencia entre las del core y las de PECL, cómo ver las activas con php -m y el puñado que necesitas de verdad en producción.",
+    href: "tutorials/extensiones-php.html",
+    categories: ["php", "runtime"],
+    topic: "PHP por dentro",
+    tags: ["Extensiones", "PECL", "php.ini"],
+    level: "Intermedio",
+    minutes: 13,
+    icon: "code",
+    status: "published",
+    date: "2026-06-22",
+  },
+  {
+    slug: "php-fpm",
+    featured: true,
+    title: "SAPIs y PHP-FPM a fondo",
+    description:
+      "Qué es un SAPI, en qué se diferencian CLI, mod_php, CGI y FPM, cómo FastCGI reutiliza procesos vivos, los modos de los pools (static/dynamic/ondemand), cómo dimensionar max_children y por qué PHP es shared-nothing.",
+    href: "tutorials/php-fpm.html",
+    categories: ["php", "runtime"],
+    topic: "PHP por dentro",
+    tags: ["PHP-FPM", "FastCGI", "Pools"],
+    level: "Avanzado",
+    minutes: 16,
+    icon: "bolt",
+    status: "published",
+    date: "2026-06-22",
+  },
+  {
+    slug: "memoria-php",
+    featured: true,
+    title: "Cómo gestiona la memoria PHP",
+    description:
+      "El gestor de Zend y la arena por request, qué es memory_limit de verdad, los zvals y el refcounting, copy-on-write y el recolector de ciclos. Por qué liberar memoria en PHP es casi gratis.",
+    href: "tutorials/memoria-php.html",
+    categories: ["php", "runtime"],
+    topic: "PHP por dentro",
+    tags: ["Memoria", "Refcount", "Copy-on-write"],
+    level: "Avanzado",
+    minutes: 16,
+    icon: "code",
+    status: "published",
+    date: "2026-06-22",
+  },
+  {
+    slug: "workers-php",
+    featured: true,
+    title: "Workers y modelos de ejecución en PHP",
+    description:
+      "Los dos sentidos de worker (los de FPM y los de cola), cómo se mantienen vivos con supervisor, el modelo long-running de Swoole y RoadRunner y por qué un worker que no muere se reinicia cada N jobs.",
+    href: "tutorials/workers-php.html",
+    categories: ["php", "runtime"],
+    topic: "PHP por dentro",
+    tags: ["Workers", "Colas", "Swoole"],
+    level: "Avanzado",
+    minutes: 15,
+    icon: "bolt",
+    status: "published",
+    date: "2026-06-22",
+  },
+  {
     slug: "tcp-ip",
     title: "TCP/IP: el cartero fiable de internet",
     description:
@@ -38,7 +102,6 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-06-21",
-    featured: true,
   },
   {
     slug: "http-a-fondo",
