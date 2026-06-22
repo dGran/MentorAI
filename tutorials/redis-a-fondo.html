@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redis a fondo: estructuras de datos en memoria — MentorAI</title>
+    <meta
+      name="description"
+      content="Redis como servidor de estructuras de datos, no solo caché: strings, listas, sets, sorted sets, hashes, bitmaps, HyperLogLog y streams. TTL, atomicidad y persistencia RDB vs AOF."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <!-- ===================== Navbar ===================== -->
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button
+            class="icon-btn theme-toggle"
+            aria-label="Cambiar tema"
+            title="Cambiar tema"
+          >
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- ===================== Hero del tutorial ===================== -->
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Infraestructura</span>
+        </nav>
+        <h1 class="tutorial-hero__title">
+          Redis a fondo: estructuras de datos en memoria
+        </h1>
+        <p class="tutorial-hero__lead">
+          Casi todo el mundo conoce Redis como "esa caché rápida". Pero su gran
+          idea es otra: es un servidor de <strong>estructuras de datos</strong> en
+          memoria. Saber qué tipos ofrece y cuándo usar cada uno convierte a Redis
+          en una navaja suiza, no solo en un almacén de claves.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            17 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Redis 7.x
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== Layout: TOC + contenido ===================== -->
+    <div class="container">
+      <div class="tutorial-layout">
+        <!-- Índice -->
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#que-es">Qué es Redis y por qué vuela</a></li>
+            <li><a href="#strings">Strings y contadores</a></li>
+            <li><a href="#listas">Listas</a></li>
+            <li><a href="#sets">Sets y sorted sets</a></li>
+            <li><a href="#hashes">Hashes</a></li>
+            <li><a href="#especiales">Bitmaps, HLL y streams</a></li>
+            <li><a href="#ttl">TTL y nombrado de claves</a></li>
+            <li><a href="#atomicidad">Atomicidad y pipelines</a></li>
+            <li><a href="#persistencia">Persistencia: RDB vs AOF</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <!-- Artículo -->
+        <article class="prose">
+          <p class="lead">
+            Imagina una pizarra enorme, en memoria, a la que todos tus servidores
+            pueden escribir y leer en microsegundos. Eso es Redis. Lo interesante
+            no es solo que sea rápida: es que la pizarra entiende de listas,
+            conjuntos, rankings y contadores, no solo de "clave = valor".
+          </p>
+
+          <!-- ============ Qué es ============ -->
+          <h2 id="que-es">
+            Qué es Redis y por qué vuela
+            <a href="#que-es" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Redis (<em>REmote DIctionary Server</em>) guarda los datos en
+            <strong>RAM</strong>, no en disco. Ahí está el primer motivo de su
+            velocidad: leer de memoria es órdenes de magnitud más rápido que de
+            disco. El segundo es más sutil: el núcleo que procesa los comandos es
+            <strong>de un solo hilo</strong>.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">¿Un solo hilo y aun así rápido?</p>
+              <p>
+                Parece contradictorio, pero es una ventaja. Sin varios hilos no hay
+                bloqueos ni condiciones de carrera <em>dentro</em> de Redis: cada
+                comando se ejecuta entero, de principio a fin, sin que otro se
+                cuele en medio. Eso hace que las operaciones sean
+                <strong>atómicas por diseño</strong> y elimina todo el coste de
+                sincronización. La velocidad sale de hacer cada cosa pequeña y de
+                no esperar nunca a disco.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            La forma mental correcta: Redis es un <strong>diccionario gigante</strong>
+            donde cada clave apunta a un valor que tiene <em>tipo</em>. Y según el
+            tipo, dispones de comandos distintos. Vamos uno a uno.
+          </p>
+
+          <!-- ============ Strings ============ -->
+          <h2 id="strings">
+            Strings: el tipo base (y los contadores)
+            <a href="#strings" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El string es el valor más simple: una clave guarda un texto o un
+            número. Sirve para cachear el HTML de una página, guardar un token o,
+            gracias a comandos atómicos, llevar contadores fiables.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">redis</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="redis"># Guardar y leer
+SET user:42:name "Ana"
+GET user:42:name
+
+# Contador atómico: ideal para "visitas" o rate limiting
+INCR page:home:views
+INCRBY page:home:views 10
+
+# Guardar con expiración de una vez (segundos)
+SETEX session:abc 3600 "datos-de-sesion"</code></pre>
+          </div>
+
+          <p>
+            <code>INCR</code> es más que un <code>+1</code>: es atómico. Dos
+            peticiones simultáneas que incrementan el mismo contador
+            <strong>nunca</strong> pierden una cuenta, justo el tipo de
+            <a href="concurrencia.html">condición de carrera</a> que en una base de
+            datos relacional tendrías que proteger con bloqueos.
+          </p>
+
+          <!-- ============ Listas ============ -->
+          <h2 id="listas">
+            Listas: colas y pilas
+            <a href="#listas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una lista es una secuencia ordenada de strings en la que insertas y
+            sacas por los extremos. Con eso montas una <strong>cola</strong>
+            (entras por un lado, sales por el otro) o una <strong>pila</strong>.
+            Es la base de muchas colas de trabajos sencillas.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">redis</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="redis"># Encolar trabajos por la izquierda
+LPUSH queue:emails "enviar:1001"
+LPUSH queue:emails "enviar:1002"
+
+# Un worker los saca por la derecha (FIFO)
+RPOP queue:emails
+
+# BRPOP bloquea esperando si la cola está vacía (sin hacer polling)
+BRPOP queue:emails 5</code></pre>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La versión bloqueante evita el polling</p>
+              <p>
+                <code>BRPOP</code> (la B es de <em>blocking</em>) deja al worker
+                dormido hasta que llega un elemento, en lugar de preguntar "¿hay
+                algo?" mil veces por segundo. Es la diferencia entre una cola
+                eficiente y quemar CPU sondeando.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Sets ============ -->
+          <h2 id="sets">
+            Sets y sorted sets
+            <a href="#sets" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un <strong>set</strong> es una colección de strings <em>únicos</em> y
+            sin orden. Brilla cuando la pregunta es "¿está este elemento?" o
+            cuando necesitas operaciones de conjuntos: intersección, unión,
+            diferencia. Comprobar pertenencia es O(1).
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">redis</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="redis"># Etiquetas únicas de un artículo
+SADD post:99:tags php redis cache
+SISMEMBER post:99:tags redis   # ¿tiene la etiqueta? -> 1
+
+# Usuarios online (únicos por naturaleza)
+SADD online:users 42 17 88
+SCARD online:users            # cuántos hay
+
+# Amigos en común: intersección de dos sets
+SINTER user:1:friends user:2:friends</code></pre>
+          </div>
+
+          <p>
+            El <strong>sorted set</strong> (o <em>zset</em>) añade lo que al set le
+            falta: cada miembro lleva un <strong>score</strong> numérico, y Redis
+            los mantiene ordenados por ese score. Es la estructura perfecta para
+            <strong>rankings y leaderboards</strong>: insertar y consultar el
+            top-N es muy barato.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">redis</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="redis"># Marcador de un juego: miembro + puntuación
+ZADD leaderboard 1500 "ana"
+ZADD leaderboard 980 "luis"
+ZINCRBY leaderboard 50 "ana"   # suma 50 a Ana
+
+# Top 3 de mayor a menor, con sus puntos
+ZREVRANGE leaderboard 0 2 WITHSCORES
+
+# ¿En qué puesto va un jugador?
+ZREVRANK leaderboard "luis"</code></pre>
+          </div>
+
+          <!-- ============ Hashes ============ -->
+          <h2 id="hashes">
+            Hashes: objetos
+            <a href="#hashes" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un hash es un mapa de campos y valores <em>dentro</em> de una sola
+            clave: justo un objeto. En vez de guardar un usuario como un JSON en un
+            string (que tendrías que leer y reescribir entero para cambiar un
+            campo), lo guardas como hash y tocas campos sueltos.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">redis</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="redis"># Un usuario como objeto
+HSET user:42 name "Ana" age 30 plan "pro"
+
+# Leer un campo o todo el objeto
+HGET user:42 plan
+HGETALL user:42
+
+# Incrementar un contador dentro del objeto, atómico
+HINCRBY user:42 logins 1</code></pre>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Hash vs JSON en un string</p>
+              <p>
+                Si solo lees el objeto entero, un JSON en un string va de sobra. Si
+                actualizas campos sueltos a menudo o quieres incrementar uno sin
+                leer el resto, el hash gana: menos datos movidos y operaciones
+                atómicas por campo.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Especiales ============ -->
+          <h2 id="especiales">
+            Bitmaps, HyperLogLog y streams
+            <a href="#especiales" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Más allá de los cuatro grandes, Redis trae tipos especializados que
+            resuelven problemas concretos con muy poca memoria:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Para qué</th>
+                  <th>Ejemplo</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Bitmap</td>
+                  <td>Banderas por ID en bits sueltos.</td>
+                  <td>¿Entró el usuario N hoy? (un bit por usuario)</td>
+                </tr>
+                <tr>
+                  <td>HyperLogLog</td>
+                  <td>Contar <em>únicos</em> aproximados con KB fijos.</td>
+                  <td>Visitantes únicos de una web enorme</td>
+                </tr>
+                <tr>
+                  <td>Stream</td>
+                  <td>Log de eventos append-only con consumidores.</td>
+                  <td>Cola de eventos tipo Kafka ligero</td>
+                </tr>
+                <tr>
+                  <td>Pub/Sub</td>
+                  <td>Mensajes a suscriptores en tiempo real.</td>
+                  <td>Notificaciones, chats</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El truco del HyperLogLog</p>
+              <p>
+                Contar visitantes únicos de verdad exige guardar cada identificador
+                visto: en un sitio enorme, gigas de memoria. El HyperLogLog estima
+                el número de únicos con un error de ~0,8% usando unos
+                <strong>12 KB fijos</strong>, vea los que vea. Cambias precisión
+                exacta por memoria casi nula; para métricas, un trato excelente.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ TTL ============ -->
+          <h2 id="ttl">
+            TTL y nombrado de claves
+            <a href="#ttl" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cualquier clave puede tener una <strong>expiración</strong> (TTL): pasado
+            ese tiempo, Redis la borra sola. Es la base de las sesiones, los tokens
+            temporales y la caché que debe caducar.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">redis</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="redis"># Caducar una clave existente en 60 segundos
+EXPIRE cart:42 60
+
+# ¿Cuánto le queda de vida?
+TTL cart:42      # 60, o -1 si no expira, o -2 si no existe
+
+# Quitar la expiración
+PERSIST cart:42</code></pre>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El nombrado de claves es tu esquema</p>
+              <p>
+                Redis no tiene tablas: la <strong>convención de nombres</strong> es
+                tu única estructura. El estándar de facto son los dos puntos como
+                separador: <code>user:42:cart</code>, <code>session:abc</code>,
+                <code>page:home:views</code>. Un buen esquema de claves hace que
+                Redis sea navegable; uno malo, un cajón de sastre imposible de
+                mantener.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Atomicidad ============ -->
+          <h2 id="atomicidad">
+            Atomicidad, MULTI y pipelines
+            <a href="#atomicidad" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cada comando de Redis es atómico por sí solo (recuerda: un solo hilo).
+            Cuando necesitas que <strong>varios</strong> comandos se ejecuten como
+            un bloque, tienes <code>MULTI</code>/<code>EXEC</code>: encolan los
+            comandos y se ejecutan juntos, sin que nadie se cuele en medio.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">redis</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="redis"># Transacción: los dos se ejecutan juntos
+MULTI
+INCRBY account:1:balance -100
+INCRBY account:2:balance 100
+EXEC</code></pre>
+          </div>
+
+          <p>
+            No confundas dos cosas que suenan parecido. <strong>MULTI</strong> es
+            atomicidad (se ejecutan sin intercalarse). El <strong>pipeline</strong>
+            es otra cosa: enviar muchos comandos de golpe sin esperar la respuesta
+            de cada uno, para ahorrarte los viajes de ida y vuelta por la red. Uno
+            resuelve <em>corrección</em>; el otro, <em>latencia</em>.
+          </p>
+
+          <!-- ============ Persistencia ============ -->
+          <h2 id="persistencia">
+            Persistencia: RDB vs AOF
+            <a href="#persistencia" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            "En memoria" asusta: ¿si Redis se reinicia, lo pierdo todo? No
+            necesariamente. Redis puede volcar su estado a disco de dos formas,
+            combinables:
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>RDB (snapshot)</h4>
+              <ul>
+                <li>Foto del dataset cada cierto tiempo</li>
+                <li>Fichero compacto, arranque rápido</li>
+                <li>Ideal para backups</li>
+                <li><strong>Riesgo:</strong> pierdes lo de entre snapshots</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>AOF (append-only)</h4>
+              <ul>
+                <li>Registra cada comando de escritura</li>
+                <li>Mucha menos pérdida ante caída</li>
+                <li>Fichero mayor, restauración más lenta</li>
+                <li>Se reescribe periódicamente para compactarse</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La elección depende del papel de Redis</p>
+              <p>
+                Si Redis es <strong>solo caché</strong> (todo está también en tu
+                BBDD), perder datos al reiniciar no es grave: incluso puedes
+                desactivar la persistencia. Si Redis es la <strong>fuente de
+                verdad</strong> de algo (un contador, una cola), querrás AOF para
+                minimizar la pérdida. No es "uno u otro" siempre: muchos montajes
+                usan los dos.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            Con las estructuras claras, el siguiente paso natural es
+            <em>usarlas</em> para el caso más común: caché de aplicación, con sus
+            estrategias de invalidación y TTL. Eso es justo el tutorial de
+            <a href="redis-cache.html">Redis como caché</a>.
+          </p>
+
+          <!-- ============ Resumen ============ -->
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Redis es un <strong>servidor de estructuras de datos</strong> en memoria y de un solo hilo: por eso es rápido y atómico por diseño.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Elige el tipo por la pregunta: <strong>string</strong> (contadores), <strong>list</strong> (colas), <strong>set</strong> (únicos), <strong>zset</strong> (rankings), <strong>hash</strong> (objetos).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Tipos especiales para problemas concretos: <strong>bitmaps</strong>, <strong>HyperLogLog</strong> (únicos aproximados), <strong>streams</strong> y <strong>pub/sub</strong>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El <strong>TTL</strong> caduca claves solo; el <strong>nombrado con <code>:</code></strong> es tu única estructura. <code>MULTI</code> da atomicidad; el pipeline, latencia.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>RDB</strong> (snapshots) y <strong>AOF</strong> (log de escrituras) le dan persistencia; cuánta necesitas depende de si Redis es caché o fuente de verdad.</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Navegación entre tutoriales -->
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+            <a href="redis-cache.html" class="next">
+              <small>Siguiente →</small>
+              <b>Redis como caché de aplicación</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <!-- ===================== Footer ===================== -->
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/roadmap.js"></script>
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

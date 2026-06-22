@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redis como caché de aplicación — MentorAI</title>
+    <meta
+      name="description"
+      content="Estrategias de caché con Redis: cache-aside, TTL, invalidación, el problema del dato obsoleto, stampede y los tres fallos clásicos (penetration, avalanche, breakdown)."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <!-- ===================== Navbar ===================== -->
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html#catalogo" class="nav__link">Tutoriales</a>
+          <button
+            class="icon-btn theme-toggle"
+            aria-label="Cambiar tema"
+            title="Cambiar tema"
+          >
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <!-- ===================== Hero del tutorial ===================== -->
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Infraestructura · Rendimiento</span>
+        </nav>
+        <h1 class="tutorial-hero__title">
+          Redis como caché de aplicación
+        </h1>
+        <p class="tutorial-hero__lead">
+          Cachear es fácil de empezar y fácil de hacer mal. Guardar el resultado de
+          una consulta cara en Redis te da un salto de rendimiento brutal… hasta
+          que sirves datos obsoletos o toda la caché expira a la vez. Veamos los
+          patrones que funcionan y las tres formas clásicas de pegarte un tiro.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Caché
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== Layout: TOC + contenido ===================== -->
+    <div class="container">
+      <div class="tutorial-layout">
+        <!-- Índice -->
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#por-que">Por qué cachear</a></li>
+            <li><a href="#cache-aside">Cache-aside, el patrón base</a></li>
+            <li><a href="#ttl">El TTL no es opcional</a></li>
+            <li><a href="#invalidar">Invalidar: el problema difícil</a></li>
+            <li><a href="#obsoleto">El dato obsoleto</a></li>
+            <li><a href="#fallos">Los tres fallos clásicos</a></li>
+            <li><a href="#stampede">Cache stampede</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <!-- Artículo -->
+        <article class="prose">
+          <p class="lead">
+            Este tutorial asume que ya sabes <em>qué es</em> Redis y sus tipos: si
+            no, pasa antes por <a href="redis-a-fondo.html">Redis a fondo</a>. Aquí
+            nos centramos en un solo uso, el más común de todos: poner Redis delante
+            de tu base de datos para no repetir trabajo caro.
+          </p>
+
+          <!-- ============ Por qué ============ -->
+          <h2 id="por-que">
+            Por qué cachear
+            <a href="#por-que" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Hay datos que cuestan mucho de calcular y cambian poco: el top de
+            productos, el perfil de un usuario, el resultado de un informe. Pedirlos
+            a la base de datos en <strong>cada petición</strong> es desperdiciar:
+            la respuesta sería casi siempre idéntica. La caché guarda ese resultado
+            en memoria y lo sirve sin tocar la BBDD.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Caché = trato: velocidad por frescura</p>
+              <p>
+                Toda caché es el mismo pacto: aceptas que el dato pueda estar
+                <em>ligeramente</em> desactualizado a cambio de servirlo mucho más
+                rápido. Todo el arte de cachear está en gestionar ese desfase para
+                que nadie lo note. Si el dato no puede desactualizarse <em>nunca</em>,
+                no lo caches.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Cache-aside ============ -->
+          <h2 id="cache-aside">
+            Cache-aside, el patrón base
+            <a href="#cache-aside" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El patrón más usado se llama <strong>cache-aside</strong> (o
+            <em>lazy loading</em>): la caché se llena bajo demanda, solo cuando
+            alguien pide un dato que no estaba.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Pregunta a Redis</b><small>¿Tienes este dato?</small></span>
+              </div>
+              <div class="flow__arrow" data-label="¿está?"></div>
+            </div>
+            <div class="compare">
+              <div class="compare__col compare__col--good">
+                <h4>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  HIT
+                </h4>
+                <ul>
+                  <li>Redis lo tiene</li>
+                  <li>Lo devuelves directo</li>
+                  <li>La BBDD ni se entera</li>
+                </ul>
+              </div>
+              <div class="compare__col compare__col--bad">
+                <h4>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/><circle cx="12" cy="12" r="10"/></svg>
+                  MISS
+                </h4>
+                <ul>
+                  <li>No está en Redis</li>
+                  <li>Lo lees de la BBDD</li>
+                  <li>Lo guardas en Redis con TTL</li>
+                  <li>Y lo devuelves</li>
+                </ul>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              La primera petición paga el coste (miss); las siguientes, hasta que
+              expire, son baratas (hit).
+            </p>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · cache-aside.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class ProductRepository
+{
+    private const TTL_SECONDS = 600;
+
+    public function __construct(
+        private \Redis $redis,
+        private \PDO $database,
+    ) {
+    }
+
+    public function find(int $productId): ?array
+    {
+        $cacheKey = "product:{$productId}";
+        $cached = $this-&gt;redis-&gt;get($cacheKey);
+
+        if ($cached !== false) {
+            return json_decode($cached, true);
+        }
+
+        $product = $this-&gt;fetchFromDatabase($productId);
+
+        if ($product === null) {
+            return null;
+        }
+
+        $this-&gt;redis-&gt;setex($cacheKey, self::TTL_SECONDS, json_encode($product));
+
+        return $product;
+    }
+}</code></pre>
+          </div>
+
+          <!-- ============ TTL ============ -->
+          <h2 id="ttl">
+            El TTL no es opcional
+            <a href="#ttl" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Fíjate en que arriba usamos <code>setex</code> (set con expiración), no
+            un <code>set</code> a secas. Esto es clave: <strong>toda entrada de
+            caché debe tener TTL</strong>. El TTL es tu red de seguridad. Aunque te
+            equivoques al invalidar, aunque olvides borrar una clave, el dato
+            obsoleto desaparece solo pasado ese tiempo.
+          </p>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Caché sin TTL = fuga de memoria con datos viejos</p>
+              <p>
+                Una clave sin expiración se queda para siempre. Multiplícalo por
+                millones de productos y Redis se llena hasta que empieza a expulsar
+                claves (o a fallar). Y si la invalidación tiene un bug, sirves un
+                dato incorrecto <em>indefinidamente</em>. Pon TTL siempre, aunque
+                también invalides a mano.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Invalidar ============ -->
+          <h2 id="invalidar">
+            Invalidar: el problema difícil
+            <a href="#invalidar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Hay una frase famosa: <em>"solo hay dos cosas difíciles en
+            informática: invalidar la caché y nombrar las cosas"</em>. La parte de
+            la caché es real. El TTL te da frescura "eventual", pero cuando un dato
+            cambia y quieres que se vea <strong>ya</strong>, tienes que invalidar.
+          </p>
+          <p>
+            La estrategia más limpia con cache-aside es <strong>borrar la clave al
+            escribir</strong> (no actualizarla): cuando modificas el producto en la
+            BBDD, eliminas su entrada de caché. El siguiente lector tendrá un miss y
+            la recargará fresca.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · invalidar.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+public function update(int $productId, array $changes): void
+{
+    $this-&gt;saveToDatabase($productId, $changes);
+
+    // Borrar, NO reescribir: que el próximo lector recargue
+    $this-&gt;redis-&gt;del("product:{$productId}");
+}</code></pre>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Borrar es más seguro que reescribir</p>
+              <p>
+                Si actualizas la caché al escribir, dos escrituras concurrentes
+                pueden dejar en Redis el valor de la que terminó <em>primero</em> en
+                la BBDD: un dato viejo pegado. Borrar la clave esquiva esa carrera:
+                el valor siempre se reconstruye desde la fuente de verdad.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Obsoleto ============ -->
+          <h2 id="obsoleto">
+            El dato obsoleto (y dónde es aceptable)
+            <a href="#obsoleto" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Por bien que invalides, siempre habrá una ventana en la que la caché y
+            la BBDD discrepan. La pregunta correcta no es "¿cómo lo evito del todo?"
+            (no puedes), sino <strong>"¿cuánto desfase tolera este dato?"</strong>.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Dato</th>
+                  <th>Desfase tolerable</th>
+                  <th>TTL razonable</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Saldo de una cuenta bancaria</td>
+                  <td>Ninguno</td>
+                  <td>No cachear (o invalidar estricto)</td>
+                </tr>
+                <tr>
+                  <td>Stock de un producto</td>
+                  <td>Segundos</td>
+                  <td>5–30 s + invalidar al vender</td>
+                </tr>
+                <tr>
+                  <td>Ficha de producto</td>
+                  <td>Minutos</td>
+                  <td>5–15 min</td>
+                </tr>
+                <tr>
+                  <td>Lista de categorías</td>
+                  <td>Horas</td>
+                  <td>1–24 h</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- ============ Fallos ============ -->
+          <h2 id="fallos">
+            Los tres fallos clásicos
+            <a href="#fallos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Tres problemas tienen nombre propio porque tumban sistemas en
+            producción. Conviene reconocerlos:
+          </p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Penetration (penetración)</p>
+              <p>
+                Se piden claves que <strong>no existen</strong> (IDs inventados). Cada
+                una falla en caché y golpea la BBDD. Atacable a propósito.
+                <strong>Solución:</strong> cachear también el "no existe" (un valor
+                nulo con TTL corto) para que el segundo intento ya no llegue a la
+                BBDD.
+              </p>
+            </div>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Avalanche (avalancha)</p>
+              <p>
+                Muchísimas claves expiran <strong>a la vez</strong> (porque las
+                cargaste juntas con el mismo TTL). De golpe, todo es miss y la BBDD
+                recibe una marea. <strong>Solución:</strong> añadir un margen
+                aleatorio al TTL (<em>jitter</em>) para repartir las expiraciones.
+              </p>
+            </div>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Breakdown (caída de una clave caliente)</p>
+              <p>
+                Una sola clave <strong>muy popular</strong> expira y, en ese
+                instante, miles de peticiones simultáneas fallan y van todas a
+                recalcularla a la BBDD. Es el <em>stampede</em>, que vemos ahora.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Stampede ============ -->
+          <h2 id="stampede">
+            Cache stampede y cómo evitarlo
+            <a href="#stampede" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El <strong>stampede</strong> (o <em>dogpile</em>) es el caso peligroso
+            de breakdown: cuando expira una clave caliente, todas las peticiones que
+            la querían tienen un miss <em>a la vez</em> y se lanzan en tropel a
+            reconstruirla. La consulta cara que la caché evitaba se ejecuta cientos
+            de veces de golpe y puede tumbar la BBDD.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Clave caliente expira</b><small>Justo en hora punta</small></span>
+              </div>
+              <div class="flow__arrow" data-label="500 peticiones a la vez"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Todas tienen MISS</b><small>Ninguna encuentra el dato</small></span>
+              </div>
+              <div class="flow__arrow" data-label="todas recalculan"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>La BBDD se ahoga</b><small>500× la misma query cara</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              El daño no es el dato que falta: es la <strong>estampida</strong> de
+              recálculos simultáneos sobre la base de datos.
+            </p>
+          </div>
+
+          <p>La defensa habitual combina dos ideas:</p>
+          <ul>
+            <li>
+              <strong>Lock (mutex):</strong> que solo la <em>primera</em> petición
+              que ve el miss recalcule; las demás esperan brevemente o devuelven el
+              valor anterior. Un <a href="redis-a-fondo.html">SET NX con TTL</a>
+              hace de cerrojo.
+            </li>
+            <li>
+              <strong>Recalcular antes de expirar:</strong> refrescar la clave de
+              forma proactiva cuando le queda poco TTL, en lugar de esperar a que
+              caiga a cero.
+            </li>
+          </ul>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · lock.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+// Solo el primero en poner el lock recalcula; vence solo por TTL
+$gotLock = $this-&gt;redis-&gt;set(
+    "lock:product:{$productId}",
+    "1",
+    ['nx', 'ex' =&gt; 10],
+);
+
+if ($gotLock) {
+    $product = $this-&gt;fetchFromDatabase($productId);
+    $this-&gt;redis-&gt;setex("product:{$productId}", 600, json_encode($product));
+    $this-&gt;redis-&gt;del("lock:product:{$productId}");
+}</code></pre>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">No te montes Redlock para esto</p>
+              <p>
+                Un lock distribuido perfecto es un problema serio (de los de
+                <a href="../index.html#catalogo">sistemas distribuidos</a>). Para
+                evitar un stampede no necesitas esa garantía: un <code>SET NX</code>
+                con TTL que "casi siempre" deja pasar a uno solo ya reduce el
+                tropel de 500 a 1. Suficiente.
+              </p>
+            </div>
+          </div>
+
+          <!-- ============ Resumen ============ -->
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Cachear es cambiar <strong>frescura por velocidad</strong>; si un dato no puede desactualizarse nunca, no lo caches.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>Cache-aside</strong>: mira Redis; si hay miss, lee de la BBDD y guarda con TTL. La primera paga, las demás vuelan.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Pon <strong>TTL siempre</strong> y, al escribir, <strong>borra la clave</strong> en vez de reescribirla (evita carreras).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Reconoce los tres fallos: <strong>penetration</strong> (cachea el nulo), <strong>avalanche</strong> (TTL con jitter), <strong>breakdown</strong> (lock).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El <strong>stampede</strong> se ataca con un <code>SET NX</code> de cerrojo y/o refrescando la clave antes de que expire.</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Navegación entre tutoriales -->
+          <nav class="tutorial-nav">
+            <a href="redis-a-fondo.html">
+              <small>← Anterior</small>
+              <b>Redis a fondo: estructuras de datos</b>
+            </a>
+            <a href="../index.html#catalogo" class="next">
+              <small>Siguiente →</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <!-- ===================== Footer ===================== -->
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/roadmap.js"></script>
+    <script src="../assets/js/main.js"></script>
+  </body>
+</html>

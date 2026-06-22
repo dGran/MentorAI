@@ -1313,6 +1313,15 @@
         { cls: "function", src: "\\b[a-zA-Z_]\\w*(?=\\s*\\()" },
         { cls: "number", src: "\\b\\d+(?:\\.\\d+)?\\b" },
       ],
+      redis: [
+        { cls: "comment", src: "#[^\\n]*" },
+        { cls: "string", src: "'(?:\\\\.|[^'\\\\])*'|\"(?:\\\\.|[^\"\\\\])*\"" },
+        {
+          cls: "keyword",
+          src: "\\b(?:SET|SETEX|SETNX|GETSET|GET|MSET|MGET|DEL|UNLINK|EXISTS|EXPIRE|PEXPIRE|TTL|PTTL|PERSIST|TYPE|RENAME|SCAN|KEYS|INCR|INCRBY|DECR|DECRBY|APPEND|STRLEN|LPUSH|RPUSH|LPOP|RPOP|BLPOP|BRPOP|LRANGE|LLEN|LREM|LINDEX|SADD|SREM|SMEMBERS|SISMEMBER|SCARD|SINTER|SUNION|SDIFF|SRANDMEMBER|SPOP|ZADD|ZREM|ZRANGE|ZREVRANGE|ZRANGEBYSCORE|ZRANK|ZREVRANK|ZSCORE|ZINCRBY|ZCARD|HSET|HGET|HMSET|HMGET|HGETALL|HDEL|HEXISTS|HINCRBY|HKEYS|HVALS|HLEN|SETBIT|GETBIT|BITCOUNT|PFADD|PFCOUNT|PFMERGE|XADD|XREAD|XRANGE|XLEN|SUBSCRIBE|PSUBSCRIBE|PUBLISH|MULTI|EXEC|DISCARD|WATCH|UNWATCH|FLUSHDB|FLUSHALL|DBSIZE|INFO|CONFIG|OBJECT)\\b",
+        },
+        { cls: "number", src: "\\b\\d+(?:\\.\\d+)?\\b" },
+      ],
     };
 
     function highlight(rawCode, language) {

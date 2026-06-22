@@ -89,6 +89,22 @@ window.ACADEMIA_TUTORIALS = [
     date: "2026-06-22",
   },
   {
+    slug: "redis-a-fondo",
+    featured: true,
+    title: "Redis a fondo: estructuras de datos en memoria",
+    description:
+      "Redis como servidor de estructuras de datos, no solo caché: strings y contadores, listas, sets y sorted sets, hashes, y los especiales (bitmaps, HyperLogLog, streams). TTL, nombrado de claves, atomicidad y persistencia RDB vs AOF.",
+    href: "tutorials/redis-a-fondo.html",
+    categories: ["infra", "bbdd"],
+    topic: "Infraestructura",
+    tags: ["Redis", "Estructuras", "Sorted sets"],
+    level: "Intermedio",
+    minutes: 17,
+    icon: "database",
+    status: "published",
+    date: "2026-06-22",
+  },
+  {
     slug: "tcp-ip",
     title: "TCP/IP: el cartero fiable de internet",
     description:
@@ -395,17 +411,18 @@ window.ACADEMIA_TUTORIALS = [
   },
   {
     slug: "redis-cache",
+    featured: true,
     title: "Redis como caché de aplicación",
     description:
-      "Estrategias de caché, invalidación, TTL y patrones para no dispararte un pie con datos obsoletos.",
+      "El patrón cache-aside paso a paso, por qué el TTL no es opcional, cómo invalidar sin carreras (borrar mejor que reescribir) y los tres fallos clásicos (penetration, avalanche, breakdown) más el cache stampede y su lock.",
     href: "tutorials/redis-cache.html",
     categories: ["infra", "rendimiento"],
     topic: "Infraestructura",
-    tags: ["Redis", "Caché"],
+    tags: ["Redis", "Caché", "TTL"],
     level: "Intermedio",
-    minutes: 14,
+    minutes: 15,
     icon: "database",
-    status: "soon",
-    date: "2026-06-19",
+    status: "published",
+    date: "2026-06-22",
   },
 ];
