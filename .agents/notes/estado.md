@@ -685,8 +685,11 @@ montar rutas + progreso de lectura). Repo: `github.com/dGran/MentorAI`, Pages en
   (que van sin `data-lang`).
 
 **PENDIENTES MENORES:**
-- Navbar "Rutas" NO está en los 50 tutoriales (solo en index/cursos/articulos/
-  curso/rutas). Añadir por sed si se quiere consistencia total.
+- Los 50 tutoriales + _PLANTILLA YA cargan `paths.js` (dato+módulo) y `init.js`
+  es defensivo (`if (MentorAI.Paths)`) — se arregló un bug que hacía desaparecer
+  los botones de acción por `TypeError`. Lo único que falta: el **enlace "Rutas"
+  en la navbar de los tutoriales** (solo cosmético; está en las 5 vistas). Añadir
+  por sed cuando se quiera consistencia total.
 - Script opcional `server/recalcular-minutos.js` (los `minutes` del manifest son
   manuales; el usuario lo dejó como opcional).
 - **Al escribir cada tutorial/curso nuevo: revisar `tutorials/paths.js` para
