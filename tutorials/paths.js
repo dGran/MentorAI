@@ -42,6 +42,7 @@ window.MENTORAI_PATHS = [
     steps: [
       { type: "course", ref: "oop" },
       { type: "course", ref: "solid" },
+      { type: "course", ref: "clean-code" },
       { type: "article", ref: "object-calisthenics" },
       { type: "article", ref: "inyeccion-dependencias" },
       { type: "course", ref: "diseno-y-arquitectura" },

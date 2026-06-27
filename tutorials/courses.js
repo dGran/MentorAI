@@ -55,6 +55,22 @@ window.MENTORAI_COURSES = [
     ],
   },
   {
+    slug: "clean-code",
+    title: "Clean Code: escribir para quien lee",
+    summary:
+      "Escribir código que la próxima persona entienda sin esfuerzo: buenos nombres, funciones pequeñas, comentarios que aportan, manejo de errores con criterio y cómo detectar code smells y refactorizar con seguridad. Adaptado a PHP.",
+    level: "Intermedio",
+    icon: "code",
+    lessons: [
+      "clean-code-intro",
+      "nombres",
+      "funciones-limpias",
+      "comentarios",
+      "manejo-errores",
+      "code-smells-refactoring",
+    ],
+  },
+  {
     slug: "fundamentos",
     title: "Fundamentos de CS para backend",
     summary:

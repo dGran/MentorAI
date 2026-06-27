@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manejo de errores: excepciones con criterio — MentorAI</title>
+    <meta
+      name="description"
+      content="Manejo de errores en código limpio: excepciones frente a códigos de error, por qué no devolver ni pasar null, excepciones específicas en vez de genéricas, fail fast y separar la lógica del manejo de errores."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Clean Code</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Manejo de errores: excepciones con criterio</h1>
+        <p class="tutorial-hero__lead">
+          El manejo de errores ensucia el código más que casi nada: si cada llamada
+          va seguida de un «¿salió bien?», la lógica de verdad se ahoga entre
+          comprobaciones. Las excepciones, los tipos honestos y el fail fast
+          separan lo que importa de lo que puede fallar, y dejan respirar al código.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Clean Code
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#excepciones">Excepciones, no códigos</a></li>
+            <li><a href="#especificas">Excepciones específicas</a></li>
+            <li><a href="#null">No devolver ni pasar null</a></li>
+            <li><a href="#fail-fast">Fail fast</a></li>
+            <li><a href="#separar">Separar lógica y manejo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Un error es algo excepcional: lo normal es que la operación salga bien.
+            El código debería leerse pensando en ese camino feliz, y desviar el manejo
+            del fallo a un lado. Las herramientas para lograrlo son viejas conocidas
+            de PHP —excepciones tipadas, tipos nullable explícitos, validación
+            temprana—, bien usadas.
+          </p>
+
+          <h2 id="excepciones">
+            Excepciones, no códigos
+            <a href="#excepciones" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Devolver un código de error (un <code>false</code>, un <code>-1</code>)
+            obliga a quien llama a comprobarlo justo ahí, en plena lógica, y a
+            propagar la comprobación hacia arriba. El resultado es un código tejido de
+            <code>if</code> defensivos. Una <strong>excepción</strong> separa el qué
+            del fallo: el camino normal queda limpio y el error se captura donde tenga
+            sentido tratarlo.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Códigos de error</h4>
+              <ul>
+                <li>Cada llamada va seguida de un <code>if</code>.</li>
+                <li>La lógica se mezcla con la comprobación.</li>
+                <li>Es fácil ignorar un código y seguir como si nada.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Excepciones</h4>
+              <ul>
+                <li>El camino feliz se lee de un tirón.</li>
+                <li>El error no se puede ignorar en silencio.</li>
+                <li>Se captura donde de verdad se puede actuar.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="especificas">
+            Excepciones específicas
+            <a href="#especificas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Lanzar un <code>\Exception</code> genérico o un
+            <code>\RuntimeException</code> a secas obliga a quien captura a leer el
+            mensaje para saber qué pasó. Una <strong>excepción específica</strong>
+            —<code>SaldoInsuficiente</code>, <code>UsuarioNoEncontrado</code>— es
+            autoexplicativa, se puede capturar de forma selectiva y documenta los
+            modos de fallo del código por su propio tipo.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · una excepción que se nombra a sí misma</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class SaldoInsuficiente extends \DomainException
+{
+    public static function para(int $saldo, int $solicitado): self
+    {
+        return new self("Saldo {$saldo}, se pidieron {$solicitado}");
+    }
+}
+
+// Quien captura puede ser selectivo
+try {
+    $cuenta-&gt;retirar($importe);
+} catch (SaldoInsuficiente $error) {
+    // tratar SOLO este caso, sin tragarte otros fallos
+}</code></pre>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Usa la jerarquía estándar de PHP</p>
+              <p>
+                Extiende de <code>\LogicException</code> (errores de programación que
+                deberían pillarse en desarrollo: argumentos inválidos, estado
+                imposible) o de <code>\RuntimeException</code> (fallos que solo se
+                conocen en ejecución: red, base de datos). Esa raíz da semántica a tu
+                excepción antes de leer el nombre.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="null">
+            No devolver ni pasar null
+            <a href="#null" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Devolver <code>null</code> «cuando no hay» reparte la responsabilidad de
+            comprobarlo por todo el código que llama; basta que uno lo olvide para
+            tener el clásico error de método sobre <code>null</code>. Y pasar
+            <code>null</code> como argumento es aún peor: mete ramas ocultas dentro de
+            la función. Alternativas más limpias:
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>En vez de devolver null…</th>
+                  <th>Mejor</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Cuando «no encontrar» es un caso esperado</td>
+                  <td>Tipo nullable <strong>explícito</strong> (<code>?Usuario</code>): el tipo avisa y obliga a tratarlo.</td>
+                </tr>
+                <tr>
+                  <td>Cuando «no encontrar» es un error de verdad</td>
+                  <td>Lanzar una excepción específica (<code>UsuarioNoEncontrado</code>).</td>
+                </tr>
+                <tr>
+                  <td>Una colección vacía</td>
+                  <td>Devuelve un array vacío o un objeto nulo, nunca <code>null</code>.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            La clave es que el <code>null</code>, cuando exista, sea
+            <strong>visible en el tipo</strong> (<code>?Usuario</code>) y no una
+            sorpresa: así PHP y tu IDE te obligan a contemplarlo.
+          </p>
+
+          <h2 id="fail-fast">
+            Fail fast
+            <a href="#fail-fast" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <strong>Falla pronto y ruidosamente.</strong> Valida las precondiciones al
+            principio del método y lanza en cuanto algo no cuadre, en lugar de
+            arrastrar un estado inválido que reventará tres capas más allá, donde será
+            imposible saber de dónde vino. Un error que salta cerca de su causa se
+            arregla en minutos; uno que salta lejos, en horas.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · valida y lanza al entrar</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+public function __construct(private string $email)
+{
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        throw new EmailInvalido($email);
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            Validar en el constructor garantiza que un objeto inválido
+            <strong>no llega a existir</strong>: el resto del código puede confiar en
+            que cualquier <code>Email</code> que reciba es válido, sin volver a
+            comprobarlo. La invariante se protege en un solo sitio.
+          </p>
+
+          <h2 id="separar">
+            Separar lógica y manejo
+            <a href="#separar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Como dice <em>Clean Code</em>, «el manejo de errores es una cosa». Una
+            función que mezcla la lógica de negocio con grandes bloques
+            <code>try/catch</code> hace dos cosas a la vez. Extrae el cuerpo a una
+            función y deja la de fuera dedicada solo a capturar y reaccionar: cada una
+            se lee a su nivel.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">No te tragues las excepciones</p>
+              <p>
+                El antipatrón más dañino es el <code>catch</code> vacío o que solo
+                registra y sigue: el error desaparece y el bug se vuelve invisible. Si
+                capturas, es para <em>hacer</em> algo (reintentar, traducir el error,
+                informar al usuario). Capturar para silenciar es esconder la suciedad
+                bajo la alfombra.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Usa <strong>excepciones</strong>, no códigos de error: el camino feliz queda limpio y el fallo no se ignora en silencio.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Lanza <strong>excepciones específicas</strong> (no genéricas), apoyadas en la jerarquía <code>Logic</code>/<code>Runtime</code> de PHP.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Evita <code>null</code>: hazlo <strong>explícito en el tipo</strong> (<code>?Usuario</code>) o lanza; nunca lo pases como argumento.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>Fail fast</strong>: valida al entrar y protege las invariantes en el constructor; separa la lógica del manejo y nunca te tragues una excepción.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="comentarios.html">
+              <small>← Anterior</small>
+              <b>Comentarios</b>
+            </a>
+            <a href="code-smells-refactoring.html" class="next">
+              <small>Siguiente →</small>
+              <b>Code smells y refactoring</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

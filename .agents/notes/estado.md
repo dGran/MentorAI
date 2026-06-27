@@ -269,6 +269,40 @@ Segundo curso del `plan-diseno-y-calidad.md`. Catálogo: **63 publicados**.
   `di-contenedores` (1 nuevo: contenedor-di + reusar inyeccion-dependencias) y el frente
   testing/observabilidad (PHPUnit 6 + Observabilidad 9).
 
+## Curso Clean Code publicado (2026-06-27) — HECHO (commit+push pendiente de confirmar)
+Tercer curso del `plan-diseno-y-calidad.md`. Catálogo: **69 publicados**.
+- **Curso `clean-code`** (6 lecciones, tercer curso en courses.js tras solid).
+  Categoría **`arquitectura`** (reusada). topic "Clean Code", icon code, ejemplos PHP
+  en `compare`. featured movido de solid-introduccion → `clean-code-intro`.
+  - `clean-code-intro` (Int, 13m): se lee 10× más de lo que se escribe, qué es código
+    limpio, coste del código sucio (deuda diaria), regla del boy scout.
+  - `nombres` (Int, 13m): revelar intención, evitar desinformación, pronunciables/
+    buscables (no números mágicos), no abreviar, booleanos is/has/should.
+  - `funciones-limpias` (Int, 14m): una sola cosa, un nivel de abstracción, pocos args
+    (no flags), sin efectos secundarios (CQS), early return.
+  - `comentarios` (Int, 12m): el comentario como disculpa, comentarios que mienten,
+    código comentado=basura, suplir mal nombre, cuándo sí (porqué no qué); cita la
+    convención del repo.
+  - `manejo-errores` (Int, 13m): excepciones vs códigos, específicas (Logic/Runtime),
+    no null (tipo nullable explícito), fail fast (validar en constructor), separar
+    lógica de manejo, no tragarse excepciones.
+  - `code-smells-refactoring` (Avz, 15m): catálogo de smells (tabla), refactorizar=
+    cambiar forma sin comportamiento, extraer método + reemplazar condicional por
+    polimorfismo, NO refactorizar sin tests (pasos pequeños, verde entre cada uno).
+- **paths.js:** curso `clean-code` añadido tras `solid` en la ruta `diseno-oo`
+  (oop → solid → clean-code → object-calisthenics → inyeccion-dependencias →
+  diseno-y-arquitectura).
+- **Cierra el último enlace pendiente** (solid-en-conjunto → clean-code-intro).
+  Verificado: node --check, escapado/TOC↔h2/balance (0 problemas), cruces (69 entradas,
+  1 featured=clean-code-intro, curso 6/6, 0 duplicados, ruta OK), **0 enlaces colgando**
+  en los 19 tutoriales OOP+SOLID+CleanCode, render headless de funciones-limpias (0
+  errores JS, route-nav inyectada) y cursos.html (curso Clean Code visible).
+- **PENDIENTE del plan-diseno-y-calidad**: solo queda `di-contenedores` (curso de 2
+  lecciones: reusar `inyeccion-dependencias` como lección + `contenedor-di` NUEVO, denso:
+  autowiring/reflexión, ciclo de vida, compilado vs runtime, memoria/GC). Implica que
+  inyeccion-dependencias deja de ser artículo suelto. Después, frente
+  testing/observabilidad (plan-testing-y-observabilidad.md): PHPUnit (6) + Observabilidad (9).
+
 ## Cómo añadir un tutorial
 Ver README.md → "Añadir un tutorial nuevo" (copiar plantilla, rellenar, añadir
 tarjeta en index.html con `data-categories`).
