@@ -38,6 +38,23 @@ window.MENTORAI_COURSES = [
     ],
   },
   {
+    slug: "solid",
+    title: "Principios SOLID",
+    summary:
+      "Los cinco principios de diseño orientado a objetos de Robert C. Martin, cada uno con su analogía, el código que lo viola y el refactor que lo cumple. De la responsabilidad única a la inversión de dependencias, y cómo encajan los cinco.",
+    level: "Intermedio",
+    icon: "code",
+    lessons: [
+      "solid-introduccion",
+      "srp-responsabilidad-unica",
+      "ocp-abierto-cerrado",
+      "lsp-sustitucion-liskov",
+      "isp-segregacion-interfaces",
+      "dip-inversion-dependencias",
+      "solid-en-conjunto",
+    ],
+  },
+  {
     slug: "fundamentos",
     title: "Fundamentos de CS para backend",
     summary:

@@ -235,6 +235,40 @@ Observabilidad**. Empezado el primero.
   curso SOLID** (siguiente del plan). (2) Nada commiteado. (3) Sigue el resto del plan:
   SOLID (7) → Clean Code (6) → di-contenedores (1 nuevo) → PHPUnit/Observabilidad.
 
+## Curso SOLID publicado (2026-06-27) — HECHO (commit+push)
+Segundo curso del `plan-diseno-y-calidad.md`. Catálogo: **63 publicados**.
+- **Curso `solid`** (7 lecciones, segundo curso en courses.js tras oop). Categoría
+  **`arquitectura`** (reusada, no chip nuevo). topic "Principios SOLID", icon code,
+  ejemplos PHP en `compare` (mal→bien). featured movido de oop-clases-y-objetos →
+  `solid-introduccion`.
+  - `solid-introduccion` (Int, 13m): qué es SOLID (Robert C. Martin), tabla de las 5
+    letras, hilo común (cohesión/acoplamiento), se refuerzan, no es checklist.
+  - `srp-responsabilidad-unica` (Int, 13m): una razón=un actor, god class factura
+    (calcula+persiste+imprime)→3 clases, cohesión no microclases.
+  - `ocp-abierto-cerrado` (Int, 14m): switch por método de pago que crece →
+    interfaz+estrategia, regla de los tres, match sobre enum cerrado no viola OCP.
+  - `lsp-sustitucion-liskov` (Avz, 14m): cuadrado/rectángulo, pre/postcondiciones,
+    herencia que miente (lanza en método heredado), salida = interfaces hermanas.
+  - `isp-segregacion-interfaces` (Int, 13m): Multifuncion gorda con throw NoSoportado
+    → Impresora/Escaner/Fax, el cliente define la interfaz, ISP abarata test doubles.
+  - `dip-inversion-dependencias` (Int, 12m, breve): alto/bajo nivel + abstracción,
+    qué se invierte, la interfaz la posee el alto nivel; remite a
+    inyeccion-dependencias y hexagonal.
+  - `solid-en-conjunto` (Avz, 13m): la cadena O→I→L→D→S, los 5 en una historia
+    (pedido+notificación), sobre-ingeniería, cuándo NO forzar; remite a clean-code y tdd.
+- **paths.js:** curso `solid` añadido tras `oop` en la ruta `diseno-oo`
+  (oop → solid → object-calisthenics → inyeccion-dependencias → diseno-y-arquitectura).
+- **Cierra los 6 enlaces pendientes de OOP** (las lecciones OOP cruzaban a slugs SOLID
+  que ahora existen). Verificado: node --check, escapado/TOC↔h2/balance (0 problemas),
+  cruces (63 entradas, 1 featured=solid-introduccion, curso solid 7/7, 0 duplicados,
+  ruta OK), render headless de lsp (0 errores JS, route-nav+route-related inyectados,
+  tokens) y de cursos.html (cursos "Programación orientada a objetos" y "Principios
+  SOLID" visibles).
+- **PENDIENTE**: queda **1 enlace a `clean-code-intro.html`** (en solid-en-conjunto),
+  que cierra el **curso Clean Code** (siguiente del plan: 6 lecciones). Después:
+  `di-contenedores` (1 nuevo: contenedor-di + reusar inyeccion-dependencias) y el frente
+  testing/observabilidad (PHPUnit 6 + Observabilidad 9).
+
 ## Cómo añadir un tutorial
 Ver README.md → "Añadir un tutorial nuevo" (copiar plantilla, rellenar, añadir
 tarjeta en index.html con `data-categories`).
