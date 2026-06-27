@@ -360,13 +360,18 @@
     const publishedEl = document.querySelector("[data-stat-published]");
     const all = window.ACADEMIA_TUTORIALS;
 
-    if (!publishedEl || !Array.isArray(all)) {
-      return;
+    if (publishedEl && Array.isArray(all)) {
+      publishedEl.textContent = all.filter(function (tutorial) {
+        return tutorial.status !== "soon";
+      }).length;
     }
 
-    publishedEl.textContent = all.filter(function (tutorial) {
-      return tutorial.status !== "soon";
-    }).length;
+    const coursesEl = document.querySelector("[data-stat-courses]");
+    const courses = window.MENTORAI_COURSES;
+
+    if (coursesEl && Array.isArray(courses)) {
+      coursesEl.textContent = courses.length;
+    }
   }
 
   MentorAI.initHeroStat = initHeroStat;

@@ -277,7 +277,7 @@
 
           host.innerHTML =
             '<header class="course-hero">' +
-            '<a class="course-hero__back" href="index.html">← Todos los cursos</a>' +
+            '<a class="course-hero__back" href="cursos.html">← Todos los cursos</a>' +
             '<span class="eyebrow">Curso</span>' +
             '<h1 class="course-hero__title">' +
             escapeHtml(course.title) +

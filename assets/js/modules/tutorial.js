@@ -22,8 +22,44 @@
     const slug = MentorAI.currentTutorialSlug();
 
     injectTutorialActions(slug, prose);
+    injectCourseCrumb(slug);
     injectRouteNav(slug, prose);
     initTocToggle();
+  }
+
+  function courseOfSlug(slug) {
+    const sequence = courseSequence();
+
+    for (let index = 0; index < sequence.length; index += 1) {
+      if (sequence[index].slug === slug) {
+        return sequence[index].course;
+      }
+    }
+
+    return null;
+  }
+
+  function injectCourseCrumb(slug) {
+    const breadcrumb = document.querySelector(".breadcrumb");
+
+    if (!breadcrumb) {
+      return;
+    }
+
+    const course = courseOfSlug(slug);
+    const topicSpan = breadcrumb.querySelector("span");
+    const separator = breadcrumb.querySelector("svg");
+
+    if (!course || !topicSpan || !separator) {
+      return;
+    }
+
+    const link = document.createElement("a");
+    link.href = "../curso.html?slug=" + encodeURIComponent(course.slug);
+    link.textContent = course.title;
+
+    breadcrumb.insertBefore(link, topicSpan);
+    breadcrumb.insertBefore(separator.cloneNode(true), topicSpan);
   }
 
   function escapeAttr(text) {
