@@ -17,8 +17,12 @@
     MentorAI.Catalog.render();
     MentorAI.Courses.render();
     MentorAI.Courses.renderCoursePage();
-    MentorAI.Paths.render();
-    MentorAI.Paths.renderHome();
+
+    if (MentorAI.Paths) {
+      MentorAI.Paths.render();
+      MentorAI.Paths.renderHome();
+    }
+
     MentorAI.Home.render();
     MentorAI.Home.initSearch();
     MentorAI.initHeroStat();
