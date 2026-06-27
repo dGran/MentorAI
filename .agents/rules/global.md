@@ -105,7 +105,15 @@ global del agente y no se duplican aquí.
 
 ## Planes abiertos
 
-Detalle en `.agents/notes/`:
+Detalle en `.agents/notes/`. **Autoría pendiente (estructura aprobada, ~35
+tutoriales), orden: OOP → SOLID → Clean Code → DI+contenedores → PHPUnit →
+Observabilidad:**
+- `plan-diseno-y-calidad.md` — cursos `oop`, `solid`, `clean-code`,
+  `di-contenedores` (20 tutoriales).
+- `plan-testing-y-observabilidad.md` — cursos `phpunit` y `observabilidad`
+  (15 tutoriales).
+
+Fase 2 (infraestructura, sin tocar):
 - `plan-buscador-fulltext.md` — búsqueda dentro del contenido (índice por el puente).
 - `plan-resaltado-texto.md` — subrayar texto dentro de los tutoriales.
 - `plan-autocategorizacion.md` — que la IA proponga las categorías al generar.

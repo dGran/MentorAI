@@ -665,13 +665,35 @@ El usuario señaló con alarma "main.js +2000 loc" y eligió "un fichero por mó
 - `plan-resaltado-texto.md` — subrayar texto dentro de los tutoriales.
 - `plan-autocategorizacion.md` — que la IA proponga las categorías al generar.
 
-## Siguiente paso sugerido
-La cola de ideas está vacía y no quedan placeholders soon (27 publicados, 0 soon).
-Los 4 commits de tutoriales de esta sesión están **en local sin pushear** (la
-regla obliga a confirmar el push explícitamente). Próximo tutorial = idea nueva
-del usuario o retomar `plan-curriculum-fundamentos.md` (pilares 6-7 pendientes).
-Opcional: encajar en `roadmap.js` los tutoriales nuevos que aún no están en
-ningún pilar (PHP por dentro, redis-a-fondo, jerga).
+## Siguiente paso sugerido (actualizado 2026-06-27)
+Estado del sitio: **50 tutoriales publicados, 4 cursos** (fundamentos, testing,
+programar-con-ia, diseno-y-arquitectura), **3 rutas de aprendizaje** (php-a-fondo,
+diseno-oo, backend-cimientos). Todo **pusheado** a `origin/main` (último push tras
+montar rutas + progreso de lectura). Repo: `github.com/dGran/MentorAI`, Pages en
+`dgran.github.io/MentorAI/`.
+
+**PENDIENTE PRINCIPAL — autoría de 35 tutoriales planificados (2 planes):**
+- `plan-diseno-y-calidad.md` — **20 tutoriales / 4 cursos**: `oop` (6),
+  `solid` (7), `clean-code` (6), `di-contenedores` (1 nuevo + reusa
+  inyeccion-dependencias). Orden: **OOP → SOLID → Clean Code → DI+contenedores**.
+- `plan-testing-y-observabilidad.md` — **15 tutoriales / 2 cursos**: `phpunit`
+  (6, + renombrar el curso testing actual a "TDD y fundamentos"), `observabilidad`
+  (9, con Prometheus/PromQL + Loki/LogQL + Sentry + Grafana).
+- Orden global sugerido y aprobado en estructura: OOP → SOLID → Clean Code →
+  DI+contenedores → PHPUnit → Observabilidad. **El usuario ya dio OK a la
+  estructura; falta arrancar la autoría.** Todo es PHP salvo PromQL/LogQL/YAML
+  (que van sin `data-lang`).
+
+**PENDIENTES MENORES:**
+- Navbar "Rutas" NO está en los 50 tutoriales (solo en index/cursos/articulos/
+  curso/rutas). Añadir por sed si se quiere consistencia total.
+- Script opcional `server/recalcular-minutos.js` (los `minutes` del manifest son
+  manuales; el usuario lo dejó como opcional).
+- **Al escribir cada tutorial/curso nuevo: revisar `tutorials/paths.js` para
+  encajarlo en una ruta** (regla en global.md).
+
+**PLANES DE FASE 2 (sin tocar):** `plan-buscador-fulltext.md`,
+`plan-resaltado-texto.md`, `plan-autocategorizacion.md`.
 
 ## Notas técnicas
 - Para añadir un lenguaje al resaltado: ampliar `LANGUAGES` en
