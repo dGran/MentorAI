@@ -57,6 +57,9 @@
       sistemas: "El sistema por debajo",
       redes: "Cómo viaja un dato",
       distribuidos: "Sistemas distribuidos",
+      arquitectura: "Arquitectura",
+      testing: "Testing",
+      ia: "Programar con IA",
     };
 
     const CLOCK_SVG =

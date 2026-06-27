@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flujo de trabajo con agentes de código — MentorAI</title>
+    <meta
+      name="description"
+      content="Qué es un agente de código (Claude Code y similares) y cómo trabajar con él: el ciclo plan-implementar-revisar, cómo darle el contexto del repositorio, qué herramientas usa y por qué el criterio sigue siendo tuyo."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Programar con IA</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Flujo de trabajo con agentes</h1>
+        <p class="tutorial-hero__lead">
+          Un agente de código no solo escribe en un chat: lee tu repositorio,
+          ejecuta comandos y edita ficheros. Eso cambia la forma de trabajar:
+          pasas de copiar y pegar fragmentos a dirigir un colaborador que actúa
+          sobre tu proyecto. Saber dirigirlo es la nueva habilidad.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Programar con IA
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">Qué es un agente de código</a></li>
+            <li><a href="#herramientas">Las herramientas que usa</a></li>
+            <li><a href="#ciclo">Plan, implementar, revisar</a></li>
+            <li><a href="#contexto-repo">El contexto del repositorio</a></li>
+            <li><a href="#criterio">No delegues el criterio</a></li>
+            <li><a href="#limites">Dónde encaja y dónde no</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Un chat de IA te da texto que tú trasladas al código. Un agente
+            cierra ese hueco: tiene permiso para leer, ejecutar y modificar tu
+            proyecto directamente. Es más potente y más delicado, porque actúa.
+            Tu papel deja de ser «copiar respuestas» y pasa a ser «dirigir y
+            revisar».
+          </p>
+
+          <h2 id="idea">
+            Qué es un agente de código
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un <strong>agente de código</strong> es un LLM envuelto en un bucle
+            que le da herramientas y autonomía para usarlas. En vez de
+            responderte y parar, observa el resultado de cada acción y decide la
+            siguiente: lee un fichero, busca una función, ejecuta los tests, ve
+            que fallan, corrige. Claude Code es un ejemplo; hay varios.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El mismo modelo, más manos</p>
+              <p>
+                Por debajo sigue siendo el LLM del tutorial anterior: predice
+                texto, ve solo su ventana de contexto, puede alucinar. Lo nuevo
+                no es que «piense mejor», sino que puede <strong>actuar y
+                observar</strong> el resultado, lo que le permite corregirse sin
+                que tú hagas de intermediario.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="herramientas">
+            Las herramientas que usa
+            <a href="#herramientas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La diferencia con un chat es el conjunto de acciones que puede tomar.
+            Las típicas:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Herramienta</th>
+                  <th>Para qué</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Leer / buscar</strong></td>
+                  <td>Abrir ficheros y rastrear símbolos por el repo para entender el código antes de tocarlo.</td>
+                </tr>
+                <tr>
+                  <td><strong>Editar / escribir</strong></td>
+                  <td>Aplicar cambios concretos a ficheros, no solo proponerlos en el chat.</td>
+                </tr>
+                <tr>
+                  <td><strong>Ejecutar comandos</strong></td>
+                  <td>Correr tests, linters, el compilador; ver la salida real y reaccionar a ella.</td>
+                </tr>
+                <tr>
+                  <td><strong>Control de versiones</strong></td>
+                  <td>Ver el diff, crear ramas, preparar commits para que revises antes de integrar.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Que actúe no es que tenga barra libre</p>
+              <p>
+                Ejecutar comandos y editar ficheros es justo lo que lo hace útil
+                y lo que exige cuidado. Trabaja sobre control de versiones, revisa
+                el diff antes de aceptar y desconfía de acciones difíciles de
+                deshacer (borrar, sobrescribir, tocar producción). La autonomía es
+                una herramienta con freno, no un piloto automático.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="ciclo">
+            Plan, implementar, revisar
+            <a href="#ciclo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El flujo que mejor funciona separa tres fases, en vez de soltar «hazlo
+            todo» y rezar:
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Plan</b><small>Pídele que explore y proponga un plan antes de tocar nada. Tú lo apruebas o corriges.</small></span>
+              </div>
+              <div class="flow__arrow" data-label="visto bueno"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Implementar</b><small>Ejecuta el plan en pasos pequeños y verificables, corriendo los tests.</small></span>
+              </div>
+              <div class="flow__arrow" data-label="diff a la vista"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Revisar</b><small>Lees el diff, pruebas el resultado y pides ajustes antes de integrar.</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Aprobar el plan antes de implementar evita que se vaya por el
+              camino equivocado durante media hora.
+            </p>
+          </div>
+
+          <p>
+            La fase de plan es la más rentable y la que más se salta la gente.
+            Revisar un plan de cinco líneas cuesta un minuto; revisar 600 líneas
+            de código que apuntaban al sitio equivocado cuesta la tarde. Es la
+            misma idea de los <a href="tdd-ciclo.html">pasos pequeños</a>:
+            confirmar el rumbo antes de avanzar.
+          </p>
+
+          <h2 id="contexto-repo">
+            El contexto del repositorio
+            <a href="#contexto-repo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El agente puede leer tu código, pero no adivina tus convenciones ni
+            tus decisiones. Por eso casi todas estas herramientas leen un fichero
+            de instrucciones del proyecto (un <code>AGENTS.md</code> o similar)
+            donde dejas escritas las reglas: estilo, arquitectura, qué no tocar,
+            cómo correr los tests. Es contexto permanente que no tienes que
+            repetir en cada sesión.
+          </p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Invierte en el contexto permanente</p>
+              <p>
+                Cada regla que escribes una vez en el fichero del proyecto es una
+                corrección que no tendrás que repetir mil veces. Un buen documento
+                de convenciones convierte al agente en alguien que «conoce la
+                casa», en vez de un recién llegado en cada sesión.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="criterio">
+            No delegues el criterio
+            <a href="#criterio" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El agente decide <em>cómo</em> hacer la tarea; tú decides <em>qué</em>
+            tarea, si la solución es buena y si entra en producción. Esa frontera
+            no se mueve. Un agente puede escribir un módulo entero en minutos,
+            pero la responsabilidad de lo que se mergea sigue siendo de quien
+            aprueba el cambio: tú.
+          </p>
+          <p>
+            En la práctica: lee siempre el diff, no apruebes lo que no entiendes,
+            y desconfía cuando el agente toma decisiones de arquitectura sin
+            consultarte. Que sea rápido no significa que tenga tu visión del
+            sistema ni tu conocimiento del negocio. El siguiente tutorial entra a
+            fondo en estos riesgos.
+          </p>
+
+          <h2 id="limites">
+            Dónde encaja y dónde no
+            <a href="#limites" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Brilla en</h4>
+              <ul>
+                <li>Tareas acotadas y bien definidas.</li>
+                <li>Código repetitivo (tests, CRUD, migraciones).</li>
+                <li>Explorar un repo desconocido.</li>
+                <li>Refactors mecánicos con tests que protegen.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Vigila en</h4>
+              <ul>
+                <li>Decisiones de arquitectura de calado.</li>
+                <li>Dominio de negocio sutil o poco documentado.</li>
+                <li>Cambios amplios sin tests que respalden.</li>
+                <li>Lo crítico de seguridad o de datos.</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            La regla práctica: cuanto mejor puedas <strong>verificar</strong> el
+            resultado (con tests, con un diff legible, ejecutándolo), más puedes
+            apoyarte en el agente. Donde la verificación es difícil, baja el ritmo
+            y sube tu implicación. La verificación es el límite real de cuánto
+            puedes delegar.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un <strong>agente de código</strong> es un LLM con herramientas (leer, editar, ejecutar) y autonomía para usarlas en bucle.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Trabaja en <strong>plan → implementar → revisar</strong>. Aprobar el plan antes de codificar es lo más rentable.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Dale el <strong>contexto del repo</strong> por escrito (convenciones, arquitectura) para no repetirlo cada vez.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Decide <strong>cómo</strong>, pero tú decides <strong>qué</strong> y qué entra. Cuanto mejor puedas verificar, más puedes delegar.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="prompting-para-codigo.html">
+              <small>← Anterior</small>
+              <b>Prompting para código</b>
+            </a>
+            <a href="criterio-y-riesgos.html" class="next">
+              <small>Siguiente →</small>
+              <b>Criterio y riesgos</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>La pirámide de tests: unit, integración y e2e — MentorAI</title>
+    <meta
+      name="description"
+      content="Por qué los tests se organizan en niveles: unitarios, de integración y end-to-end. El trade-off velocidad/confianza/coste, qué cubrir en cada nivel y por qué el cono de helado es un antipatrón."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Testing</span>
+        </nav>
+        <h1 class="tutorial-hero__title">La pirámide de tests</h1>
+        <p class="tutorial-hero__lead">
+          No todos los tests cuestan lo mismo ni dan la misma confianza. La
+          pirámide ordena tres niveles —unitarios, de integración y
+          end-to-end— según ese trade-off, y te dice cuántos poner de cada uno
+          para que la suite sea rápida y fiable a la vez.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Testing
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">Por qué hay niveles</a></li>
+            <li><a href="#piramide">La pirámide</a></li>
+            <li><a href="#unit">Tests unitarios</a></li>
+            <li><a href="#integration">Tests de integración</a></li>
+            <li><a href="#e2e">Tests end-to-end</a></li>
+            <li><a href="#cono">El cono de helado</a></li>
+            <li><a href="#cuanto">Cuánto de cada</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Un test te da confianza en que algo funciona, pero esa confianza
+            tiene precio: velocidad de ejecución, fragilidad y coste de
+            mantenerlo. La pirámide de tests es una forma visual de equilibrar
+            esos tres ejes para que tu suite no sea ni inútil ni insufrible.
+          </p>
+
+          <h2 id="idea">
+            Por qué hay niveles
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un test puede comprobar una función aislada o el sistema entero de
+            punta a punta. Cuanto más abarca, más confianza da («esto funciona
+            de verdad para el usuario») pero más cuesta: tarda más, se rompe por
+            más motivos y es más difícil saber <em>qué</em> falló cuando falla.
+            Los niveles existen para poner cada comprobación al precio justo.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Tres ejes en tensión</p>
+              <p>
+                <strong>Velocidad</strong> (¿corre en milisegundos o en
+                minutos?), <strong>confianza</strong> (¿se parece a lo que hace
+                el usuario real?) y <strong>coste</strong> (¿cuánto duele
+                escribirlo y mantenerlo?). Ningún test gana en los tres a la
+                vez; eliges según lo que estés cubriendo.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="piramide">
+            La pirámide
+            <a href="#piramide" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La metáfora, de Mike Cohn, es un triángulo con tres pisos. La base,
+            ancha, son muchos tests unitarios; el centro, menos, de integración;
+            la cúspide, pocos, end-to-end. La forma <strong>no es decorativa</strong>:
+            cuanto más arriba, más caro y lento, así que pones menos.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">▲</span>
+                <span><b>End-to-end (pocos)</b><small>El sistema entero como lo usa un usuario. Lentos, frágiles, máxima confianza.</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">■</span>
+                <span><b>Integración (algunos)</b><small>Varias piezas juntas: código + base de datos, código + API.</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">▬</span>
+                <span><b>Unitarios (muchos)</b><small>Una unidad aislada. Rápidos, baratos, precisos al señalar el fallo.</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Más abajo = más cantidad. Más arriba = más confianza por test,
+              pero más caro.
+            </p>
+          </div>
+
+          <h2 id="unit">
+            Tests unitarios
+            <a href="#unit" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Prueban una <strong>unidad</strong> de código aislada —normalmente
+            una clase o función— sin tocar base de datos, red ni ficheros. Las
+            dependencias se sustituyen por <a href="test-doubles.html">dobles
+            de test</a>. Corren en milisegundos, así que puedes tener miles y
+            ejecutarlos en cada guardado.
+          </p>
+          <p>
+            Su superpoder es la <strong>precisión</strong>: cuando uno falla,
+            sabes exactamente qué función se rompió. Su límite es que prueban
+            las piezas por separado; que cada engranaje gire no garantiza que el
+            reloj dé la hora.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · unitario (sin dependencias externas)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+public function test_calcula_el_iva_de_un_importe(): void
+{
+    $calculator = new TaxCalculator();
+
+    $this-&gt;assertSame(121.0, $calculator-&gt;withVat(100.0, 0.21));
+}</code></pre>
+          </div>
+
+          <h2 id="integration">
+            Tests de integración
+            <a href="#integration" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Comprueban que <strong>varias piezas colaboran</strong> bien: tu
+            repositorio contra una base de datos real, tu cliente contra una API
+            de pruebas, tu código contra la cola de mensajes. Aquí ya no
+            sustituyes la dependencia: usas una de verdad (a menudo en un
+            contenedor, una base de datos efímera).
+          </p>
+          <p>
+            Dan una confianza que el unitario no puede: que tu SQL es válido,
+            que el mapeo objeto-tabla cuadra, que la transacción hace lo que
+            crees. A cambio son más lentos (arrancar y poblar una base de datos
+            cuesta) y se rompen por más motivos.
+          </p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Aquí vive el valor real en backend</p>
+              <p>
+                En una aplicación de backend, mucha de la lógica que importa es
+                «pedir esto a la base de datos y transformarlo». Los tests de
+                integración cubren justo esa frontera, que los unitarios fingen
+                con dobles. No los descuides por estar en mitad de la pirámide.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="e2e">
+            Tests end-to-end
+            <a href="#e2e" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Ejercitan el sistema <strong>completo</strong> como lo haría un
+            usuario: lanzan la aplicación de verdad y simulan clics en el
+            navegador o peticiones HTTP reales que recorren toda la pila. Son la
+            única prueba de que «el conjunto funciona», incluida la
+            configuración, las rutas y el despliegue.
+          </p>
+          <p>
+            También son los más caros: lentos (segundos por test), frágiles
+            (un cambio de maquetación los rompe) y difíciles de depurar (¿falló
+            el front, el back, la red?). Por eso van en la cúspide: unos pocos
+            que cubran los <em>caminos críticos</em> (registrarse, pagar), no
+            cada variación.
+          </p>
+
+          <h2 id="cono">
+            El cono de helado
+            <a href="#cono" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El antipatrón clásico es la pirámide <strong>al revés</strong>: el
+            <em>cono de helado</em>. Muchos tests end-to-end, pocos unitarios y,
+            coronándolo, un montón de pruebas manuales. Pasa cuando se testea
+            «por la interfaz» porque parece más realista.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Pirámide</h4>
+              <ul>
+                <li>Base ancha de unitarios rápidos.</li>
+                <li>La suite corre en segundos.</li>
+                <li>Un fallo señala la pieza exacta.</li>
+                <li>Refactorizas sin miedo.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Cono de helado</h4>
+              <ul>
+                <li>Casi todo es e2e lento y frágil.</li>
+                <li>La suite tarda y la gente la ignora.</li>
+                <li>Cuando falla, no sabes dónde.</li>
+                <li>Tests «flaky» que fallan a ratos sin motivo.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Una suite lenta es una suite muerta</p>
+              <p>
+                Si los tests tardan diez minutos, la gente deja de ejecutarlos
+                antes de subir código. Una suite que no se corre no protege
+                nada. La velocidad de la base unitaria no es un lujo: es lo que
+                mantiene viva la práctica.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="cuanto">
+            Cuánto de cada
+            <a href="#cuanto" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Las proporciones famosas (70/20/10) son una guía, no una ley. La
+            regla útil de verdad es: <strong>empuja cada test al nivel más bajo
+            que pueda probar lo que te importa</strong>. Si una regla de negocio
+            se puede comprobar en un unitario, no la pruebes por la interfaz.
+            Reserva el e2e para lo que <em>solo</em> se ve integrando todo.
+          </p>
+          <p>
+            Hay quien prefiere hablar de un <em>panal</em> (más integración que
+            pirámide pura) para backends donde la lógica vive en la frontera con
+            la base de datos. El reparto exacto depende de tu sistema; el
+            principio no cambia: lo barato y preciso abajo, lo caro y realista
+            arriba, y poco.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Cada test equilibra <strong>velocidad</strong>, <strong>confianza</strong> y <strong>coste</strong>: ninguno gana en los tres.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>Unitarios</strong>: muchos, rápidos, una unidad aislada. <strong>Integración</strong>: piezas reales juntas. <strong>E2e</strong>: pocos, el sistema entero.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El <strong>cono de helado</strong> (al revés) da suites lentas y frágiles que la gente acaba ignorando.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Empuja cada comprobación al <strong>nivel más bajo</strong> que la pueda probar. Lo caro y realista, arriba y poco.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="tdd-ciclo.html">
+              <small>← Anterior</small>
+              <b>El ciclo TDD: rojo, verde, refactor</b>
+            </a>
+            <a href="test-doubles.html" class="next">
+              <small>Siguiente →</small>
+              <b>Dobles de test</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

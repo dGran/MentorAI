@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>El ciclo TDD: rojo, verde, refactor — MentorAI</title>
+    <meta
+      name="description"
+      content="Qué es TDD y por qué se escribe el test antes que el código: el ritmo rojo-verde-refactor, los pasos pequeños (baby steps) y qué te da de verdad (diseño emergente y red de seguridad), con un ejemplo en PHP."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Testing</span>
+        </nav>
+        <h1 class="tutorial-hero__title">El ciclo TDD: rojo, verde, refactor</h1>
+        <p class="tutorial-hero__lead">
+          Escribir el test <em>antes</em> que el código suena del revés, pero es
+          el corazón del Test-Driven Development. No va de testear más: va de
+          dejar que cada test pequeño tire del diseño, paso a paso, con una red
+          de seguridad que crece contigo.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Testing
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">Qué es TDD</a></li>
+            <li><a href="#por-que">Por qué el test primero</a></li>
+            <li><a href="#ciclo">Rojo, verde, refactor</a></li>
+            <li><a href="#baby-steps">Pasos pequeños</a></li>
+            <li><a href="#ejemplo">Un ejemplo en PHP</a></li>
+            <li><a href="#que-te-da">Qué te da de verdad</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            La mayoría aprende a programar escribiendo código y, si acaso,
+            probándolo después a mano. TDD le da la vuelta a ese orden: primero
+            describes lo que quieres con un test que falla, y solo entonces
+            escribes el código justo para que pase. El test no es un examen al
+            final; es la brújula que marca cada paso.
+          </p>
+
+          <h2 id="idea">
+            Qué es TDD
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <strong>Test-Driven Development</strong> (desarrollo guiado por
+            pruebas) es una forma de programar en la que escribes un test
+            automático <strong>antes</strong> que el código que lo hace pasar.
+            Repites ese gesto en bucles muy cortos —de segundos a minutos— y
+            dejas que la suma de esos tests vaya dibujando el diseño de tu
+            código.
+          </p>
+          <p>
+            La idea no es nueva (Kent Beck la popularizó a finales de los 90 con
+            Extreme Programming), pero sigue costando porque choca con el
+            instinto: queremos resolver el problema ya, no describirlo primero.
+            La promesa de TDD es que, describiéndolo primero, lo resuelves mejor
+            y con menos miedo a tocarlo después.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">TDD no es «escribir tests»</p>
+              <p>
+                Puedes tener una suite de tests enorme sin hacer TDD (los
+                escribes después), y puedes hacer TDD con pocos tests. TDD es el
+                <strong>orden</strong> y el <strong>ritmo</strong>: test que
+                falla → código → limpieza, una y otra vez. Lo que produce buenos
+                tests es un efecto secundario; el objetivo es guiar el diseño.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="por-que">
+            Por qué el test primero
+            <a href="#por-que" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Escribir el test antes te obliga a contestar tres preguntas
+            <em>antes</em> de implementar nada: ¿cómo se va a llamar esto?, ¿qué
+            recibe y qué devuelve?, ¿cómo sabré que funciona? Son justo las
+            decisiones de diseño que, si las pospones, acabas tomando a la fuerza
+            y mal.
+          </p>
+          <p>
+            Como aún no existe la implementación, te ves obligado a pensar desde
+            <strong>fuera</strong>: desde quien va a usar tu código, no desde sus
+            tripas. Eso empuja hacia interfaces pequeñas y honestas. El test es
+            tu primer cliente, y un cliente exigente mejora el producto.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Test después</h4>
+              <ul>
+                <li>Testeas lo que ya escribiste, con sus mismos sesgos.</li>
+                <li>Tiendes a adaptar el test al código, no al revés.</li>
+                <li>Lo que es difícil de testear ya está escrito así.</li>
+                <li>Es fácil «dejarlo para luego» y no volver.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Test antes (TDD)</h4>
+              <ul>
+                <li>Diseñas la interfaz desde quien la usa.</li>
+                <li>Si algo es difícil de testear, lo ves y lo cambias ya.</li>
+                <li>Cada línea de código nace porque un test la pide.</li>
+                <li>Tienes la red de seguridad desde el minuto uno.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="ciclo">
+            Rojo, verde, refactor
+            <a href="#ciclo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El ciclo de TDD tiene tres fases con nombre de color, por el color
+            que pone el ejecutor de tests al pasar o fallar:
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Rojo</b><small>Escribe un test que falla: describe el siguiente trocito de comportamiento</small></span>
+              </div>
+              <div class="flow__arrow" data-label="lo mínimo"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Verde</b><small>Escribe el código más simple que haga pasar el test, aunque sea feo</small></span>
+              </div>
+              <div class="flow__arrow" data-label="ya en verde"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Refactor</b><small>Limpia el código sin cambiar su comportamiento; los tests te protegen</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Y vuelta a empezar. Cada vuelta añade una pizca de comportamiento.
+            </p>
+          </div>
+
+          <p>
+            Las tres fases tienen reglas distintas y conviene no mezclarlas:
+          </p>
+          <ul>
+            <li>
+              <strong>Rojo:</strong> el test debe fallar por la razón correcta
+              (la funcionalidad no existe), no por un error de sintaxis. Ver el
+              rojo confirma que el test <em>puede</em> fallar; un test que nunca
+              falla no prueba nada.
+            </li>
+            <li>
+              <strong>Verde:</strong> aquí vale hacer trampa. Si devolver un
+              valor fijo hace pasar el test, hazlo. La fealdad es temporal y el
+              siguiente test la expulsará. La única meta es la barra verde.
+            </li>
+            <li>
+              <strong>Refactor:</strong> con todo en verde, mejora nombres,
+              elimina duplicación y aclara la estructura. No añades
+              comportamiento nuevo; si lo necesitas, eso es otro test (vuelta a
+              rojo).
+            </li>
+          </ul>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">No te saltes el rojo</p>
+              <p>
+                El error más común al empezar es escribir el código y el test a
+                la vez, o el test después «porque ya sé que pasa». Si no has
+                visto el test en rojo, no sabes si realmente prueba algo. Un
+                test que pasa desde el primer momento es sospechoso.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="baby-steps">
+            Pasos pequeños
+            <a href="#baby-steps" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La otra mitad de TDD es el tamaño del paso. Los
+            <strong>baby steps</strong> son incrementos tan pequeños que el
+            siguiente test casi se escribe solo. En vez de «implementar la
+            calculadora», haces «sumar dos números», luego «sumar con un cero»,
+            luego «sumar negativos». Cada uno es un rojo→verde de un par de
+            minutos.
+          </p>
+          <p>
+            ¿Por qué tan pequeño? Porque si un test tarda mucho en ponerse
+            verde, te has alejado demasiado de terreno seguro: cuando algo
+            falle, tendrás mucho código que revisar. Con pasos diminutos, cuando
+            el test no pasa sabes que el culpable es lo último que escribiste.
+            El depurador casi desaparece.
+          </p>
+
+          <h2 id="ejemplo">
+            Un ejemplo en PHP
+            <a href="#ejemplo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Imagina una función que aplica un descuento a un precio. Empezamos
+            por el test, con <strong>PHPUnit</strong>, antes de que exista la
+            clase:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · rojo (el test que falla)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+use PHPUnit\Framework\TestCase;
+
+final class DiscountTest extends TestCase
+{
+    public function test_aplica_un_porcentaje_al_precio(): void
+    {
+        $discount = new Discount();
+
+        $final = $discount-&gt;apply(100, 20);
+
+        $this-&gt;assertSame(80, $final);
+    }
+}
+
+// Ejecutar ahora falla: la clase Discount no existe todavía. Es el rojo.</code></pre>
+          </div>
+
+          <p>
+            Ahora el código <strong>mínimo</strong> para llegar a verde. No
+            generalizamos de más: solo lo que el test exige.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · verde (lo mínimo)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class Discount
+{
+    public function apply(int $price, int $percent): int
+    {
+        return $price - intdiv($price * $percent, 100);
+    }
+}
+
+// El test pasa. Verde.</code></pre>
+          </div>
+
+          <p>
+            Con el verde puesto, viene el siguiente rojo: ¿qué pasa con un
+            descuento negativo o mayor que 100? Escribimos un test que lo exija
+            y volvemos al ciclo. El diseño (validar la entrada, quizá lanzar una
+            excepción tipada) <strong>emerge</strong> de los tests, no de
+            adivinar requisitos por adelantado.
+          </p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Triangular para generalizar</p>
+              <p>
+                Una técnica clásica: si en verde hiciste «trampa» devolviendo un
+                valor fijo, añade un segundo ejemplo distinto que obligue a
+                generalizar. Con dos o tres casos que tiran en direcciones
+                distintas, la solución honesta aparece sola. Se llama
+                <em>triangulación</em>.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="que-te-da">
+            Qué te da de verdad
+            <a href="#que-te-da" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            TDD no es gratis: ralentiza el arranque y exige disciplina. Lo que
+            devuelve a cambio:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Beneficio</th>
+                  <th>Por qué aparece</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Diseño emergente</strong></td>
+                  <td>Al diseñar desde quien usa el código, salen interfaces pequeñas y desacopladas casi sin pretenderlo.</td>
+                </tr>
+                <tr>
+                  <td><strong>Red de seguridad</strong></td>
+                  <td>Cada cambio futuro corre contra cientos de tests; si algo se rompe, lo sabes en segundos, no en producción.</td>
+                </tr>
+                <tr>
+                  <td><strong>Documentación viva</strong></td>
+                  <td>Los tests describen qué hace el código con ejemplos reales y siempre actualizados (si fallan, los arreglas).</td>
+                </tr>
+                <tr>
+                  <td><strong>Menos depuración</strong></td>
+                  <td>Con pasos pequeños, el fallo siempre está en lo último que tocaste. El depurador deja de ser tu casa.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            TDD no encaja en todo por igual: para explorar (un <em>spike</em>,
+            un prototipo que vas a tirar) puede estorbar, y para código sin
+            lógica (un getter, mapear un DTO) aporta poco. Brilla donde hay
+            <strong>decisiones</strong>: reglas de negocio, cálculos, casos
+            límite. Ahí es donde el diseño guiado por tests gana de calle.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>TDD</strong> es escribir el test antes que el código y repetirlo en bucles cortos. Es un orden y un ritmo, no «escribir más tests».</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El ciclo es <strong>rojo</strong> (test que falla) → <strong>verde</strong> (lo mínimo para pasar) → <strong>refactor</strong> (limpiar sin cambiar comportamiento).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Avanza en <strong>pasos pequeños</strong>: si el test no pasa, el culpable es lo último que escribiste.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Te da <strong>diseño emergente</strong>, una <strong>red de seguridad</strong>, documentación viva y menos depuración. Brilla donde hay decisiones de negocio.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../cursos.html">
+              <small>← Volver</small>
+              <b>Cursos</b>
+            </a>
+            <a href="tipos-de-test.html" class="next">
+              <small>Siguiente →</small>
+              <b>La pirámide de tests</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DDD táctico: entidades, value objects y agregados — MentorAI</title>
+    <meta
+      name="description"
+      content="Los building blocks del DDD táctico explicados con ejemplos en PHP: entidad, value object, agregado y su raíz, repositorio, servicio de dominio y factory. Cuándo usar cada uno y por qué un agregado no es una tabla."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Arquitectura</span>
+        </nav>
+        <h1 class="tutorial-hero__title">DDD táctico (building blocks)</h1>
+        <p class="tutorial-hero__lead">
+          Con las fronteras ya trazadas, el DDD táctico da las piezas para
+          modelar dentro de cada bounded context: entidades, value objects,
+          agregados, repositorios. No son clases vacías con getters: son patrones
+          que ponen las reglas del negocio donde deben estar.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            16 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Arquitectura
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">Los building blocks</a></li>
+            <li><a href="#value-object">Value object</a></li>
+            <li><a href="#entidad">Entidad</a></li>
+            <li><a href="#agregado">Agregado y su raíz</a></li>
+            <li><a href="#repositorio">Repositorio</a></li>
+            <li><a href="#servicio-factory">Servicio de dominio y factory</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Estos patrones son herramientas, no obligaciones. La pregunta no es
+            «¿qué patrón aplico aquí?», sino «¿cuál de estas piezas captura mejor
+            esta parte del negocio?». Mal usados, son ceremonia; bien usados,
+            hacen que el código exprese el dominio.
+          </p>
+
+          <h2 id="idea">
+            Los building blocks
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El DDD táctico vive dentro de un bounded context y de la capa de
+            dominio de la <a href="hexagonal.html">hexagonal</a>. Su objetivo es
+            un <strong>modelo rico</strong>: objetos que contienen sus reglas, no
+            sacos de datos manipulados desde fuera. La primera distinción, y la
+            más útil, es entre objetos con identidad (entidades) y objetos sin
+            ella (value objects).
+          </p>
+
+          <h2 id="value-object">
+            Value object
+            <a href="#value-object" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un <strong>value object</strong> se define por su valor, no por una
+            identidad. Dos billetes de 10 € son intercambiables: lo que importa es
+            «10 €», no cuál es cuál. Email, dinero, un rango de fechas, una
+            dirección: candidatos perfectos. Son <strong>inmutables</strong> (si
+            cambias algo, creas otro) y validan su propia corrección al nacer.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · value object Email</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class Email
+{
+    public function __construct(private string $value)
+    {
+        if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+            throw new InvalidEmail($value);
+        }
+    }
+
+    public function value(): string
+    {
+        return $this-&gt;value;
+    }
+
+    public function equals(Email $other): bool
+    {
+        return $this-&gt;value === $other-&gt;value;
+    }
+}</code></pre>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Los value objects matan las primitivas obsesivas</p>
+              <p>
+                Pasar emails como <code>string</code> y dinero como
+                <code>float</code> esparce validaciones por todo el código y
+                permite errores absurdos (sumar un id con un precio). Un value
+                object encierra la regla en un sitio: si tienes un
+                <code>Email</code>, es válido por construcción. Empieza por aquí;
+                es el patrón con mejor relación valor/esfuerzo.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="entidad">
+            Entidad
+            <a href="#entidad" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una <strong>entidad</strong> tiene <strong>identidad</strong> propia
+            que persiste en el tiempo aunque cambien sus atributos. Un usuario
+            sigue siendo el mismo usuario aunque cambie de email; un pedido sigue
+            siendo ese pedido aunque cambie de estado. Se distinguen por su id, no
+            por sus valores, y encapsulan las operaciones que cambian su estado.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · entidad con comportamiento, no setters</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class Subscription
+{
+    public function __construct(
+        private SubscriptionId $id,
+        private Status $status
+    ) {}
+
+    public function cancel(): void
+    {
+        if ($this-&gt;status === Status::Cancelled) {
+            throw new AlreadyCancelled($this-&gt;id);
+        }
+
+        $this-&gt;status = Status::Cancelled;
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            Fíjate: no hay <code>setStatus()</code>. Hay <code>cancel()</code>,
+            que es lo que el negocio sabe hacer, con su regla incluida. Una
+            entidad con solo getters y setters es un <em>modelo anémico</em>: los
+            datos por un lado y las reglas dispersas por servicios, justo lo que
+            DDD quiere evitar.
+          </p>
+
+          <h2 id="agregado">
+            Agregado y su raíz
+            <a href="#agregado" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un <strong>agregado</strong> es un grupo de entidades y value objects
+            que se tratan como una <strong>unidad de consistencia</strong>. Tiene
+            una <strong>raíz</strong> (aggregate root): la única entidad por la
+            que se accede al grupo desde fuera. Un pedido (raíz) con sus líneas
+            (dentro): nadie toca una línea directamente, todo pasa por el pedido,
+            que vela por las invariantes («el total cuadra con las líneas»).
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">→</span>
+                <span><b>Acceso solo por la raíz</b><small>El exterior habla con Order, nunca con OrderLine directamente</small></span>
+              </div>
+              <div class="flow__arrow" data-label="protege invariantes"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">◆</span>
+                <span><b>Agregado Order</b><small>Order (raíz) + OrderLine[] + Money. Consistente como un todo.</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              La raíz es la frontera de consistencia: dentro, siempre coherente.
+            </p>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Un agregado no es una tabla</p>
+              <p>
+                Es el error que más confunde a quien viene de
+                <a href="modelado-relacional.html">modelar en relacional</a>. El
+                agregado es una frontera de <em>consistencia y comportamiento</em>,
+                no de almacenamiento. Puede mapear a varias tablas, y no toda
+                relación de claves foráneas es un agregado. Diseña el agregado por
+                las reglas que debe proteger, no por cómo lo guardarás.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            Regla práctica: mantén los agregados <strong>pequeños</strong> y
+            <strong>referénciate entre ellos por id</strong>, no por objeto. Un
+            pedido no contiene al cliente entero; guarda un <code>CustomerId</code>.
+            Agregados gigantes que se arrastran medio sistema al cargarse son un
+            antipatrón clásico.
+          </p>
+
+          <h2 id="repositorio">
+            Repositorio
+            <a href="#repositorio" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un <strong>repositorio</strong> es la abstracción que da y guarda
+            agregados como si fueran una colección en memoria, ocultando la
+            persistencia. <strong>Uno por agregado raíz</strong>: el repositorio
+            trabaja con la raíz completa, no con las piezas internas. Es justo el
+            <a href="hexagonal.html">puerto</a> que viste en la hexagonal.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · repositorio = puerto, una por raíz</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+interface OrderRepository
+{
+    public function save(Order $order): void;   // guarda la raíz completa
+
+    public function byId(OrderId $id): ?Order;   // reconstruye el agregado
+}</code></pre>
+          </div>
+
+          <h2 id="servicio-factory">
+            Servicio de dominio y factory
+            <a href="#servicio-factory" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cuando una operación de negocio no pertenece de forma natural a
+            ninguna entidad —porque involucra a varias—, vive en un
+            <strong>servicio de dominio</strong>: una clase sin estado que
+            expresa esa lógica en el lenguaje del negocio (por ejemplo, una
+            transferencia que toca dos cuentas). No lo confundas con el servicio
+            de aplicación: el de dominio contiene reglas; el de aplicación solo
+            orquesta.
+          </p>
+          <p>
+            Una <strong>factory</strong> encapsula la creación compleja de un
+            agregado cuando construirlo bien tiene reglas (varios pasos,
+            invariantes que asegurar al nacer). Si crear el objeto es trivial, el
+            constructor basta; la factory es para cuando la construcción es en sí
+            misma una operación de negocio.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>Value object</strong>: se define por su valor, inmutable y autovalidado (Email, Money). Empieza por aquí.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>Entidad</strong>: tiene identidad propia y comportamiento, no setters anémicos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>Agregado</strong>: unidad de consistencia con una raíz; pequeño y referenciado por id. No es una tabla.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>Repositorio</strong> (uno por raíz) = puerto; <strong>servicio de dominio</strong> para lo que no cae en una entidad; <strong>factory</strong> para creación con reglas.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="ddd-estrategico.html">
+              <small>← Anterior</small>
+              <b>DDD estratégico</b>
+            </a>
+            <a href="eventos-de-dominio.html" class="next">
+              <small>Siguiente →</small>
+              <b>Eventos de dominio</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

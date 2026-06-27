@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hexagonal en PHP: carpetas, capas y un puerto con dos adaptadores — MentorAI</title>
+    <meta
+      name="description"
+      content="La arquitectura hexagonal aplicada en PHP: estructura de carpetas por capas (dominio, aplicación, infraestructura), un puerto con dos adaptadores (MySQL y en memoria), cómo testear el dominio aislado y los errores típicos al aplicarla."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Arquitectura</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Hexagonal en PHP</h1>
+        <p class="tutorial-hero__lead">
+          La teoría de puertos y adaptadores baja aquí a tierra: qué carpetas
+          creas, qué va en cada capa, cómo un mismo puerto tiene un adaptador de
+          MySQL para producción y uno en memoria para los tests, y cómo eso te
+          deja probar el dominio sin levantar nada.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            16 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Arquitectura
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">De la teoría a las carpetas</a></li>
+            <li><a href="#estructura">Estructura por capas</a></li>
+            <li><a href="#capas">Qué va en cada capa</a></li>
+            <li><a href="#adaptadores">Un puerto, dos adaptadores</a></li>
+            <li><a href="#test">Testear el dominio aislado</a></li>
+            <li><a href="#errores">Errores al aplicarla</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            La arquitectura no se ve en un diagrama, se ve en el árbol de
+            carpetas y en los <code>use</code> de cada fichero. Vamos a montar un
+            caso de uso pequeño —registrar un usuario— respetando la regla de
+            oro: las dependencias apuntan siempre hacia el dominio.
+          </p>
+
+          <h2 id="idea">
+            De la teoría a las carpetas
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La hexagonal se suele materializar en tres capas concéntricas:
+            <strong>dominio</strong> en el centro, <strong>aplicación</strong>
+            alrededor e <strong>infraestructura</strong> en el borde. No es la
+            única forma de organizarla, pero es la más extendida en PHP y deja la
+            regla de dependencias muy visible: nadie de dentro mira hacia fuera.
+          </p>
+
+          <h2 id="estructura">
+            Estructura por capas
+            <a href="#estructura" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">árbol de carpetas (módulo User)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>src/User/
+├── Domain/
+│   ├── User.php                 # Entidad
+│   ├── UserId.php               # Value object
+│   ├── Email.php                # Value object
+│   └── UserRepository.php       # PUERTO (interfaz)
+├── Application/
+│   └── RegisterUser/
+│       ├── RegisterUser.php     # Caso de uso (puerto driving)
+│       └── RegisterUserCommand.php
+└── Infrastructure/
+    ├── Persistence/
+    │   ├── MySqlUserRepository.php      # ADAPTADOR driven
+    │   └── InMemoryUserRepository.php   # ADAPTADOR para tests
+    └── Http/
+        └── RegisterUserController.php   # ADAPTADOR driving</code></pre>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Organiza por módulo, no por tipo</p>
+              <p>
+                Fíjate en que la raíz es <code>User/</code>, no
+                <code>Controllers/</code> o <code>Models/</code>. Agrupa por
+                <strong>concepto de negocio</strong> y, dentro, por capa. Así
+                cada funcionalidad vive junta y se entiende sola, en vez de estar
+                desperdigada por carpetas técnicas.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="capas">
+            Qué va en cada capa
+            <a href="#capas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Capa</th>
+                  <th>Contiene</th>
+                  <th>Puede importar de…</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Domain</strong></td>
+                  <td>Entidades, value objects, puertos, reglas de negocio.</td>
+                  <td>Nada externo. Solo de sí misma.</td>
+                </tr>
+                <tr>
+                  <td><strong>Application</strong></td>
+                  <td>Casos de uso que orquestan el dominio.</td>
+                  <td>Domain.</td>
+                </tr>
+                <tr>
+                  <td><strong>Infrastructure</strong></td>
+                  <td>Adaptadores: ORM, HTTP, colas, email.</td>
+                  <td>Domain y Application.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            La columna de la derecha es la regla de oro hecha tabla: las flechas
+            van hacia el centro. <code>Domain</code> no importa de nadie;
+            <code>Infrastructure</code> importa de los dos de dentro, nunca al
+            revés. Si te ves escribiendo un <code>use</code> de Infrastructure
+            dentro de Domain, algo se torció.
+          </p>
+
+          <h2 id="adaptadores">
+            Un puerto, dos adaptadores
+            <a href="#adaptadores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El caso de uso depende del puerto. En producción le inyectas el
+            adaptador de MySQL; en los tests, el de memoria. La lógica del caso de
+            uso es idéntica en ambos casos: no sabe ni le importa cuál recibió.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Application/RegisterUser/RegisterUser.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class RegisterUser
+{
+    public function __construct(
+        private UserRepository $users
+    ) {}
+
+    public function __invoke(RegisterUserCommand $command): void
+    {
+        $email = new Email($command-&gt;email);
+
+        if ($this-&gt;users-&gt;byEmail($email) !== null) {
+            throw new EmailAlreadyInUse($email);
+        }
+
+        $this-&gt;users-&gt;save(
+            User::register(UserId::next(), $email)
+        );
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            En el arranque de la aplicación (el cableado, donde vive la
+            <a href="inyeccion-dependencias.html">inyección de dependencias</a>)
+            decides qué adaptador entra:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · cableado: producción vs test</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+// Producción: el puerto se resuelve al adaptador de MySQL.
+$useCase = new RegisterUser(
+    new MySqlUserRepository($pdo)
+);
+
+// Test: el mismo caso de uso, con el adaptador en memoria.
+$useCase = new RegisterUser(
+    new InMemoryUserRepository()
+);</code></pre>
+          </div>
+
+          <h2 id="test">
+            Testear el dominio aislado
+            <a href="#test" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Aquí se cobra la inversión. Como el caso de uso solo conoce el puerto,
+            el test usa el <a href="test-doubles.html">fake</a> en memoria y corre
+            en milisegundos, sin base de datos, sin contenedor, sin red:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · test del caso de uso (sin infraestructura)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+public function test_registra_un_usuario_nuevo(): void
+{
+    $users = new InMemoryUserRepository();
+    $register = new RegisterUser($users);
+
+    $register(new RegisterUserCommand('ana@example.com'));
+
+    $this-&gt;assertNotNull($users-&gt;byEmail(new Email('ana@example.com')));
+}
+
+public function test_rechaza_un_email_repetido(): void
+{
+    $users = new InMemoryUserRepository();
+    $register = new RegisterUser($users);
+    $register(new RegisterUserCommand('ana@example.com'));
+
+    $this-&gt;expectException(EmailAlreadyInUse::class);
+    $register(new RegisterUserCommand('ana@example.com'));
+}</code></pre>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El adaptador real también se prueba</p>
+              <p>
+                El fake cubre la lógica del caso de uso, pero el
+                <code>MySqlUserRepository</code> necesita su propio test de
+                <a href="tipos-de-test.html">integración</a> contra una base de
+                datos real: que el SQL es válido y el mapeo cuadra. Cada cosa en
+                su nivel de la pirámide.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="errores">
+            Errores al aplicarla
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La entidad de dominio no es la tabla</p>
+              <p>
+                El error más común es dejar que el ORM mande: anotar la entidad de
+                dominio con mapeos de la base de datos. Eso vuelve a atar el centro
+                a la infraestructura. El dominio debe ser PHP puro; el adaptador
+                de persistencia es quien traduce entre el objeto y la tabla.
+              </p>
+            </div>
+          </div>
+
+          <p>Otros tropiezos habituales:</p>
+          <ul>
+            <li>
+              <strong>Adaptadores anémicos que filtran tecnología:</strong> un
+              puerto que devuelve un <code>ResultSet</code> del driver en vez de
+              objetos de dominio. El puerto debe hablar el idioma del dominio.
+            </li>
+            <li>
+              <strong>Aplicar la artillería a un CRUD:</strong> tres capas y
+              cuatro interfaces para guardar un formulario sin reglas. Reserva la
+              hexagonal para módulos con negocio de verdad.
+            </li>
+            <li>
+              <strong>Lógica de negocio en el controlador:</strong> el adaptador
+              driving solo traduce la petición a un comando y llama al caso de
+              uso. Si hay reglas ahí, se han escapado del dominio.
+            </li>
+          </ul>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Tres capas: <strong>Domain</strong> (centro, sin dependencias), <strong>Application</strong> (casos de uso) e <strong>Infrastructure</strong> (adaptadores).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Organiza <strong>por módulo de negocio</strong> y, dentro, por capa. Las dependencias apuntan hacia dentro.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un <strong>puerto, dos adaptadores</strong> (MySQL y en memoria): el dominio se testea aislado y rapidísimo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La <strong>entidad de dominio no es la tabla</strong>; sin lógica en el controlador y sin matar moscas a cañonazos en un CRUD.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="hexagonal.html">
+              <small>← Anterior</small>
+              <b>Puertos y adaptadores</b>
+            </a>
+            <a href="ddd-que-es.html" class="next">
+              <small>Siguiente →</small>
+              <b>Qué es DDD (y qué no)</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

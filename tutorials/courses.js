@@ -66,4 +66,63 @@ window.MENTORAI_COURSES = [
       },
     ],
   },
+  {
+    slug: "testing",
+    title: "Testing y TDD para backend",
+    summary:
+      "Escribir código con red de seguridad: el ciclo de TDD, cómo organizar los tests en niveles, los dobles para aislar dependencias y cómo evitar los tests que estorban.",
+    level: "Intermedio",
+    icon: "code",
+    lessons: [
+      "tdd-ciclo",
+      "tipos-de-test",
+      "test-doubles",
+      "tests-que-no-estorban",
+    ],
+  },
+  {
+    slug: "programar-con-ia",
+    title: "Programar con IA",
+    summary:
+      "Trabajar con modelos y agentes sin perder el criterio: cómo piensa un LLM, prompting para código, el flujo con agentes y la gestión de los riesgos de lo generado.",
+    level: "Intermedio",
+    icon: "signal",
+    lessons: [
+      "conceptos-ia",
+      "como-piensa-un-llm",
+      "prompting-para-codigo",
+      "flujo-con-agentes",
+      "criterio-y-riesgos",
+    ],
+  },
+  {
+    slug: "diseno-y-arquitectura",
+    title: "Diseño y arquitectura",
+    summary:
+      "De la teoría a la práctica del diseño táctico y estratégico: arquitectura hexagonal, Domain-Driven Design y CQRS con event sourcing. Cada módulo se apoya en el anterior.",
+    level: "Avanzado",
+    icon: "code",
+    modules: [
+      {
+        title: "Arquitectura hexagonal",
+        summary: "Proteger el dominio del mundo exterior con puertos y adaptadores.",
+        lessons: ["hexagonal", "hexagonal-en-php"],
+      },
+      {
+        title: "Domain-Driven Design",
+        summary: "Modelar dominios complejos: lo estratégico, lo táctico y los eventos.",
+        lessons: [
+          "ddd-que-es",
+          "ddd-estrategico",
+          "ddd-tactico",
+          "eventos-de-dominio",
+        ],
+      },
+      {
+        title: "CQRS y Event Sourcing",
+        summary: "Separar lecturas de escrituras y guardar la historia como verdad.",
+        lessons: ["cqrs", "cqrs-event-sourcing"],
+      },
+    ],
+  },
 ];

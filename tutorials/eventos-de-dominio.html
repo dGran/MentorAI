@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Eventos de dominio: comunicar sin acoplar — MentorAI</title>
+    <meta
+      name="description"
+      content="Qué es un evento de dominio, cómo lo emiten los agregados, por qué sirven para mantener la consistencia entre agregados sin acoplarlos y cómo son el puente natural hacia la mensajería asíncrona y la idempotencia."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Arquitectura</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Eventos de dominio</h1>
+        <p class="tutorial-hero__lead">
+          Cuando algo importante pasa en el negocio —se confirma un pedido, se
+          cancela una suscripción— a menudo hay que reaccionar en otra parte del
+          sistema. Un evento de dominio captura ese hecho como algo de primera
+          clase y deja que otros reaccionen sin que el origen sepa quiénes son.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Arquitectura
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">Qué es un evento de dominio</a></li>
+            <li><a href="#emitir">Agregados que los emiten</a></li>
+            <li><a href="#consistencia">Consistencia entre agregados</a></li>
+            <li><a href="#publicar">Publicar y reaccionar</a></li>
+            <li><a href="#mensajeria">Puente a la mensajería</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Un evento de dominio nombra algo que <em>ya ocurrió</em> y que al
+            negocio le importa. En pasado, porque es un hecho consumado:
+            «PedidoConfirmado», «SuscripciónCancelada». Esa forma de pensar
+            desacopla el sistema en piezas que reaccionan a hechos en vez de
+            llamarse unas a otras a la cara.
+          </p>
+
+          <h2 id="idea">
+            Qué es un evento de dominio
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un <strong>evento de dominio</strong> es un objeto inmutable que
+            representa algo relevante que sucedió en el dominio, nombrado en
+            pasado y en el lenguaje del negocio. Lleva los datos del hecho (qué
+            pedido, cuándo) y nada más. No es una orden («confirma el pedido»),
+            es una notificación («el pedido se confirmó»).
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · un evento es un hecho inmutable en pasado</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class OrderConfirmed
+{
+    public function __construct(
+        public readonly OrderId $orderId,
+        public readonly DateTimeImmutable $occurredOn
+    ) {}
+}</code></pre>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Evento vs comando</p>
+              <p>
+                Un <strong>comando</strong> es una petición de que algo pase
+                («ConfirmarPedido»): puede rechazarse, tiene un destinatario. Un
+                <strong>evento</strong> es algo que ya pasó («PedidoConfirmado»):
+                no se rechaza, puede tener cero o muchos interesados. Confundirlos
+                es la fuente de la mitad de los líos con eventos.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="emitir">
+            Agregados que los emiten
+            <a href="#emitir" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El que mejor sabe que algo pasó es el <a href="ddd-tactico.html">agregado</a>
+            donde pasó. Así que es el agregado quien <strong>registra</strong> el
+            evento cuando cambia de estado, sin publicarlo todavía: lo guarda en
+            una lista interna. Quien orquesta la operación (el caso de uso) lo
+            recoge y lo publica después de persistir.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · el agregado registra el evento al cambiar de estado</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class Order
+{
+    private array $events = [];
+
+    public function confirm(): void
+    {
+        $this-&gt;status = Status::Confirmed;
+
+        $this-&gt;events[] = new OrderConfirmed(
+            $this-&gt;id,
+            new DateTimeImmutable()
+        );
+    }
+
+    public function pullEvents(): array
+    {
+        $events = $this-&gt;events;
+        $this-&gt;events = [];
+
+        return $events;
+    }
+}</code></pre>
+          </div>
+
+          <h2 id="consistencia">
+            Consistencia entre agregados
+            <a href="#consistencia" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Aquí está el uso más profundo. La regla de DDD dice modificar
+            <strong>un agregado por transacción</strong>, para no acoplar sus
+            fronteras de consistencia. Pero el negocio a veces exige que, al
+            confirmar un pedido, se actualice el inventario (otro agregado).
+            ¿Cómo, sin meterlos en la misma transacción?
+          </p>
+          <p>
+            La respuesta es el evento: el pedido se confirma y emite
+            <code>OrderConfirmed</code>; otro lugar escucha y, en
+            <em>su</em> transacción, actualiza el inventario. Los dos agregados
+            quedan consistentes, pero no a la vez: con
+            <strong>consistencia eventual</strong>.
+          </p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Consistencia dentro, eventual fuera</p>
+              <p>
+                Dentro de un agregado: consistencia inmediata y transaccional.
+                Entre agregados: consistencia eventual vía eventos. Es la misma
+                <a href="cap-consistencia.html">consistencia eventual</a> de los
+                sistemas distribuidos, aplicada a la coherencia entre partes de tu
+                dominio. Aceptar ese pequeño desfase es lo que mantiene el sistema
+                desacoplado.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="publicar">
+            Publicar y reaccionar
+            <a href="#publicar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El caso de uso persiste el agregado y luego publica sus eventos en un
+            <em>bus</em>; los <strong>handlers</strong> suscritos reaccionan. El
+            que confirma el pedido no sabe ni cuántos handlers hay ni qué hacen:
+            añadir una reacción nueva (enviar un email, sumar puntos de
+            fidelidad) es registrar otro handler, sin tocar el pedido.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Order.confirm()</b><small>Cambia de estado y registra OrderConfirmed</small></span>
+              </div>
+              <div class="flow__arrow" data-label="el caso de uso publica"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Bus de eventos</b><small>Reparte el evento a los handlers suscritos</small></span>
+              </div>
+              <div class="flow__arrow" data-label="cada uno en lo suyo"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Handlers</b><small>Actualizar stock · enviar email · sumar puntos</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              El origen emite y se olvida; los interesados reaccionan. Acoplamiento
+              mínimo.
+            </p>
+          </div>
+
+          <h2 id="mensajeria">
+            Puente a la mensajería
+            <a href="#mensajeria" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Los handlers pueden ejecutarse en el mismo proceso (síncronos) o,
+            cuando cruzan bounded contexts o conviene desacoplar en el tiempo,
+            viajar como mensajes por una cola como <a href="rabbitmq.html">RabbitMQ</a>.
+            El evento de dominio se serializa, se publica en el broker y otro
+            servicio lo consume. Es el salto natural del monolito modular a una
+            arquitectura orientada a eventos.
+          </p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">En cuanto hay cola, hace falta idempotencia</p>
+              <p>
+                Al pasar por un broker entras en el terreno del at-least-once: un
+                evento puede entregarse <strong>más de una vez</strong>. Si el
+                handler que descuenta stock se ejecuta dos veces, descuenta de más.
+                La defensa es la <a href="idempotencia.html">idempotencia</a>:
+                handlers que aplicar dos veces el mismo evento no rompe nada.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <ul>
+            <li>
+              <strong>Eventos con forma de comando:</strong> nombrarlos en
+              presente o imperativo («ActualizarStock») y meterles lógica de
+              destino. Un evento solo dice qué pasó; lo que se hace con ello es de
+              los handlers.
+            </li>
+            <li>
+              <strong>Publicar antes de persistir:</strong> si emites el evento y
+              luego falla el guardado, has notificado un hecho que no ocurrió.
+              Persiste primero, publica después (o usa el patrón outbox para que
+              ambas cosas sean atómicas).
+            </li>
+            <li>
+              <strong>Eventos anémicos o gigantes:</strong> ni un evento vacío que
+              obliga a ir a buscar todo, ni uno que arrastra el agregado entero.
+              Lleva lo justo para que el handler reaccione.
+            </li>
+            <li>
+              <strong>Cadenas de eventos imposibles de seguir:</strong> un evento
+              dispara otro que dispara otro… y nadie entiende el flujo. El
+              desacoplamiento tiene un coste de trazabilidad; úsalo con criterio.
+            </li>
+          </ul>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un <strong>evento de dominio</strong> es un hecho inmutable en pasado, en el lenguaje del negocio. Es una notificación, no una orden.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El <strong>agregado</strong> los registra al cambiar de estado; el caso de uso los publica tras persistir.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Sirven para coordinar <strong>agregados sin acoplarlos</strong>: consistencia inmediata dentro, <strong>eventual</strong> entre ellos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Son el puente a la <strong>mensajería</strong> (RabbitMQ); en cuanto cruzan una cola, exigen <strong>idempotencia</strong>.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="ddd-tactico.html">
+              <small>← Anterior</small>
+              <b>DDD táctico (building blocks)</b>
+            </a>
+            <a href="cqrs.html" class="next">
+              <small>Siguiente →</small>
+              <b>CQRS: separar lecturas de escrituras</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
