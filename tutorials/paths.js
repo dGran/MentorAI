@@ -40,6 +40,7 @@ window.MENTORAI_PATHS = [
       "Del ejercicio al patrón: buenas prácticas de diseño OO, inyección de dependencias y la arquitectura que sostiene un dominio complejo (hexagonal, DDD, CQRS).",
     icon: "code",
     steps: [
+      { type: "course", ref: "oop" },
       { type: "article", ref: "object-calisthenics" },
       { type: "article", ref: "inyeccion-dependencias" },
       { type: "course", ref: "diseno-y-arquitectura" },

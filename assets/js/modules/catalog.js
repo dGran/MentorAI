@@ -58,6 +58,7 @@
       redes: "Cómo viaja un dato",
       distribuidos: "Sistemas distribuidos",
       arquitectura: "Arquitectura",
+      oop: "Orientación a objetos",
       testing: "Testing",
       ia: "Programar con IA",
     };

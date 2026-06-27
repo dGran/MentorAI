@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interfaces: el contrato que desacopla — MentorAI</title>
+    <meta
+      name="description"
+      content="La interfaz como contrato en PHP: qué, no cómo. implements, programar contra interfaces, implementar varias a la vez y la diferencia entre interfaz y herencia. La pieza que conecta polimorfismo con inyección de dependencias."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Orientación a objetos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Interfaces: el contrato que desacopla</h1>
+        <p class="tutorial-hero__lead">
+          Una interfaz es una promesa sin cuerpo: dice qué métodos existen, no cómo
+          se cumplen. Es la herramienta más afilada de la OOP para desacoplar, y la
+          que te abre la puerta a programar contra contratos en vez de contra
+          clases concretas. Aquí ves por qué cambia tanto el diseño.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Orientación a objetos
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">Qué es una interfaz</a></li>
+            <li><a href="#implements">implements</a></li>
+            <li><a href="#contra-interfaces">Programar contra interfaces</a></li>
+            <li><a href="#varias">Implementar varias</a></li>
+            <li><a href="#vs-herencia">Interfaz vs herencia</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Si una clase es «qué soy y cómo lo hago», una interfaz es solo «qué
+            prometo poder hacer». No tiene propiedades ni cuerpo de métodos: es una
+            lista de firmas. Cualquier clase que la implemente se compromete a
+            ofrecer esos métodos. Suena a poco, pero es el contrato que permite
+            cambiar una pieza por otra sin que el resto se entere.
+          </p>
+
+          <h2 id="idea">
+            Qué es una interfaz
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Piensa en el enchufe de la pared. La interfaz es la forma del enchufe:
+            define cómo conectarse. Lo que haya detrás —una central de gas, una
+            placa solar, una batería— da igual mientras respete la forma. Tus
+            aparatos dependen del enchufe (el contrato), no de la central eléctrica
+            (la implementación). En código:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · una interfaz es solo firmas</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+interface RepositorioUsuarios
+{
+    public function porId(int $id): ?Usuario;
+
+    public function guardar(Usuario $usuario): void;
+}</code></pre>
+          </div>
+
+          <p>
+            No hay cómo: ni una línea de implementación. Solo el compromiso de que
+            quien firme este contrato sabrá buscar por id y guardar. Los métodos de
+            una interfaz son siempre <code>public</code> (es lo que se promete al
+            exterior).
+          </p>
+
+          <h2 id="implements">
+            implements
+            <a href="#implements" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una clase se compromete con <code>implements</code>. A partir de ahí,
+            PHP la obliga a tener todos los métodos del contrato con firmas
+            compatibles; si falta uno, no compila. Puedes tener muchas
+            implementaciones del mismo contrato: una contra base de datos, otra en
+            memoria para los tests.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · dos implementaciones del mismo contrato</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+final class RepositorioMySql implements RepositorioUsuarios
+{
+    public function porId(int $id): ?Usuario { /* SELECT ... */ }
+    public function guardar(Usuario $usuario): void { /* INSERT ... */ }
+}
+
+final class RepositorioEnMemoria implements RepositorioUsuarios
+{
+    /** @var Usuario[] */
+    private array $usuarios = [];
+
+    public function porId(int $id): ?Usuario
+    {
+        return $this-&gt;usuarios[$id] ?? null;
+    }
+
+    public function guardar(Usuario $usuario): void
+    {
+        $this-&gt;usuarios[$usuario-&gt;id()] = $usuario;
+    }
+}</code></pre>
+          </div>
+
+          <h2 id="contra-interfaces">
+            Programar contra interfaces
+            <a href="#contra-interfaces" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Aquí está el premio. El código que <em>usa</em> el repositorio escribe
+            su dependencia como la interfaz, no como una clase concreta. Así puede
+            recibir cualquier implementación: en producción la de MySQL, en los
+            tests la de memoria, sin cambiar una línea.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · depender del contrato, no de la clase</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+final class RegistrarUsuario
+{
+    public function __construct(
+        private RepositorioUsuarios $repositorio,
+    ) {
+    }
+
+    public function __invoke(string $email): void
+    {
+        $this-&gt;repositorio-&gt;guardar(Usuario::nuevo($email));
+    }
+}</code></pre>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Esto es la inversión de dependencias</p>
+              <p>
+                <code>RegistrarUsuario</code> no conoce MySQL: depende de una
+                abstracción que tú le inyectas. Ese giro —el código de alto nivel
+                depende del contrato, no del detalle— es la D de SOLID y el corazón
+                de la <a href="inyeccion-dependencias.html">inyección de
+                dependencias</a>. Las interfaces son lo que lo hace posible.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="varias">
+            Implementar varias
+            <a href="#varias" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            A diferencia de la herencia (una sola clase padre), una clase puede
+            implementar <strong>varias interfaces</strong>. Eso permite componer
+            capacidades por rol: una clase puede ser a la vez
+            <code>Comparable</code> y <code>Serializable</code> sin forzar ninguna
+            jerarquía. Es la base del principio de
+            <a href="isp-segregacion-interfaces.html">segregación de interfaces</a>:
+            muchos contratos pequeños y específicos en vez de uno gigante.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · varias capacidades por rol</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+final class Factura implements Exportable, Firmable
+{
+    public function aPdf(): string { /* ... */ }
+    public function firmar(Certificado $cert): void { /* ... */ }
+}</code></pre>
+          </div>
+
+          <h2 id="vs-herencia">
+            Interfaz vs herencia
+            <a href="#vs-herencia" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Las dos permiten polimorfismo, pero comprometen cosas distintas. La
+            herencia comparte <em>implementación</em> (código real del padre) y ata
+            a una jerarquía. La interfaz comparte solo el <em>contrato</em> y deja a
+            cada clase su libertad. Por eso, cuando solo quieres un punto común para
+            el polimorfismo sin imponer cómo se hace, la interfaz suele ganar.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Interfaz</th>
+                  <th>Herencia (clase)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Qué comparte</td>
+                  <td>Solo el contrato (firmas).</td>
+                  <td>Implementación y estado.</td>
+                </tr>
+                <tr>
+                  <td>Cuántas a la vez</td>
+                  <td>Varias.</td>
+                  <td>Una sola clase padre.</td>
+                </tr>
+                <tr>
+                  <td>Acoplamiento</td>
+                  <td>Mínimo: «sé hacer X».</td>
+                  <td>Alto: «soy un Y por dentro».</td>
+                </tr>
+                <tr>
+                  <td>Relación</td>
+                  <td>«se comporta como».</td>
+                  <td>«es un».</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">¿Y si quiero contrato + algo de código compartido?</p>
+              <p>
+                Ahí entra la <a href="clases-abstractas.html">clase abstracta</a>: a
+                medio camino, define el contrato y además aporta implementación
+                común. La siguiente lección compara las dos en detalle.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una <strong>interfaz</strong> es un contrato: dice <strong>qué</strong> métodos hay, no <strong>cómo</strong> se cumplen.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Programar <strong>contra la interfaz</strong> deja intercambiar implementaciones (MySQL, memoria) sin tocar el cliente.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una clase puede <strong>implementar varias</strong>: capacidades por rol, base de la segregación de interfaces.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Frente a la herencia, la interfaz comparte <strong>solo el contrato</strong>: menos acoplamiento, «se comporta como» en vez de «es un».</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="polimorfismo.html">
+              <small>← Anterior</small>
+              <b>Polimorfismo</b>
+            </a>
+            <a href="clases-abstractas.html" class="next">
+              <small>Siguiente →</small>
+              <b>Clases abstractas</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

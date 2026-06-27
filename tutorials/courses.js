@@ -22,6 +22,22 @@
 
 window.MENTORAI_COURSES = [
   {
+    slug: "oop",
+    title: "Programación orientada a objetos",
+    summary:
+      "Los fundamentos de la OOP en PHP, de cero: clases y objetos, encapsulación, herencia, polimorfismo, interfaces y clases abstractas, hasta saber elegir el tipo de clase adecuado. La base que SOLID y el diseño asumen por sabida.",
+    level: "Principiante",
+    icon: "code",
+    lessons: [
+      "oop-clases-y-objetos",
+      "herencia",
+      "polimorfismo",
+      "interfaces",
+      "clases-abstractas",
+      "tipos-de-clases-php",
+    ],
+  },
+  {
     slug: "fundamentos",
     title: "Fundamentos de CS para backend",
     summary:

@@ -195,6 +195,46 @@ Tres cosas pedidas por el usuario.
   + rutas); añadirla por sed si se quiere consistencia total. El fix del % y las
   rutas esperan commit.
 
+## Curso OOP publicado + fixes UI (2026-06-27) — HECHO (sin commit)
+Arranque de la autoría del `plan-diseno-y-calidad.md`. Catálogo: **56 publicados**.
+Orden global aprobado: **OOP → SOLID → Clean Code → DI+contenedores → PHPUnit →
+Observabilidad**. Empezado el primero.
+- **Curso `oop`** (6 lecciones, primer curso en courses.js, va antes de SOLID).
+  Categoría nueva **`oop`** (label "Orientación a objetos" en CATEGORY_LABELS,
+  decisión del usuario por AskUserQuestion: chip propio, no reusar php/arquitectura).
+  topic "Orientación a objetos", icon code, autoría manual con `compare`:
+  - `oop-clases-y-objetos` (Princ, 13m): qué resuelve la OOP, clase vs objeto,
+    estado+comportamiento, instanciar, `$this`, constructor (promoción + readonly),
+    encapsulación (public/protected/private; "un getter público no es encapsular").
+    Es el `featured` actual (movido de object-calisthenics).
+  - `herencia` (Int, 14m): extends, parent::, sobrescribir, jerarquías frágiles +
+    explosión de subclases, herencia vs composición (preferir composición).
+  - `polimorfismo` (Int, 14m): mismo mensaje/distinta respuesta, el switch por tipo
+    que crece → interfaz Forma, type hints como contrato, sustituibilidad (puente LSP).
+  - `interfaces` (Int, 13m): contrato (qué no cómo), implements, programar contra
+    interfaces (repo MySQL vs memoria), implementar varias (puente ISP), vs herencia.
+  - `clases-abstractas` (Int, 13m): abstract, métodos abstractos, template method
+    (importar final), abstracta vs interfaz + tabla + cómo decidir.
+  - `tipos-de-clases-php` (Int, 15m): final/interface/abstract/trait/enum/readonly/
+    anónimas + tabla de decisión. Cierra remitiendo a SOLID.
+- **CSS global (fix UI pedido por el usuario):** `.breadcrumb` → scroll horizontal
+  (flex-wrap:nowrap + overflow-x:auto + white-space:nowrap + scrollbar oculto, `> *`
+  flex-shrink:0); `.tutorial-meta span` → `white-space:nowrap` (los "X min de lectura"
+  / "Nivel X" ya no rompen en 2 líneas). Afecta a TODAS las páginas de tutorial.
+- **paths.js:** curso `oop` añadido como **primer paso de la ruta `diseno-oo`**
+  (regla: revisar paths al añadir contenido).
+- Verificado: node --check (manifest/courses/paths/catalog), script python (0 chars
+  crudos en code-blocks, balance <code>, TOC↔h2, 0 U+FFFD) → 0 problemas; cruce
+  courses×paths×manifest (56 entradas, 1 featured=oop-clases-y-objetos, curso oop 6/6
+  lecciones, ruta diseno-oo 4 pasos OK); render headless de interfaces.html (0 errores
+  JS, tutorial-actions + route-nav de curso inyectados, highlighter tokeniza).
+- **PENDIENTE**: (1) **6 enlaces internos a lecciones de SOLID que aún NO existen**
+  (solid-introduccion, ocp-abierto-cerrado, lsp-sustitucion-liskov×2,
+  isp-segregacion-interfaces, dip-inversion-dependencias) — están en callouts de
+  herencia/polimorfismo/interfaces/tipos-de-clases-php; **se cierran al escribir el
+  curso SOLID** (siguiente del plan). (2) Nada commiteado. (3) Sigue el resto del plan:
+  SOLID (7) → Clean Code (6) → di-contenedores (1 nuevo) → PHPUnit/Observabilidad.
+
 ## Cómo añadir un tutorial
 Ver README.md → "Añadir un tutorial nuevo" (copiar plantilla, rellenar, añadir
 tarjeta en index.html con `data-categories`).
