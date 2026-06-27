@@ -25,8 +25,53 @@
 
 window.ACADEMIA_TUTORIALS = [
   {
-    slug: "contenedor-di",
+    slug: "git-comandos-esenciales",
     featured: true,
+    title: "Git: comandos del día a día",
+    description:
+      "La chuleta de comandos de Git para tener a mano: configurar, empezar un repo, los cambios del día a día (add, commit, status, diff), inspeccionar el historial y sincronizar con el remoto (push, pull, fetch). Cada comando con qué hace y un ejemplo.",
+    href: "tutorials/git-comandos-esenciales.html",
+    categories: ["herramientas"],
+    topic: "Git",
+    tags: ["Git", "Comandos", "Referencia"],
+    level: "Principiante",
+    minutes: 14,
+    icon: "code",
+    status: "published",
+    date: "2026-06-27",
+  },
+  {
+    slug: "git-ramas-y-flujo",
+    title: "Git: ramas y flujo de trabajo",
+    description:
+      "Cómo funcionan las ramas en Git: crear y cambiar de rama, combinar trabajo con merge frente a rebase, resolver conflictos y el flujo de trabajo con feature branches y pull requests.",
+    href: "tutorials/git-ramas-y-flujo.html",
+    categories: ["herramientas"],
+    topic: "Git",
+    tags: ["Git", "Ramas", "Merge"],
+    level: "Intermedio",
+    minutes: 14,
+    icon: "code",
+    status: "published",
+    date: "2026-06-27",
+  },
+  {
+    slug: "git-deshacer",
+    title: "Git: deshacer y rescatar",
+    description:
+      "Cómo salir de un lío en Git: descartar cambios con restore, reset soft/mixed/hard, revert para deshacer sin reescribir, guardar trabajo a medias con stash, corregir el último commit con amend y recuperar lo perdido con reflog.",
+    href: "tutorials/git-deshacer.html",
+    categories: ["herramientas"],
+    topic: "Git",
+    tags: ["Git", "reset", "reflog"],
+    level: "Intermedio",
+    minutes: 14,
+    icon: "code",
+    status: "published",
+    date: "2026-06-27",
+  },
+  {
+    slug: "contenedor-di",
     title: "El contenedor de DI por dentro",
     description:
       "Cómo funciona un contenedor de inyección de dependencias por dentro: definiciones de servicio, autowiring por reflexión, detección de ciclos, ciclo de vida (shared vs factory, lazy con proxies), compilado vs runtime y la gestión de memoria y GC en FPM frente a workers long-running.",

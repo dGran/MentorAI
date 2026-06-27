@@ -59,6 +59,7 @@
       distribuidos: "Sistemas distribuidos",
       arquitectura: "Arquitectura",
       oop: "Orientación a objetos",
+      herramientas: "Herramientas",
       testing: "Testing",
       ia: "Programar con IA",
     };

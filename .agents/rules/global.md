@@ -105,13 +105,19 @@ global del agente y no se duplican aquí.
 
 ## Planes abiertos
 
-Detalle en `.agents/notes/`. **Autoría pendiente (estructura aprobada, ~35
-tutoriales), orden: OOP → SOLID → Clean Code → DI+contenedores → PHPUnit →
-Observabilidad:**
-- `plan-diseno-y-calidad.md` — cursos `oop`, `solid`, `clean-code`,
-  `di-contenedores` (20 tutoriales).
+Detalle en `.agents/notes/`. **Norte del proyecto** (ver `plan-carrera-completa.md`):
+llegar a ser "como una carrera universitaria" que dé la base formal que el usuario
+(backend autodidacta) no tuvo — temario completo y coherente, no tutoriales sueltos.
+Ya cubre ~70-80% del temario troncal de un grado; pendiente montar una ruta
+transversal "El grado que no hiciste" y cerrar los frentes de abajo.
+
+- `plan-diseno-y-calidad.md` — **COMPLETO** (cursos `oop`, `solid`, `clean-code`,
+  `di-contenedores` publicados 2026-06-27).
 - `plan-testing-y-observabilidad.md` — cursos `phpunit` y `observabilidad`
-  (15 tutoriales).
+  (15 tutoriales). Pendiente de autoría.
+- `plan-practica-backend.md` — huecos del día a día (construir/operar un servicio
+  real): Git (referencia de comandos), APIs REST, acceso a datos/ORM, Docker,
+  CI/CD + config y Composer sueltos. Cola documentada, estructura por aprobar.
 
 Fase 2 (infraestructura, sin tocar):
 - `plan-buscador-fulltext.md` — búsqueda dentro del contenido (índice por el puente).

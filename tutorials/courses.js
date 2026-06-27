@@ -22,6 +22,19 @@
 
 window.MENTORAI_COURSES = [
   {
+    slug: "git",
+    title: "Git: control de versiones",
+    summary:
+      "Git de principio a fin, también como referencia: los comandos del día a día con su explicación y ejemplo, cómo trabajar con ramas (merge vs rebase, conflictos, pull requests) y cómo salir de cualquier lío deshaciendo y rescatando.",
+    level: "Principiante",
+    icon: "code",
+    lessons: [
+      "git-comandos-esenciales",
+      "git-ramas-y-flujo",
+      "git-deshacer",
+    ],
+  },
+  {
     slug: "oop",
     title: "Programación orientada a objetos",
     summary:

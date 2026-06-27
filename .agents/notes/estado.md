@@ -343,6 +343,53 @@ de 4 a **8 cursos**. Fixes UI: breadcrumb scroll horizontal + tutorial-meta nowr
 - **Fase 2 (infraestructura, sin tocar):** plan-buscador-fulltext, plan-resaltado-texto,
   plan-autocategorizacion.
 
+## Revisión de huecos + visión "carrera" (2026-06-27)
+El usuario pidió revisar qué falta de básico para un backend dev y compartió su
+norte: que MentorAI sea **"como una carrera universitaria"** para vencer la barrera
+psicológica con las bases (es autodidacta sin grado). Decisiones y material nuevo:
+- **Memoria `user-perfil`** creada (backend autodidacta, FP, git desde PhpStorm,
+  el norte "carrera"). Calibra el enfoque de todos los tutoriales.
+- **`plan-carrera-completa.md`** (nota paraguas): mapeo asignaturas-grado → qué hay
+  / qué falta; idea de ruta transversal "El grado que no hiciste"; asignaturas
+  teóricas que faltan (programación funcional, metodologías/ágil).
+- **`plan-practica-backend.md`** (cola nueva): Git, APIs REST, acceso a datos/ORM,
+  Docker, CI/CD + config y Composer. Surgió de la revisión de huecos.
+- Rules (`global.md`) "Planes abiertos" actualizado: diseño-y-calidad COMPLETO +
+  las dos colas nuevas + el norte.
+- **Acordado el orden:** (1) Git ahora [EN CURSO], (2) montar ruta "carrera" en
+  paralelo, (3) APIs REST → ORM → Docker → CI/CD, (4) PHPUnit+Observabilidad,
+  (5) funcional + metodologías. Estructura por aprobar curso a curso.
+- **Git decidido:** enfoque **chuleta de comandos** (el usuario usa PhpStorm, no
+  terminal, quiere todos los comandos a mano). Estructura propuesta: curso `git`,
+  3 lecciones (comandos del día a día = la chuleta / ramas y flujo / deshacer y
+  rescatar), categoría nueva `herramientas`, bloques bash.
+
+## Curso Git publicado (2026-06-27) — HECHO (commit+push)
+Primer curso del `plan-practica-backend.md`. Catálogo: **73 publicados, 9 cursos**.
+- **Curso `git`** (3 lecciones, PRIMER curso en courses.js). Categoría nueva
+  **`herramientas`** (label "Herramientas" en CATEGORY_LABELS, catalog.js). topic
+  "Git", icon code, bloques **bash** (highlighter ya lo soporta; tokeniza OK).
+  featured movido de contenedor-di → git-comandos-esenciales.
+  - `git-comandos-esenciales` (Princ, 14m): LA CHULETA que pidió el usuario. Modelo
+    mental de 3 zonas (working/staging/repo), tablas comando→qué hace + bloque bash de
+    ejemplo por grupo: configurar, empezar (init/clone), día a día (status/add/commit/
+    rm/mv), inspeccionar (log/diff/show/blame), remoto (fetch/pull/push), .gitignore.
+  - `git-ramas-y-flujo` (Int, 14m): rama=puntero, branch/switch -c, merge vs rebase
+    (compare + regla de oro: no rebase de lo compartido), conflictos (marcas <<< === >>>
+    escapadas), feature branch workflow + pull request (cruza tests-que-no-estorban).
+  - `git-deshacer` (Int, 14m): mapa de "deshacer", restore (lo único sin vuelta),
+    reset soft/mixed/hard vs revert, amend, stash, **reflog** (en git casi nada se
+    pierde → commitea a menudo, pierde el miedo).
+- **paths.js NO tocado**: Git es transversal; no encaja en las rutas temáticas
+  actuales. Lo recogerá la macro-ruta "El grado que no hiciste" cuando se monte
+  (pendiente, ver plan-carrera-completa).
+- Verificado: node --check, escapado/TOC↔h2/balance (0), cruces (73 entradas, 1
+  featured=git-comandos-esenciales, curso 3/3, 0 duplicados, 9 cursos), 0 enlaces
+  colgando, render headless de git-comandos-esenciales (0 errores JS, route-nav, bash
+  tokeniza) y cursos.html (curso Git visible).
+- **SIGUIENTE** (plan-practica-backend): APIs REST → acceso a datos/ORM → Docker →
+  CI/CD. Y montar la ruta "carrera" (plan-carrera-completa). Estructura por aprobar.
+
 ## Cómo añadir un tutorial
 Ver README.md → "Añadir un tutorial nuevo" (copiar plantilla, rellenar, añadir
 tarjeta en index.html con `data-categories`).
