@@ -159,7 +159,41 @@ agrupado con SOLID. Tercer curso `di-contenedores`: reutiliza el artículo exist
 `inyeccion-dependencias` como lección 1 + nuevo `contenedor-di` denso (container
 por dentro: autowiring/reflexión, lazy, compilado, ciclo de vida, memoria y GC en
 long-running). `inyeccion-dependencias` deja de ser artículo suelto. Reusan
-`arquitectura`/`php`. **14 tutoriales nuevos, 3 cursos. Pendiente OK del usuario.**
+`arquitectura`/`php`. Cuarto curso `oop` (Programación orientada a objetos, 6
+lecciones: clases-y-objetos/encapsulación, herencia, polimorfismo, interfaces,
+clases-abstractas, tipos-de-clases-php) — fundamento que va ANTES de SOLID; el
+usuario destacó interés en interfaces, abstract y los tipos de clases PHP. Posible
+chip nuevo `oop`. **20 tutoriales nuevos, 4 cursos. Pendiente OK del usuario.**
+
+## Rutas de aprendizaje + progreso de lectura (2026-06-27) — HECHO (sin commit)
+Tres cosas pedidas por el usuario.
+- **Progreso de lectura en la página de tutorial.** `tutorial.js`
+  `buildReadingProgress(slug)`: barra + "X% leído" bajo las acciones, en TODOS los
+  tutoriales (artículos y lecciones). Toma el % guardado de `Reading.get`, sube
+  con el scroll y, al pulsar **Marcar como completado**, salta a **100%**; al
+  **Reiniciar**, vuelve a 0. (Sustituye al efímero "% del curso" que se probó
+  antes, que no aplicaba a artículos sueltos.)
+- **Rutas de aprendizaje (nueva capa por encima de cursos).** Itinerarios que
+  ordenan cursos y artículos hacia un objetivo. Pasos mixtos
+  `{type:"course"|"article", ref:slug}`. Datos en `tutorials/paths.js`
+  (`window.MENTORAI_PATHS`), módulo `assets/js/modules/paths.js` (`MentorAI.Paths`
+  con `render()` → `rutas.html#paths` y `renderHome()` → `index #home-paths`).
+  Página nueva **`rutas.html`** + navbar "Rutas" en index/cursos/articulos/curso +
+  sección con tarjetas y enlace en el inicio (`#rutas-home`). `init.js` llama
+  `Paths.render()`/`Paths.renderHome()`. CSS `.path*`/`.path-card*` +
+  `.step--course`/`.step__kind`/`.step__marker--icon`. 3 rutas iniciales:
+  `php-a-fondo` (6 artículos), `diseno-oo` (2 artículos + curso arquitectura),
+  `backend-cimientos` (3 cursos). Progreso de ruta = items completados (lecciones
+  de cursos + artículos) / publicados.
+- **Regla nueva en `.agents/rules/global.md`:** tres capas (manifest → cursos →
+  rutas), y **al añadir tutorial/curso revisar `paths.js` para encajarlo en una
+  ruta**. `paths.js` añadido al listado de módulos del Frontend.
+- Verificado: `node --check`, cruce paths×cursos×manifest (0 refs inválidas),
+  render headless de rutas.html (3 rutas, pasos mixtos, 0 errores JS) e index
+  (3 tarjetas de ruta), captura visual OK.
+- **PENDIENTE**: navbar "Rutas" NO está en los 50 tutoriales (solo en las 4 vistas
+  + rutas); añadirla por sed si se quiere consistencia total. El fix del % y las
+  rutas esperan commit.
 
 ## Cómo añadir un tutorial
 Ver README.md → "Añadir un tutorial nuevo" (copiar plantilla, rellenar, añadir

@@ -20,6 +20,45 @@ object-calisthenics, hexagonal, DDD, CQRS). Ejemplos PHP en formato comparativa
 
 ---
 
+## Curso 0 — Programación orientada a objetos (`oop`)
+
+Pedido por el usuario (2026-06-27): "POO, herencia y polimorfismo... ¿tenemos
+algo? ¿quizá un curso? son fundamentos básicos". Verificado: **no existe nada**
+de OOP fundamentos; las interfaces se usan (DI, hexagonal, DDD) pero nunca se
+explican; `abstract` no aparece como clase abstracta en ningún sitio. El usuario
+destaca especial interés en **interfaces**, **clases abstractas** y **los tipos
+de clases de PHP y cuándo usar cada una**.
+
+Es el fundamento que va **antes de SOLID** (SOLID asume OOP). Curso propio,
+nivel Principiante→Intermedio, icon `code`, topic "Orientación a objetos".
+Categoría nueva `oop` (label "Orientación a objetos" en CATEGORY_LABELS), o
+reusar `php` si se prefiere no añadir chip — **decidir al publicar**. Ejemplos
+PHP en `compare` donde aplique. 6 lecciones:
+
+1. **`oop-clases-y-objetos`** (Princ, 13m) — qué resuelve la OOP, clase vs objeto
+   (molde vs instancia), estado y comportamiento, instanciación, `$this`,
+   constructor, **encapsulación** (visibilidad public/protected/private, por qué
+   ocultar el estado). El primer pilar.
+2. **`herencia`** (Int, 14m) — `extends`, reutilizar y especializar, `parent::`,
+   sobrescribir métodos, jerarquías; **herencia vs composición** (preferir
+   composición), el problema de las jerarquías profundas/frágiles. Cruza
+   object-calisthenics y (futuro) LSP.
+3. **`polimorfismo`** (Int, 14m) — un mismo mensaje, distintas respuestas;
+   polimorfismo por herencia y por interfaces; type hints como contrato;
+   sustituibilidad (puente a LSP). El pilar que da flexibilidad.
+4. **`interfaces`** (Int, 13m) — la interfaz como **contrato** (qué, no cómo),
+   `implements`, programar contra interfaces (puente a DIP/inyección), implementar
+   varias, interface vs herencia. Cruza inyeccion-dependencias e (futuro) ISP.
+5. **`clases-abstractas`** (Int, 13m) — clase abstracta y métodos abstractos,
+   plantilla parcial (template method), **abstract vs interface: cuándo cada
+   una** (el punto que más le interesa al usuario). Cruza interfaces.
+6. **`tipos-de-clases-php`** (Int, 15m) — el "zoo" de PHP y cuándo usar cada uno:
+   clase normal, `abstract`, `final`, `interface`, `trait`, `enum` (8.1),
+   propiedades `readonly` (8.2), clases anónimas. Tabla de decisión. Cierra el
+   curso atando interfaces/abstract con el resto.
+
+Total: **6 lecciones**. Posible 1 chip nuevo (`oop`).
+
 ## Curso 1 — SOLID (`solid`)
 
 "Principios SOLID", nivel Intermedio, icon `code`, topic "Principios SOLID".
@@ -117,9 +156,10 @@ Artículos dejará de aparecer `inyeccion-dependencias` (pasa a ser lección).
 
 ## Resumen de impacto
 
-- **14 tutoriales nuevos** (7 SOLID + 6 Clean Code + 1 contenedor-di).
-- **3 cursos nuevos** en courses.js (`solid`, `clean-code`, `di-contenedores`).
-- **0 categorías nuevas** (reusan `arquitectura`/`php`).
+- **20 tutoriales nuevos** (6 OOP + 7 SOLID + 6 Clean Code + 1 contenedor-di).
+- **4 cursos nuevos** en courses.js (`oop`, `solid`, `clean-code`,
+  `di-contenedores`).
+- **Posible 1 categoría nueva** (`oop`); el resto reusa `arquitectura`/`php`.
 - **0 lenguajes nuevos** en el highlighter (php).
 - `inyeccion-dependencias` deja de ser artículo suelto → lección de
   `di-contenedores`. `object-calisthenics` sigue suelto, enlazado desde estos
@@ -127,12 +167,12 @@ Artículos dejará de aparecer `inyeccion-dependencias` (pasa a ser lección).
 
 ## Orden de autoría sugerido
 
-SOLID primero (más demandado, base de OO), luego Clean Code, luego el curso DI
-(reutiliza el artículo existente + 1 nuevo). Independientes del frente de
+**OOP fundamentos primero** (base de todo lo demás), luego SOLID, Clean Code y el
+curso DI (reutiliza el artículo existente + 1 nuevo). Independientes del frente de
 testing/observabilidad (`plan-testing-y-observabilidad.md`).
 
 ## Estado
 
 **Plan en estructura; pendiente OK del usuario para arrancar la autoría.**
-Junto con `plan-testing-y-observabilidad.md`, hay **29 tutoriales** planificados
-sin escribir (14 aquí + 15 allí).
+Junto con `plan-testing-y-observabilidad.md`, hay **35 tutoriales** planificados
+sin escribir (20 aquí + 15 allí).

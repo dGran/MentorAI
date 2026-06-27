@@ -17,12 +17,22 @@ global del agente y no se duplican aquí.
   (`tutorials/manifest.js` → `window.ACADEMIA_TUTORIALS`). Cualquier dato nuevo
   (p. ej. un índice de búsqueda) sigue ese patrón: un `.js` que setea `window.X`,
   incluido con `<script>` antes de los módulos de `assets/js/modules/`.
-- **Una vista = una página.** Inicio (`index.html`), Cursos (`cursos.html`) y
-  Artículos (`articulos.html`) son páginas HTML reales con navegación por
-  `<a href>`, **no** pestañas conmutadas por JS sobre una sola página (eso
-  provocaba el destello del inicio en cada recarga). Cada `init*`/módulo hace
-  early-return si su contenedor no está, así el mismo bundle de JS sirve para
-  todas las páginas.
+- **Una vista = una página.** Inicio (`index.html`), Rutas (`rutas.html`), Cursos
+  (`cursos.html`) y Artículos (`articulos.html`) son páginas HTML reales con
+  navegación por `<a href>`, **no** pestañas conmutadas por JS sobre una sola
+  página (eso provocaba el destello del inicio en cada recarga). Cada
+  `init*`/módulo hace early-return si su contenedor no está, así el mismo bundle
+  de JS sirve para todas las páginas.
+- **Tres capas de organización, cada una referencia a la de abajo por slug, sin
+  duplicar:** el **manifest** (`tutorials/manifest.js`) es la verdad de cada
+  pieza; los **cursos** (`tutorials/courses.js` → `window.MENTORAI_COURSES`)
+  ordenan lecciones en módulos; las **rutas** (`tutorials/paths.js` →
+  `window.MENTORAI_PATHS`) ordenan cursos y artículos (pasos mixtos
+  `{type:"course"|"article", ref:slug}`) hacia un objetivo. Las rutas se pintan
+  en `rutas.html` (`#paths`) y como tarjetas en el inicio (`#home-paths`) vía
+  `assets/js/modules/paths.js`. **Al añadir un tutorial o curso nuevo, revisar
+  las rutas existentes en `paths.js` para ver si encaja en alguna y ampliarla**
+  (igual que se revisa si un tutorial entra en un curso).
 - **`tutorials/manifest.js` es la única fuente de verdad del catálogo.** La
   portada no se edita a mano: `index.html` solo tiene contenedores vacíos
   (`#filters`, `#cards`, `#cards-empty`) y el módulo `Catalog`
@@ -63,7 +73,8 @@ global del agente y no se duplican aquí.
   `assets/js/modules/`, cada uno su propio IIFE sin dependencias que cuelga lo
   suyo de `window.MentorAI`: `core.js` (tema, progreso, scrollspy, copiar, año),
   `storage.js` (`Bookmarks`/`Progress`/`Reading`), `catalog.js` (`Catalog`),
-  `courses.js` (`Courses`), `home.js` (dashboard + buscador del index),
+  `courses.js` (`Courses`), `paths.js` (`Paths`, rutas de aprendizaje),
+  `home.js` (dashboard + buscador del index),
   `syntax.js` (`SyntaxHighlighter`), `bridge.js` (compositor/refinador),
   `tutorial.js` (mejoras de la página de tutorial) e `init.js` (arranque, va el
   **último** en cada página). Las funciones de arranque se exponen en
