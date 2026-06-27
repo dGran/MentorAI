@@ -91,13 +91,10 @@
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   const CLOSE_SVG =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
-  const ZOOM_SVG =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>';
   const RESET_SVG =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>';
   const CHEVRON_SVG =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
-  const FONT_KEY = "academia-font-size";
 
   function initTocToggle() {
     const toc = document.querySelector(".toc");
@@ -122,32 +119,6 @@
     toggle.addEventListener("click", function () {
       toc.classList.toggle("is-open");
     });
-  }
-
-  function buildZoomButton(prose) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "tutorial-action tutorial-action--zoom";
-
-    const isLarge = localStorage.getItem(FONT_KEY) === "large";
-
-    if (isLarge) {
-      prose.classList.add("is-large");
-    }
-
-    function update(large) {
-      button.innerHTML = ZOOM_SVG + "<span>" + (large ? "Normal" : "Grande") + "</span>";
-    }
-
-    update(isLarge);
-
-    button.addEventListener("click", function () {
-      const nowLarge = prose.classList.toggle("is-large");
-      localStorage.setItem(FONT_KEY, nowLarge ? "large" : "normal");
-      update(nowLarge);
-    });
-
-    return button;
   }
 
   function buildResetButton(slug, doneBtn) {
@@ -182,7 +153,6 @@
     const hasSpeech = "speechSynthesis" in window;
     const audioBtn = hasSpeech ? buildAudioButton(prose) : null;
     const doneBtn = buildDoneButton(slug);
-    const zoomBtn = buildZoomButton(prose);
     const resetBtn = buildResetButton(slug, doneBtn);
 
     if (audioBtn) {
@@ -190,9 +160,67 @@
     }
 
     actions.appendChild(doneBtn);
-    actions.appendChild(zoomBtn);
     actions.appendChild(resetBtn);
     host.appendChild(actions);
+
+    const progress = buildCourseProgress(slug);
+
+    if (progress) {
+      host.appendChild(progress.el);
+      doneBtn.addEventListener("click", progress.update);
+      resetBtn.addEventListener("click", progress.update);
+    }
+  }
+
+  function courseLessons(course) {
+    if (Array.isArray(course.modules)) {
+      return course.modules.reduce(function (all, module) {
+        return all.concat(module.lessons || []);
+      }, []);
+    }
+
+    return course.lessons || [];
+  }
+
+  function buildCourseProgress(slug) {
+    const course = courseOfSlug(slug);
+
+    if (!course) {
+      return null;
+    }
+
+    const manifest = manifestBySlug();
+    const published = courseLessons(course).filter(function (lessonSlug) {
+      return isPublishedTutorial(manifest[lessonSlug]);
+    });
+
+    if (published.length === 0) {
+      return null;
+    }
+
+    const el = document.createElement("div");
+    el.className = "tutorial-progress";
+    el.innerHTML =
+      '<div class="tutorial-progress__bar"><span></span></div>' +
+      '<span class="tutorial-progress__label"></span>';
+
+    const fill = el.querySelector(".tutorial-progress__bar span");
+    const label = el.querySelector(".tutorial-progress__label");
+
+    const update = function () {
+      const done = published.filter(function (lessonSlug) {
+        return MentorAI.Progress.has(lessonSlug);
+      }).length;
+      const percent = Math.round((done / published.length) * 100);
+
+      fill.style.width = percent + "%";
+      label.textContent =
+        percent + "% del curso · " + done + " / " + published.length + " completadas";
+    };
+
+    update();
+
+    return { el: el, update: update };
   }
 
   function speechChunks(prose) {
@@ -239,6 +267,7 @@
     let barFill = null;
     let trackButton = null;
     let percentLabel = null;
+    let statusLabel = null;
 
     let chunks = [];
     let offsets = [];
@@ -283,6 +312,7 @@
         barFill = null;
         trackButton = null;
         percentLabel = null;
+        statusLabel = null;
       }
     };
 
@@ -297,13 +327,15 @@
     };
 
     const setToggleLabel = function () {
-      if (!toggleButton) {
-        return;
+      if (toggleButton) {
+        toggleButton.innerHTML = isPaused
+          ? PLAY_SVG + "<span>Reanudar</span>"
+          : PAUSE_SVG + "<span>Pausa</span>";
       }
 
-      toggleButton.innerHTML = isPaused
-        ? PLAY_SVG + "<span>Reanudar</span>"
-        : PAUSE_SVG + "<span>Pausa</span>";
+      if (statusLabel) {
+        statusLabel.textContent = isPaused ? "Pausado" : "Escuchando";
+      }
     };
 
     const togglePause = function () {
@@ -330,9 +362,10 @@
       const meta = document.createElement("div");
       meta.className = "audio-bar__meta";
       meta.innerHTML =
-        '<div class="audio-bar__label"><span>Escuchando</span>' +
+        '<div class="audio-bar__label"><span class="audio-bar__status">Escuchando</span>' +
         '<span class="audio-bar__percent">0%</span></div>' +
         '<button type="button" class="audio-bar__track" aria-label="Avanzar o retroceder"><span></span></button>';
+      statusLabel = meta.querySelector(".audio-bar__status");
       percentLabel = meta.querySelector(".audio-bar__percent");
       trackButton = meta.querySelector(".audio-bar__track");
       barFill = trackButton.querySelector("span");
@@ -634,7 +667,7 @@
 
     if (manualNav) {
       manualNav.insertAdjacentHTML("beforebegin", html);
-      manualNav.hidden = true;
+      manualNav.remove();
       return;
     }
 

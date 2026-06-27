@@ -297,7 +297,11 @@
             '<div class="course-hero__bar"><span style="width:' +
             stats.percent +
             '%"></span></div>' +
+            '<div class="course-hero__progress"><span class="course-hero__percent">' +
+            stats.percent +
+            "% completado</span>" +
             resetButton +
+            "</div>" +
             "</header>" +
             '<div class="course-modules">' +
             modulesHtml +
