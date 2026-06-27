@@ -44,7 +44,7 @@ window.MENTORAI_PATHS = [
       { type: "course", ref: "solid" },
       { type: "course", ref: "clean-code" },
       { type: "article", ref: "object-calisthenics" },
-      { type: "article", ref: "inyeccion-dependencias" },
+      { type: "course", ref: "di-contenedores" },
       { type: "course", ref: "diseno-y-arquitectura" },
     ],
   },

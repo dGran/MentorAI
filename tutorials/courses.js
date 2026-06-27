@@ -71,6 +71,18 @@ window.MENTORAI_COURSES = [
     ],
   },
   {
+    slug: "di-contenedores",
+    title: "Inyección de dependencias y contenedores",
+    summary:
+      "De los fundamentos de la inyección de dependencias al contenedor por dentro: por qué una clase no fabrica sus colaboradores, y cómo un contenedor resuelve el grafo con autowiring, ciclo de vida, compilación y la memoria que eso implica.",
+    level: "Avanzado",
+    icon: "code",
+    lessons: [
+      "inyeccion-dependencias",
+      "contenedor-di",
+    ],
+  },
+  {
     slug: "fundamentos",
     title: "Fundamentos de CS para backend",
     summary:

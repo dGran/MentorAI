@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>El contenedor de DI por dentro — MentorAI</title>
+    <meta
+      name="description"
+      content="Cómo funciona un contenedor de inyección de dependencias por dentro: definiciones de servicio, resolución recursiva y autowiring por reflexión, detección de ciclos, ciclo de vida (shared vs factory, lazy con proxies), compilado vs runtime y la gestión de memoria y GC en FPM frente a workers long-running."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Inyección de dependencias</span>
+        </nav>
+        <h1 class="tutorial-hero__title">El contenedor de DI por dentro</h1>
+        <p class="tutorial-hero__lead">
+          Sabes inyectar dependencias por el constructor; pero ¿quién construye el
+          árbol entero de objetos y los pasa en orden? El contenedor. Abrirlo por
+          dentro —autowiring por reflexión, ciclo de vida, compilación, memoria—
+          desmitifica la «magia» de Symfony y Laravel y te enseña a usarla con cabeza.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            18 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Inyección de dependencias
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">Qué resuelve el contenedor</a></li>
+            <li><a href="#autowiring">Autowiring por reflexión</a></li>
+            <li><a href="#ciclos">Detectar ciclos</a></li>
+            <li><a href="#ciclo-de-vida">Ciclo de vida y lazy</a></li>
+            <li><a href="#compilado">Compilado vs runtime</a></li>
+            <li><a href="#memoria">Memoria y GC</a></li>
+            <li><a href="#service-locator">El service locator</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            La <a href="inyeccion-dependencias.html">inyección de dependencias</a>
+            resuelve un problema de diseño: que cada clase reciba sus colaboradores en
+            vez de fabricarlos. Pero eso traslada el trabajo a alguien: si nadie
+            fabrica nada, ¿quién arma el grafo de objetos con sus decenas de niveles?
+            Ese alguien es el <strong>contenedor</strong>, y aquí lo abrimos.
+          </p>
+
+          <h2 id="problema">
+            Qué resuelve el contenedor
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una clase de aplicación moderna depende de un servicio que depende de un
+            repositorio que depende de una conexión que depende de una configuración.
+            Construir eso a mano —<code>new A(new B(new C(new D(...))))</code>— en cada
+            sitio es insostenible. El contenedor es un <strong>registro que sabe
+            construir cualquier servicio</strong> bajo demanda, resolviendo sus
+            dependencias recursivamente.
+          </p>
+          <p>
+            Lo configuras con <strong>definiciones de servicio</strong>: el mapa de
+            qué hace falta para construir cada cosa. Puede ser explícito (esta
+            interfaz se resuelve con esta clase; este parámetro vale esto) o, en gran
+            parte, deducido automáticamente.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · el contrato mínimo de un contenedor (PSR-11)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+interface ContainerInterface
+{
+    public function get(string $id): mixed;     // dame el servicio id, construido
+
+    public function has(string $id): bool;       // ¿sabes construir id?
+}</code></pre>
+          </div>
+
+          <h2 id="autowiring">
+            Autowiring por reflexión
+            <a href="#autowiring" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La parte que parece magia. El <strong>autowiring</strong> es la capacidad
+            del contenedor de averiguar solo qué necesita un constructor y resolverlo,
+            sin que se lo digas. ¿Cómo? Con <strong>reflexión</strong>: PHP puede
+            inspeccionar una clase en ejecución y leer los tipos de los parámetros de
+            su constructor. Por cada parámetro con tipo de clase, el contenedor se
+            llama a sí mismo para construir esa dependencia. Es recursión sobre el
+            grafo de tipos.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · un autowiring mínimo, didáctico</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class Container implements ContainerInterface
+{
+    /** @var array&lt;string, object&gt; */
+    private array $resueltos = [];
+
+    public function get(string $id): mixed
+    {
+        if (isset($this-&gt;resueltos[$id])) {
+            return $this-&gt;resueltos[$id];
+        }
+
+        return $this-&gt;resueltos[$id] = $this-&gt;construir($id);
+    }
+
+    private function construir(string $clase): object
+    {
+        $reflexion = new \ReflectionClass($clase);
+        $constructor = $reflexion-&gt;getConstructor();
+
+        if ($constructor === null) {
+            return new $clase();
+        }
+
+        $argumentos = [];
+        foreach ($constructor-&gt;getParameters() as $parametro) {
+            $tipo = $parametro-&gt;getType();
+            $argumentos[] = $this-&gt;get($tipo-&gt;getName());   // recursión
+        }
+
+        return $reflexion-&gt;newInstanceArgs($argumentos);
+    }
+
+    public function has(string $id): bool
+    {
+        return class_exists($id);
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            Eso es, en esencia, lo que hace un contenedor real: leer el constructor,
+            resolver cada dependencia por su tipo y construir de abajo arriba. Lo de
+            verdad añade lo que falta aquí: resolver interfaces a implementaciones,
+            inyectar parámetros escalares (un DSN, una API key), manejar argumentos
+            opcionales y, sobre todo, no morir ante un ciclo.
+          </p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La reflexión no es gratis</p>
+              <p>
+                Inspeccionar clases en ejecución tiene un coste. Hacerlo en
+                <strong>cada</strong> petición, para todo el grafo de servicios, se
+                nota. Es precisamente el motivo por el que existe la compilación del
+                contenedor, que veremos más abajo: reflexionar una vez y guardar el
+                resultado.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="ciclos">
+            Detectar ciclos
+            <a href="#ciclos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Si <code>A</code> necesita <code>B</code> y <code>B</code> necesita
+            <code>A</code>, la resolución recursiva entra en bucle infinito hasta
+            agotar la pila. Un contenedor serio lleva la cuenta de qué está
+            <em>construyendo ahora mismo</em>: si vuelve a pedir algo que ya está en
+            esa pila, lanza una <strong>excepción de dependencia circular</strong> en
+            vez de colgarse.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · marcar lo que está en construcción</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+private array $construyendo = [];
+
+private function construir(string $clase): object
+{
+    if (isset($this-&gt;construyendo[$clase])) {
+        throw new DependenciaCircular(
+            implode(' -&gt; ', array_keys($this-&gt;construyendo)) . " -&gt; {$clase}"
+        );
+    }
+
+    $this-&gt;construyendo[$clase] = true;
+    // ... reflexión y resolución recursiva ...
+    unset($this-&gt;construyendo[$clase]);
+
+    return $objeto;
+}</code></pre>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Un ciclo casi siempre es un olor de diseño</p>
+              <p>
+                Que <code>A</code> y <code>B</code> se necesiten mutuamente suele
+                indicar que tienen una responsabilidad compartida mal repartida (un
+                problema de <a href="srp-responsabilidad-unica.html">SRP</a>). Antes de
+                buscar trucos para romper el ciclo, plantéate si falta una tercera
+                clase que ambas usen, o si una dependencia debería ser un evento.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="ciclo-de-vida">
+            Ciclo de vida y lazy
+            <a href="#ciclo-de-vida" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            ¿El contenedor crea un objeto nuevo cada vez que lo pides, o reutiliza el
+            mismo? Es el <strong>ciclo de vida</strong> del servicio, y se elige por
+            servicio:
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Modo</th>
+                  <th>Comportamiento</th>
+                  <th>Para</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Shared</strong> (singleton)</td>
+                  <td>Se construye una vez y se cachea; las siguientes llamadas devuelven la misma instancia.</td>
+                  <td>Servicios sin estado: la mayoría. Es el valor por defecto.</td>
+                </tr>
+                <tr>
+                  <td><strong>Factory</strong> (no compartido)</td>
+                  <td>Una instancia nueva en cada <code>get()</code>.</td>
+                  <td>Objetos con estado propio que no debe compartirse.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            En el contenedor mínimo de arriba, la línea
+            <code>$this-&gt;resueltos[$id] = ...</code> ya implementa el modo shared: se
+            cachea la instancia. Un modo factory simplemente no cachearía.
+          </p>
+          <p>
+            El matiz fino son los <strong>lazy services</strong>. A veces un servicio
+            es caro de construir (abre una conexión, carga un fichero) pero casi nunca
+            se usa en una petición dada. La solución es inyectar un
+            <strong>proxy</strong>: un objeto ligero que finge ser el servicio real y
+            lo construye de verdad solo en la primera llamada a un método. Así el coste
+            se paga únicamente si se usa.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Se inyecta un proxy</b><small>ligero, no construye nada aún</small></span>
+              </div>
+              <div class="flow__arrow" data-label="primera llamada a un método"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>El proxy construye el real</b><small>aquí se paga el coste</small></span>
+              </div>
+              <div class="flow__arrow" data-label="delega"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Servicio real responde</b><small>las siguientes ya van directas</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Un lazy service difiere su coste de construcción hasta el primer uso real.</p>
+          </div>
+
+          <h2 id="compilado">
+            Compilado vs runtime
+            <a href="#compilado" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Aquí está la diferencia entre un contenedor de juguete y uno de
+            producción. Resolver todo por <a href="#autowiring">reflexión</a> en cada
+            petición es cómodo en desarrollo pero caro en producción. Por eso Symfony
+            <strong>compila el contenedor</strong>: en el build, hace la reflexión una
+            sola vez y <em>genera código PHP plano</em> —una clase enorme con un método
+            por servicio que hace los <code>new</code> en el orden correcto, sin
+            reflexión—. En cada request se ejecuta ese PHP directo, rapidísimo.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Runtime (reflexión cada vez)</h4>
+              <ul>
+                <li>Inspecciona constructores en cada petición.</li>
+                <li>Flexible: cambias config y va al vuelo.</li>
+                <li>Cómodo en desarrollo, caro en producción.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Compilado (PHP generado)</h4>
+              <ul>
+                <li>Reflexiona una vez en el build.</li>
+                <li>Genera un contenedor en PHP plano, cacheado.</li>
+                <li>Cada request ejecuta <code>new</code> directos.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Cada framework, su filosofía</p>
+              <p>
+                <strong>Symfony</strong> compila el contenedor a PHP en el warmup de
+                la caché: máximo rendimiento, configuración resuelta de antemano.
+                <strong>Laravel</strong> resuelve más en runtime con su container,
+                priorizando flexibilidad y expresividad. Dos puntos distintos del
+                mismo compromiso entre velocidad y dinamismo.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="memoria">
+            Memoria y GC
+            <a href="#memoria" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            ¿Cuánto vive un servicio shared? La respuesta depende por completo del
+            modelo de ejecución, y aquí se conecta todo con cómo corre PHP.
+          </p>
+          <p>
+            En <strong><a href="php-fpm.html">PHP-FPM</a></strong>, cada petición es un
+            proceso (o un worker reiniciado por request): el contenedor y todos sus
+            servicios se construyen, viven la petición y <strong>se tiran al
+            final</strong>. La <a href="memoria-php.html">arena de memoria de Zend</a>
+            se libera entera de golpe, así que el ciclo de vida shared es «gratis»: no
+            hay que preocuparse de fugas entre peticiones porque no hay <em>entre</em>;
+            el siguiente request empieza con el contenedor limpio.
+          </p>
+          <p>
+            En <strong><a href="workers-php.html">workers long-running</a></strong>
+            (Swoole, RoadRunner, Octane), el proceso <strong>persiste entre miles de
+            peticiones</strong>. Ahí el contenedor y sus servicios shared sobreviven, y
+            eso cambia las reglas:
+          </p>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que en FPM era inofensivo, en long-running muerde</p>
+              <p>
+                Un servicio shared que acumula estado (un array que va creciendo, una
+                colección de eventos que no se vacía) es una <strong>fuga de
+                memoria</strong> que crece petición a petición hasta tumbar el worker.
+                Y un servicio con estado del usuario A puede filtrarlo al usuario B si
+                se reutiliza sin resetear. En long-running, los servicios shared deben
+                ser de verdad <strong>sin estado</strong>.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            Sobre el <strong>recolector de ciclos</strong>: PHP libera la mayoría de
+            objetos por conteo de referencias en cuanto dejan de usarse, pero los
+            ciclos de referencias (el servicio apunta al contenedor y el contenedor al
+            servicio) necesitan al recolector de ciclos para liberarse. En FPM da
+            igual —todo muere al final del request—; en long-running, esos ciclos
+            retienen memoria hasta que el GC pasa, y por eso frameworks como Octane
+            reinician el worker cada N peticiones como red de seguridad.
+          </p>
+
+          <h2 id="service-locator">
+            El service locator
+            <a href="#service-locator" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un último aviso. Es tentador inyectar el contenedor entero en una clase y
+            pedirle servicios dentro (<code>$this-&gt;container-&gt;get(Mailer::class)</code>).
+            Eso es el <strong>service locator</strong>, y es un antipatrón: la clase
+            oculta sus dependencias reales (ya no las declara en el constructor),
+            depende de <em>todo</em> el contenedor y se vuelve difícil de testear,
+            porque hay que simular el contenedor completo.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Service locator</h4>
+              <ul>
+                <li>Recibe el contenedor y pide dentro.</li>
+                <li>Las dependencias quedan ocultas.</li>
+                <li>Acoplado a todo; test costoso.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Inyección por constructor</h4>
+              <ul>
+                <li>Recibe exactamente lo que usa.</li>
+                <li>Las dependencias son visibles en la firma.</li>
+                <li>Acoplado a lo justo; test trivial.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El contenedor se usa en la frontera, no en el dominio</p>
+              <p>
+                La regla práctica: el contenedor solo aparece en el punto de entrada
+                (el front controller, la configuración del framework), donde arma el
+                grafo. Tu código de negocio nunca debería conocer el contenedor: recibe
+                sus dependencias ya construidas y no sabe que existe. Eso mantiene el
+                dominio limpio y testeable.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El contenedor <strong>construye el grafo de objetos</strong> bajo demanda; el <strong>autowiring</strong> lo deduce por reflexión del constructor, recursivamente.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Detecta <strong>ciclos</strong> marcando lo que construye; el <strong>ciclo de vida</strong> es shared (cacheado, por defecto) o factory, con lazy + proxies para diferir lo caro.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Symfony <strong>compila el contenedor a PHP plano</strong> para no reflexionar en cada request; Laravel resuelve más en runtime.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En <strong>FPM</strong> los servicios mueren con el request (shared «gratis»); en <strong>long-running</strong>, el estado compartido es fuga y filtración: servicios sin estado y reinicio periódico. Y nunca uses el contenedor como <strong>service locator</strong>.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="inyeccion-dependencias.html">
+              <small>← Anterior</small>
+              <b>Inyección de dependencias en PHP</b>
+            </a>
+            <a href="../cursos.html" class="next">
+              <small>Fin del curso →</small>
+              <b>Ver todos los cursos</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

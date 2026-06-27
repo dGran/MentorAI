@@ -25,8 +25,23 @@
 
 window.ACADEMIA_TUTORIALS = [
   {
-    slug: "clean-code-intro",
+    slug: "contenedor-di",
     featured: true,
+    title: "El contenedor de DI por dentro",
+    description:
+      "Cómo funciona un contenedor de inyección de dependencias por dentro: definiciones de servicio, autowiring por reflexión, detección de ciclos, ciclo de vida (shared vs factory, lazy con proxies), compilado vs runtime y la gestión de memoria y GC en FPM frente a workers long-running.",
+    href: "tutorials/contenedor-di.html",
+    categories: ["php", "arquitectura"],
+    topic: "Inyección de dependencias",
+    tags: ["DI", "Contenedor", "Reflexión"],
+    level: "Avanzado",
+    minutes: 18,
+    icon: "code",
+    status: "published",
+    date: "2026-06-27",
+  },
+  {
+    slug: "clean-code-intro",
     title: "Clean Code: escribir para quien lee",
     description:
       "Qué es el código limpio y por qué importa: el código se lee mucho más de lo que se escribe, el coste real del código sucio como deuda diaria y la regla del boy scout. La introducción al curso de Clean Code.",

@@ -303,6 +303,46 @@ Tercer curso del `plan-diseno-y-calidad.md`. Catálogo: **69 publicados**.
   inyeccion-dependencias deja de ser artículo suelto. Después, frente
   testing/observabilidad (plan-testing-y-observabilidad.md): PHPUnit (6) + Observabilidad (9).
 
+## Curso DI y contenedores — plan-diseno-y-calidad COMPLETO (2026-06-27) — HECHO (commit+push)
+Cuarto y último curso del `plan-diseno-y-calidad.md`. **El plan queda cerrado.**
+Catálogo: **70 publicados**.
+- **Curso `di-contenedores`** (2 lecciones, cuarto curso en courses.js tras clean-code).
+  Avanzado, icon code:
+  - `inyeccion-dependencias` (YA EXISTÍA, era artículo suelto) — **ahora es lección 1
+    del curso, NO se reescribió**. Deja de aparecer en Artículos (Catalog excluye
+    lessonSlugs); recibe course-nav inyectada. Verificado en headless.
+  - `contenedor-di` (NUEVO, Avz, 18m, `["php","arquitectura"]`, topic "Inyección de
+    dependencias"): el contenedor por dentro. Secciones: qué resuelve (definiciones +
+    PSR-11), autowiring por reflexión (con Container mínimo didáctico + ReflectionClass),
+    detección de ciclos (marcar lo que se construye, DependenciaCircular), ciclo de vida
+    (shared/singleton vs factory, lazy services con proxies + diagrama), compilado vs
+    runtime (Symfony compila a PHP plano / Laravel runtime), memoria y GC (FPM=request,
+    arena Zend "gratis" → memoria-php; long-running Swoole/RoadRunner/Octane = persiste →
+    fugas y filtración de estado entre usuarios, reinicio cada N), service locator como
+    antipatrón. Cruza inyeccion-dependencias, php-fpm, memoria-php, workers-php, srp.
+    featured movido de clean-code-intro → contenedor-di.
+- **paths.js:** la ruta `diseno-oo` sustituye el paso `article:inyeccion-dependencias`
+  por `course:di-contenedores`. Ruta final: oop → solid → clean-code →
+  object-calisthenics → di-contenedores → diseno-y-arquitectura (6 pasos).
+- Verificado: node --check, escapado/TOC↔h2/balance (0), cruces (70 entradas, 1
+  featured=contenedor-di, curso 2/2, inyeccion-dependencias ahora es lección, ruta OK),
+  0 enlaces colgando, render headless de contenedor-di (0 errores JS, route-nav) e
+  inyeccion-dependencias (route-nav inyectada), articulos.html (0 ocurrencias de ambas
+  = bien excluidas), cursos.html (curso DI visible).
+
+## ESTADO GLOBAL tras esta sesión (2026-06-27)
+**4 cursos nuevos publicados y pusheados** (commits 96c403f OOP, da3c958 SOLID,
+ba97345 Clean Code, + DI). **20 tutoriales nuevos** (6 OOP + 7 SOLID + 6 Clean Code +
+1 contenedor-di) → `plan-diseno-y-calidad.md` **COMPLETO**. Catálogo 50→70 publicados,
+de 4 a **8 cursos**. Fixes UI: breadcrumb scroll horizontal + tutorial-meta nowrap.
+- **PENDIENTE (único frente de contenido restante):** `plan-testing-y-observabilidad.md`
+  — curso `phpunit` (6 lecciones, + renombrar el curso `testing` actual a "TDD y
+  fundamentos") y curso `observabilidad` (9 lecciones: Sentry + Grafana/Loki/LogQL +
+  Prometheus/PromQL; 1 categoría nueva `observabilidad`; PromQL/LogQL/YAML sin data-lang).
+  **15 tutoriales.**
+- **Fase 2 (infraestructura, sin tocar):** plan-buscador-fulltext, plan-resaltado-texto,
+  plan-autocategorizacion.
+
 ## Cómo añadir un tutorial
 Ver README.md → "Añadir un tutorial nuevo" (copiar plantilla, rellenar, añadir
 tarjeta en index.html con `data-categories`).
