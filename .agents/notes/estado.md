@@ -116,6 +116,51 @@ orden lógico bottom-up, arranque por Representación de datos, ejemplos PHP+SQL
   `concurrencia`, `async-event-loop`, `memoria`). Sin dep. de highlighter (PHP +
   pseudocódigo; ojo: PHP flojo en hilos → ejemplos mixtos).
 
+## Object Calisthenics + Conceptos de IA (2026-06-27) — HECHO (sin commit)
+Dos añadidos sueltos pedidos por el usuario tras la cola de arquitectura.
+Catálogo: **50 publicados**. `featured` movido de cqrs-event-sourcing →
+`object-calisthenics`.
+- **`object-calisthenics.html`** (artículo suelto, `["arquitectura"]`, topic
+  "Diseño y arquitectura", Int, 16m, icon code): las 9 reglas de Jeff Bay /
+  Keyvan Akbary agrupadas en 4 familias (flujo: 1 nivel indent + sin else; tipos:
+  envolver primitivos + colecciones de primera clase; acoplamiento: 1 punto por
+  línea/Demeter + sin getters/setters; tamaño: no abreviar + entidades pequeñas +
+  2 variables de instancia). Marco "es una kata, no dogma de producción". Cruza
+  ddd-tactico e inyeccion-dependencias. 2 php. NO va en curso (artículo).
+- **`conceptos-ia.html`** (lección, `["ia"]`, topic "Programar con IA", Princ,
+  15m, icon signal): mapa del ecosistema — LLM, prompt/tokens/ventana de contexto,
+  herramientas (tool/function calling), agente, **MCP** (Model Context Protocol,
+  estándar abierto de Anthropic; analogía USB-C; tools=qué, MCP=cómo), **RAG** +
+  embeddings, fine-tuning vs contexto. Sin bloques con data-lang (conceptual).
+  **Añadido como PRIMERA lección del curso `programar-con-ia`** (antes de
+  como-piensa-un-llm) en courses.js. Cruza como-piensa-un-llm y flujo-con-agentes.
+  (Se consultó la skill `claude-api` para precisión sobre MCP/agente/LLM.)
+- Verificado: node --check, escapado (0 crudos), TOC↔h2, cruce (1 featured, 0
+  huérfanas, 39 lecciones), render headless (0 errores JS, tutorial-actions
+  inyectado en ambos).
+
+## Plan abierto — Testing a fondo + Observabilidad (2026-06-27)
+Detalle en `plan-testing-y-observabilidad.md`. El usuario notó que el bloque
+testing quedó conceptual y propuso PHPUnit a fondo + monitoring (Sentry/Grafana/
+Loki). Decidido (AskUserQuestion): **dos cursos de testing separados** (renombrar
+el actual a "TDD y fundamentos" + nuevo "PHPUnit a fondo", 6 lecciones) y un curso
+**"Observabilidad y monitoring"** completo (Sentry + Grafana/Loki/LogQL +
+Prometheus/PromQL, 9 lecciones en módulos). 15 tutoriales nuevos, 1 categoría nueva
+`observabilidad`. **Plan dejado en notas; pendiente OK del usuario para la autoría.**
+
+## Plan abierto — SOLID + Clean Code (2026-06-27)
+Detalle en `plan-diseno-y-calidad.md`. El usuario pidió un curso de SOLID (cada
+principio con ejemplos claros) y "algo de clean code". Decidido (AskUserQuestion):
+SOLID **curso propio** (7 lecciones: intro + SRP/OCP/LSP/ISP/DIP + cierre), con la
+**lección DIP breve** que remite a `inyeccion-dependencias` (sigue suelto). Clean
+Code propuesto como **curso propio** (6 lecciones: intro, nombres, funciones,
+comentarios, errores, code smells+refactoring) — **confirmado aparte**, no
+agrupado con SOLID. Tercer curso `di-contenedores`: reutiliza el artículo existente
+`inyeccion-dependencias` como lección 1 + nuevo `contenedor-di` denso (container
+por dentro: autowiring/reflexión, lazy, compilado, ciclo de vida, memoria y GC en
+long-running). `inyeccion-dependencias` deja de ser artículo suelto. Reusan
+`arquitectura`/`php`. **14 tutoriales nuevos, 3 cursos. Pendiente OK del usuario.**
+
 ## Cómo añadir un tutorial
 Ver README.md → "Añadir un tutorial nuevo" (copiar plantilla, rellenar, añadir
 tarjeta en index.html con `data-categories`).
@@ -379,8 +424,54 @@ TDD, programar con IA, hexagonal, DDD, CQRS, "con previo análisis para ver cuá
 salen"). Resultado: **16 tutoriales** (rango 14-18). TDD=4 (`testing`), Programar
 con IA=4 (`ia`), Hexagonal=2 (`arquitectura`), DDD=4 (`arquitectura`), CQRS=2
 (`arquitectura`). 2 chips nuevos: `testing`, `ia`. Orden sugerido: TDD e IA
-(transversales) → hexagonal → DDD → CQRS. **Pendiente: decidir si se arranca la
-autoría o quedan en cola.**
+(transversales) → hexagonal → DDD → CQRS. ✅ **CONSUMIDA** → ver sección siguiente.
+
+## Cola arquitectura y práctica — COMPLETA (2026-06-26) — SIN COMMIT
+Sesión de autoría autónoma ("ataca toda la cola sin parar"). Escritos y publicados
+los **16 tutoriales** de `cola-arquitectura-y-practica.md`. Catálogo: **48
+publicados, 0 soon** (eran 32). Autoría manual (no se usó el puente) siguiendo
+`/tutorial` y el patrón de `owasp.html`. Todos `date: 2026-06-26`, `featured`
+movido de owasp → `cqrs-event-sourcing`.
+- **Bloque TDD** (`testing`, topic "Testing", icon code): `tdd-ciclo` (Int, 14m,
+  rojo-verde-refactor, baby steps, ejemplo PHPUnit, triangulación), `tipos-de-test`
+  (Int, 14m, pirámide unit/integración/e2e, cono de helado), `test-doubles` (Int,
+  14m, dummy/stub/spy/mock/fake, estado vs comportamiento, no mockear lo ajeno),
+  `tests-que-no-estorban` (Avz, 15m, comportamiento≠implementación, FIRST, frágiles,
+  cobertura engañosa). Ejemplos PHP/PHPUnit con `data-lang="php"`.
+- **Bloque IA** (`ia`, topic "Programar con IA", icon signal): `como-piensa-un-llm`
+  (Princ, 14m, tokens/ventana/predicción, alucinaciones), `prompting-para-codigo`
+  (Int, 14m, contexto/específico/few-shot/iterar), `flujo-con-agentes` (Int, 15m,
+  agentes, plan-implementar-revisar, contexto del repo), `criterio-y-riesgos` (Int,
+  15m, revisar, seguridad/secretos/licencias, deuda, tests como red). Bloques de
+  prompt SIN `data-lang` (no se resaltan a propósito).
+- **Bloque arquitectura** (`arquitectura`, topic "Diseño y arquitectura", icon
+  code): `hexagonal` (Avz, 16m, puertos/adaptadores, driving/driven, DIP),
+  `hexagonal-en-php` (Avz, 16m, carpetas por capa, 1 puerto 2 adaptadores, test
+  aislado), `ddd-que-es` (Int, 14m, lenguaje ubicuo, no es "más capas", cuándo no),
+  `ddd-estrategico` (Avz, 15m, bounded context, subdominios core/soporte/genérico,
+  context map), `ddd-tactico` (Avz, 16m, value object/entidad/agregado/repositorio/
+  servicio/factory; agregado≠tabla), `eventos-de-dominio` (Avz, 15m, hecho en
+  pasado, consistencia entre agregados, puente a mensajería+idempotencia), `cqrs`
+  (Avz, 15m, comando vs query, niveles, cuándo NO), `cqrs-event-sourcing` (Avz, 16m,
+  event store append-only, rehidratar, proyecciones, trade-offs). Ejemplos PHP.
+- **Catálogo/cursos**: `CATEGORY_LABELS` += `arquitectura`/`testing`/`ia`
+  (catalog.js). 3 cursos nuevos en `courses.js`: `testing` (4 lecciones planas),
+  `programar-con-ia` (4 planas), `diseno-y-arquitectura` (3 módulos: hexagonal/DDD/
+  CQRS, 8 lecciones). `inyeccion-dependencias` sigue como artículo suelto.
+- **Cruces internos**: TDD↔inyeccion-dependencias; IA↔owasp/tdd; hexagonal↔
+  inyeccion-dependencias/test-doubles; ddd-tactico↔modelado-relacional; eventos↔
+  rabbitmq/idempotencia/cap-consistencia; cqrs↔cap-consistencia/eventos.
+- **Verificado**: `node --check` (manifest/courses/catalog); script python (balance
+  `<code>`, 0 `<`/`>` crudos en data-lang, TOC↔h2 id, 0 U+FFFD) → 0 problemas;
+  cruce courses×manifest (1 featured, 0 duplicados, 0 lecciones huérfanas, 38
+  referenciadas, 10 artículos sueltos); render headless google-chrome de 3
+  tutoriales (highlighter tokeniza, tutorial-actions inyectado, 0 errores JS),
+  articulos/cursos (4 course-cards) y curso.html?slug=diseno-y-arquitectura (3
+  módulos). Nota de diseño: los 16 NO aparecen en Artículos (son lecciones de
+  curso; la vista los excluye). Por eso en Artículos solo sale el chip Arquitectura
+  (vía `inyeccion-dependencias`), no Testing ni IA.
+- **PENDIENTE**: nada commiteado (19 ficheros: 3 mod + 16 nuevos). Espera OK del
+  usuario para commit/push (regla de acciones de cara afuera).
 
 ## Cursos + Artículos (infraestructura) (2026-06-22) — HECHO (pusheado: 602ba2f, a580a2f)
 Cambio de modelo de contenido pedido por el usuario: dos tipos de primera clase,

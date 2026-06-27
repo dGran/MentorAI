@@ -115,6 +115,17 @@ con `eventos-de-dominio` y `cap-consistencia`.
 
 ## Estado
 
-Análisis hecho y aprobado el encolado. **Pendiente: autoría** (16 tutoriales).
-Aún no decidido si se arranca ya o quedan en cola. Sugerencia de arranque: bloque
-TDD (transversal y base de "criterio-y-riesgos" del bloque IA).
+**CONSUMIDA (2026-06-26).** Los 16 tutoriales escritos y publicados en una tanda
+de autoría ("ataca toda la cola sin parar"). Detalle en `estado.md` → sección
+"Cola arquitectura y práctica — COMPLETA". Decisiones de implementación frente al
+análisis:
+- Se mantuvieron los 16 (no se fusionó ninguno). Slugs tal cual el análisis.
+- 2 chips nuevos en CATEGORY_LABELS (`testing`, `ia`) + se añadió label explícito
+  para `arquitectura` ("Arquitectura"); el bloque arquitectura reusa ese chip.
+- 3 cursos nuevos en `courses.js`: `testing` (4 lecciones planas),
+  `programar-con-ia` (4 planas) y `diseno-y-arquitectura` (3 módulos: hexagonal 2,
+  DDD 4, CQRS 2 = 8 lecciones). `inyeccion-dependencias` se dejó como artículo
+  suelto (no se metió en el curso de arquitectura).
+- `featured` movido de owasp a `cqrs-event-sourcing` (el más reciente). Todos con
+  `date: 2026-06-26`, `topic` por bloque ("Testing", "Programar con IA",
+  "Diseño y arquitectura").
