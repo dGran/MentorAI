@@ -163,41 +163,17 @@
     actions.appendChild(resetBtn);
     host.appendChild(actions);
 
-    const progress = buildCourseProgress(slug);
+    const progress = buildReadingProgress(slug);
 
-    if (progress) {
-      host.appendChild(progress.el);
-      doneBtn.addEventListener("click", progress.update);
-      resetBtn.addEventListener("click", progress.update);
-    }
-  }
+    host.appendChild(progress.el);
 
-  function courseLessons(course) {
-    if (Array.isArray(course.modules)) {
-      return course.modules.reduce(function (all, module) {
-        return all.concat(module.lessons || []);
-      }, []);
-    }
-
-    return course.lessons || [];
-  }
-
-  function buildCourseProgress(slug) {
-    const course = courseOfSlug(slug);
-
-    if (!course) {
-      return null;
-    }
-
-    const manifest = manifestBySlug();
-    const published = courseLessons(course).filter(function (lessonSlug) {
-      return isPublishedTutorial(manifest[lessonSlug]);
+    doneBtn.addEventListener("click", function () {
+      progress.setComplete(MentorAI.Progress.has(slug));
     });
+    resetBtn.addEventListener("click", progress.reset);
+  }
 
-    if (published.length === 0) {
-      return null;
-    }
-
+  function buildReadingProgress(slug) {
     const el = document.createElement("div");
     el.className = "tutorial-progress";
     el.innerHTML =
@@ -207,20 +183,47 @@
     const fill = el.querySelector(".tutorial-progress__bar span");
     const label = el.querySelector(".tutorial-progress__label");
 
-    const update = function () {
-      const done = published.filter(function (lessonSlug) {
-        return MentorAI.Progress.has(lessonSlug);
-      }).length;
-      const percent = Math.round((done / published.length) * 100);
+    const stored = MentorAI.Reading.get(slug);
+    let shown = stored ? stored.percent : 0;
+    let complete = MentorAI.Progress.has(slug);
 
-      fill.style.width = percent + "%";
-      label.textContent =
-        percent + "% del curso · " + done + " / " + published.length + " completadas";
+    const render = function () {
+      const value = complete ? 100 : shown;
+      fill.style.width = value + "%";
+      label.textContent = value + "% leído";
     };
 
-    update();
+    render();
 
-    return { el: el, update: update };
+    window.addEventListener(
+      "scroll",
+      function () {
+        const height = document.documentElement.scrollHeight - window.innerHeight;
+        const current = height > 0 ? Math.round((window.scrollY / height) * 100) : 0;
+
+        if (current > shown) {
+          shown = current;
+
+          if (!complete) {
+            render();
+          }
+        }
+      },
+      { passive: true }
+    );
+
+    return {
+      el: el,
+      reset: function () {
+        shown = 0;
+        complete = false;
+        render();
+      },
+      setComplete: function (isComplete) {
+        complete = isComplete;
+        render();
+      },
+    };
   }
 
   function speechChunks(prose) {
