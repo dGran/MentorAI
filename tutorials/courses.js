@@ -50,6 +50,21 @@ window.MENTORAI_COURSES = [
     ],
   },
   {
+    slug: "acceso-a-datos",
+    title: "Acceso a datos y ORM",
+    summary:
+      "El puente entre tu código y la base de datos: ORM, query builder o SQL plano según el caso, las dos filosofías de mapeo (Active Record vs Data Mapper), el problema N+1 y cómo evitarlo, migraciones de esquema y cómo el ORM gestiona transacciones con el unit of work.",
+    level: "Intermedio",
+    icon: "database",
+    lessons: [
+      "orm-vs-sql",
+      "active-record-vs-data-mapper",
+      "problema-n-mas-1",
+      "migraciones-de-esquema",
+      "orm-transacciones-unit-of-work",
+    ],
+  },
+  {
     slug: "oop",
     title: "Programación orientada a objetos",
     summary:

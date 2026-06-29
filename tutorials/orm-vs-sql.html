@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ORM, query builder o SQL plano — MentorAI</title>
+    <meta name="description" content="Los tres niveles de abstracción para hablar con la base de datos desde el código: SQL plano, query builder y ORM. Qué ganas y qué pagas en cada uno, y cuándo bajar de nivel." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Bases de datos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">ORM, query builder o SQL plano</h1>
+        <p class="tutorial-hero__lead">Entre tu objeto PHP y una fila de la base de datos hay un abismo, y tienes tres formas de cruzarlo. Cada una te sube un peldaño de comodidad a cambio de un peldaño de control. Saber cuál usar —y cuándo bajar— es media batalla del acceso a datos.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#abismo">El abismo objeto-tabla</a></li>
+            <li><a href="#sql-plano">SQL plano</a></li>
+            <li><a href="#query-builder">Query builder</a></li>
+            <li><a href="#orm">ORM</a></li>
+            <li><a href="#cuando">Cuándo cada uno</a></li>
+            <li><a href="#fugas">La abstracción tiene fugas</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Tu aplicación piensa en objetos: un <code>Pedido</code> con su <code>Cliente</code> y sus líneas. La base de datos piensa en tablas y filas. Alguien tiene que traducir entre los dos mundos, y la pregunta es cuánto de esa traducción haces tú a mano y cuánto delegas. Esa decisión tiene tres respuestas.</p>
+
+          <h2 id="abismo">
+            El abismo objeto-tabla
+            <a href="#abismo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El problema tiene nombre: <strong>desajuste de impedancia objeto-relacional</strong>. Los objetos tienen referencias, herencia y colecciones anidadas; las tablas tienen filas planas, claves foráneas y <code>JOIN</code>s. No encajan de forma natural, y todo el código de acceso a datos vive en esa costura, traduciendo de un lado a otro.</p>
+          <p>Las tres herramientas se diferencian en <strong>quién escribe esa traducción</strong>:</p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>SQL plano</b><small>Tú escribes el SQL y mapeas las filas a mano. Control total.</small></span>
+              </div>
+              <div class="flow__arrow" data-label="subes abstracción"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Query builder</b><small>Compones el SQL con métodos; el mapeo sigue siendo tuyo.</small></span>
+              </div>
+              <div class="flow__arrow" data-label="subes más"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>ORM</b><small>Trabajas con objetos; la herramienta genera el SQL y mapea.</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Más arriba, más productividad; más abajo, más control. No hay un nivel "correcto": hay un nivel adecuado a cada consulta.</p>
+          </div>
+
+          <h2 id="sql-plano">
+            SQL plano
+            <a href="#sql-plano" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El nivel más bajo: escribes el SQL tú mismo y lo ejecutas con el driver (PDO en PHP). Tienes el <strong>control absoluto</strong> de cada consulta —ves exactamente qué se manda a la base de datos— a cambio de escribir y mantener cada línea, incluido el mapeo de la fila al objeto.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · SQL plano con PDO (siempre parametrizado)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+$statement = $pdo-&gt;prepare(
+    'SELECT id, total FROM pedidos WHERE cliente_id = :cliente AND estado = :estado'
+);
+$statement-&gt;execute(['cliente' =&gt; 42, 'estado' =&gt; 'enviado']);
+
+$pedidos = $statement-&gt;fetchAll(PDO::FETCH_ASSOC);</code></pre>
+          </div>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Nunca concatenes valores en el SQL</p>
+              <p>Con SQL plano, la inyección SQL es tu responsabilidad. <em>Jamás</em> metas una variable dentro del string con interpolación: usa siempre parámetros (<code>:cliente</code>) y deja que el driver los escape. Lo desarrolla <a href="owasp.html">OWASP Top 10</a>; aquí solo el recordatorio de que el control total incluye el control del riesgo.</p>
+            </div>
+          </div>
+          <p>SQL plano brilla cuando la consulta es compleja o crítica para el rendimiento: un informe con varios <code>JOIN</code>, funciones de ventana, o una agregación pesada que quieres afinar al milímetro. Pierde cuando tienes cincuenta CRUD sencillos: escribir a mano el <code>INSERT</code>/<code>UPDATE</code>/<code>SELECT</code> de cada entidad es repetitivo y propenso a erratas.</p>
+
+          <h2 id="query-builder">
+            Query builder
+            <a href="#query-builder" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un peldaño arriba: en vez de escribir el SQL como un string, lo <strong>compones</strong> encadenando métodos. El builder genera el SQL final por ti, parametrizado, y a menudo con autocompletado del IDE. El mapeo a objetos sigue siendo cosa tuya (o de una capa fina encima).</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · la misma consulta con un query builder</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+$pedidos = $queryBuilder
+    -&gt;select('id', 'total')
+    -&gt;from('pedidos')
+    -&gt;where('cliente_id = :cliente')
+    -&gt;andWhere('estado = :estado')
+    -&gt;setParameters(['cliente' =&gt; 42, 'estado' =&gt; 'enviado'])
+    -&gt;fetchAllAssociative();</code></pre>
+          </div>
+          <p>La ventaja real aparece con el SQL <strong>dinámico</strong>: cuando los filtros dependen de lo que pida el usuario, concatenar <code>WHERE</code>s a mano sobre un string es un infierno de comas y espacios; con un builder, añades un <code>-&gt;andWhere(...)</code> dentro de un <code>if</code> y ya está. Es el punto dulce entre el control del SQL plano y la comodidad del ORM: hablas casi en SQL, pero programáticamente.</p>
+
+          <h2 id="orm">
+            ORM
+            <a href="#orm" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El nivel más alto. Un <strong>ORM</strong> (Object-Relational Mapper) mapea tus clases a tablas y trabajas con objetos; él genera el SQL y traduce las filas a entidades en ambos sentidos. Defines el mapeo una vez y la herramienta se encarga del resto.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · con un ORM piensas en objetos, no en SQL</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+$pedidos = $repositorioPedidos-&gt;findBy([
+    'cliente' =&gt; $cliente,
+    'estado'  =&gt; 'enviado',
+]);
+
+foreach ($pedidos as $pedido) {
+    echo $pedido-&gt;getTotal();
+}</code></pre>
+          </div>
+          <p>No hay SQL a la vista: pides objetos <code>Pedido</code> y recibes objetos <code>Pedido</code>. Para el 80&nbsp;% del CRUD del día a día, esto es una ganancia enorme de productividad y de legibilidad. El coste es que cedes el control: el ORM decide qué SQL ejecuta, y a veces decide mal (consultas de más, el <a href="problema-n-mas-1.html">problema N+1</a>) sin que lo veas a simple vista. Y debajo de los nombres comerciales hay dos filosofías distintas —Active Record y Data Mapper— que cambian cómo se siente: es la <a href="active-record-vs-data-mapper.html">siguiente lección</a>.</p>
+
+          <h2 id="cuando">
+            Cuándo cada uno
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El error de principiante es pensar que hay que elegir uno para todo el proyecto. No: <strong>conviven</strong>. Lo sano es un nivel por defecto y bajar de nivel en los casos puntuales que lo pidan.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Situación</th><th>Nivel adecuado</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>CRUD de entidades, lógica de dominio, el 80&nbsp;% del código</td><td><b>ORM</b></td></tr>
+                <tr><td>Filtros dinámicos, búsquedas que se montan según la entrada</td><td><b>Query builder</b></td></tr>
+                <tr><td>Informe pesado, agregación compleja, consulta a optimizar al milímetro</td><td><b>SQL plano</b></td></tr>
+                <tr><td>Operación masiva (actualizar un millón de filas de golpe)</td><td><b>SQL plano</b></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>La buena noticia: las herramientas serias lo asumen. Doctrine trae su query builder y un modo de SQL nativo; Eloquent te deja caer a la fachada <code>DB::</code> con SQL plano cuando hace falta. Usar el ORM por defecto no te encierra: la escotilla de escape a un nivel inferior está siempre ahí.</p>
+
+          <h2 id="fugas">
+            La abstracción tiene fugas
+            <a href="#fugas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Hay una tentación peligrosa: creer que el ORM te exime de saber SQL. Es justo al revés. Toda abstracción "tiene fugas" —acaba dejando ver la complejidad que oculta— y la del ORM gotea precisamente cuando algo va lento.</p>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El ORM no te libera de entender la BD</p>
+              <p>Cuando una página va lenta, abres el SQL que genera el ORM y necesitas saber leerlo: si usa el índice, si hace un <code>JOIN</code> de más, si dispara cien consultas donde debería una. Sin esa base —<a href="indices-btree.html">índices</a>, <a href="modelado-relacional.html">modelado</a>, <a href="transacciones-acid.html">transacciones</a>— el ORM es una caja negra que no sabes depurar.</p>
+            </div>
+          </div>
+          <p>Por eso el orden de este temario no es casual: primero la base de datos por dentro, ahora cómo tu código habla con ella. El ORM es una herramienta excelente <em>encima</em> de saber SQL, nunca un sustituto de saberlo.</p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Entre objetos y tablas hay un desajuste de impedancia; las tres herramientas se diferencian en quién escribe la traducción.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>SQL plano: control total, máxima verbosidad. Para consultas complejas, informes y operaciones masivas. Siempre parametrizado.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Query builder: compones el SQL con métodos. Su punto fuerte es el SQL dinámico (filtros que dependen de la entrada).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>ORM: trabajas con objetos y genera el SQL. Gran productividad para el CRUD; cedes control y puede generar SQL ineficiente.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>No es uno para todo: conviven. ORM por defecto, baja a query builder o SQL plano donde haga falta. Y el ORM no te exime de saber SQL.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../cursos.html">
+              <small>← Volver</small>
+              <b>Cursos</b>
+            </a>
+            <a href="active-record-vs-data-mapper.html" class="next">
+              <small>Siguiente →</small>
+              <b>Active Record vs Data Mapper</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

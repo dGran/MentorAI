@@ -100,5 +100,8 @@ COMPLETO (OOP, SOLID, Clean Code, di-contenedores publicados 2026-06-27).
   nueva `apis`). Estructura aprobada: 5 lecciones (REST → verbos/estados → URLs →
   errores/validación → REST vs RPC vs GraphQL), auth solo cruce a `autenticacion`.
   Detalle en `estado.md`.
-- ⬜ **SIGUIENTE: Acceso a datos / ORM** (curso `acceso-a-datos`), luego Docker y
-  CI/CD. Config y Composer como artículos sueltos intercalados.
+- ✅ **Acceso a datos / ORM** publicado (2026-06-29, curso `acceso-a-datos`, 5
+  lecciones: orm-vs-sql → AR vs DM → N+1 → migraciones → transacciones/unit of work).
+  Slug `acceso-a-datos` y 5 lecciones (4 del plan + transacciones) aprobados.
+- ⬜ **SIGUIENTE: Docker** (curso `docker`), luego CI/CD. Config y Composer como
+  artículos sueltos intercalados.

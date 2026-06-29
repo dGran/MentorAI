@@ -433,6 +433,43 @@ Segundo curso del `plan-practica-backend.md`. Catálogo: **78 publicados, 10 cur
 - **SIGUIENTE** (plan-practica-backend): acceso a datos/ORM → Docker → CI/CD. Y montar
   la ruta "carrera"/"construir un servicio". Estructura por aprobar curso a curso.
 
+## Curso Acceso a datos / ORM publicado (2026-06-29) — HECHO (commit+push)
+Tercer curso del `plan-practica-backend.md`. Catálogo: **83 publicados, 11 cursos**.
+- **Curso `acceso-a-datos`** ("Acceso a datos y ORM", 5 lecciones, en courses.js tras
+  `apis-rest`). Categorías `["bbdd","php"]` (sin label nuevo), topic "Acceso a datos",
+  icon `database`, nivel Intermedio. Estructura aprobada por el usuario vía
+  AskUserQuestion: slug `acceso-a-datos` (no `orm`) y **5 lecciones** (añadida la 5ª de
+  transacciones/unit of work sobre las 4 del plan). featured movido de rest-que-es →
+  orm-vs-sql.
+  - `orm-vs-sql` (Int, 14m): desajuste de impedancia objeto-tabla; 3 niveles (SQL plano
+    con PDO parametrizado / query builder / ORM), qué ganas-pagas, conviven (ORM por
+    defecto, baja de nivel donde haga falta), la abstracción tiene fugas (el ORM no
+    exime de saber SQL). Cruza modelado-relacional, owasp, indices-btree.
+  - `active-record-vs-data-mapper` (Int, 14m): dos filosofías (Fowler); AR = entidad
+    extiende ORM y se persiste (Eloquent, save()), DM = entidad pura + entity manager
+    (Doctrine, flush()); tabla cara a cara; elección según complejidad de dominio (DM
+    encaja con DDD/hexagonal). Cruza interfaces, hexagonal, ddd-tactico, srp.
+  - `problema-n-mas-1` (Int, 13m): N+1 = 1 consulta + N por relación; lo causa el lazy
+    loading (consulta oculta en bucle); el O(n) escondido; detectar contando consultas
+    (profiler/query log); curar con eager loading (with()/JOIN → 2 consultas); sin
+    pasarse al over-fetching. Cruza big-o, active-record-vs-data-mapper, indices-btree.
+  - `migraciones-de-esquema` (Int, 14m): la BD también es código; migración = script
+    versionado up/down; la BD registra las aplicadas (solo las pendientes); estructura
+    (DDL) vs datos (DML); en equipo/producción (viajan en el PR, parte del deploy);
+    regla de oro: una migración aplicada en entorno compartido es inmutable. Bloques
+    php+bash. Cruza transacciones-acid, git-ramas-y-flujo.
+  - `orm-transacciones-unit-of-work` (Int, 14m): recordatorio transacción; unit of work
+    (acumula cambios → escribe juntos en una transacción = consistencia+eficiencia);
+    persist marca / flush escribe (flush ≠ commit; detecta dirty); wrapInTransaction /
+    DB::transaction para "todo o nada"; errores (flush en bucle, transacción larga con
+    llamada externa, dato que no se guarda por flush que falta). Cruza transacciones-acid,
+    problema-n-mas-1, active-record-vs-data-mapper, idempotencia.
+- **paths.js NO tocado** (mismo criterio que git/apis-rest: transversal al frente
+  práctico; lo recogerá la futura ruta "construir un servicio").
+- Verificado: node --check, TOC↔h2 (0 ×5), escapado php/bash/sql (0 crudos), enlaces
+  (todos resuelven), 83 entradas, featured=1 orm-vs-sql, 0 duplicados, 11 cursos.
+- **SIGUIENTE** (plan-practica-backend): Docker → CI/CD. Config y Composer sueltos.
+
 ## Cómo añadir un tutorial
 Ver README.md → "Añadir un tutorial nuevo" (copiar plantilla, rellenar, añadir
 tarjeta en index.html con `data-categories`).

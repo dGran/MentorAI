@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Migraciones de esquema — MentorAI</title>
+    <meta name="description" content="Versionar la base de datos con migraciones: scripts up/down bajo control de versiones, migraciones de estructura vs de datos, y cómo aplicarlas en equipo y en producción sin romper nada." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Bases de datos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Migraciones de esquema</h1>
+        <p class="tutorial-hero__lead">Tu código vive en Git, versionado y reproducible. ¿Y el esquema de tu base de datos? Si la respuesta es "alguien le aplicó un ALTER TABLE a mano y no recuerdo cuándo", tienes un problema. Las migraciones ponen la estructura de la BD bajo el mismo control que el código.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">La BD también es código</a></li>
+            <li><a href="#que-es">Qué es una migración</a></li>
+            <li><a href="#up-down">Up y down</a></li>
+            <li><a href="#estructura-datos">Estructura vs datos</a></li>
+            <li><a href="#equipo">En equipo y en producción</a></li>
+            <li><a href="#reglas">Reglas que ahorran sustos</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Una migración es un script versionado que describe un cambio en el esquema de la base de datos. En conjunto, las migraciones son la historia reproducible de cómo tu BD llegó a su forma actual: cualquiera puede partir de una base vacía y, aplicándolas en orden, obtener exactamente el mismo esquema. Es Git, pero para la estructura de tus datos.</p>
+
+          <h2 id="problema">
+            La BD también es código
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El código fuente lleva décadas resuelto: está en control de versiones, cada cambio tiene su autor y su porqué, y puedes recrear cualquier estado del pasado. El esquema de la base de datos, en cambio, es fácil que viva fuera de ese control: alguien añade una columna con un cliente gráfico, otro la modifica por consola, y nadie sabe ya qué estado tiene cada entorno.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Cambios a mano</h4>
+              <ul>
+                <li><code>ALTER TABLE</code> suelto en producción.</li>
+                <li>Local, staging y producción divergen.</li>
+                <li>Nadie sabe el estado exacto de cada entorno.</li>
+                <li>Imposible reproducir o revertir.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Migraciones versionadas</h4>
+              <ul>
+                <li>Cada cambio es un fichero en el repo.</li>
+                <li>Mismo esquema en todos los entornos.</li>
+                <li>La BD registra qué migraciones aplicó.</li>
+                <li>Reproducible desde cero y reversible.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="que-es">
+            Qué es una migración
+            <a href="#que-es" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una migración es un fichero —con un nombre que lleva una marca temporal o un número de secuencia para ordenarlas— que describe <strong>un</strong> cambio: crear una tabla, añadir una columna, crear un índice. Va en el repositorio, junto al código que la necesita.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · una migración con su ida (up) y su vuelta (down)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+final class Version20260629_AnadeTelefonoACliente
+{
+    public function up(Schema $schema): void
+    {
+        $this-&gt;addSql('ALTER TABLE clientes ADD telefono VARCHAR(20) NULL');
+    }
+
+    public function down(Schema $schema): void
+    {
+        $this-&gt;addSql('ALTER TABLE clientes DROP telefono');
+    }
+}</code></pre>
+          </div>
+          <p>La base de datos guarda en una tabla propia (algo como <code>migrations</code>) qué migraciones ya ejecutó. Así, cuando lanzas el comando de migrar, la herramienta aplica <strong>solo las que faltan</strong>, en orden, y nunca repite una ya aplicada. Ese registro es lo que mantiene cada entorno sincronizado.</p>
+
+          <h2 id="up-down">
+            Up y down
+            <a href="#up-down" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Casi todos los sistemas de migración piden dos métodos: <code>up()</code>, que <strong>aplica</strong> el cambio, y <code>down()</code>, que lo <strong>revierte</strong>. El <code>down</code> es el plan B: si una migración recién desplegada causa problemas, poder volver atrás de forma ordenada vale oro.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · aplicar y revertir desde la terminal</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash"># aplicar las migraciones pendientes
+php bin/console doctrine:migrations:migrate
+
+# revertir hasta una versión concreta (ejecuta los down)
+php bin/console doctrine:migrations:migrate prev</code></pre>
+          </div>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El down no siempre te devuelve los datos</p>
+              <p>Revertir el esquema es fácil; recuperar lo que ya se borró, no. Si una migración hizo <code>DROP COLUMN</code>, su <code>down</code> recrea la columna pero <em>vacía</em>: los datos que tenía se fueron. El <code>down</code> protege la estructura, no el contenido. Por eso los cambios destructivos en producción se piensan dos veces.</p>
+            </div>
+          </div>
+
+          <h2 id="estructura-datos">
+            Estructura vs datos
+            <a href="#estructura-datos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Hay dos cosas distintas que a veces se mezclan, y conviene separarlas mentalmente:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Tipo</th><th>Cambia</th><th>Ejemplo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><b>Migración de estructura</b></td><td>La forma del esquema (DDL)</td><td><code>CREATE TABLE</code>, <code>ADD COLUMN</code>, <code>CREATE INDEX</code></td></tr>
+                <tr><td><b>Migración de datos</b></td><td>El contenido de las filas (DML)</td><td>Rellenar una columna nueva, normalizar valores, mover datos entre tablas</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>El caso clásico que las junta: añades una columna <code>nombre_completo</code> (estructura) y necesitas rellenarla combinando <code>nombre</code> y <code>apellidos</code> de las filas existentes (datos). Lo limpio es separarlo en pasos —y a veces en varias migraciones a lo largo de varios despliegues— para no bloquear una tabla enorme ni dejar la columna a medio poblar. La distinción importa porque una migración de datos sobre millones de filas es una operación pesada que merece el cuidado de una <a href="transacciones-acid.html">transacción</a> bien pensada.</p>
+
+          <h2 id="equipo">
+            En equipo y en producción
+            <a href="#equipo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Las migraciones brillan precisamente cuando no trabajas solo. Como cada una es un fichero versionado, viajan en la misma rama y el mismo <a href="git-ramas-y-flujo.html">pull request</a> que el código que las necesita. Quien hace <code>pull</code> y migra, obtiene el esquema que ese código espera. El despliegue encadena lo de siempre:</p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Llega el código nuevo</b><small>git pull / deploy</small></span>
+              </div>
+              <div class="flow__arrow" data-label="antes de servir"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Se aplican las migraciones pendientes</b><small>El esquema se pone al día</small></span>
+              </div>
+              <div class="flow__arrow" data-label="ya alineados"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Código y esquema coinciden</b><small>La app arranca sobre la BD correcta</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">El paso de migrar es parte del despliegue, normalmente automatizado en el pipeline.</p>
+          </div>
+          <p>El conflicto típico en equipo: dos personas crean una migración a la vez. Como el orden lo da la marca temporal del nombre, rara vez chocan en el fichero, pero sí pueden chocar en el <em>efecto</em> (las dos tocan la misma tabla). Se resuelve como cualquier integración: comunicación y revisar el orden antes de mezclar.</p>
+
+          <h2 id="reglas">
+            Reglas que ahorran sustos
+            <a href="#reglas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un puñado de costumbres que separan las migraciones tranquilas de los despliegues con incidente:</p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Las costumbres que evitan incidentes</p>
+              <p><b>No edites una migración ya aplicada</b> en otros entornos: crea una nueva que corrija. <b>Una migración, un cambio coherente</b>: más fáciles de revisar y revertir. <b>Cuidado con lo destructivo</b> (<code>DROP</code>, <code>NOT NULL</code> sobre datos existentes): hazlo en fases. <b>Prueba la migración con datos reales</b> (una copia de producción), no solo con la base vacía de tu local.</p>
+            </div>
+          </div>
+          <p>La regla de oro detrás de todas: una migración, una vez aplicada en un entorno compartido, es <strong>inmutable</strong>. Cambiarla rompe la reproducibilidad —el entorno que ya la aplicó no la volverá a ejecutar—, que era justo lo que las migraciones venían a darte. ¿Te equivocaste? La corrección es otra migración encima, igual que en Git corriges con un commit nuevo, no reescribiendo la historia ya publicada.</p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una migración es un script versionado de un cambio de esquema. En conjunto, la historia reproducible de tu base de datos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La BD registra qué migraciones aplicó; al migrar solo se ejecutan las pendientes, en orden, sin repetir.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>up</code> aplica el cambio, <code>down</code> lo revierte. El down protege la estructura, no los datos ya borrados.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Separa migraciones de estructura (DDL) de las de datos (DML); las de datos sobre tablas grandes piden cuidado y fases.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una migración aplicada en un entorno compartido es inmutable: para corregir, otra migración encima. Nunca edites la ya aplicada.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="problema-n-mas-1.html">
+              <small>← Anterior</small>
+              <b>El problema N+1</b>
+            </a>
+            <a href="orm-transacciones-unit-of-work.html" class="next">
+              <small>Siguiente →</small>
+              <b>Transacciones y unit of work</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
