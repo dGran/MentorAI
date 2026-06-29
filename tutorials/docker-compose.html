@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>docker-compose: el entorno local — MentorAI</title>
+    <meta name="description" content="docker-compose declara tu entorno completo (app, base de datos, cache) en un YAML y lo levanta con un comando. Servicios, redes que se hablan por nombre y volúmenes que persisten los datos." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>DevOps</span>
+        </nav>
+        <h1 class="tutorial-hero__title">docker-compose: el entorno local</h1>
+        <p class="tutorial-hero__lead">Una app real no es un contenedor: son varios —la aplicación, su base de datos, una cache— que tienen que arrancar juntos y hablarse. Orquestar eso a mano con comandos sueltos es un suplicio. Compose lo declara todo en un fichero y lo levanta con una orden.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">Varios contenedores a la vez</a></li>
+            <li><a href="#yaml">El fichero compose</a></li>
+            <li><a href="#redes">Se hablan por su nombre</a></li>
+            <li><a href="#volumenes">Volúmenes: persistir y editar</a></li>
+            <li><a href="#comandos">Comandos del día a día</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Docker Compose es la herramienta para definir y arrancar aplicaciones de varios contenedores. En vez de lanzar cada contenedor con su <code>docker run</code> lleno de flags, describes todos los servicios en un fichero <code>compose.yaml</code> y los levantas —o los tiras— de golpe. Es el corazón del entorno de desarrollo local containerizado.</p>
+
+          <h2 id="problema">
+            Varios contenedores a la vez
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Tu aplicación necesita PHP, pero también MySQL para los datos y quizá Redis para la cache. Son tres contenedores que deben arrancar, conectarse entre sí y configurarse con sus puertos y credenciales. Hacerlo a mano significa tres <code>docker run</code> largos, en el orden correcto, recordando cada flag, cada vez. Inviable.</p>
+          <p>Compose convierte todo eso en una <strong>descripción declarativa</strong>: dices <em>qué</em> servicios quieres y cómo se relacionan, y él se encarga del <em>cómo</em>. Y como es un fichero, vive en el repositorio: quien clona el proyecto tiene el entorno entero a un comando de distancia.</p>
+
+          <h2 id="yaml">
+            El fichero compose
+            <a href="#yaml" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Es un YAML con una sección <code>services</code>, donde cada entrada es un contenedor. Un entorno típico de app PHP + base de datos:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">compose.yaml · app + base de datos</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>services:
+  app:
+    build: .
+    ports:
+      - "8080:9000"
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.3
+    environment:
+      MYSQL_DATABASE: tienda
+      MYSQL_ROOT_PASSWORD: secreto
+    volumes:
+      - datos-db:/var/lib/mysql
+
+volumes:
+  datos-db:</code></pre>
+          </div>
+          <p>Se lee de un vistazo: dos servicios, <code>app</code> (construido desde tu Dockerfile) y <code>db</code> (la imagen oficial de MySQL). El <code>app</code> publica un puerto, monta el código y declara que depende de <code>db</code>. Abajo, un volumen con nombre para los datos de la base de datos. Todo el entorno, en veinte líneas versionadas.</p>
+
+          <h2 id="redes">
+            Se hablan por su nombre
+            <a href="#redes" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una de las cosas que Compose hace por ti sin que la pidas: crea una <strong>red privada</strong> para tus servicios y los conecta a ella. Dentro de esa red, cada servicio es localizable por <em>el nombre que le diste</em>. Tu app no se conecta a la base de datos por una IP, sino por <code>db</code>:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · la app encuentra la BD por el nombre del servicio</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash"># dentro del contenedor app, el host de la BD es "db"
+DATABASE_URL="mysql://root:secreto@db:3306/tienda"</code></pre>
+          </div>
+          <p>Compose monta un pequeño DNS interno que resuelve <code>db</code> a la IP del contenedor de la base de datos. Esto es enorme: no dependes de IPs que cambian en cada arranque, sino de nombres estables que tú eliges. Es el mismo principio de nombres sobre direcciones del que habla <a href="url-a-fondo.html">URL a fondo</a>, aquí dentro de tu red de contenedores.</p>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Puerto interno ≠ puerto publicado</p>
+              <p>En <code>"8080:9000"</code>, el primero es el puerto en <em>tu máquina</em> y el segundo el del <em>contenedor</em>. Entre contenedores de la misma red se hablan por el puerto interno (<code>db:3306</code>) sin necesidad de publicar nada. Solo publicas (<code>ports</code>) lo que quieres alcanzar desde fuera, como tu navegador.</p>
+            </div>
+          </div>
+
+          <h2 id="volumenes">
+            Volúmenes: persistir y editar
+            <a href="#volumenes" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Recordemos que un <a href="docker-imagen-vs-contenedor.html">contenedor es efímero</a>: lo que escribe dentro muere con él. Los volúmenes son el mecanismo para que algo sobreviva, y en el ejemplo cumplen dos papeles distintos:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Línea</th><th>Tipo</th><th>Para qué</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>datos-db:/var/lib/mysql</code></td><td>Volumen con nombre</td><td><b>Persistencia</b>: los datos de MySQL sobreviven aunque borres y recrees el contenedor.</td></tr>
+                <tr><td><code>.:/app</code></td><td>Bind mount</td><td><b>Desarrollo en vivo</b>: monta tu carpeta de código dentro del contenedor; editas en tu IDE y el cambio se ve al instante, sin reconstruir.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>El bind mount es lo que hace que trabajar containerizado sea cómodo: tu código vive en tu máquina (lo editas con tu editor de siempre) pero se ejecuta dentro del contenedor. No reconstruyes la imagen por cada cambio de una línea. El volumen con nombre, en cambio, deja que Docker gestione dónde guardar los datos que deben perdurar entre reinicios.</p>
+
+          <h2 id="comandos">
+            Comandos del día a día
+            <a href="#comandos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Con el fichero escrito, el entorno entero se maneja con un puñado de comandos:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · levantar, mirar, entrar y tirar el entorno</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash"># levantar todos los servicios en segundo plano
+docker compose up -d
+
+# ver los logs (en vivo con -f)
+docker compose logs -f app
+
+# abrir una shell dentro del contenedor de la app
+docker compose exec app bash
+
+# parar y eliminar contenedores y redes
+docker compose down</code></pre>
+          </div>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Cuidado con <code>down -v</code></p>
+              <p><code>docker compose down</code> normal borra contenedores y redes pero <strong>conserva los volúmenes</strong>, así que tus datos siguen ahí al volver a levantar. Añadir <code>-v</code> (<code>down -v</code>) borra <em>también</em> los volúmenes: te cargas la base de datos. Útil para empezar de cero a propósito, peligroso por error.</p>
+            </div>
+          </div>
+          <p>Una nota sobre el entorno: Compose es la herramienta estrella en <strong>desarrollo local</strong>. Para producción con muchas máquinas y alta disponibilidad, el relevo lo toma un orquestador como Kubernetes; pero ese es otro escalón, y para construir y operar tu servicio en local, Compose es exactamente lo que necesitas.</p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Compose declara una app de varios contenedores en un YAML y la levanta o tira de golpe. El fichero vive en el repo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Cada entrada de <code>services</code> es un contenedor; <code>build</code> usa tu Dockerfile, <code>image</code> usa una imagen ya hecha.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los servicios se encuentran por su nombre en una red privada (<code>db:3306</code>), sin depender de IPs.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Volúmenes con nombre persisten datos (la BD sobrevive); los bind mounts montan tu código para editarlo en vivo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>up -d</code>, <code>logs -f</code>, <code>exec</code>, <code>down</code> cubren el día a día. Ojo con <code>down -v</code>: borra los volúmenes.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="dockerfile-y-capas.html">
+              <small>← Anterior</small>
+              <b>Dockerfile y capas</b>
+            </a>
+            <a href="docker-buenas-practicas.html" class="next">
+              <small>Siguiente →</small>
+              <b>Imágenes pequeñas y buenas prácticas</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

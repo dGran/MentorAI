@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Imágenes pequeñas y buenas prácticas — MentorAI</title>
+    <meta name="description" content="Imágenes Docker pequeñas, rápidas y seguras: elegir bien la base, multi-stage builds para dejar fuera las herramientas de construcción, .dockerignore, no correr como root y no hornear secretos en la imagen." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>DevOps</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Imágenes pequeñas y buenas prácticas</h1>
+        <p class="tutorial-hero__lead">Una imagen funciona aunque pese un gigabyte y corra como root. Pero "funciona" no es "está bien hecha": el tamaño se paga en cada despliegue y la seguridad se paga el día menos pensado. Un puñado de prácticas convierten una imagen torpe en una pequeña, rápida y segura.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#tamano">Por qué importa el tamaño</a></li>
+            <li><a href="#base">Elegir bien la base</a></li>
+            <li><a href="#multi-stage">Multi-stage builds</a></li>
+            <li><a href="#dockerignore">.dockerignore</a></li>
+            <li><a href="#no-root">No corras como root</a></li>
+            <li><a href="#secretos">Secretos fuera de la imagen</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Las buenas prácticas de Docker se reducen a dos objetivos: imágenes <strong>pequeñas</strong> (se construyen, suben y despliegan más rápido, y tienen menos cosas que puedan fallar o ser atacadas) e imágenes <strong>seguras</strong> (mínimo privilegio, sin secretos dentro). Vamos con las que más rendimiento dan por el esfuerzo.</p>
+
+          <h2 id="tamano">
+            Por qué importa el tamaño
+            <a href="#tamano" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una imagen de un gigabyte y otra de cien megas hacen lo mismo, pero la diferencia se paga repetidamente: en cada <code>push</code> al registry, en cada <code>pull</code> al desplegar, en el almacenamiento, en el tiempo de arranque de un servidor nuevo. Multiplica eso por decenas de despliegues al día y el tamaño deja de ser un detalle estético.</p>
+          <p>Y hay un segundo motivo, de seguridad: cuanto más mete una imagen (compiladores, herramientas, paquetes del sistema que no usas), más grande es su <strong>superficie de ataque</strong>. Cada binario presente es algo que podría tener una vulnerabilidad. Una imagen mínima no solo es rápida: tiene menos por donde la ataquen.</p>
+
+          <h2 id="base">
+            Elegir bien la base
+            <a href="#base" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La primera línea del Dockerfile, el <code>FROM</code>, ya decide buena parte del tamaño. Las imágenes oficiales suelen ofrecer variantes:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Etiqueta</th><th>Qué trae</th><th>Tamaño orientativo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>php:8.3</code></td><td>Imagen completa, con muchas utilidades del sistema</td><td>Grande (~500&nbsp;MB)</td></tr>
+                <tr><td><code>php:8.3-slim</code></td><td>Recortada: solo lo esencial</td><td>Media</td></tr>
+                <tr><td><code>php:8.3-alpine</code></td><td>Sobre Alpine Linux, minimalista</td><td>Pequeña (~80&nbsp;MB)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Partir de <code>slim</code> o <code>alpine</code> en lugar de la imagen completa recorta cientos de megas casi gratis. Alpine es la más pequeña, con un matiz: usa una librería de C distinta (musl en vez de glibc), que de vez en cuando da problemas con según qué extensiones nativas. Para PHP, <code>slim</code> suele ser el equilibrio más cómodo entre tamaño y compatibilidad.</p>
+
+          <h2 id="multi-stage">
+            Multi-stage builds
+            <a href="#multi-stage" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La técnica que más reduce el tamaño, y la más elegante. La idea: para <em>construir</em> tu app necesitas herramientas (Composer, compiladores, dependencias de desarrollo) que para <em>ejecutarla</em> no hacen falta. Un multi-stage build usa una imagen "de construcción" llena de herramientas, y luego copia <strong>solo el resultado</strong> a una imagen final limpia.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">Dockerfile · dos etapas: construir y ejecutar</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code># --- etapa 1: construir, con todas las herramientas ---
+FROM composer:2 AS build
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader
+COPY . .
+
+# --- etapa 2: la imagen final, limpia ---
+FROM php:8.3-fpm-slim
+WORKDIR /app
+COPY --from=build /app /app
+CMD ["php-fpm"]</code></pre>
+          </div>
+          <p>La magia está en <code>COPY --from=build</code>: la imagen final parte de una base limpia y se queda <em>solo</em> con el resultado de la etapa de construcción (el código y las dependencias ya instaladas). Composer, su caché y todo lo que solo servía para construir se quedan en la etapa 1 y no viajan a la imagen final. El resultado pesa una fracción.</p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Construir y ejecutar son entornos distintos</p>
+              <p>Es la misma idea que separa las dependencias de desarrollo de las de producción: lo que necesitas para preparar el artefacto no es lo que necesitas para correrlo. El multi-stage lleva esa separación al propio empaquetado.</p>
+            </div>
+          </div>
+
+          <h2 id="dockerignore">
+            .dockerignore
+            <a href="#dockerignore" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Cuando haces <code>COPY . .</code>, Docker copia <em>todo</em> el directorio… incluido lo que no debería entrar: la carpeta <code>vendor</code> que vas a reinstalar, los <code>node_modules</code>, el <code>.git</code> entero, ficheros <code>.env</code> con secretos. El <code>.dockerignore</code> —hermano del <code>.gitignore</code>— le dice a Docker qué dejar fuera:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">.dockerignore · lo que no entra en la imagen</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>.git
+vendor
+node_modules
+.env
+*.log</code></pre>
+          </div>
+          <p>Dos beneficios de un fichero de cinco líneas: imágenes más pequeñas (no arrastras basura) y builds más rápidos (Docker manda menos ficheros al construir). Y uno de seguridad nada menor: evita que un <code>.env</code> con credenciales acabe horneado dentro de la imagen sin darte cuenta.</p>
+
+          <h2 id="no-root">
+            No corras como root
+            <a href="#no-root" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Por defecto, el proceso dentro de un contenedor corre como <code>root</code>. Si alguien logra explotar tu aplicación, hereda esos privilegios dentro del contenedor, lo que le da mucho más margen para hacer daño o intentar escapar. La práctica segura es crear un usuario sin privilegios y cambiar a él antes del <code>CMD</code>:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">Dockerfile · bajar privilegios antes de ejecutar</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>RUN useradd --system --no-create-home app
+USER app
+CMD ["php-fpm"]</code></pre>
+          </div>
+          <p>Es el <strong>principio de mínimo privilegio</strong> aplicado al contenedor: el proceso solo debería tener los permisos que de verdad necesita, ni uno más. Un contenedor que corre como un usuario normal es una capa más de defensa si algo va mal por encima.</p>
+
+          <h2 id="secretos">
+            Secretos fuera de la imagen
+            <a href="#secretos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La regla que nunca debe romperse. Una imagen se comparte, se guarda en registries y sus capas se pueden inspeccionar: cualquier secreto que metas dentro —una contraseña, una clave de API, un token— queda ahí para siempre y al alcance de quien tenga la imagen.</p>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Nunca hornees credenciales en la imagen</p>
+              <p>Ni con <code>ENV PASSWORD=...</code> ni copiando un <code>.env</code>. Borrarlo en una capa posterior <em>no</em> lo elimina: sigue en la capa donde lo añadiste, recuperable. Los secretos se inyectan <strong>en tiempo de ejecución</strong> como variables de entorno (vía compose, el orquestador o un gestor de secretos), nunca en construcción. Es parte del cuadro de <a href="owasp.html">seguridad</a> que cierra este planteamiento.</p>
+            </div>
+          </div>
+          <p>La misma imagen, sin un solo secreto dentro, sirve para desarrollo, staging y producción; lo único que cambia entre entornos son las variables que le inyectas al arrancar. Esa separación entre la imagen (igual en todos lados) y la configuración (distinta por entorno) es exactamente lo que predica la metodología de los doce factores, y es lo que hace que un mismo artefacto sea promocionable de un entorno al siguiente con confianza.</p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Imágenes pequeñas se construyen, suben y arrancan más rápido, y tienen menos superficie de ataque.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Parte de una base recortada (<code>slim</code>/<code>alpine</code>) en vez de la imagen completa: cientos de megas menos casi gratis.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Multi-stage build: construye con herramientas en una etapa y copia solo el resultado a una imagen final limpia.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Usa <code>.dockerignore</code> para no copiar basura ni secretos, y corre como un usuario sin privilegios, no como root.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Jamás hornees secretos en la imagen: se inyectan en ejecución. La imagen es igual en todos los entornos; la config cambia.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="docker-compose.html">
+              <small>← Anterior</small>
+              <b>docker-compose</b>
+            </a>
+            <a href="php-en-docker.html" class="next">
+              <small>Siguiente →</small>
+              <b>PHP en Docker</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

@@ -103,5 +103,9 @@ COMPLETO (OOP, SOLID, Clean Code, di-contenedores publicados 2026-06-27).
 - ✅ **Acceso a datos / ORM** publicado (2026-06-29, curso `acceso-a-datos`, 5
   lecciones: orm-vs-sql → AR vs DM → N+1 → migraciones → transacciones/unit of work).
   Slug `acceso-a-datos` y 5 lecciones (4 del plan + transacciones) aprobados.
-- ⬜ **SIGUIENTE: Docker** (curso `docker`), luego CI/CD. Config y Composer como
-  artículos sueltos intercalados.
+- ✅ **Docker** publicado (2026-06-29, curso `docker`, 5 lecciones: imagen-vs-contenedor
+  → dockerfile-y-capas → docker-compose → buenas-practicas → php-en-docker). Categoría
+  nueva en uso `devops`.
+- ⬜ **SIGUIENTE: CI/CD** (curso `ci-cd`), último del frente. Config/12-factor y Composer
+  como artículos sueltos intercalados. Pendiente también montar ruta "construir un
+  servicio" en paths.js (ya hay material: git + apis-rest + acceso-a-datos + docker).

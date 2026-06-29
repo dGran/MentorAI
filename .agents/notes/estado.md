@@ -470,6 +470,39 @@ Tercer curso del `plan-practica-backend.md`. Catálogo: **83 publicados, 11 curs
   (todos resuelven), 83 entradas, featured=1 orm-vs-sql, 0 duplicados, 11 cursos.
 - **SIGUIENTE** (plan-practica-backend): Docker → CI/CD. Config y Composer sueltos.
 
+## Curso Docker publicado (2026-06-29) — HECHO (commit+push)
+Cuarto curso del `plan-practica-backend.md`. Catálogo: **88 publicados, 12 cursos**.
+- **Curso `docker`** ("Docker para desarrollo", 5 lecciones, en courses.js tras
+  `acceso-a-datos`). Categoría **`devops`** (label "DevOps" ya existía en
+  CATEGORY_LABELS, antes sin usar → ahora estrena chip), topic "Docker", icon `code`.
+  Bloques `bash` (CLI) y Dockerfile/compose/nginx **sin data-lang** (el highlighter no
+  los conoce). featured movido de orm-vs-sql → docker-imagen-vs-contenedor.
+  Continuó sin preguntar tras ORM (lo pidió el usuario explícitamente); estructura de 5
+  lecciones tomada del plan + lección PHP-en-Docker por el perfil PHP/containerizado.
+  - `docker-imagen-vs-contenedor` (Princ, 13m): qué resuelve ("en mi máquina funciona"),
+    contenedor ≠ VM (comparte kernel), imagen=molde/contenedor=galleta (clase/objeto),
+    ciclo pull/run/ps/stop, efímero → volúmenes. Cruza procesos-hilos, oop-clases-y-objetos.
+  - `dockerfile-y-capas` (Int, 14m): receta declarativa, instrucciones (FROM/WORKDIR/
+    COPY/RUN/ENV/EXPOSE/CMD; RUN en build vs CMD en run), cada instrucción=capa, caché de
+    capas (una capa cambiada invalida las de abajo), orden óptimo (deps antes que código).
+  - `docker-compose` (Int, 14m): varios contenedores, compose.yaml (services), red privada
+    (se hablan por nombre, db:3306), volúmenes (named=persistencia, bind=código en vivo),
+    up/logs/exec/down (ojo down -v). Cruza url-a-fondo, docker-imagen-vs-contenedor.
+  - `docker-buenas-practicas` (Int, 14m): tamaño importa (velocidad+superficie ataque),
+    base slim/alpine, multi-stage (build con herramientas → imagen final limpia),
+    .dockerignore, no root (mínimo privilegio), secretos fuera de la imagen (12-factor).
+    Cruza owasp.
+  - `php-en-docker` (Int, 15m): nginx + php-fpm en contenedores separados (1 proceso/
+    contenedor), php-fpm=PHP como servicio FastCGI (no servidor web), fastcgi_pass app:9000,
+    extensiones (docker-php-ext-install / pecl), compose completo web+app+db, local vs prod.
+    Cruza php-fpm, workers-php, extensiones-php, opcache, docker-compose, docker-buenas-practicas.
+- **paths.js NO tocado** (mismo criterio; transversal al frente práctico).
+- Verificado: node --check, TOC↔h2 (0 ×5), escapado bash/Dockerfile/yaml (0 crudos),
+  enlaces (todos resuelven), 88 entradas, featured=1, 0 duplicados, 12 cursos, label devops.
+- **SIGUIENTE** (plan-practica-backend): **CI/CD** (último curso del frente). Luego Config/
+  12-factor y Composer como artículos sueltos. Y montar la ruta "carrera"/"construir un
+  servicio" en paths.js (ya hay material: git, apis-rest, acceso-a-datos, docker).
+
 ## Cómo añadir un tutorial
 Ver README.md → "Añadir un tutorial nuevo" (copiar plantilla, rellenar, añadir
 tarjeta en index.html con `data-categories`).
