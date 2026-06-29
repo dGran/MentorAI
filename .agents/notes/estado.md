@@ -390,7 +390,7 @@ Primer curso del `plan-practica-backend.md`. Catálogo: **73 publicados, 9 curso
 - **SIGUIENTE** (plan-practica-backend): APIs REST → acceso a datos/ORM → Docker →
   CI/CD. Y montar la ruta "carrera" (plan-carrera-completa). Estructura por aprobar.
 
-## Curso APIs REST publicado (2026-06-29) — HECHO (sin commit)
+## Curso APIs REST publicado (2026-06-29) — HECHO (commit+push: 7625f7a)
 Segundo curso del `plan-practica-backend.md`. Catálogo: **78 publicados, 10 cursos**.
 - **Curso `apis-rest`** (5 lecciones, en courses.js tras `git`). Categoría nueva
   **`apis`** (label "APIs" en CATEGORY_LABELS, catalog.js). topic "APIs REST", icon
