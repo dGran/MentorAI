@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Verbos y códigos de estado con criterio — MentorAI</title>
+    <meta name="description" content="Elegir el método HTTP y el código de estado correctos al diseñar una API: GET/POST/PUT/PATCH/DELETE, seguro vs idempotente, y la familia 2xx/4xx/5xx aplicada con criterio." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>APIs</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Verbos y códigos de estado con criterio</h1>
+        <p class="tutorial-hero__lead">Si la URL nombra el recurso, el método dice qué le haces y el código de estado dice cómo fue. Elegir bien los dos es lo que hace que un cliente entienda tu API sin preguntarte. Aquí está el criterio para no dudar.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#verbos">Un verbo para cada intención</a></li>
+            <li><a href="#put-patch">PUT reemplaza, PATCH parchea</a></li>
+            <li><a href="#seguro-idempotente">Seguro e idempotente</a></li>
+            <li><a href="#estados">Códigos de estado con criterio</a></li>
+            <li><a href="#eleccion">La elección del código, caso a caso</a></li>
+            <li><a href="#errores">Errores que se cuelan</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Diseñar bien la capa HTTP de una API se reduce a dos decisiones que se repiten en cada endpoint: qué <strong>método</strong> expresa lo que el cliente quiere hacer, y qué <strong>código de estado</strong> resume lo que pasó. Las dos tienen respuestas con criterio, no a gusto.</p>
+
+          <h2 id="verbos">
+            Un verbo para cada intención
+            <a href="#verbos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>HTTP trae un puñado de métodos con significado acordado. En REST cada uno expresa una intención sobre el recurso de la URL. Estos son los cinco del día a día:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Método</th><th>Intención</th><th>Ejemplo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>GET</code></td><td>Leer la representación de un recurso. Nunca modifica nada.</td><td><code>GET /pedidos/1001</code></td></tr>
+                <tr><td><code>POST</code></td><td>Crear un recurso nuevo en una colección, o disparar un proceso.</td><td><code>POST /pedidos</code></td></tr>
+                <tr><td><code>PUT</code></td><td>Reemplazar por completo un recurso (o crearlo en una URL conocida).</td><td><code>PUT /usuarios/42</code></td></tr>
+                <tr><td><code>PATCH</code></td><td>Modificar parcialmente un recurso: solo los campos que mandas.</td><td><code>PATCH /usuarios/42</code></td></tr>
+                <tr><td><code>DELETE</code></td><td>Borrar el recurso.</td><td><code>DELETE /pedidos/1001</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>La regla de oro: <strong>el método es el verbo; la URL nunca lo es</strong>. En cuanto veas <code>/crearPedido</code> o <code>/usuarios/borrar</code>, sabes que algo se ha torcido: ese verbo pertenece al método HTTP. Fíjate también en que <code>POST</code> va contra la colección (<code>/pedidos</code>) porque aún no existe el recurso, mientras que <code>PUT</code>, <code>PATCH</code> y <code>DELETE</code> van contra un recurso concreto que ya tiene URL.</p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">¿Y las acciones que no son CRUD?</p>
+              <p>Un "publicar", un "reembolsar", un "enviar". Lo más limpio es modelarlas como un recurso (<code>POST /pedidos/1001/reembolsos</code>) o como un cambio de estado vía <code>PATCH</code>. Cuando de verdad no encaje, un <code>POST</code> a una sub-URL de acción (<code>POST /pedidos/1001/envio</code>) es un compromiso aceptado. Lo vemos en la lección de <a href="rest-diseno-de-urls.html">diseño de URLs</a>.</p>
+            </div>
+          </div>
+
+          <h2 id="put-patch">
+            PUT reemplaza, PATCH parchea
+            <a href="#put-patch" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Es la confusión más común. <code>PUT</code> manda la <strong>representación completa</strong> del recurso: lo que envías es el nuevo estado entero, y los campos que omitas se entienden como borrados o reseteados. <code>PATCH</code> manda solo el <strong>cambio</strong>: los campos que incluyes se actualizan y el resto se queda como estaba.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>PATCH /usuarios/42 — cambiar el email</h4>
+              <ul>
+                <li><code>{ "email": "nuevo@ej.com" }</code></li>
+                <li>El <code>nombre</code> y el resto siguen intactos.</li>
+                <li>Mandas lo que cambia.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>PUT /usuarios/42 — con el mismo cuerpo</h4>
+              <ul>
+                <li><code>{ "email": "nuevo@ej.com" }</code></li>
+                <li>El <code>nombre</code> ausente: ¡se borra!</li>
+                <li>PUT espera el recurso entero.</li>
+              </ul>
+            </div>
+          </div>
+          <p>De ahí la regla práctica: usa <code>PATCH</code> para cambios parciales (lo habitual en formularios de edición) y reserva <code>PUT</code> para cuando de verdad reemplazas el recurso completo. Mandar medio recurso por <code>PUT</code> es una fuente clásica de "se me han borrado campos sin querer".</p>
+
+          <h2 id="seguro-idempotente">
+            Seguro e idempotente
+            <a href="#seguro-idempotente" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Dos propiedades de los métodos que el diseño debe respetar, porque clientes, proxies y caches cuentan con ellas:</p>
+          <ul>
+            <li><strong>Seguro</strong>: no modifica el estado del servidor. Solo lee. Un buscador puede recorrer todos los enlaces <code>GET</code> de tu sitio sin miedo a romper nada.</li>
+            <li><strong>Idempotente</strong>: repetir la misma petición varias veces deja el mismo resultado que hacerla una vez. Si se pierde la respuesta y el cliente reintenta, no pasa nada malo.</li>
+          </ul>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Método</th><th>¿Seguro?</th><th>¿Idempotente?</th><th>Por qué</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>GET</code></td><td>Sí</td><td>Sí</td><td>Solo lee; leer mil veces no cambia nada.</td></tr>
+                <tr><td><code>PUT</code></td><td>No</td><td>Sí</td><td>Dejar el recurso en el estado X repetido = estado X.</td></tr>
+                <tr><td><code>DELETE</code></td><td>No</td><td>Sí</td><td>Borrar lo ya borrado deja el mismo resultado (no existe).</td></tr>
+                <tr><td><code>PATCH</code></td><td>No</td><td>Depende</td><td>Idempotente si fija valores; no lo es si hace "suma 1".</td></tr>
+                <tr><td><code>POST</code></td><td>No</td><td>No</td><td>Repetirlo crea un recurso nuevo cada vez (otro pedido).</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>La consecuencia de diseño es directa: como <code>POST</code> no es idempotente, un cliente que reintenta tras un timeout puede crear pedidos duplicados. Por eso las operaciones de crear con dinero de por medio necesitan una clave de idempotencia explícita. Es un tema con suficiente miga propia: lo desarrolla el tutorial <a href="idempotencia.html">Idempotencia</a>, y volvemos a aplicarlo en la lección de <a href="rest-errores-y-validacion.html">errores y validación</a>.</p>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">No hagas un GET con efectos</p>
+              <p>El error más caro contra "seguro": <code>GET /pedidos/1001/cancelar</code>. Un prefetch del navegador, un crawler o un acelerador de enlaces lo dispararán solos y cancelarán pedidos sin que nadie pulse nada. Cualquier cosa que cambie estado va por <code>POST</code>, <code>PUT</code>, <code>PATCH</code> o <code>DELETE</code>; nunca por <code>GET</code>.</p>
+            </div>
+          </div>
+
+          <h2 id="estados">
+            Códigos de estado con criterio
+            <a href="#estados" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El código de estado es el resumen de tres dígitos de cómo fue la petición. La primera cifra ya cuenta la historia, y es lo primero que mira cualquier cliente:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Familia</th><th>Significa</th><th>De quién es la "culpa"</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><b>2xx</b></td><td>Éxito. Se hizo lo que pedías.</td><td>—</td></tr>
+                <tr><td><b>3xx</b></td><td>Redirección. El recurso está en otro sitio.</td><td>—</td></tr>
+                <tr><td><b>4xx</b></td><td>Error del cliente. La petición está mal.</td><td>Del que llama (corregir y reintentar tiene sentido).</td></tr>
+                <tr><td><b>5xx</b></td><td>Error del servidor. La petición estaba bien, el servidor falló.</td><td>Del servidor (reintentar más tarde puede funcionar).</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Esa frontera 4xx/5xx es la más importante de respetar: define quién tiene que actuar. Un dato mal validado es <strong>4xx</strong> (el cliente lo arregla); una excepción no capturada o una base de datos caída es <strong>5xx</strong> (el cliente no puede hacer nada salvo reintentar). Confundirlas manda a todo el mundo a buscar el problema en el sitio equivocado.</p>
+
+          <h2 id="eleccion">
+            La elección del código, caso a caso
+            <a href="#eleccion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Dentro de cada familia, estos son los códigos que cubren casi todo lo que devuelve una API. No necesitas más para empezar:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Código</th><th>Cuándo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>200 OK</code></td><td><code>GET</code>, <code>PATCH</code> o <code>PUT</code> que salen bien y devuelven cuerpo.</td></tr>
+                <tr><td><code>201 Created</code></td><td><code>POST</code> que crea un recurso. Acompáñalo de la cabecera <code>Location</code> con su URL.</td></tr>
+                <tr><td><code>204 No Content</code></td><td>Éxito sin cuerpo que devolver. Típico de <code>DELETE</code>.</td></tr>
+                <tr><td><code>400 Bad Request</code></td><td>La petición está malformada o falla la validación de entrada.</td></tr>
+                <tr><td><code>401 Unauthorized</code></td><td>No te has autenticado (falta o caduca el token). Realmente es "no autenticado".</td></tr>
+                <tr><td><code>403 Forbidden</code></td><td>Estás autenticado, pero no tienes permiso para esto.</td></tr>
+                <tr><td><code>404 Not Found</code></td><td>El recurso no existe (o no quieres revelar que existe).</td></tr>
+                <tr><td><code>409 Conflict</code></td><td>Choque con el estado actual: un email ya registrado, una edición concurrente.</td></tr>
+                <tr><td><code>422 Unprocessable Entity</code></td><td>Sintaxis correcta pero semántica inválida. Muy usado para errores de validación de campos.</td></tr>
+                <tr><td><code>500 Internal Server Error</code></td><td>Algo reventó en el servidor. Es tu bug, no el del cliente.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>El par <code>201</code> + <code>Location</code> es la respuesta canónica de un <code>POST</code> que crea: cuenta que se creó y dónde vive lo creado.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">http · crear un recurso: 201 + Location</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>POST /pedidos HTTP/1.1
+Content-Type: application/json
+
+{ "producto": "teclado", "cantidad": 1 }
+
+HTTP/1.1 201 Created
+Location: /pedidos/1001
+Content-Type: application/json
+
+{ "id": 1001, "estado": "pendiente_de_pago" }</code></pre>
+          </div>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">401 vs 403, la pareja que todos confunden</p>
+              <p>Truco mnemotécnico: <code>401</code> es "no sé quién eres" (autenticación: identifícate). <code>403</code> es "sé quién eres y aun así no puedes" (autorización: permisos). El detalle de tokens y permisos está en <a href="autenticacion.html">Autenticación</a>.</p>
+            </div>
+          </div>
+
+          <h2 id="errores">
+            Errores que se cuelan
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Tres antipatrones de la capa HTTP que aparecen una y otra vez:</p>
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Así no</h4>
+              <ul>
+                <li><code>200 OK</code> con <code>{"error":"no encontrado"}</code> dentro: el cliente cree que fue bien.</li>
+                <li><code>POST</code> para todo, incluso para leer.</li>
+                <li>Un <code>500</code> cuando el cliente mandó un campo inválido (es culpa suya, va 4xx).</li>
+                <li>Inventar códigos raros (<code>299</code>, <code>420</code>) que nadie interpreta.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Así sí</h4>
+              <ul>
+                <li>El código de estado dice la verdad; el cuerpo da el detalle.</li>
+                <li>Cada verbo para su intención (lees con <code>GET</code>).</li>
+                <li>4xx para errores del cliente, 5xx para fallos del servidor.</li>
+                <li>Códigos estándar; el cliente ya sabe interpretarlos.</li>
+              </ul>
+            </div>
+          </div>
+          <p>El primero es el más dañino: devolver <code>200</code> con un error metido en el cuerpo rompe a todos los que se fían del código de estado —monitorización, reintentos, caches— y obliga a cada cliente a leer el JSON para saber si algo falló. El código de estado <em>es</em> la señal; que diga la verdad. Cómo dar el detalle del error de forma consistente es justo lo que veremos en la lección de <a href="rest-errores-y-validacion.html">errores y validación</a>.</p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El método es el verbo (GET lee, POST crea, PUT reemplaza, PATCH parchea, DELETE borra); la URL nunca lleva el verbo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>PUT manda el recurso completo (lo que omitas se pierde); PATCH manda solo los campos a cambiar.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>GET es seguro (no modifica); GET, PUT y DELETE son idempotentes; POST no lo es: repetirlo crea duplicados.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La frontera 4xx/5xx dice de quién es el problema: 4xx lo arregla el cliente, 5xx es fallo del servidor.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Nunca devuelvas 200 con un error dentro: el código de estado es la señal y tiene que decir la verdad.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="rest-que-es.html">
+              <small>← Anterior</small>
+              <b>Qué es REST de verdad</b>
+            </a>
+            <a href="rest-diseno-de-urls.html" class="next">
+              <small>Siguiente →</small>
+              <b>Diseño de URLs</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

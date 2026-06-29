@@ -35,6 +35,21 @@ window.MENTORAI_COURSES = [
     ],
   },
   {
+    slug: "apis-rest",
+    title: "Diseño de APIs REST",
+    summary:
+      "Diseñar una API que se entienda sola: qué es REST de verdad (recursos, representaciones, sin estado), elegir verbo y código de estado con criterio, nombrar URLs y paginar, devolver errores consistentes con problem+json, y cuándo REST, RPC o GraphQL.",
+    level: "Intermedio",
+    icon: "signal",
+    lessons: [
+      "rest-que-es",
+      "rest-metodos-y-estados",
+      "rest-diseno-de-urls",
+      "rest-errores-y-validacion",
+      "rest-vs-rpc-vs-graphql",
+    ],
+  },
+  {
     slug: "oop",
     title: "Programación orientada a objetos",
     summary:

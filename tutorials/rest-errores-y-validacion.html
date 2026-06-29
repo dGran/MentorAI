@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Errores y validación en una API — MentorAI</title>
+    <meta name="description" content="Errores de API que se entienden: un formato consistente con problem+json, validación de entrada que devuelve todos los fallos a la vez, y reintentos seguros con claves de idempotencia." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>APIs</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Errores y validación en una API</h1>
+        <p class="tutorial-hero__lead">El día feliz de una API es el fácil; lo que la hace usable de verdad es cómo trata el error. Un formato de error consistente, una validación que explica qué falló y reintentos que no duplican nada: eso es lo que separa una API que da gusto integrar de una que da miedo.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#consistencia">Un solo formato de error</a></li>
+            <li><a href="#problem-json">problem+json, el estándar</a></li>
+            <li><a href="#validacion">Validar la entrada</a></li>
+            <li><a href="#todos-los-errores">Devuelve todos los fallos</a></li>
+            <li><a href="#filtraciones">Qué no contar en un error</a></li>
+            <li><a href="#idempotencia">Reintentos que no duplican</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Una API se integra leyendo sus errores tanto como sus éxitos. Si cada endpoint falla a su manera, quien te consume escribe un parser distinto por caso y acaba odiándote. La meta de esta lección es que todos tus errores tengan la misma forma, digan lo justo y permitan reintentar sin miedo.</p>
+
+          <h2 id="consistencia">
+            Un solo formato de error
+            <a href="#consistencia" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La decisión más rentable sobre errores es la más simple: que <strong>todos</strong> tengan la misma estructura. Un cliente que aprende a leer un error de tu API ya sabe leerlos todos. Da igual la forma exacta que elijas mientras sea una sola y la respete cada endpoint.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Errores que cambian de forma</h4>
+              <ul>
+                <li>Un endpoint: <code>{"error":"texto"}</code></li>
+                <li>Otro: <code>{"mensaje":"...","ok":false}</code></li>
+                <li>Otro: un string pelado, sin JSON.</li>
+                <li>El cliente parsea cada caso a mano.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Un contrato de error</h4>
+              <ul>
+                <li>Misma estructura en toda la API.</li>
+                <li>Un campo legible para humanos y uno estable para máquinas.</li>
+                <li>El código de estado HTTP correcto, además del cuerpo.</li>
+                <li>El cliente escribe el manejo una vez.</li>
+              </ul>
+            </div>
+          </div>
+          <p>Fíjate en el último punto de la izquierda: el cuerpo del error <strong>acompaña</strong> al código de estado, no lo sustituye. El <code>422</code> o el <code>409</code> ya dijimos que es la señal (lo vimos en <a href="rest-metodos-y-estados.html">verbos y códigos de estado</a>); el cuerpo solo añade el detalle.</p>
+
+          <h2 id="problem-json">
+            problem+json, el estándar
+            <a href="#problem-json" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>No hace falta inventar el formato: existe un estándar, <strong>Problem Details for HTTP APIs</strong> (RFC 9457, antes 7807). Define un cuerpo JSON con un <code>Content-Type</code> propio, <code>application/problem+json</code>, y unos campos acordados:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Campo</th><th>Para qué</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>type</code></td><td>URI que identifica el <em>tipo</em> de problema. Estable, pensado para máquinas.</td></tr>
+                <tr><td><code>title</code></td><td>Resumen legible y corto del problema. No cambia entre ocurrencias.</td></tr>
+                <tr><td><code>status</code></td><td>El código de estado HTTP, repetido en el cuerpo por comodidad.</td></tr>
+                <tr><td><code>detail</code></td><td>Explicación concreta de <em>esta</em> ocurrencia, para un humano.</td></tr>
+                <tr><td><code>instance</code></td><td>URI de la ocurrencia concreta (útil para correlacionar con logs).</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Y puedes añadir campos propios. Para validación, lo habitual es sumar un array <code>errors</code> con el detalle por campo:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">http · un error de validación en problem+json</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>HTTP/1.1 422 Unprocessable Entity
+Content-Type: application/problem+json
+
+{
+  "type": "https://api.ejemplo.com/errores/validacion",
+  "title": "La petición no es válida",
+  "status": 422,
+  "detail": "Revisa los campos marcados.",
+  "errors": [
+    { "campo": "email",    "mensaje": "Formato de email no válido" },
+    { "campo": "cantidad", "mensaje": "Debe ser mayor que 0" }
+  ]
+}</code></pre>
+          </div>
+          <p>Que el <code>type</code> sea una URI no es capricho: es un identificador global y estable que el cliente puede comparar (<code>if type == ".../validacion"</code>) sin parsear textos que cambian de idioma o de redacción. El <code>title</code> es para que lo lea una persona; el <code>type</code> es para que lo entienda el código.</p>
+
+          <h2 id="validacion">
+            Validar la entrada
+            <a href="#validacion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Toda entrada que cruza la frontera de tu API es sospechosa hasta que la validas. La regla mental: <strong>nunca confíes en el cliente</strong>, ni siquiera en tu propio frontend. La validación del navegador es comodidad para el usuario; la del servidor es la que de verdad protege tus datos, porque cualquiera puede saltarse la del navegador y llamar a la API directamente.</p>
+          <p>Valida en el borde, antes de tocar la lógica de negocio: tipos correctos, campos obligatorios presentes, rangos y formatos, y reglas de negocio (un email no repetido, un stock suficiente). Y distingue dos códigos que se confunden:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Situación</th><th>Código</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>El JSON está roto, falta un campo obligatorio, un tipo no cuadra</td><td><code>400 Bad Request</code></td></tr>
+                <tr><td>El JSON es correcto pero los valores no pasan las reglas (email inválido, cantidad negativa)</td><td><code>422 Unprocessable Entity</code></td></tr>
+                <tr><td>Choca con el estado actual (email ya registrado, versión obsoleta)</td><td><code>409 Conflict</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Validar también es defenderse</p>
+              <p>La validación de entrada es la primera línea contra inyecciones y datos corruptos. No sustituye a las consultas parametrizadas ni al escapado, pero recorta la superficie de ataque. Es una pieza del cuadro completo de <a href="owasp.html">seguridad web</a>.</p>
+            </div>
+          </div>
+
+          <h2 id="todos-los-errores">
+            Devuelve todos los fallos
+            <a href="#todos-los-errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un detalle pequeño con un impacto enorme en la experiencia: cuando validas un formulario con diez campos y fallan tres, <strong>devuélvelos los tres a la vez</strong>, no el primero y paras. Si fallas de uno en uno, obligas al cliente a un baile de prueba-error: corrige uno, reenvía, descubre el siguiente, corrige, reenvía…</p>
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Falla al primer error</h4>
+              <ul>
+                <li><code>{"error":"email inválido"}</code></li>
+                <li>El usuario lo corrige y reenvía.</li>
+                <li>Ahora: "cantidad inválida". Y otra vuelta.</li>
+                <li>Tres envíos para tres errores.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Acumula y devuelve todo</h4>
+              <ul>
+                <li>El array <code>errors</code> con los tres campos.</li>
+                <li>El usuario los corrige de una.</li>
+                <li>Un solo reenvío.</li>
+                <li>El formulario puede marcar cada campo en rojo.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="filtraciones">
+            Qué no contar en un error
+            <a href="#filtraciones" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un error generoso de más es un agujero de seguridad. Lo que mandas en un <code>5xx</code> lo puede leer un atacante igual que un cliente legítimo, así que cuida el equilibrio entre "útil para depurar" y "regalo para quien ataca".</p>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Nunca filtres el interior por el cuerpo del error</p>
+              <p>Fuera de la respuesta: stack traces, nombres de tablas y columnas, consultas SQL, rutas del sistema de ficheros, versiones exactas del software. Todo eso es un mapa para un atacante. El cliente recibe un mensaje genérico y un identificador de error; el detalle técnico va a tus logs del servidor, correlacionado por ese identificador.</p>
+            </div>
+          </div>
+          <p>Hay un matiz fino en los <code>404</code> frente a los <code>403</code>: a veces revelar que un recurso <em>existe</em> pero no tienes permiso (<code>403</code>) ya filtra información. Para recursos sensibles, responder <code>404</code> ("aquí no hay nada") puede ser más prudente que <code>403</code> ("existe, pero no es para ti"). Es una decisión de diseño, no una regla fija.</p>
+
+          <h2 id="idempotencia">
+            Reintentos que no duplican
+            <a href="#idempotencia" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La red falla. Un cliente manda <code>POST /pagos</code>, el pago se procesa, pero la respuesta se pierde por el camino. El cliente no sabe si funcionó, así que reintenta… y cobra dos veces. Como vimos, <code>POST</code> no es idempotente, y aquí eso duele de verdad.</p>
+          <p>La solución acordada es la <strong>clave de idempotencia</strong>: el cliente genera un identificador único para la operación y lo manda en una cabecera. El servidor recuerda esa clave; si llega repetida, en vez de procesar otra vez devuelve el resultado de la primera.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">http · el reintento llega con la misma clave</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>POST /pagos HTTP/1.1
+Idempotency-Key: 8f3a1c7e-2b4d-49a0-9e21-7c6f0b2d5a11
+Content-Type: application/json
+
+{ "pedido": 1001, "importe": 49.90 }</code></pre>
+          </div>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Llega una clave</b><small>¿La he visto antes?</small></span>
+              </div>
+              <div class="flow__arrow" data-label="es nueva"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Proceso y guardo</b><small>Asocio el resultado a la clave</small></span>
+              </div>
+              <div class="flow__arrow" data-label="llega repetida"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Devuelvo lo guardado</b><small>Sin volver a cobrar</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">El reintento es seguro: la segunda petición con la misma clave no ejecuta de nuevo.</p>
+          </div>
+          <p>Esto convierte un <code>POST</code> peligroso en un reintento seguro sin cambiar su semántica. El mecanismo completo —cuánto guardar la clave, qué pasa si la operación aún está en curso, cómo lo hacen Stripe y compañía— está en el tutorial dedicado: <a href="idempotencia.html">Idempotencia</a>.</p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un único formato de error en toda la API: el cliente aprende a leerlo una vez y vale para todos los endpoints.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>No inventes: <code>application/problem+json</code> (RFC 9457) ya define los campos. Un <code>type</code> estable para máquinas, un <code>title</code> para humanos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Valida en el servidor siempre; nunca confíes en el cliente. 400 para malformado, 422 para semántica inválida, 409 para conflicto.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Devuelve todos los errores de validación a la vez, no de uno en uno. Y no filtres stack traces ni internals en el cuerpo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una clave de idempotencia (<code>Idempotency-Key</code>) convierte un POST en un reintento seguro: la repetición no vuelve a ejecutar.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="rest-diseno-de-urls.html">
+              <small>← Anterior</small>
+              <b>Diseño de URLs</b>
+            </a>
+            <a href="rest-vs-rpc-vs-graphql.html" class="next">
+              <small>Siguiente →</small>
+              <b>REST vs RPC vs GraphQL</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

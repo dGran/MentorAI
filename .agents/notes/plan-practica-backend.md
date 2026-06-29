@@ -94,6 +94,11 @@ pendiente: phpunit 6 + observabilidad 9). `plan-diseno-y-calidad.md` ya está
 COMPLETO (OOP, SOLID, Clean Code, di-contenedores publicados 2026-06-27).
 
 ## Estado
-**Cola documentada; pendiente aprobar estructura curso a curso para arrancar la
-autoría.** El usuario quiere empezar a meter estos temas; el siguiente paso
-natural es Git (lo pidió explícito) o APIs REST.
+**Cola documentada; estructura se aprueba curso a curso antes de la autoría.**
+- ✅ **Git** publicado (2026-06-27, curso `git`, 3 lecciones).
+- ✅ **APIs REST** publicado (2026-06-29, curso `apis-rest`, 5 lecciones, categoría
+  nueva `apis`). Estructura aprobada: 5 lecciones (REST → verbos/estados → URLs →
+  errores/validación → REST vs RPC vs GraphQL), auth solo cruce a `autenticacion`.
+  Detalle en `estado.md`.
+- ⬜ **SIGUIENTE: Acceso a datos / ORM** (curso `acceso-a-datos`), luego Docker y
+  CI/CD. Config y Composer como artículos sueltos intercalados.

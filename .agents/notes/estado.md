@@ -390,6 +390,49 @@ Primer curso del `plan-practica-backend.md`. Catálogo: **73 publicados, 9 curso
 - **SIGUIENTE** (plan-practica-backend): APIs REST → acceso a datos/ORM → Docker →
   CI/CD. Y montar la ruta "carrera" (plan-carrera-completa). Estructura por aprobar.
 
+## Curso APIs REST publicado (2026-06-29) — HECHO (sin commit)
+Segundo curso del `plan-practica-backend.md`. Catálogo: **78 publicados, 10 cursos**.
+- **Curso `apis-rest`** (5 lecciones, en courses.js tras `git`). Categoría nueva
+  **`apis`** (label "APIs" en CATEGORY_LABELS, catalog.js). topic "APIs REST", icon
+  `signal`, nivel Intermedio. Estructura aprobada por el usuario vía AskUserQuestion:
+  categoría nueva `apis` (no reusar arquitectura/redes) y auth **solo cruce** (no
+  lección propia, ya está `autenticacion`). featured movido de
+  git-comandos-esenciales → rest-que-es.
+  - `rest-que-es` (Int, 13m): REST no es protocolo; recurso (sustantivo en URL,
+    verbo = método HTTP), recurso ≠ representación (Accept/Content-Type), stateless
+    (escala horizontal), interfaz uniforme, niveles de Richardson 0→3 + HATEOAS
+    (nivel 2 = "ser REST" para casi todos). Bloques http+json. Cruza http-a-fondo,
+    url-a-fondo.
+  - `rest-metodos-y-estados` (Int, 15m): verbos por intención, PUT (reemplaza) vs
+    PATCH (parchea), seguro vs idempotente (tabla verbo×propiedad; POST no idempotente),
+    familias 2xx/4xx/5xx, tabla de códigos (200/201/204/400/401/403/404/409/422/500),
+    201+Location, antipatrón 200-con-error-dentro. Cruza idempotencia, autenticacion.
+  - `rest-diseno-de-urls` (Int, 15m): nombrar (plural/minúsculas/guiones/sin extensión),
+    anidar máx 1 nivel, lo que no es CRUD (estado→sub-recurso→URL-acción), versionado
+    en path (/v1, solo ante cambio incompatible), query (filtrar/ordenar/buscar),
+    paginación offset vs cursor. Cruza url-a-fondo, indices-btree.
+  - `rest-errores-y-validacion` (Int, 15m): formato único de error, **problem+json**
+    (RFC 9457, type/title/status/detail/instance + errors), validar en servidor
+    (400 vs 422 vs 409), devolver TODOS los errores, no filtrar internals (callout
+    danger), clave de idempotencia (Idempotency-Key). Cruza owasp, idempotencia.
+  - `rest-vs-rpc-vs-graphql` (Int, 14m): tres modelos (recursos/procedimientos/grafo),
+    RPC+gRPC (interno máquina-a-máquina), GraphQL (over/under-fetching, pero pierde
+    cache HTTP + N+1 + maquinaria), guía de elección (REST por defecto). Cruza
+    rest-que-es, big-o.
+- **paths.js NO tocado**: APIs REST es transversal al frente práctico; ninguna de las
+  3 rutas (php-a-fondo, diseño-oo, backend-cimientos) encaja. Lo recogerá la futura
+  ruta "construir/operar un servicio" o la macro-ruta "El grado que no hiciste".
+- Verificado: node --check (4 ficheros datos OK), TOC↔h2 (0 desajustes ×5), escapado
+  http/json (0 crudos), enlaces internos (todos resuelven; ojo: no hay `seguridad-web`
+  ni `logging` → se usó `owasp` y se quitó el enlace a logs), cruces (78 entradas,
+  featured=1 rest-que-es, 0 duplicados, 10 cursos, apis-rest 5/5 lecciones en manifest,
+  categoría apis con 5).
+- Nota: el chequeo de cruces detectó **2 lecciones huérfanas preexistentes** (strings
+  vacíos `""`) en algún curso anterior a este trabajo — NO es de apis-rest (su check da
+  "ninguna"). Pendiente de revisar aparte si molesta.
+- **SIGUIENTE** (plan-practica-backend): acceso a datos/ORM → Docker → CI/CD. Y montar
+  la ruta "carrera"/"construir un servicio". Estructura por aprobar curso a curso.
+
 ## Cómo añadir un tutorial
 Ver README.md → "Añadir un tutorial nuevo" (copiar plantilla, rellenar, añadir
 tarjeta en index.html con `data-categories`).

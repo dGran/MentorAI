@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>REST vs RPC vs GraphQL: cuándo cada uno — MentorAI</title>
+    <meta name="description" content="Tres estilos para diseñar una API: REST (recursos), RPC/gRPC (procedimientos) y GraphQL (el cliente pide la forma de los datos). Qué resuelve cada uno y cómo elegir con criterio." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>APIs</span>
+        </nav>
+        <h1 class="tutorial-hero__title">REST vs RPC vs GraphQL: cuándo cada uno</h1>
+        <p class="tutorial-hero__lead">REST no es la única forma de diseñar una API, solo la más extendida. RPC piensa en funciones que llamas; GraphQL deja que el cliente pida exactamente los datos que necesita. Conocer los tres te da el criterio para elegir, y para no usar REST por inercia donde no toca.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#tres-estilos">Tres formas de pensar una API</a></li>
+            <li><a href="#rpc">RPC: llamar funciones</a></li>
+            <li><a href="#graphql">GraphQL: el cliente pide la forma</a></li>
+            <li><a href="#fetching">El problema del over/under-fetching</a></li>
+            <li><a href="#coste">Lo que GraphQL te cobra</a></li>
+            <li><a href="#eleccion">Cómo elegir</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">REST, RPC y GraphQL no son tecnologías rivales que hagan lo mismo mejor o peor: son tres <em>maneras de pensar</em> la conversación entre cliente y servidor. La pregunta no es cuál es mejor, sino cuál encaja con la forma de tu problema.</p>
+
+          <h2 id="tres-estilos">
+            Tres formas de pensar una API
+            <a href="#tres-estilos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La diferencia de raíz está en torno a qué gira la API:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Estilo</th><th>Gira en torno a…</th><th>El cliente piensa en…</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><b>REST</b></td><td>Recursos (sustantivos)</td><td>"Quiero el pedido 1001"</td></tr>
+                <tr><td><b>RPC</b></td><td>Procedimientos (verbos)</td><td>"Llama a la función reembolsar(1001)"</td></tr>
+                <tr><td><b>GraphQL</b></td><td>Un grafo de datos consultable</td><td>"Dame estos campos del pedido y el nombre de su cliente"</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>REST ya lo conoces: nombras un recurso en una URL y le aplicas un verbo HTTP. Los otros dos cambian el centro de gravedad. Veámoslos.</p>
+
+          <h2 id="rpc">
+            RPC: llamar funciones
+            <a href="#rpc" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>RPC —<strong>Remote Procedure Call</strong>— es la idea más antigua y la más directa: hacer que llamar a una función en otra máquina se parezca a llamar a una función local. No hay recursos ni verbos HTTP con significado; hay <em>procedimientos</em> con nombre y argumentos.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">http · una llamada estilo RPC</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>POST /reembolsarPedido HTTP/1.1
+Content-Type: application/json
+
+{ "pedidoId": 1001, "motivo": "defectuoso" }</code></pre>
+          </div>
+          <p>La URL es el nombre del procedimiento y casi todo va por <code>POST</code>. Esto, que en REST sería un antipatrón (recuerda el "nivel 0" de Richardson de la <a href="rest-que-es.html">primera lección</a>), en RPC es el diseño correcto: el modelo mental es distinto.</p>
+          <p>Su encarnación moderna es <strong>gRPC</strong>, de Google. Define los procedimientos y los tipos en un contrato (<em>Protocol Buffers</em>), genera el código de cliente y servidor a partir de él, y transmite en binario sobre HTTP/2. Es muy rápido y con tipado fuerte de extremo a extremo, lo que lo hace el estándar de facto para la <strong>comunicación entre microservicios</strong>: máquina a máquina, donde nadie abre la API con un navegador y la eficiencia manda.</p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La contra de RPC sobre HTTP plano</p>
+              <p>Al ignorar la semántica HTTP, pierdes lo que REST te daba gratis: cache por <code>GET</code>, códigos de estado expresivos, idempotencia por método. gRPC lo compensa con su propio stack; un RPC casero sobre <code>POST</code> a secas, no.</p>
+            </div>
+          </div>
+
+          <h2 id="graphql">
+            GraphQL: el cliente pide la forma
+            <a href="#graphql" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>GraphQL, creado por Facebook, le da la vuelta a quién decide la forma de la respuesta. En REST, el servidor define qué devuelve cada endpoint. En GraphQL hay <strong>un solo endpoint</strong> y es el <em>cliente</em> quien describe, en cada petición, exactamente qué campos quiere y cómo navegar las relaciones:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">graphql · el cliente pide justo lo que necesita</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>query {
+  pedido(id: 1001) {
+    total
+    estado
+    cliente {
+      nombre
+    }
+  }
+}</code></pre>
+          </div>
+          <p>La respuesta llega con esa forma exacta: el <code>total</code>, el <code>estado</code> y el <code>nombre</code> del cliente, ni un campo más ni uno menos, y todo en una sola petición aunque el cliente viva en otra tabla. El servidor publica un <strong>esquema tipado</strong> (qué tipos existen, qué campos tiene cada uno, cómo se relacionan) y el cliente consulta ese grafo a su antojo.</p>
+
+          <h2 id="fetching">
+            El problema del over/under-fetching
+            <a href="#fetching" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>GraphQL nació para resolver dos dolores muy concretos de REST, sobre todo en apps móviles donde cada byte y cada ida y vuelta cuentan:</p>
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Over-fetching</h4>
+              <ul>
+                <li><code>GET /pedidos/1001</code> devuelve 30 campos.</li>
+                <li>La pantalla solo pinta 3.</li>
+                <li>Gastas ancho de banda en 27 que sobran.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Under-fetching</h4>
+              <ul>
+                <li>Pides el pedido, pero te falta el cliente.</li>
+                <li>Otra llamada a <code>/clientes/42</code>.</li>
+                <li>Y otra para sus líneas. Tres viajes para una pantalla.</li>
+              </ul>
+            </div>
+          </div>
+          <p>GraphQL elimina los dos de un golpe: el cliente pide los 3 campos que pinta (sin over-fetching) y navega al cliente y a las líneas en la misma consulta (sin under-fetching). Para un frontend rico con muchas vistas distintas sobre los mismos datos, esa flexibilidad es oro: el equipo de frontend itera sin pedirle al de backend un endpoint nuevo por cada pantalla.</p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">REST también puede mitigarlo</p>
+              <p>Con campos dispersos (<code>?fields=total,estado</code>) y expansión de relaciones (<code>?include=cliente</code>) una API REST recorta bastante el over y el under-fetching. No llega a la flexibilidad de GraphQL, pero a menudo es suficiente y mucho más simple.</p>
+            </div>
+          </div>
+
+          <h2 id="coste">
+            Lo que GraphQL te cobra
+            <a href="#coste" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Esa flexibilidad no es gratis. Trasladar al cliente el poder de pedir cualquier cosa traslada al servidor un puñado de problemas nuevos:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Reto</th><th>Por qué aparece</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><b>Cache HTTP perdida</b></td><td>Todo va por <code>POST</code> a un único endpoint: la cache por URL de HTTP y los proxies dejan de servirte. Cacheas a otro nivel, con más trabajo.</td></tr>
+                <tr><td><b>El N+1 acechando</b></td><td>Una query que navega relaciones puede disparar una consulta a BD por cada nodo. Hace falta agrupar (el patrón <em>DataLoader</em>) para no hundir la base de datos.</td></tr>
+                <tr><td><b>Consultas abusivas</b></td><td>Un cliente puede pedir un grafo enorme y profundo. Hay que limitar complejidad y profundidad para que no sea un vector de denegación de servicio.</td></tr>
+                <tr><td><b>Más maquinaria</b></td><td>Esquema, resolvers, tipos: más piezas que montar y mantener que un endpoint REST que devuelve JSON.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>El N+1 merece un aviso: es el mismo problema que ya asomaba en <a href="big-o.html">Big-O</a> y que volverá en el acceso a datos. GraphQL no lo causa, pero su libertad para navegar relaciones lo hace muy fácil de provocar sin darte cuenta.</p>
+
+          <h2 id="eleccion">
+            Cómo elegir
+            <a href="#eleccion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>No hay un ganador; hay un encaje. Esta es la guía rápida:</p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>API pública o CRUD de recursos</b><small>Clara, cacheable, fácil de consumir → <b>REST</b></small></span>
+              </div>
+              <div class="flow__arrow" data-label="o bien"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Servicio interno, máquina a máquina</b><small>Latencia baja, tipado fuerte, alto volumen → <b>RPC / gRPC</b></small></span>
+              </div>
+              <div class="flow__arrow" data-label="o bien"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Frontend rico, muchas vistas, datos muy enlazados</b><small>Clientes que necesitan formas distintas → <b>GraphQL</b></small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Elige por la forma del problema, no por la moda.</p>
+          </div>
+          <p>Para la inmensa mayoría de las APIs —un backend que expone recursos a una web o a terceros— <strong>REST sigue siendo la opción por defecto sensata</strong>: la entiende todo el mundo, aprovecha HTTP y no añade maquinaria. RPC brilla puertas adentro, entre tus propios servicios. GraphQL gana cuando tienes muchos clientes distintos pidiendo recortes distintos de un grafo de datos muy conectado. Y nada te obliga a casarte con uno: es común un núcleo REST con un servicio gRPC interno, o un gateway GraphQL por delante de varias APIs REST.</p>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">No adoptes GraphQL por hype</p>
+              <p>Montar GraphQL para un CRUD sencillo con un único cliente es pagar toda su complejidad sin cobrar su beneficio. La flexibilidad solo compensa cuando de verdad tienes el problema que resuelve. Si no lo tienes, REST te llevará más lejos con menos.</p>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Tres modelos mentales: REST gira en torno a recursos, RPC en torno a procedimientos, GraphQL en torno a un grafo de datos que el cliente consulta.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>RPC/gRPC: rápido, tipado y binario sobre HTTP/2. El estándar para comunicación interna entre microservicios.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>GraphQL resuelve el over/under-fetching: un endpoint, el cliente pide los campos exactos y navega relaciones en una sola petición.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El precio de GraphQL: pierdes cache HTTP, te expones al N+1 y a consultas abusivas, y montas más maquinaria.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Para la mayoría de APIs, REST es la opción por defecto. Elige por la forma del problema, no por la moda, y combínalos sin miedo.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="rest-errores-y-validacion.html">
+              <small>← Anterior</small>
+              <b>Errores y validación</b>
+            </a>
+            <a href="../cursos.html" class="next">
+              <small>Fin del curso →</small>
+              <b>Ver todos los cursos</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

@@ -58,6 +58,7 @@
       redes: "Cómo viaja un dato",
       distribuidos: "Sistemas distribuidos",
       arquitectura: "Arquitectura",
+      apis: "APIs",
       oop: "Orientación a objetos",
       herramientas: "Herramientas",
       testing: "Testing",
