@@ -572,6 +572,32 @@ Catálogo: **94 publicados, 13 cursos**. Estructura aprobada vía AskUserQuestio
   plan-testing-y-observabilidad (PHPUnit 6 + Observabilidad 9, estructura ya
   decidida). Después, plan-huecos-versatilidad.
 
+## Rutas "carrera" y "servicio" + fixes UI/PWA (2026-07-04) — HECHO (commit local, push pendiente de confirmar)
+Tanda técnica aprobada por AskUserQuestion ("Rutas + fixes") antes de seguir con
+contenido. Sin autoría; solo paths.js, CSS y head/navbar de los HTML.
+- **2 rutas nuevas en paths.js** (total 5):
+  - `el-grado-que-no-hiciste` (13 pasos, todos cursos, icon signal): fundamentos →
+    oop → solid → clean-code → di-contenedores → diseno-y-arquitectura → testing →
+    git → apis-rest → acceso-a-datos → docker → ci-cd → programar-con-ia. ES la
+    macro-ruta transversal del plan-carrera-completa. Se reusó `.path-card` (no
+    hizo falta tipo visual nuevo).
+  - `construir-un-servicio` (7 pasos mixtos, icon bolt): git → composer (artículo)
+    → apis-rest → acceso-a-datos → docker → config-y-entornos (artículo) → ci-cd.
+    Cierra el pendiente del plan-practica-backend.
+- **Navbar "Rutas" añadida a los 95 tutorials/*.html** (94 + _PLANTILLA), tras
+  "Inicio" — la plantilla ya la trae para los futuros.
+- **Metas PWA replicadas** en los 95 tutoriales (con `../`) y en `curso.html`
+  (faltaba): manifest, apple-touch-icon, metas apple/mobile-web-app y theme-color.
+  Cierra el pendiente de iOS (salir a Safari al navegar a un tutorial).
+- **CSS muerta `.view-toggle` eliminada** de styles.css (bloque principal + media
+  query; 0 restos).
+- Verificado: node --check paths.js, 0 refs rotas (5 rutas × cursos/artículos),
+  render headless de rutas.html (5 `.path` con las 2 nuevas), index (5 path-card),
+  opcache.html (navbar Rutas + manifest presentes); 0 errores JS en las 3 páginas.
+- **SIGUIENTE**: contenido de nuevo — plan-testing-y-observabilidad (PHPUnit 6 +
+  Observabilidad 9) o lo que fije el usuario (Go encolado sin prioridad,
+  plan-huecos-versatilidad detrás).
+
 ## Cómo añadir un tutorial
 Ver README.md → "Añadir un tutorial nuevo" (copiar plantilla, rellenar, añadir
 tarjeta en index.html con `data-categories`).

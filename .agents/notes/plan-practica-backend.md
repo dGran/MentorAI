@@ -111,5 +111,6 @@ COMPLETO (OOP, SOLID, Clean Code, di-contenedores publicados 2026-06-27).
   pipeline-anatomia → ci-para-php → despliegue-continuo, GitHub Actions como ejemplo).
 - ✅ **Config/12-factor** publicado (2026-07-04, artículo `config-y-entornos`).
 - ✅ **Composer** publicado (2026-07-04, artículo `composer`).
-- **PLAN COMPLETO en contenido.** Queda solo montar la ruta "construir un servicio"
-  en paths.js (material completo: git → apis-rest → acceso-a-datos → docker → ci-cd).
+- ✅ **Ruta `construir-un-servicio` montada en paths.js** (2026-07-04, 7 pasos
+  mixtos con los artículos composer y config-y-entornos intercalados).
+- **PLAN CERRADO al completo.**

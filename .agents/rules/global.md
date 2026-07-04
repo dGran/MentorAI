@@ -108,16 +108,17 @@ global del agente y no se duplican aquí.
 Detalle en `.agents/notes/`. **Norte del proyecto** (ver `plan-carrera-completa.md`):
 llegar a ser "como una carrera universitaria" que dé la base formal que el usuario
 (backend autodidacta) no tuvo — temario completo y coherente, no tutoriales sueltos.
-Ya cubre ~70-80% del temario troncal de un grado; pendiente montar una ruta
-transversal "El grado que no hiciste" y cerrar los frentes de abajo.
+Ya cubre ~70-80% del temario troncal de un grado; la ruta transversal
+`el-grado-que-no-hiciste` está montada en paths.js (2026-07-04). Quedan los
+frentes de abajo.
 
 - `plan-diseno-y-calidad.md` — **COMPLETO** (cursos `oop`, `solid`, `clean-code`,
   `di-contenedores` publicados 2026-06-27).
 - `plan-testing-y-observabilidad.md` — cursos `phpunit` y `observabilidad`
   (15 tutoriales). Pendiente de autoría.
-- `plan-practica-backend.md` — **COMPLETO en contenido** (Git, APIs REST, acceso a
-  datos/ORM, Docker, CI/CD + artículos config-y-entornos y composer, 2026-07-04).
-  Queda montar la ruta "construir un servicio" en paths.js.
+- `plan-practica-backend.md` — **CERRADO** (Git, APIs REST, acceso a datos/ORM,
+  Docker, CI/CD, artículos config-y-entornos y composer, y la ruta
+  `construir-un-servicio` montada; 2026-07-04).
 - `plan-curso-go.md` — curso amplio de Go para aprender el lenguaje desde cero
   (entorno dockerizado, editores y plugins incluidos). Encolado 2026-07-04,
   estructura por aprobar.

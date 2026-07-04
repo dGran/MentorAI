@@ -55,9 +55,9 @@ principio a fin que recorra todo el temario como un plan de estudios:
 fundamentos → datos/algoritmos → BBDD → sistemas → redes → distribuidos →
 seguridad → OOP → diseño/arquitectura → testing → (práctica: git/apis/docker...).
 Verlo entero, con el progreso de lectura, es lo que más desactiva la barrera
-psicológica. **Pendiente de montar** (decidido: se hará en paralelo a Git).
-Ojo: las rutas actuales son temáticas y acotadas; esta sería la "macro-ruta"
-transversal. Revisar si conviene un tipo visual distinto o reusar `.path-card`.
+psicológica. ✅ **MONTADA (2026-07-04)**: ruta `el-grado-que-no-hiciste` en
+paths.js, 13 pasos (todos los cursos en orden de plan de estudios, de fundamentos
+a CI/CD + programar-con-ia). Se reusó `.path-card`, sin tipo visual nuevo.
 
 ## Estado / orden acordado
 1. **Git** (curso, enfoque chuleta de comandos) — EN CURSO, arrancando.

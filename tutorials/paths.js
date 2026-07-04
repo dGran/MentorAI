@@ -49,6 +49,44 @@ window.MENTORAI_PATHS = [
     ],
   },
   {
+    slug: "el-grado-que-no-hiciste",
+    title: "El grado que no hiciste",
+    summary:
+      "La carrera completa, en orden: de los fundamentos de informática al diseño orientado a objetos, la arquitectura, el testing y la práctica de construir y operar un servicio. El temario troncal, de principio a fin.",
+    icon: "signal",
+    steps: [
+      { type: "course", ref: "fundamentos" },
+      { type: "course", ref: "oop" },
+      { type: "course", ref: "solid" },
+      { type: "course", ref: "clean-code" },
+      { type: "course", ref: "di-contenedores" },
+      { type: "course", ref: "diseno-y-arquitectura" },
+      { type: "course", ref: "testing" },
+      { type: "course", ref: "git" },
+      { type: "course", ref: "apis-rest" },
+      { type: "course", ref: "acceso-a-datos" },
+      { type: "course", ref: "docker" },
+      { type: "course", ref: "ci-cd" },
+      { type: "course", ref: "programar-con-ia" },
+    ],
+  },
+  {
+    slug: "construir-un-servicio",
+    title: "Construir un servicio",
+    summary:
+      "El ciclo completo de construir y operar un servicio real: versionarlo con Git, gestionar sus dependencias, diseñar su API, hablar con la base de datos, containerizarlo, configurarlo por entornos y automatizar su camino a producción.",
+    icon: "bolt",
+    steps: [
+      { type: "course", ref: "git" },
+      { type: "article", ref: "composer" },
+      { type: "course", ref: "apis-rest" },
+      { type: "course", ref: "acceso-a-datos" },
+      { type: "course", ref: "docker" },
+      { type: "article", ref: "config-y-entornos" },
+      { type: "course", ref: "ci-cd" },
+    ],
+  },
+  {
     slug: "backend-cimientos",
     title: "Backend desde los cimientos",
     summary:
