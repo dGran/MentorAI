@@ -119,9 +119,10 @@ frentes de abajo.
 - `plan-practica-backend.md` — **CERRADO** (Git, APIs REST, acceso a datos/ORM,
   Docker, CI/CD, artículos config-y-entornos y composer, y la ruta
   `construir-un-servicio` montada; 2026-07-04).
-- `plan-curso-go.md` — curso amplio de Go para aprender el lenguaje desde cero
-  (entorno dockerizado, editores y plugins incluidos). Encolado 2026-07-04,
-  estructura por aprobar.
+- `plan-curso-go.md` y `plan-curso-rust.md` — cursos amplios de Go y Rust para
+  aprender cada lenguaje desde cero (entorno dockerizado, editores y plugins, y
+  en ambos una lección de virtudes/para qué proyectos, cruzadas entre sí).
+  Encolados 2026-07-04, estructura por aprobar.
 - `plan-huecos-versatilidad.md` — versatilidad transversal aprobada 2026-07-04:
   SQL aplicado avanzado, patrones GoF, framework por dentro, terminal/Linux, y
   la idea "Ponlo en práctica" (mini-retos al cierre de cada curso).

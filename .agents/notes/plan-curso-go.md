@@ -21,11 +21,17 @@ Curso `go` con **módulos** (como `fundamentos` y `diseno-y-arquitectura`),
 ~20 lecciones en 5 módulos. Categoría nueva `go` (label "Go" en CATEGORY_LABELS).
 
 ### Módulo 1 — Arranque: el lenguaje y tu entorno (3)
-1. `go-que-es` — por qué Go: compilado a binario único, tipado estático, GC,
-   concurrencia nativa, simplicidad deliberada (poco lenguaje a propósito);
-   dónde brilla (servicios de red, CLIs, infra: Docker y Kubernetes están
-   escritos en Go); Go vs PHP como modelos de ejecución (cruza php-fpm,
-   workers-php).
+1. `go-que-es` — **la lección de virtudes/casos de uso que pidió el usuario
+   (2026-07-04, requisito común con Rust)**: por qué Go — compilado a binario
+   único, tipado estático, GC, concurrencia nativa, simplicidad deliberada
+   (poco lenguaje a propósito, se lee en una tarde), compilación casi
+   instantánea, despliegue trivial. **Para qué proyectos es más adecuado**:
+   servicios de red y APIs, CLIs, infraestructura y tooling (Docker y
+   Kubernetes están escritos en Go), microservicios con equipos grandes.
+   **Cuándo NO**: dominio con jerarquías ricas, máximo control de memoria/
+   latencia (→ Rust). Go vs PHP como modelos de ejecución (cruza php-fpm,
+   workers-php). Cierre ¿Go o Rust? con tabla cara a cara (cruza `rust-que-es`
+   cuando exista, ver plan-curso-rust.md).
 2. `go-entorno-docker` — el entorno local dockerizado: imagen `golang` oficial,
    compose de desarrollo (bind mount del código, caché de módulos en volumen
    named), hot reload con `air`, compilar/ejecutar dentro del contenedor,
