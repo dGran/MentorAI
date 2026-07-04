@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>El ciclo HTTP de un framework: de nginx al controlador y vuelta — MentorAI</title>
+    <meta
+      name="description"
+      content="El recorrido completo de una petición HTTP en Symfony y Laravel: nginx, FPM, front controller, Kernel, router, eventos, resolución del controlador y respuesta. Sin magia."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>PHP</span>
+        </nav>
+        <h1 class="tutorial-hero__title">El ciclo HTTP de un framework: de nginx al controlador y vuelta</h1>
+        <p class="tutorial-hero__lead">¿Qué pasa exactamente entre que el navegador envía una petición y tu controlador la recibe? El recorrido completo: nginx, PHP-FPM, el front controller, el Kernel, el router, los eventos y la respuesta. Sin magia.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            17 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#hasta-php">Antes de PHP: nginx y FPM</a></li>
+            <li><a href="#front-controller">El front controller</a></li>
+            <li><a href="#kernel">El Kernel</a></li>
+            <li><a href="#routing">Routing: URL a controlador</a></li>
+            <li><a href="#eventos">Eventos del ciclo HTTP</a></li>
+            <li><a href="#controlador">Resolución del controlador</a></li>
+            <li><a href="#respuesta">La respuesta de vuelta</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Cuando usas un framework a diario puedes vivir sin saber qué hay detrás. Pero cuando algo falla en un lugar inesperado, cuando necesitas intervenir en el ciclo o cuando lees código del framework, ese conocimiento vale más que cualquier otra cosa.</p>
+
+          <h2 id="hasta-php">
+            Antes de PHP: nginx y FPM
+            <a href="#hasta-php" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El recorrido empieza antes de que tu código exista. El navegador abre una conexión TCP al servidor, envía la petición HTTP y nginx la recibe. Nginx no ejecuta PHP: actúa como proxy inverso y reenvía la petición a PHP-FPM a través del protocolo FastCGI.</p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Navegador</b><small>HTTP/2 sobre TCP</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>nginx</b><small>Sirve estáticos, reenvía el resto a FPM</small></span>
+              </div>
+              <div class="flow__arrow" data-label="FastCGI (socket)"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>PHP-FPM</b><small>Pool de workers, asigna uno libre</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>index.php</b><small>El front controller: el único punto de entrada</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Nginx gestiona conexiones; FPM gestiona procesos PHP. Tu código empieza en index.php.</p>
+          </div>
+
+          <p>PHP-FPM mantiene un pool de procesos PHP siempre listos. Cuando llega una petición, asigna un worker libre — un proceso que ya tiene PHP cargado en memoria — y le pasa la petición vía FastCGI. Cuando el worker termina, vuelve al pool disponible para la siguiente petición.</p>
+
+          <p>Esto explica algo importante sobre PHP: cada petición empieza desde cero. No hay estado compartido entre peticiones en el mismo proceso (salvo que uses APCu o similar). La memoria del proceso se limpia al acabar. Es la diferencia fundamental con los modelos de servidor persistente (Go, Node, Java) que ya viste en el tutorial sobre procesos e hilos.</p>
+
+          <h2 id="front-controller">
+            El front controller
+            <a href="#front-controller" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Nginx está configurado para reenviar <em>todas</em> las peticiones que no sean ficheros estáticos al mismo fichero PHP: <code>public/index.php</code>. Da igual que el navegador pida <code>/users</code>, <code>/orders/42</code> o <code>/api/health</code>: siempre llega a <code>index.php</code>.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · nginx.conf (fragmento)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">location / {
+    # Si el fichero o directorio existe, sírvelo directamente
+    try_files $uri $uri/ /index.php$is_args$args;
+}
+
+location ~ \.php$ {
+    fastcgi_pass php-fpm:9000;
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+    include fastcgi_params;
+}</code></pre>
+          </div>
+
+          <p>Este es el patrón <strong>Front Controller</strong>: un único punto de entrada que centraliza el arranque y delega el procesamiento. La alternativa —un fichero PHP por URL— era el enfoque anterior a los frameworks: <code>users.php</code>, <code>orders.php</code>, <code>login.php</code>. El front controller lo unifica todo.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · public/index.php (Symfony simplificado)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+use App\Kernel;
+use Symfony\Component\HttpFoundation\Request;
+
+require_once dirname(__DIR__) . '/vendor/autoload.php';
+
+$kernel   = new Kernel($_SERVER['APP_ENV'], (bool) $_SERVER['APP_DEBUG']);
+$request  = Request::createFromGlobals();
+$response = $kernel-&gt;handle($request);
+$response-&gt;send();
+$kernel-&gt;terminate($request, $response);</code></pre>
+          </div>
+
+          <p>Todo el framework cabe en cinco líneas visibles: arrancar el kernel, crear la Request a partir de los superglobales PHP (<code>$_GET</code>, <code>$_POST</code>, <code>$_SERVER</code>…), procesarla, enviar la respuesta y llamar al terminate para limpiar (cerrar conexiones, flush de logs).</p>
+
+          <h2 id="kernel">
+            El Kernel
+            <a href="#kernel" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El <code>Kernel::handle()</code> es el corazón del framework. Implementa el patrón Template Method: define la secuencia fija y delega cada paso. En Symfony, la secuencia real de <code>HttpKernel::handle()</code> es:</p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>kernel.request</b><small>Evento: sesión, firewall, locale…</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Router</b><small>Resuelve URL → controlador + parámetros</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>kernel.controller</b><small>Evento: security voters, param conversion…</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">4</span>
+                <span><b>Controlador</b><small>Tu código: lógica de negocio, devuelve Response</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">5</span>
+                <span><b>kernel.response</b><small>Evento: cache headers, compresión…</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">6</span>
+                <span><b>Response → cliente</b><small>send() escribe headers y body</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">El Kernel orquesta la secuencia; los eventos son los puntos de extensión.</p>
+          </div>
+
+          <p>Si en cualquier punto del ciclo se lanza una excepción, el Kernel la captura y dispara el evento <code>kernel.exception</code>. Los listeners de ese evento (el ExceptionListener de Symfony, tu propio handler) convierten la excepción en una respuesta HTTP apropiada — 404, 500, o lo que toque. Si ningún listener la maneja, el Kernel lanza de nuevo la excepción.</p>
+
+          <h2 id="routing">
+            Routing: URL a controlador
+            <a href="#routing" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El router recibe la petición y devuelve un array de atributos: qué controlador ejecutar, qué parámetros extrajo de la URL y cualquier metadato adicional de la ruta.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Symfony routing</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+// Symfony: el atributo #[Route] se lee en tiempo de compilación del contenedor
+#[Route('/orders/{id}', name: 'order_show', methods: ['GET'])]
+public function show(int $id): Response { /* ... */ }
+
+// El router compila todas las rutas en una estructura de árbol (RadixTree)
+// y la cachea. En producción no hay regex en caliente: es una búsqueda en árbol.
+
+// Lo que el router devuelve para GET /orders/42:
+// [
+//   '_controller' => 'App\Controller\OrderController::show',
+//   '_route'      => 'order_show',
+//   'id'          => '42',
+// ]</code></pre>
+          </div>
+
+          <p>En Laravel el mecanismo es equivalente: las rutas definidas en <code>routes/web.php</code> o <code>routes/api.php</code> se compilan en una estructura interna. El Router de Laravel también cachea el árbol de rutas para producción (<code>php artisan route:cache</code>).</p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Por qué route:cache es importante</p>
+              <p>Sin caché, el router lee y parsea los atributos <code>#[Route]</code> de cada controlador en cada petición usando Reflection — lento. Con caché, lee un fichero PHP compilado. En producción, siempre <code>php artisan route:cache</code> (Laravel) o el warm-up del contenedor en Symfony.</p>
+            </div>
+          </div>
+
+          <h2 id="eventos">
+            Eventos del ciclo HTTP
+            <a href="#eventos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Los eventos del Kernel son el mecanismo de extensión principal. Cada punto crítico del ciclo dispara un evento; cualquier código del proyecto (o de un bundle/package) puede escucharlo sin modificar el núcleo.</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Evento Symfony</th><th>Equivalente Laravel</th><th>Cuándo</th><th>Para qué</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>kernel.request</code></td>
+                  <td><code>handle</code> en Middleware</td>
+                  <td>Antes del routing</td>
+                  <td>Iniciar sesión, detectar locale, comprobar mantenimiento</td>
+                </tr>
+                <tr>
+                  <td><code>kernel.controller</code></td>
+                  <td>Route middleware</td>
+                  <td>Controlador resuelto, antes de ejecutarlo</td>
+                  <td>Security voters, conversión de parámetros, rate limiting</td>
+                </tr>
+                <tr>
+                  <td><code>kernel.view</code></td>
+                  <td>—</td>
+                  <td>El controlador devolvió algo que no es Response</td>
+                  <td>Serializar arrays a JSON, renderizar vistas</td>
+                </tr>
+                <tr>
+                  <td><code>kernel.response</code></td>
+                  <td>Terminate middleware</td>
+                  <td>Response creada, antes de enviarla</td>
+                  <td>Añadir headers de caché, compresión, CORS</td>
+                </tr>
+                <tr>
+                  <td><code>kernel.exception</code></td>
+                  <td>Exception handler</td>
+                  <td>Excepción no capturada</td>
+                  <td>Convertir excepción en respuesta HTTP apropiada</td>
+                </tr>
+                <tr>
+                  <td><code>kernel.terminate</code></td>
+                  <td>Terminable middleware</td>
+                  <td>Respuesta ya enviada al cliente</td>
+                  <td>Flush de logs, métricas, limpieza post-petición</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="controlador">
+            Resolución del controlador
+            <a href="#controlador" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una vez el router ha devuelto <code>_controller = 'App\Controller\OrderController::show'</code>, el framework necesita instanciar el controlador e inyectarle sus dependencias. Aquí entra el contenedor DI.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · ControllerResolver (simplificado)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+// El ControllerResolver obtiene el callable del controlador
+$controllerCallable = $resolver-&gt;getController($request);
+
+// El ArgumentResolver resuelve los argumentos del método
+// Combina parámetros de ruta, query string, body, servicios del contenedor...
+$arguments = $argumentResolver-&gt;getArguments($request, $controllerCallable);
+
+// La llamada real al controlador
+$response = $controllerCallable(...$arguments);</code></pre>
+          </div>
+
+          <p>El ArgumentResolver es lo que hace funcionar la "magia" de los controladores de Symfony: puedes declarar el tipo de un argumento como <code>OrderRepository $repository</code> y el framework lo inyecta desde el contenedor; puedes declarar <code>int $id</code> y lo extrae de la ruta; puedes declarar <code>Request $request</code> y lo pasa directamente. Cada estrategia de resolución es un <code>ArgumentValueResolverInterface</code> — Strategy aplicado.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Controlador con inyección automática</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+class OrderController
+{
+    // El contenedor inyecta OrderRepository en el constructor (autowiring)
+    public function __construct(
+        private readonly OrderRepository $orders
+    ) {}
+
+    #[Route('/orders/{id}', methods: ['GET'])]
+    public function show(
+        int $id,            // ArgumentResolver: lo extrae de la ruta
+        Request $request    // ArgumentResolver: lo pasa directamente
+    ): Response {
+        $order = $this-&gt;orders-&gt;findById($id);
+
+        if ($order === null) {
+            throw new NotFoundHttpException("Order {$id} not found");
+        }
+
+        return $this-&gt;json($order);
+    }
+}</code></pre>
+          </div>
+
+          <h2 id="respuesta">
+            La respuesta de vuelta
+            <a href="#respuesta" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El controlador devuelve una <code>Response</code> (o algo que el <code>kernel.view</code> convierte en una). El Kernel dispara <code>kernel.response</code> para que los listeners añadan headers, y luego llama a <code>$response->send()</code>.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Response::send() (simplificado)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+public function send(): static
+{
+    $this-&gt;sendHeaders();  // HTTP/1.1 200 OK + todos los headers
+    $this-&gt;sendContent();  // el body (echo del contenido)
+
+    if (\function_exists('fastcgi_finish_request')) {
+        fastcgi_finish_request(); // cierra la conexión con FPM, libera el worker
+    }
+
+    return $this;
+}</code></pre>
+          </div>
+
+          <p><code>fastcgi_finish_request()</code> es importante: cierra la conexión con el cliente y libera el worker de FPM <em>antes</em> de que PHP termine de ejecutar. Lo que viene después (<code>kernel.terminate</code>: logs, métricas, emails en cola) se ejecuta sin que el usuario espere. Es el mecanismo que hace posible procesar trabajo post-petición sin afectar al tiempo de respuesta percibido.</p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">kernel.terminate: trabajo post-petición gratuito</p>
+              <p>Si envías emails, escribes logs detallados o actualizas analíticas en <code>kernel.terminate</code>, el usuario ya recibió su respuesta. El coste de esas operaciones no aparece en el tiempo de respuesta. Para trabajo más pesado o que no puede fallar, las colas asíncronas (Messenger/Queue) son la alternativa correcta.</p>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Nginx reenvía todas las peticiones no-estáticas al front controller (<code>index.php</code>). PHP-FPM mantiene workers listos; cada petición arranca desde cero.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El Kernel es un Template Method: fija la secuencia (request→router→controller→response) y delega cada paso. Las excepciones fluyen a <code>kernel.exception</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El router compila rutas en una estructura de árbol cacheada. En producción no hay regex en caliente: es una búsqueda eficiente en árbol compilado.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los eventos del kernel (<code>kernel.request</code>, <code>kernel.controller</code>, <code>kernel.response</code>…) son Observer: puntos de extensión sin tocar el núcleo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El ArgumentResolver inyecta parámetros de ruta, Request y servicios del contenedor en el método del controlador mediante Strategy.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>fastcgi_finish_request()</code> cierra la conexión con el cliente antes de <code>kernel.terminate</code>: el trabajo post-petición no afecta al tiempo de respuesta percibido.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../cursos.html">
+              <small>← Volver</small>
+              <b>Catálogo de cursos</b>
+            </a>
+            <a href="framework-extension-points.html">
+              <small>Siguiente →</small>
+              <b>Cómo extender el framework</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

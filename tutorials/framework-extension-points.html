@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cómo extender un framework sin tocar su núcleo — MentorAI</title>
+    <meta
+      name="description"
+      content="Service providers, bundles, tagged services, compiler passes, event subscribers y middleware: los mecanismos que permiten extender Symfony y Laravel sin modificar su código."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>PHP</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Cómo extender un framework sin tocar su núcleo</h1>
+        <p class="tutorial-hero__lead">Symfony y Laravel ofrecen puntos de extensión formales para añadir comportamiento sin modificar su código. Tagged services y compiler passes en Symfony, service providers en Laravel, event subscribers, middleware personalizado: el catálogo completo de mecanismos de extensión.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            16 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#el-principio">El principio de extensión</a></li>
+            <li><a href="#event-subscribers">Event subscribers</a></li>
+            <li><a href="#middleware">Middleware personalizado</a></li>
+            <li><a href="#tagged-services">Tagged services (Symfony)</a></li>
+            <li><a href="#compiler-passes">Compiler passes (Symfony)</a></li>
+            <li><a href="#service-providers">Service providers (Laravel)</a></li>
+            <li><a href="#cuando-cada-uno">Cuándo usar cada mecanismo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">La lección anterior mostró el ciclo completo de una petición. Esta responde la pregunta inevitable: ¿dónde meto mi código cuando quiero intervenir en ese ciclo o en el contenedor sin parchear el framework?</p>
+
+          <h2 id="el-principio">
+            El principio de extensión
+            <a href="#el-principio" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un framework bien diseñado aplica OCP (Open/Closed Principle) a sí mismo: está cerrado a la modificación, abierto a la extensión. En la práctica eso significa que tiene puntos de extensión formales — lugares definidos donde el código externo puede engancharse — en lugar de requerir que modifiques su código fuente.</p>
+
+          <div class="compare">
+            <div>
+              <p class="compare__label compare__label--no">Parchar el framework (nunca)</p>
+              <div class="code-block">
+                <div class="code-block__head">
+                  <span class="code-block__lang">bash</span>
+                  <button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button>
+                </div>
+                <pre><code data-lang="bash"># vendor/ está en .gitignore.
+# Cualquier cambio aquí se pierde
+# con el siguiente composer update.
+vendor/symfony/http-kernel/HttpKernel.php</code></pre>
+              </div>
+            </div>
+            <div>
+              <p class="compare__label compare__label--yes">Usar los puntos de extensión</p>
+              <div class="code-block">
+                <div class="code-block__head">
+                  <span class="code-block__lang">bash</span>
+                  <button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button>
+                </div>
+                <pre><code data-lang="bash">src/EventListener/SecurityListener.php
+src/Middleware/RateLimitMiddleware.php
+src/DependencyInjection/AppExtension.php</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <h2 id="event-subscribers">
+            Event subscribers
+            <a href="#event-subscribers" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El mecanismo más versátil: escuchar cualquier evento del ciclo del Kernel (o del dominio) e intervenir. La diferencia entre un EventListener y un EventSubscriber es pequeña pero práctica: el Subscriber declara él mismo a qué eventos se suscribe, lo que lo hace autocontenido.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Symfony EventSubscriber</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace App\EventSubscriber;
+
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpKernel\Event\RequestEvent;
+use Symfony\Component\HttpKernel\KernelEvents;
+
+final class LocaleSubscriber implements EventSubscriberInterface
+{
+    public function __construct(private readonly string $defaultLocale) {}
+
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            KernelEvents::REQUEST =&gt; [['onKernelRequest', 20]],
+        ];
+    }
+
+    public function onKernelRequest(RequestEvent $event): void
+    {
+        $request = $event-&gt;getRequest();
+
+        if (!$request-&gt;hasPreviousSession()) {
+            return;
+        }
+
+        $locale = $request-&gt;getSession()-&gt;get('_locale', $this-&gt;defaultLocale);
+        $request-&gt;setLocale($locale);
+    }
+}</code></pre>
+          </div>
+
+          <p>El número <code>20</code> en el array es la prioridad: mayor número = se ejecuta antes. El firewall de seguridad de Symfony escucha <code>kernel.request</code> con prioridad 8; un subscriber con prioridad 20 se ejecuta antes del firewall.</p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Listeners vs Subscribers</p>
+              <p>Si el listener responde solo a un evento, usa el atributo <code>#[AsEventListener]</code> directamente sobre el método — es menos código. El Subscriber conviene cuando una misma clase necesita escuchar varios eventos relacionados (por ejemplo, un "auditor" que escucha request + response + exception).</p>
+            </div>
+          </div>
+
+          <p>En Laravel el equivalente son los Event Listeners registrados en <code>EventServiceProvider</code> (o autodetectados con <code>php artisan event:generate</code>). La diferencia con los kernel events de Symfony es que en Laravel los eventos del framework (requests, autenticación, etc.) viajan por el mismo EventDispatcher que los eventos de dominio.</p>
+
+          <h2 id="middleware">
+            Middleware personalizado
+            <a href="#middleware" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>En la lección anterior viste cómo el Kernel despacha el <code>kernel.controller</code> para el security voter. El middleware es el otro mecanismo: envuelve la petición antes de que llegue al controlador, y puede cortarla (devolver una respuesta propia) o pasarla al siguiente elemento de la cadena.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Symfony Kernel middleware con kernel.request</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+// En Symfony el "middleware" más puro es el EventSubscriber que escucha
+// kernel.request con alta prioridad y puede setear una respuesta:
+
+public function onKernelRequest(RequestEvent $event): void
+{
+    if ($this-&gt;isUnderMaintenance()) {
+        $event-&gt;setResponse(new Response('Service unavailable', 503));
+        // Al setear la respuesta, el Kernel no llega al controlador
+    }
+}
+
+// El equivalente directo a Express/Laravel middleware en Symfony son
+// los listeners de kernel.request que llaman a setResponse para cortarlo,
+// o simplemente dejan pasar si no hacen nada.</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Laravel Middleware</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+final class EnsureApiToken
+{
+    public function handle(Request $request, Closure $next): Response
+    {
+        if (!$request-&gt;hasValidSignature()) {
+            return response()-&gt;json(['error' =&gt; 'Unauthorized'], 401);
+        }
+
+        return $next($request); // pasa al siguiente middleware o al controlador
+    }
+}</code></pre>
+          </div>
+
+          <p>El middleware de Laravel es la Chain of Responsibility que viste en la lección de patrones de comportamiento: cada pieza recibe la petición, puede cortarla devolviendo una respuesta propia o pasarla llamando a <code>$next($request)</code>. Symfony logra lo mismo con listeners de <code>kernel.request</code> de alta prioridad.</p>
+
+          <h2 id="tagged-services">
+            Tagged services (Symfony)
+            <a href="#tagged-services" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>¿Cómo sabe Symfony qué clases son voters de seguridad, qué clases son command handlers, qué clases son Twig extensions? A través de tags. Un tag es una etiqueta que marca un servicio para que el contenedor lo incluya en una colección.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Definir e inyectar tagged services</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+// Cualquier clase que implemente VoterInterface recibe el tag 'security.voter'
+// automáticamente por autoconfiguration. Sin configuración extra.
+
+final class OrderVoter extends Voter
+{
+    // El SecurityContext inyecta todos los 'security.voter' taggeados
+    protected function supports(string $attribute, mixed $subject): bool
+    {
+        return $subject instanceof Order;
+    }
+
+    protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token): bool
+    {
+        return match ($attribute) {
+            'VIEW'  =&gt; $this-&gt;canView($subject, $token),
+            'EDIT'  =&gt; $this-&gt;canEdit($subject, $token),
+            default =&gt; false,
+        };
+    }
+}</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Tag propio para extensión de negocio</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+// Un atributo PHP como tag de autoconfiguration
+#[\Attribute(\Attribute::TARGET_CLASS)]
+final class AsPaymentGateway
+{
+    public function __construct(public readonly string $name) {}
+}
+
+// Usar el atributo en cada implementación
+#[AsPaymentGateway(name: 'stripe')]
+final class StripeGateway implements PaymentGatewayInterface { /* ... */ }
+
+#[AsPaymentGateway(name: 'paypal')]
+final class PaypalGateway implements PaymentGatewayInterface { /* ... */ }
+
+// El PaymentGatewayRegistry recibe todos los taggeados e indexa por nombre:
+// $this-&gt;gateways['stripe'], $this-&gt;gateways['paypal']
+// Añadir un gateway nuevo = crear la clase. Sin tocar el registry.</code></pre>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Tagged services = OCP aplicado al contenedor</p>
+              <p>Este es exactamente el principio Open/Closed en el contenedor: el registry está cerrado a la modificación (no hay que editar ninguna lista), pero está abierto a la extensión (añadir una clase taggeada la incorpora automáticamente). El contenedor resuelve la colección en tiempo de compilación.</p>
+            </div>
+          </div>
+
+          <h2 id="compiler-passes">
+            Compiler passes (Symfony)
+            <a href="#compiler-passes" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Los tagged services son el mecanismo declarativo. Los compiler passes son el mecanismo imperativo: código PHP que se ejecuta <em>durante la compilación del contenedor</em> y puede leer, modificar o reconfigurar cualquier definición de servicio antes de que el contenedor se cachee.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · CompilerPass</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace App\DependencyInjection\Compiler;
+
+use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Reference;
+
+final class PaymentGatewayPass implements CompilerPassInterface
+{
+    public function process(ContainerBuilder $container): void
+    {
+        if (!$container-&gt;has(PaymentGatewayRegistry::class)) {
+            return;
+        }
+
+        $registryDefinition = $container-&gt;findDefinition(PaymentGatewayRegistry::class);
+        $taggedServices     = $container-&gt;findTaggedServiceIds('app.payment_gateway');
+
+        foreach ($taggedServices as $serviceId =&gt; $tags) {
+            $registryDefinition-&gt;addMethodCall(
+                'register',
+                [$tags[0]['name'], new Reference($serviceId)]
+            );
+        }
+    }
+}
+
+// Se registra en el Kernel:
+// protected function build(ContainerBuilder $container): void
+// {
+//     $container-&gt;addCompilerPass(new PaymentGatewayPass());
+// }</code></pre>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Compiler pass = tiempo de compilación, no de ejecución</p>
+              <p>El código del compiler pass se ejecuta una vez cuando Symfony compila el contenedor (típicamente en el primer request o con <code>php bin/console cache:clear</code>). El contenedor compilado se cachea. Si el pass tiene un bug, aparece en compilación, no en runtime — lo que hace los errores más visibles y rápidos de detectar.</p>
+            </div>
+          </div>
+
+          <h2 id="service-providers">
+            Service providers (Laravel)
+            <a href="#service-providers" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>En Laravel el equivalente a un bundle de Symfony (o a un Extension + CompilerPass) es el Service Provider: una clase que registra servicios en el contenedor y conecta código propio con el framework.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Laravel ServiceProvider</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Providers;
+
+use Illuminate\Support\ServiceProvider;
+
+final class PaymentServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        // register(): solo bindings. No uses otras abstracciones aquí:
+        // el contenedor aún no está completamente construido.
+        $this-&gt;app-&gt;singleton(PaymentGatewayRegistry::class, function ($app) {
+            $registry = new PaymentGatewayRegistry();
+            $registry-&gt;register('stripe', $app-&gt;make(StripeGateway::class));
+            $registry-&gt;register('paypal', $app-&gt;make(PaypalGateway::class));
+            return $registry;
+        });
+    }
+
+    public function boot(): void
+    {
+        // boot(): todos los providers ya se han registrado.
+        // Aquí puedes usar servicios de otros providers, registrar
+        // routes, observers, gates, Blade directives, etc.
+        Gate::define('process-payment', [PaymentPolicy::class, 'process']);
+    }
+}</code></pre>
+          </div>
+
+          <p>La distinción <code>register()</code> / <code>boot()</code> resuelve el problema de orden: en <code>register()</code> defines bindings sin depender de otros providers; en <code>boot()</code> ya todos los providers se han registrado y puedes usar sus servicios. El ciclo de vida de Laravel llama a todos los <code>register()</code> primero y luego a todos los <code>boot()</code>.</p>
+
+          <h2 id="cuando-cada-uno">
+            Cuándo usar cada mecanismo
+            <a href="#cuando-cada-uno" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Mecanismo</th><th>Framework</th><th>Para qué</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Event Subscriber / <code>#[AsEventListener]</code></td>
+                  <td>Symfony</td>
+                  <td>Intervenir en el ciclo HTTP o reaccionar a eventos de dominio sin acoplarte al emisor</td>
+                </tr>
+                <tr>
+                  <td>Event Listener</td>
+                  <td>Laravel</td>
+                  <td>Igual que el Subscriber de Symfony; registro en EventServiceProvider o autodescubrimiento</td>
+                </tr>
+                <tr>
+                  <td>Kernel Middleware</td>
+                  <td>Laravel</td>
+                  <td>Filtrar, transformar o cortar peticiones antes del controlador; lógica transversal sin tocar rutas</td>
+                </tr>
+                <tr>
+                  <td>kernel.request listener de alta prioridad</td>
+                  <td>Symfony</td>
+                  <td>Equivalente funcional al middleware de Laravel; puede setear response y cortar el ciclo</td>
+                </tr>
+                <tr>
+                  <td>Tagged services + autoconfiguration</td>
+                  <td>Symfony</td>
+                  <td>Registrar implementaciones de una interfaz sin editar ningún fichero central; OCP puro</td>
+                </tr>
+                <tr>
+                  <td>Compiler pass</td>
+                  <td>Symfony</td>
+                  <td>Manipulación avanzada del contenedor: leer tags, inyectar colecciones, validar configuración en compilación</td>
+                </tr>
+                <tr>
+                  <td>Service Provider <code>register()</code></td>
+                  <td>Laravel</td>
+                  <td>Registrar bindings, singletons y factories; punto de entrada de cualquier paquete o módulo</td>
+                </tr>
+                <tr>
+                  <td>Service Provider <code>boot()</code></td>
+                  <td>Laravel</td>
+                  <td>Configurar el framework una vez todos los providers están listos: rutas, gates, observers, Blade</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los Event Subscribers (Symfony) y Event Listeners (Laravel) son el mecanismo más versátil: escuchan puntos del ciclo sin modificar el núcleo. Observer en estado puro.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El middleware de Laravel (Chain of Responsibility) puede cortar la petición o pasarla. En Symfony el equivalente es un listener de <code>kernel.request</code> con alta prioridad que llama a <code>setResponse()</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los tagged services de Symfony aplican OCP al contenedor: añadir una implementación = crear la clase con el tag. Sin editar ninguna lista central.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los compiler passes manipulan el contenedor en compilación, no en runtime: más potentes que los tags, pero también más complejos. El coste es en caché, no en cada petición.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los service providers de Laravel centralizan bindings (<code>register()</code>) y configuración del framework (<code>boot()</code>). La separación evita dependencias circulares entre providers.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La regla de oro: nunca modificar <code>vendor/</code>. Los puntos de extensión formales existen precisamente para que no tengas que hacerlo.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="framework-ciclo-http.html">
+              <small>← Anterior</small>
+              <b>El ciclo HTTP de un framework</b>
+            </a>
+            <a href="../cursos.html">
+              <small>Volver →</small>
+              <b>Catálogo de cursos</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

@@ -22,6 +22,18 @@
 
 window.MENTORAI_COURSES = [
   {
+    slug: "framework-por-dentro",
+    title: "Cómo funciona un framework por dentro",
+    summary:
+      "El recorrido mecánico de una petición HTTP en Symfony y Laravel — de nginx al controlador y vuelta — y los mecanismos formales para extender el framework sin tocar su núcleo: tagged services, compiler passes, service providers, middleware y event subscribers.",
+    level: "Avanzado",
+    icon: "code",
+    lessons: [
+      "framework-ciclo-http",
+      "framework-extension-points",
+    ],
+  },
+  {
     slug: "patrones-diseno",
     title: "Patrones de diseño GoF",
     summary:
