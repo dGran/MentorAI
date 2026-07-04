@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tests de integración con base de datos — MentorAI</title>
+    <meta name="description" content="Cuándo los stubs ya no bastan: base de datos de test aislada, fixtures con estado conocido, transacción por test que se revierte y la pirámide que decide cuántos de cada tipo necesitas." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Testing</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Tests de integración con base de datos</h1>
+        <p class="tutorial-hero__lead">El stub que finge tu repositorio es útil hasta cierto punto: no verifica que la query SQL devuelva los registros correctos, ni que la constraint de unicidad rechace el duplicado, ni que la migración que escribiste ayer sea compatible con el código de hoy. Para eso necesitas la base de datos real, pero de test.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#limite-stub">El límite del stub</a></li>
+            <li><a href="#bbdd-test">La base de datos de test</a></li>
+            <li><a href="#fixtures">Fixtures: estado de partida</a></li>
+            <li><a href="#transaccion">Transacción por test</a></li>
+            <li><a href="#piramide">La pirámide y las suites</a></li>
+            <li><a href="#que-cubren">Lo que solo el test de integración cubre</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">En los <a href="phpunit-mocks.html">tests unitarios con stubs y mocks</a> alimentabas el servicio con colaboradores falsos: el repositorio devolvía lo que tú decías. Eso es correcto — aisla el comportamiento de la lógica de negocio del acceso a datos. Pero hay una capa que esa estrategia no puede tocar: la que vive dentro del repositorio real.</p>
+
+          <h2 id="limite-stub">
+            El límite del stub
+            <a href="#limite-stub" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Cuando haces <code>createStub(ProductRepository::class)</code> y le dices qué devolver, tu test comprueba que el servicio usa bien lo que le llega. Bien. Pero nadie ha verificado que <code>DoctrineProductRepository</code> —el repositorio real— ejecute la query correcta. Esa query podría:</p>
+          <ul>
+            <li>devolver los registros en el orden equivocado porque falta un <code>ORDER BY</code>,</li>
+            <li>ignorar un filtro porque hay un error en la cláusula <code>WHERE</code>,</li>
+            <li>explotar con un <code>SQLSTATE[42S22]</code> porque la columna fue renombrada en la migración de ayer y nadie actualizó la query.</li>
+          </ul>
+          <p>El stub no puede detectar nada de esto: finge la interfaz, no la implementación. Para testear la implementación necesitas ejecutarla —y eso implica una base de datos.</p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Dos tipos de test, dos responsabilidades</p>
+              <p>El test unitario verifica que el <em>servicio</em> usa el repositorio correctamente. El test de integración verifica que el <em>repositorio</em> habla con la base de datos correctamente. No son redundantes: cubren capas distintas.</p>
+            </div>
+          </div>
+
+          <h2 id="bbdd-test">
+            La base de datos de test
+            <a href="#bbdd-test" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La base de datos de test es <strong>idéntica en esquema</strong> a la de producción pero completamente separada: distinto nombre, sin datos reales, destruible y reconstruible en cualquier momento. Si usas Docker, añadirla es trivial:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">docker-compose.yml · servicio de test</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>services:
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: app
+      MYSQL_DATABASE_TEST: app_test   # creas la BD de test aquí
+    ports:
+      - "3306:3306"</code></pre>
+          </div>
+          <p>La convención más habitual es sufijo <code>_test</code>: si la de desarrollo se llama <code>app</code>, la de test se llama <code>app_test</code>. Mismas migraciones, ejecutadas una vez al arrancar o en CI, y listo.</p>
+          <p>PHPUnit necesita saber la URL de conexión. La forma limpia es un parámetro de entorno en <code>phpunit.xml</code> que sobreescribe el valor del entorno real durante la suite:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">phpunit.xml · suites + env de test</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;phpunit bootstrap="vendor/autoload.php"&gt;
+
+  &lt;testsuites&gt;
+    &lt;testsuite name="Unit"&gt;
+      &lt;directory&gt;tests/Unit&lt;/directory&gt;
+    &lt;/testsuite&gt;
+    &lt;testsuite name="Integration"&gt;
+      &lt;directory&gt;tests/Integration&lt;/directory&gt;
+    &lt;/testsuite&gt;
+  &lt;/testsuites&gt;
+
+  &lt;php&gt;
+    &lt;env name="DATABASE_URL"
+         value="mysql://root:secret@127.0.0.1:3306/app_test"
+         force="true"/&gt;
+  &lt;/php&gt;
+
+  &lt;source&gt;
+    &lt;include&gt;&lt;directory&gt;src&lt;/directory&gt;&lt;/include&gt;
+  &lt;/source&gt;
+
+&lt;/phpunit&gt;</code></pre>
+          </div>
+          <p>El atributo <code>force="true"</code> asegura que el valor del XML gana aunque ya exista en el entorno del shell — imprescindible si tu <code>.env</code> apunta a la BD de desarrollo.</p>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="10.29 3.86 1.82 18 22.18 18 13.71 3.86 10.29 3.86"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Nunca la base de datos de producción</p>
+              <p>Un test que inserta y revierte sigue siendo un test que <em>ejecuta escrituras</em>. Si por error apunta a producción, puede corromper datos aunque el rollback funcione, porque hay efectos secundarios (triggers, sequences de IDs) que no se deshacen. La BD de test vive en Docker local o en un servicio efímero de CI; nunca en el entorno real.</p>
+            </div>
+          </div>
+
+          <h2 id="fixtures">
+            Fixtures: estado de partida
+            <a href="#fixtures" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un test de integración necesita datos en la base de datos para poder probar algo. Esos datos se llaman <strong>fixtures</strong>: el estado inicial conocido y determinista desde el que parte cada test.</p>
+          <p>La clave es que cada test crea su propio estado, en lugar de depender de datos que ya pudieran existir. Si dos tests comparten filas insertadas globalmente, el orden de ejecución importa — y eso viola la independencia que viste en <a href="phpunit-fixtures.html">el ciclo de vida de los tests</a>. El lugar natural para insertar fixtures es <code>setUp()</code>:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · base de integración con fixtures en setUp</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace Tests\Integration\Infrastructure\Persistence;
+
+use App\Infrastructure\Persistence\DoctrineProductRepository;
+use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\Test;
+
+final class DoctrineProductRepositoryTest extends TestCase
+{
+    private Connection $connection;
+    private DoctrineProductRepository $repository;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->connection = DriverManager::getConnection([
+            'url' =&gt; getenv('DATABASE_URL'),
+        ]);
+
+        $this->connection->beginTransaction();
+
+        $this->connection->executeStatement(
+            'INSERT INTO products (id, name, price_cents) VALUES (:id, :name, :price)',
+            ['id' =&gt; 1, 'name' =&gt; 'Teclado mecánico', 'price' =&gt; 8990]
+        );
+        $this->connection->executeStatement(
+            'INSERT INTO products (id, name, price_cents) VALUES (:id, :name, :price)',
+            ['id' =&gt; 2, 'name' =&gt; 'Monitor 4K', 'price' =&gt; 45000]
+        );
+
+        $this->repository = new DoctrineProductRepository($this->connection);
+    }
+
+    protected function tearDown(): void
+    {
+        $this->connection->rollBack();
+        parent::tearDown();
+    }
+
+    #[Test]
+    public function finds_products_below_price(): void
+    {
+        $results = $this->repository-&gt;findBelowPrice(priceCents: 10000);
+
+        $this-&gt;assertCount(1, $results);
+        $this-&gt;assertSame('Teclado mecánico', $results[0]-&gt;name());
+    }
+}</code></pre>
+          </div>
+          <p>Observa que <code>beginTransaction()</code> va en <code>setUp()</code>, <strong>antes</strong> de insertar los fixtures. Así la inserción también queda dentro de la transacción y se deshará junto con cualquier escritura que haga el test.</p>
+
+          <h2 id="transaccion">
+            Transacción por test
+            <a href="#transaccion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El patrón que acabas de ver — abrir transacción en <code>setUp()</code>, hacer rollback en <code>tearDown()</code> — tiene un nombre: <strong>rollback por test</strong>. Es la forma más rápida de mantener la BD limpia entre tests sin truncar tablas.</p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__step">setUp() — beginTransaction()</div>
+              <div class="flow__arrow">↓</div>
+              <div class="flow__step">INSERT fixtures</div>
+              <div class="flow__arrow">↓</div>
+              <div class="flow__step">Ejecuta el test (puede INSERT, UPDATE, DELETE)</div>
+              <div class="flow__arrow">↓</div>
+              <div class="flow__step">tearDown() — rollBack()</div>
+              <div class="flow__arrow">↓</div>
+              <div class="flow__step">BD vuelve al estado anterior a setUp()</div>
+            </div>
+          </div>
+
+          <p>Comparado con truncar tablas en <code>tearDown()</code>, el rollback es más rápido (la BD descarta los cambios sin escribir nada en disco) y más seguro (cualquier error en el test provoca un rollback implícito igualmente). El siguiente test empieza desde cero, sin rastro del anterior.</p>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="10.29 3.86 1.82 18 22.18 18 13.71 3.86 10.29 3.86"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Limitación: el SUT no puede hacer su propio commit</p>
+              <p>Si el código bajo test llama a <code>commit()</code> explícitamente, los cambios quedan escritos y el rollback de <code>tearDown()</code> no los deshace. En ese caso necesitas truncar tablas en lugar de usar este patrón. La solución habitual es que el caso de uso no gestione la transacción directamente — eso queda en la infraestructura o en un middleware — lo que, como efecto secundario, hace la lógica de negocio más testeable.</p>
+            </div>
+          </div>
+          <p>Cuando el patrón de rollback no es viable, la alternativa es truncar en <code>tearDown()</code>:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · alternativa: truncar en tearDown</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">protected function tearDown(): void
+{
+    $this->connection->executeStatement('SET FOREIGN_KEY_CHECKS = 0');
+    $this->connection->executeStatement('TRUNCATE TABLE products');
+    $this->connection->executeStatement('SET FOREIGN_KEY_CHECKS = 1');
+
+    parent::tearDown();
+}</code></pre>
+          </div>
+          <p>Más lento (escribe en disco), pero funciona cuando el SUT controla la transacción. El <code>FOREIGN_KEY_CHECKS</code> deshabilita temporalmente las claves foráneas para poder truncar en cualquier orden — recuérdalo si el esquema tiene relaciones.</p>
+
+          <h2 id="piramide">
+            La pirámide y las suites
+            <a href="#piramide" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Los tests de integración con base de datos son inevitablemente más lentos que los unitarios: levantan una conexión, ejecutan queries reales, pasan por el disco. Por eso la <strong>pirámide de testing</strong> los pone en el nivel medio: más que los tests end-to-end, pero muchos menos que los unitarios.</p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__step" style="font-size:0.85em;opacity:0.75">E2E / UI — muy pocos, muy lentos</div>
+              <div class="flow__step">Tests de integración — algunos, más lentos</div>
+              <div class="flow__step" style="font-weight:700">Tests unitarios — muchos, muy rápidos</div>
+            </div>
+          </div>
+
+          <p>Las dos suites en <code>phpunit.xml</code> no son solo organización: te permiten ejecutarlas de forma independiente según el momento del ciclo de desarrollo:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · ejecutar suites por separado</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash"># mientras desarrollas: feedback rápido
+vendor/bin/phpunit --testsuite Unit
+
+# antes de hacer push: todo
+vendor/bin/phpunit --testsuite Unit,Integration
+
+# en CI: unitarios primero (fallan rápido), integración después
+vendor/bin/phpunit --testsuite Unit
+vendor/bin/phpunit --testsuite Integration</code></pre>
+          </div>
+          <p>El criterio de cuántos tests de integración escribir es pragmático: uno por cada query o comportamiento de persistencia que no puedas confiar sin verificar contra la BD real. No necesitas cubrir cada método del repositorio con múltiples variantes — eso es redundante si el unitario del servicio ya cubre los casos de negocio.</p>
+
+          <h2 id="que-cubren">
+            Lo que solo el test de integración cubre
+            <a href="#que-cubren" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Esta tabla resume qué verifica cada nivel y por qué no son intercambiables:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>¿Qué verificas?</th><th>Test unitario (stub)</th><th>Test de integración</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>El servicio usa el repositorio correctamente</td><td>✔</td><td>—</td></tr>
+                <tr><td>La query SQL devuelve los registros correctos</td><td>✘ (fingida)</td><td>✔</td></tr>
+                <tr><td>Un <code>WHERE</code> o <code>ORDER BY</code> funciona como se espera</td><td>✘</td><td>✔</td></tr>
+                <tr><td>Una constraint de unicidad rechaza duplicados</td><td>✘</td><td>✔</td></tr>
+                <tr><td>La migración reciente no rompió ninguna query</td><td>✘</td><td>✔</td></tr>
+                <tr><td>Un <a href="transacciones-acid.html">rollback</a> de la BD funciona en el camino de error</td><td>✘</td><td>✔</td></tr>
+                <tr><td>La lógica de negocio aislada de infraestructura</td><td>✔</td><td>— (demasiado lento para eso)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>La columna más valiosa es la del test de integración con "✔ La migración reciente no rompió ninguna query". En proyectos que evolucionan el esquema continuamente —columnas renombradas, tablas partidas, tipos cambiados— los tests de integración son la única red que detecta la rotura antes de que llegue a producción. El stub no puede detectar esto nunca, por diseño.</p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Los tests de integración también documentan</p>
+              <p>Un test que inserta un pedido con líneas, lo recupera y verifica el total es una especificación ejecutable de cómo funciona la persistencia. Cuando alguien refactoriza el repositorio seis meses después, ese test dice exactamente qué debe seguir funcionando — y lo comprueba contra la BD real en lugar de contra un stub que quizás nunca fue fiel a la implementación.</p>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El test unitario verifica la lógica; el de integración verifica la persistencia. No son redundantes: cubren capas distintas y el stub no puede reemplazar al segundo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La BD de test: mismo esquema que producción, distinto nombre, datos propios. La URL va en <code>phpunit.xml</code> como env con <code>force="true"</code> para no contaminar el entorno real.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Fixtures en <code>setUp()</code>: cada test crea su propio estado inicial. Estado compartido entre tests = orden de ejecución importa = bugs silenciosos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Rollback por test: <code>beginTransaction()</code> en <code>setUp()</code>, <code>rollBack()</code> en <code>tearDown()</code>. Más rápido y limpio que truncar — salvo que el SUT haga su propio commit.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Dos suites en <code>phpunit.xml</code>: unitarios para feedback rápido mientras desarrollas; integración antes del push y en CI, después de los unitarios.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El valor único del test de integración: detectar que una migración rompió una query, que un WHERE filtra mal o que una constraint rechaza lo que debe rechazar — todo lo que el stub finge y nunca puede verificar.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="phpunit-excepciones-cobertura.html">
+              <small>← Anterior</small>
+              <b>Testear excepciones y medir cobertura</b>
+            </a>
+            <a href="../cursos.html" class="next">
+              <small>Fin del curso →</small>
+              <b>Volver a los cursos</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

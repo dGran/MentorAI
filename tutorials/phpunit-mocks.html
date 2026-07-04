@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stubs y mocks en la práctica — MentorAI</title>
+    <meta name="description" content="La API de dobles de PHPUnit aplicada: createStub con willReturn para respuestas programadas, createMock con expects para verificar interacciones, excepciones y callbacks — y el aviso contra sobre-mockear." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Testing</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Stubs y mocks en la práctica</h1>
+        <p class="tutorial-hero__lead">La teoría de los dobles ya la tienes; esta lección es la API concreta con la que PHPUnit los fabrica. Dos métodos, dos intenciones: createStub para programar respuestas, createMock para verificar conversaciones — y saber cuándo estás usando demasiados.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#teoria-a-api">De la teoría a la API</a></li>
+            <li><a href="#stubs">Stubs: programar respuestas</a></li>
+            <li><a href="#mocks">Mocks: verificar la conversación</a></li>
+            <li><a href="#comportamientos">Respuestas avanzadas</a></li>
+            <li><a href="#sobre-mockear">Sobre-mockear</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">En <a href="test-doubles.html">test doubles</a> viste la taxonomía —dummy, stub, spy, mock, fake— y la distinción de fondo: verificar <em>estado</em> (qué devuelve o en qué queda algo) vs verificar <em>comportamiento</em> (qué llamadas se hicieron). PHPUnit condensa esa teoría en una API pequeña, y elegir bien el método es elegir qué tipo de test estás escribiendo.</p>
+
+          <h2 id="teoria-a-api">
+            De la teoría a la API
+            <a href="#teoria-a-api" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Dos puntos de entrada, cada uno con su intención:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Método</th><th>Fabrica</th><th>Lo usas cuando…</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>createStub(Interfaz::class)</code></td><td>Un <strong>stub</strong>: responde lo que le programes, no verifica nada.</td><td>El colaborador solo <em>alimenta</em> al código bajo prueba; la aserción va sobre el resultado.</td></tr>
+                <tr><td><code>createMock(Interfaz::class)</code></td><td>Un <strong>mock</strong>: además de responder, <em>espera</em> llamadas concretas y falla si no ocurren.</td><td>La llamada al colaborador ES el efecto que pruebas (enviar el email, publicar el evento).</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Ambos generan al vuelo una clase que implementa la interfaz (o extiende la clase) con todos los métodos vacíos. Y aquí reaparece un viejo conocido: esto funciona bien porque tus servicios dependen de <a href="interfaces.html">interfaces</a> inyectadas por <a href="inyeccion-dependencias.html">constructor</a> — los dobles son la recompensa práctica de ese diseño. Interfaces pequeñas (<a href="isp-segregacion-interfaces.html">ISP</a>) = dobles baratos.</p>
+
+          <h2 id="stubs">
+            Stubs: programar respuestas
+            <a href="#stubs" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El caso más frecuente: pruebas un servicio que <em>lee</em> de un colaborador. El stub le da al servicio el mundo que necesita ver:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · el stub alimenta; la aserción va al resultado</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">#[Test]
+public function el_total_convierte_a_la_moneda_del_cliente(): void
+{
+    $rates = $this-&gt;createStub(ExchangeRateProvider::class);
+    $rates-&gt;method('rateFor')-&gt;willReturn(1.10);
+
+    $converter = new PriceConverter($rates);
+
+    $this-&gt;assertSame(1100, $converter-&gt;convert(1000, to: 'USD'));
+}</code></pre>
+          </div>
+          <p>La secuencia se lee sola: <code>method('rateFor')</code> selecciona el método, <code>willReturn(1.10)</code> programa la respuesta. El test no comprueba <em>nada</em> sobre el stub — le da igual cuántas veces se llame o con qué argumentos. Esa indiferencia es una virtud: el test queda acoplado al resultado, no a cómo el servicio conversa por dentro, así que sobrevivirá a refactorizaciones internas.</p>
+
+          <h2 id="mocks">
+            Mocks: verificar la conversación
+            <a href="#mocks" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>A veces el efecto que pruebas no es un valor devuelto sino una <em>orden dada</em>: "al confirmar el pedido, se envía el email". No hay resultado que asertar — la llamada es el comportamiento. Ahí entra el mock con sus expectativas:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · la llamada es lo que se prueba</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">#[Test]
+public function confirmar_el_pedido_notifica_al_cliente(): void
+{
+    $mailer = $this-&gt;createMock(OrderMailer::class);
+    $mailer-&gt;expects($this-&gt;once())
+        -&gt;method('sendConfirmation')
+        -&gt;with($this-&gt;callback(
+            fn (Order $order): bool =&gt; $order-&gt;id() === 7
+        ));
+
+    $service = new OrderService(new InMemoryOrderRepository(), $mailer);
+
+    $service-&gt;confirm(new Order(id: 7));
+}</code></pre>
+          </div>
+          <p>Las tres piezas de una expectativa: <code>expects()</code> dice <em>cuántas veces</em> (<code>$this-&gt;once()</code>, <code>$this-&gt;never()</code>, <code>$this-&gt;exactly(2)</code>), <code>method()</code> dice <em>qué método</em>, y <code>with()</code> dice <em>con qué argumentos</em> (valores literales, o un <code>callback</code> para comprobar lo que importa del argumento). Si al terminar el test la expectativa no se cumplió, falla solo — la verificación está implícita.</p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">$this-&gt;never(): la expectativa negativa</p>
+              <p>Tan valioso como comprobar que algo se llama es comprobar que <em>no</em> se llama: "si el pedido ya estaba confirmado, NO se reenvía el email". <code>expects($this-&gt;never())-&gt;method('sendConfirmation')</code> lo deja escrito como regla ejecutable.</p>
+            </div>
+          </div>
+
+          <h2 id="comportamientos">
+            Respuestas avanzadas
+            <a href="#comportamientos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Además de <code>willReturn</code>, hay tres programaciones que cubren el resto de escenarios reales:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · excepciones, respuestas según argumento y callbacks</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">// simular que el colaborador falla: ¿mi servicio lo gestiona bien?
+$gateway-&gt;method('charge')
+    -&gt;willThrowException(new PaymentDeclined('fondos insuficientes'));
+
+// respuesta distinta según el argumento (mapa entrada -&gt; salida)
+$rates-&gt;method('rateFor')-&gt;willReturnMap([
+    ['USD', 1.10],
+    ['GBP', 0.85],
+]);
+
+// lógica arbitraria cuando el mapa no basta
+$repository-&gt;method('find')-&gt;willReturnCallback(
+    fn (int $id): ?Order =&gt; $id === 7 ? new Order(id: 7) : null
+);</code></pre>
+          </div>
+          <p><code>willThrowException</code> es la más importante de las tres: es la puerta a testear los <strong>caminos tristes</strong> — qué hace tu servicio cuando la pasarela rechaza el pago, cuando la API externa da timeout. En producción esos escenarios son difíciles de provocar; con un stub cuestan una línea. La lección siguiente (excepciones) completa ese frente.</p>
+
+          <h2 id="sobre-mockear">
+            Sobre-mockear
+            <a href="#sobre-mockear" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La API es tan cómoda que el peligro es el exceso. Dos reglas de contención:</p>
+          <p><strong>Primera: no verifiques conversaciones que no son el comportamiento.</strong> Si usas <code>expects()</code> para cada llamada interna —que consultó el repositorio, que llamó al validador, que pidió el tipo de cambio— tu test es una fotografía de la implementación: cualquier refactor que cambie el <em>cómo</em> sin tocar el <em>qué</em> lo rompe. Es el test frágil de manual (<a href="tests-que-no-estorban.html">comportamiento, no implementación</a>). La pregunta que ordena: ¿esta llamada es un <em>efecto prometido</em> del servicio (email enviado, evento publicado) o un <em>detalle de fontanería</em>? Mock para lo primero; stub indiferente para lo segundo.</p>
+          <p><strong>Segunda: no mockees lo que no es tuyo.</strong> Doblar la interfaz de un cliente HTTP de terceros acopla tus tests a una API ajena que cambiará. El patrón sano: define <em>tu</em> puerto (una interfaz tuya, pequeña, con el lenguaje de tu dominio), envuelve la librería en un adaptador, y mockea tu puerto — exactamente la jugada de <a href="hexagonal.html">la arquitectura hexagonal</a>. Y para colaboradores con lógica de consulta rica (un repositorio), a menudo un <strong>fake</strong> escrito a mano (como el <code>InMemoryOrderRepository</code> de estos ejemplos) da tests más legibles que una pila de stubs.</p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>createStub para alimentar (aserción sobre el resultado); createMock + expects cuando la llamada misma es el comportamiento prometido.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Expectativa = expects (cuántas: once/never/exactly) + method (cuál) + with (con qué); se verifica sola al acabar el test.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>willThrowException abre los caminos tristes; willReturnMap y willReturnCallback cubren respuestas dependientes del argumento.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Mock solo los efectos prometidos; expectativas sobre la fontanería interna = test frágil que castiga cada refactor.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>No mockees lo ajeno: envuélvelo en tu puerto y mockea el puerto. Para colaboradores ricos, un fake en memoria gana en legibilidad.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="phpunit-fixtures.html">
+              <small>← Anterior</small>
+              <b>Fixtures y ciclo de vida</b>
+            </a>
+            <a href="phpunit-excepciones-cobertura.html" class="next">
+              <small>Siguiente →</small>
+              <b>Excepciones y cobertura</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

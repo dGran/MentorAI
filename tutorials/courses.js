@@ -201,7 +201,7 @@ window.MENTORAI_COURSES = [
   },
   {
     slug: "testing",
-    title: "Testing y TDD para backend",
+    title: "TDD y fundamentos de testing",
     summary:
       "Escribir código con red de seguridad: el ciclo de TDD, cómo organizar los tests en niveles, los dobles para aislar dependencias y cómo evitar los tests que estorban.",
     level: "Intermedio",
@@ -211,6 +211,22 @@ window.MENTORAI_COURSES = [
       "tipos-de-test",
       "test-doubles",
       "tests-que-no-estorban",
+    ],
+  },
+  {
+    slug: "phpunit",
+    title: "PHPUnit en profundidad",
+    summary:
+      "Del primer test a la suite completa: anatomía de un test, casos paramétricos con data providers, ciclo de vida de fixtures, stubs y mocks para aislar dependencias, testear excepciones y medir cobertura, y tests de integración con base de datos real.",
+    level: "Avanzado",
+    icon: "code",
+    lessons: [
+      "phpunit-primeros-pasos",
+      "phpunit-data-providers",
+      "phpunit-fixtures",
+      "phpunit-mocks",
+      "phpunit-excepciones-cobertura",
+      "phpunit-integracion-bbdd",
     ],
   },
   {

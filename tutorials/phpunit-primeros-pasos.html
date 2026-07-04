@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PHPUnit: primeros pasos — MentorAI</title>
+    <meta name="description" content="Instalar PHPUnit con Composer, configurar phpunit.xml, escribir el primer test con la anatomía correcta, ejecutar la suite y dominar las aserciones esenciales — incluida la diferencia entre assertSame y assertEquals." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Testing</span>
+        </nav>
+        <h1 class="tutorial-hero__title">PHPUnit: primeros pasos</h1>
+        <p class="tutorial-hero__lead">Ya sabes por qué testear; ahora toca la herramienta con la que lo harás cada día. Instalar PHPUnit, escribir el primer test bien formado, leer lo que te dice cuando falla — y esquivar desde el principio la trampa de assertEquals.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#instalar">Instalar y configurar</a></li>
+            <li><a href="#anatomia">Anatomía de un test</a></li>
+            <li><a href="#ejecutar">Ejecutar y leer la salida</a></li>
+            <li><a href="#aserciones">Las aserciones esenciales</a></li>
+            <li><a href="#same-vs-equals">assertSame vs assertEquals</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">PHPUnit es el framework de testing de facto en PHP: lo usan Symfony, Laravel y prácticamente todo el ecosistema. Este curso es la contraparte práctica del de <a href="tdd-ciclo.html">TDD y fundamentos</a>: allí el porqué y el cuándo; aquí, la herramienta a fondo.</p>
+
+          <h2 id="instalar">
+            Instalar y configurar
+            <a href="#instalar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>PHPUnit es una dependencia <strong>de desarrollo</strong>: la necesitas para trabajar, no para que la aplicación funcione en producción. Por eso va a <code>require-dev</code>:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · instalar PHPUnit</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">composer require --dev phpunit/phpunit
+
+# el binario queda en vendor/bin
+vendor/bin/phpunit --version</code></pre>
+          </div>
+          <p>La configuración vive en <code>phpunit.xml</code> en la raíz del proyecto. Tres cosas hacen el 90&nbsp;% del trabajo: dónde están los tests, qué bootstrap cargar (el autoloader de Composer) y un par de banderas de higiene:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">xml · phpunit.xml mínimo y sano</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>&lt;phpunit bootstrap="vendor/autoload.php"
+         colors="true"
+         failOnRisky="true"
+         failOnWarning="true"&gt;
+    &lt;testsuites&gt;
+        &lt;testsuite name="unit"&gt;
+            &lt;directory&gt;tests/Unit&lt;/directory&gt;
+        &lt;/testsuite&gt;
+        &lt;testsuite name="integration"&gt;
+            &lt;directory&gt;tests/Integration&lt;/directory&gt;
+        &lt;/testsuite&gt;
+    &lt;/testsuites&gt;
+&lt;/phpunit&gt;</code></pre>
+          </div>
+          <p>Fíjate en las dos suites separadas: es <a href="tipos-de-test.html">la pirámide de tests</a> hecha configuración. Podrás ejecutar solo las unitarias (rápidas, a cada rato) o todo (antes de un push, y siempre en CI). La convención de nombres: la clase <code>InvoiceCalculator</code> se prueba en <code>InvoiceCalculatorTest</code>, espejo de <code>src/</code> en <code>tests/</code>.</p>
+
+          <h2 id="anatomia">
+            Anatomía de un test
+            <a href="#anatomia" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un test de PHPUnit es una clase que extiende <code>TestCase</code>; cada método marcado con el atributo <code>#[Test]</code> (o cuyo nombre empieza por <code>test</code>) es un caso independiente. Por dentro, los buenos tests siguen siempre la misma partitura en tres actos — <em>arrange, act, assert</em>: preparar el escenario, ejecutar lo que pruebas, comprobar el resultado.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · tests/Unit/InvoiceCalculatorTest.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+
+final class InvoiceCalculatorTest extends TestCase
+{
+    #[Test]
+    public function aplica_el_iva_al_subtotal(): void
+    {
+        $calculator = new InvoiceCalculator(vatRate: 21);
+
+        $total = $calculator-&gt;totalFor(subtotalCents: 10000);
+
+        $this-&gt;assertSame(12100, $total);
+    }
+}</code></pre>
+          </div>
+          <p>Detalles que importan más de lo que parecen: el nombre del método describe <strong>el comportamiento</strong>, no el método que llama ("aplica el IVA al subtotal", no "testTotalFor") — cuando falle dentro de seis meses, el nombre es lo primero que leerás. Y las tres fases separadas por líneas en blanco hacen el test legible de un vistazo, exactamente el mismo criterio de legibilidad que pides al código de producción.</p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">¿Atributo o prefijo test?</p>
+              <p>Ambos funcionan: <code>#[Test]</code> sobre el método (PHPUnit 10+) libera el nombre para escribir español natural; el prefijo <code>public function testAplicaElIva()</code> es la convención clásica que verás en miles de repos. Elige uno con tu equipo y sé consistente — el atributo es el camino moderno.</p>
+            </div>
+          </div>
+
+          <h2 id="ejecutar">
+            Ejecutar y leer la salida
+            <a href="#ejecutar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El día a día son tres comandos:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · ejecutar la suite</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash"># todo
+vendor/bin/phpunit
+
+# solo la suite rápida
+vendor/bin/phpunit --testsuite unit
+
+# solo lo que estás tocando ahora
+vendor/bin/phpunit --filter InvoiceCalculatorTest</code></pre>
+          </div>
+          <p>La salida usa un carácter por test: <code>.</code> pasó, <code>F</code> falló una aserción, <code>E</code> explotó con un error antes de llegar a la aserción, <code>R</code> arriesgado (no comprobó nada), <code>S</code> saltado. La distinción <code>F</code>/<code>E</code> orienta el diagnóstico: un <em>failure</em> significa "el código corrió y el resultado no es el esperado"; un <em>error</em> significa "el test ni siquiera pudo terminar" (excepción no prevista, clase que no existe). Se arreglan mirando sitios distintos.</p>
+          <p>Cuando una aserción falla, PHPUnit imprime el diff entre lo esperado y lo recibido. Ahí está la mitad del valor de la herramienta: un buen test que falla te dice <em>qué</em> se rompió sin abrir el depurador — es la razón por la que las aserciones específicas (siguiente sección) ganan a un <code>assertTrue</code> genérico que solo dice "false is not true".</p>
+
+          <h2 id="aserciones">
+            Las aserciones esenciales
+            <a href="#aserciones" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>PHPUnit trae decenas de aserciones; con estas cubres casi todo, y la regla para elegir es siempre la misma: <strong>la más específica que exprese tu intención</strong>, porque es la que mejor mensaje da al fallar.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Aserción</th><th>Comprueba</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>assertSame($esperado, $real)</code></td><td>Identidad estricta (<code>===</code>). Tu aserción por defecto.</td></tr>
+                <tr><td><code>assertEquals($esperado, $real)</code></td><td>Igualdad laxa (valores comparables). Solo cuando la laxitud es deliberada.</td></tr>
+                <tr><td><code>assertTrue($x)</code> / <code>assertFalse($x)</code></td><td>Booleanos reales (no truthy/falsy).</td></tr>
+                <tr><td><code>assertNull($x)</code></td><td>El valor es exactamente <code>null</code>.</td></tr>
+                <tr><td><code>assertCount(3, $coleccion)</code></td><td>Número de elementos, con mensaje claro al fallar.</td></tr>
+                <tr><td><code>assertContains($aguja, $pajar)</code></td><td>Un elemento está en el array/iterable.</td></tr>
+                <tr><td><code>assertInstanceOf(Clase::class, $x)</code></td><td>El tipo del objeto.</td></tr>
+                <tr><td><code>assertStringContainsString($sub, $str)</code></td><td>Subcadena en un string.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Todas aceptan un mensaje opcional como último argumento, pero si necesitas explicar la aserción con un mensaje, suele ser señal de que existe una aserción más específica que lo diría sola.</p>
+
+          <h2 id="same-vs-equals">
+            assertSame vs assertEquals
+            <a href="#same-vs-equals" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El error típico del que arranca con PHPUnit merece su propia sección. <code>assertEquals</code> compara con la laxitud de <code>==</code>: convierte tipos antes de comparar. <code>assertSame</code> usa <code>===</code>: tipo y valor. La diferencia deja pasar bugs reales:</p>
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>assertEquals — pasa (y miente)</h4>
+              <ul>
+                <li><code>assertEquals(1, '1')</code> ✔ pasa</li>
+                <li><code>assertEquals(0, false)</code> ✔ pasa</li>
+                <li><code>assertEquals(null, 0)</code> ✔ pasa (PHPUnit 9)</li>
+                <li>Tu función devuelve string donde prometía int y el test no se entera.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>assertSame — falla (y te avisa)</h4>
+              <ul>
+                <li><code>assertSame(1, '1')</code> ✘ falla</li>
+                <li><code>assertSame(0, false)</code> ✘ falla</li>
+                <li>El tipo forma parte del contrato, igual que con <code>declare(strict_types=1)</code>.</li>
+                <li>El diff te muestra el tipo exacto recibido.</li>
+              </ul>
+            </div>
+          </div>
+          <p>¿Cuándo sí <code>assertEquals</code>? Con <strong>objetos que quieres comparar por contenido</strong>: dos <code>DateTimeImmutable</code> con la misma fecha, dos value objects con el mismo estado. <code>assertSame</code> entre objetos exige que sean <em>la misma instancia</em>, que casi nunca es lo que quieres comprobar. La regla práctica: <strong>escalares con <code>assertSame</code>, objetos por contenido con <code>assertEquals</code></strong> — y coherente con el tipado estricto que ya usas en el código de producción.</p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Desde el IDE también</p>
+              <p>PhpStorm integra PHPUnit: detecta <code>phpunit.xml</code>, ejecuta un test o una clase con el triángulo verde del margen y te deja saltar del fallo a la línea. Ideal para el ciclo rápido; la terminal y el CI ejecutan exactamente lo mismo.</p>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>PHPUnit va en require-dev; phpunit.xml define bootstrap, suites separadas (unit/integration) y banderas de higiene como failOnRisky.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un test = clase TestCase + método #[Test] con tres actos: arrange, act, assert. El nombre describe el comportamiento, no el método llamado.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>F ≠ E: failure es resultado inesperado; error es que el test ni terminó. Se diagnostican mirando sitios distintos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Usa siempre la aserción más específica: su mensaje de fallo trabaja por ti.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>assertSame (===) para escalares; assertEquals solo para comparar objetos por contenido. La laxitud de == deja pasar bugs de tipo.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../cursos.html">
+              <small>← Volver</small>
+              <b>Cursos</b>
+            </a>
+            <a href="phpunit-data-providers.html" class="next">
+              <small>Siguiente →</small>
+              <b>Data providers</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

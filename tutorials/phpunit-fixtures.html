@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fixtures y ciclo de vida del test — MentorAI</title>
+    <meta name="description" content="Cómo ejecuta PHPUnit cada test por dentro: una instancia nueva por método, setUp y tearDown, los métodos estáticos de clase, y por qué los tests deben ser independientes — con el estado compartido como enemigo número uno." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Testing</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Fixtures y ciclo de vida del test</h1>
+        <p class="tutorial-hero__lead">Cada test necesita su escenario montado antes de empezar y recogido al terminar. PHPUnit tiene un ciclo de vida preciso para eso — y entenderlo es la diferencia entre tests independientes y una suite que falla según el orden en que corre.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#ciclo">El ciclo de vida por dentro</a></li>
+            <li><a href="#setup">setUp y tearDown en la práctica</a></li>
+            <li><a href="#before-class">Los métodos de clase</a></li>
+            <li><a href="#independencia">Tests independientes</a></li>
+            <li><a href="#estado">El estado compartido, el enemigo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Al escenario que un test necesita montado —objetos, datos, dobles— se le llama <strong>fixture</strong>. PHPUnit ofrece ganchos para construirlo y desmontarlo, pero antes de usarlos conviene saber una cosa que sorprende a casi todo el mundo: cómo ejecuta PHPUnit tus tests por dentro.</p>
+
+          <h2 id="ciclo">
+            El ciclo de vida por dentro
+            <a href="#ciclo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El dato clave: <strong>PHPUnit crea una instancia nueva de tu clase de test para cada método</strong>. Si tu clase tiene cinco tests, se instancia cinco veces. Las propiedades del objeto <em>no</em> sobreviven de un test al siguiente — y eso es deliberado: es la primera línea de defensa del aislamiento.</p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>setUpBeforeClass()</b><small>Una vez, antes de todos los tests de la clase (estático)</small></span>
+              </div>
+              <div class="flow__arrow" data-label="por cada test"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>new TuTest() → setUp() → el test → tearDown()</b><small>Instancia nueva, montar, probar, desmontar</small></span>
+              </div>
+              <div class="flow__arrow" data-label="al acabar todos"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>tearDownAfterClass()</b><small>Una vez, después del último test (estático)</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">El paso 2 se repite entero por cada método de test: instancia limpia, escenario limpio.</p>
+          </div>
+          <p>Con ese mapa, los ganchos se explican solos: <code>setUp()</code> corre antes de <em>cada</em> test y <code>tearDown()</code> después de <em>cada</em> test; los métodos <code>*Class</code> son estáticos y corren una sola vez por clase.</p>
+
+          <h2 id="setup">
+            setUp y tearDown en la práctica
+            <a href="#setup" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p><code>setUp()</code> es el sitio del escenario común: lo que <em>todos</em> los tests de la clase necesitan igual. El caso típico, construir el objeto bajo prueba con sus dobles:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · escenario común en setUp</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">final class OrderServiceTest extends TestCase
+{
+    private InMemoryOrderRepository $repository;
+    private OrderService $service;
+
+    protected function setUp(): void
+    {
+        $this-&gt;repository = new InMemoryOrderRepository();
+        $this-&gt;service = new OrderService($this-&gt;repository);
+    }
+
+    #[Test]
+    public function guarda_el_pedido_confirmado(): void
+    {
+        $this-&gt;service-&gt;confirm(new Order(id: 7));
+
+        $this-&gt;assertCount(1, $this-&gt;repository-&gt;all());
+    }
+}</code></pre>
+          </div>
+          <p><code>tearDown()</code> es el simétrico: limpiar lo que el test haya dejado <em>fuera del objeto</em> — cerrar un fichero temporal, restaurar una variable de entorno, vaciar una cola. Para objetos en memoria normalmente no hace falta: la instancia muere con el test y el recolector hace el resto.</p>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">setUp no es un trastero</p>
+              <p>Si el setUp monta cosas que solo usan dos de diez tests, los otros ocho pagan un escenario que no entienden ni necesitan — y quien lea un test tiene que subir al setUp para saber de dónde sale cada cosa. Regla práctica: al setUp va lo <em>universal</em> de la clase; lo particular de cada test, dentro del test (o en un método privado con nombre expresivo: <code>$this-&gt;pedidoConDosLineas()</code>).</p>
+            </div>
+          </div>
+
+          <h2 id="before-class">
+            Los métodos de clase
+            <a href="#before-class" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p><code>setUpBeforeClass()</code> y <code>tearDownAfterClass()</code> existen para recursos <strong>caros de crear y seguros de compartir</strong>: la conexión a la base de datos de test, un contenedor arrancado, un servidor fake. Crearlos una vez por clase en lugar de una vez por test puede ahorrar minutos de suite.</p>
+          <p>La palabra que importa es <em>seguros</em>: como son estáticos y viven entre tests, cualquier cosa mutable que guardes ahí es un canal de contaminación entre tests. Una conexión, sí; los <em>datos</em> que los tests escriben a través de ella, no — de limpiarlos se encarga cada test (en la lección de integración con BD verás el patrón de la transacción con rollback, que resuelve esto con elegancia).</p>
+
+          <h2 id="independencia">
+            Tests independientes
+            <a href="#independencia" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Todo este ciclo de vida sirve a un principio que ya conoces de <a href="tests-que-no-estorban.html">FIRST</a>: cada test debe poder ejecutarse <strong>solo, en cualquier orden, y dar el mismo resultado</strong>. Un test que solo pasa si otro corrió antes no es un test: es una trampa retardada que explotará cuando alguien ejecute con <code>--filter</code> o cuando el orden cambie.</p>
+          <p>Hay una forma barata de comprobar que tu suite lo cumple: pedirle a PHPUnit que baraje el orden en cada ejecución.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · detectar dependencias ocultas entre tests</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">vendor/bin/phpunit --order-by=random
+
+# reproducir un fallo de orden concreto
+vendor/bin/phpunit --order-by=random --random-order-seed=1234</code></pre>
+          </div>
+          <p>Si la suite pasa en orden natural y falla barajada, tienes tests acoplados; la semilla te deja reproducir la combinación exacta que falló. Activarlo en el CI convierte la independencia de deseo en garantía.</p>
+
+          <h2 id="estado">
+            El estado compartido, el enemigo
+            <a href="#estado" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Si la instancia se renueva por test, ¿por dónde se contaminan los tests entre sí? Por todo lo que vive <em>fuera</em> de la instancia. La lista de sospechosos habituales:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Canal de contaminación</th><th>Antídoto</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Propiedades y variables <code>static</code> (incl. singletons)</td><td>Evitarlos en diseño; si no hay más remedio, resetear en setUp/tearDown.</td></tr>
+                <tr><td>La base de datos de test</td><td>Transacción por test con rollback (próximas lecciones).</td></tr>
+                <tr><td>Ficheros y directorios temporales</td><td>Nombre único por test + borrado en tearDown.</td></tr>
+                <tr><td>Variables de entorno y config global</td><td>Guardar el valor original y restaurarlo en tearDown.</td></tr>
+                <tr><td>El reloj (<code>time()</code>, <code>new DateTime()</code>)</td><td>Inyectar un reloj (<a href="inyeccion-dependencias.html">DI</a>): el tiempo real hace tests no repetibles.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>El patrón de los cinco es el mismo: <strong>estado global mutable</strong>. El mismo enemigo que ya señalaban <a href="funciones-limpias.html">las funciones limpias</a> (efectos secundarios) y la inyección de dependencias, visto ahora desde los tests: lo que hace difícil testear algo suele ser exactamente lo que lo hace frágil en producción. Los tests que se contaminan no son un problema de PHPUnit — son un síntoma de diseño que PHPUnit te está regalando.</p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>PHPUnit instancia tu clase de test una vez POR MÉTODO: las propiedades no sobreviven entre tests, a propósito.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>setUp/tearDown corren por cada test (escenario común); setUpBeforeClass/tearDownAfterClass una vez por clase (recursos caros y seguros de compartir).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Al setUp va lo universal de la clase; lo particular de cada test, en el test. Un setUp trastero hace ilegibles los diez tests de abajo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>--order-by=random en CI convierte la independencia en garantía; la semilla reproduce el fallo exacto.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La contaminación viaja por el estado global mutable: statics, BD, ficheros, entorno y el reloj. Un test difícil de aislar es un aviso de diseño.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="phpunit-data-providers.html">
+              <small>← Anterior</small>
+              <b>Data providers</b>
+            </a>
+            <a href="phpunit-mocks.html" class="next">
+              <small>Siguiente →</small>
+              <b>Stubs y mocks en la práctica</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data providers: tests parametrizados — MentorAI</title>
+    <meta name="description" content="Un mismo test, muchos casos: el data provider de PHPUnit. Por qué gana al copiar y pegar tests, datasets con nombre que se leen solos al fallar y cómo cubrir los casos límite en una tabla." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Testing</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Data providers: tests parametrizados</h1>
+        <p class="tutorial-hero__lead">La misma lógica con diez entradas distintas no son diez tests copiados: es un test y una tabla de casos. El data provider es la herramienta de PHPUnit para esa tabla — y bien usado, convierte los casos límite en una lista que se lee de un vistazo.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">El test copiado y pegado</a></li>
+            <li><a href="#provider">El data provider</a></li>
+            <li><a href="#nombres">Datasets con nombre</a></li>
+            <li><a href="#casos-limite">Los casos límite, en tabla</a></li>
+            <li><a href="#cuando-no">Cuándo no usarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Hay una señal inequívoca de que necesitas un data provider: tres métodos de test idénticos salvo por los números. La lógica de la prueba es una; lo que varía son los datos. Separarlos es el mismo principio de <a href="funciones-limpias.html">no repetirte</a> aplicado a los tests.</p>
+
+          <h2 id="problema">
+            El test copiado y pegado
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Supón un servicio que calcula el descuento por volumen de un pedido. Quieres probar varios tramos, y la primera tentación es esta:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · el patrón que pide a gritos un provider</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">#[Test]
+public function sin_descuento_por_debajo_de_100(): void
+{
+    $this-&gt;assertSame(0, (new VolumeDiscount())-&gt;percentFor(9900));
+}
+
+#[Test]
+public function cinco_por_ciento_desde_100(): void
+{
+    $this-&gt;assertSame(5, (new VolumeDiscount())-&gt;percentFor(10000));
+}
+
+#[Test]
+public function diez_por_ciento_desde_500(): void
+{
+    $this-&gt;assertSame(10, (new VolumeDiscount())-&gt;percentFor(50000));
+}</code></pre>
+          </div>
+          <p>Funciona, pero tiene los problemas de todo copia-pega: si mañana cambia la forma de llamar al servicio tocas N sitios, añadir un caso cuesta un método entero, y la vista de pájaro ("¿qué tramos estamos cubriendo?") no existe — está repartida en metros de código idéntico.</p>
+
+          <h2 id="provider">
+            El data provider
+            <a href="#provider" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un <strong>data provider</strong> es un método estático que devuelve conjuntos de argumentos; PHPUnit ejecuta el test <em>una vez por conjunto</em>, como si fueran tests separados. Se conecta con el atributo <code>#[DataProvider]</code>:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · un test, todos los tramos</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
+
+final class VolumeDiscountTest extends TestCase
+{
+    #[Test]
+    #[DataProvider('tramos')]
+    public function aplica_el_descuento_por_tramo(int $subtotalCents, int $expectedPercent): void
+    {
+        $discount = new VolumeDiscount();
+
+        $this-&gt;assertSame($expectedPercent, $discount-&gt;percentFor($subtotalCents));
+    }
+
+    public static function tramos(): iterable
+    {
+        yield [9900, 0];
+        yield [10000, 5];
+        yield [49900, 5];
+        yield [50000, 10];
+    }
+}</code></pre>
+          </div>
+          <p>Reglas de la mecánica: el provider es <code>public static</code> (PHPUnit lo llama antes de instanciar la clase), devuelve un iterable de arrays, y cada array son los argumentos del test en orden. En versiones antiguas verás la anotación <code>@dataProvider</code> en el docblock: es lo mismo con la sintaxis previa a los atributos.</p>
+          <p>Fíjate en qué ganó el test: añadir un tramo es <strong>una línea</strong>, la llamada al servicio vive en un solo sitio, y los cuatro casos se leen como lo que son — una tabla de decisión. Cada caso sigue contando como test individual: si falla uno, los demás se ejecutan igualmente.</p>
+
+          <h2 id="nombres">
+            Datasets con nombre
+            <a href="#nombres" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El ejemplo anterior tiene un defecto que descubrirás el día que falle: PHPUnit reporta el caso como <code>with data set #2</code>, y toca contar yields para saber cuál es. La solución es nombrar cada dataset con una clave:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · el fallo se explica solo</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">public static function tramos(): iterable
+{
+    yield 'justo por debajo del primer tramo' =&gt; [9900, 0];
+    yield 'frontera exacta del 5%' =&gt; [10000, 5];
+    yield 'justo por debajo del 10%' =&gt; [49900, 5];
+    yield 'frontera exacta del 10%' =&gt; [50000, 10];
+}</code></pre>
+          </div>
+          <p>Ahora un fallo dice <code>aplica_el_descuento_por_tramo with data set "frontera exacta del 5%"</code> — el diagnóstico viene incluido en el nombre. El coste es teclear una frase; el beneficio aparece justo cuando peor estás (algo se ha roto). Nómbralos <strong>siempre</strong>.</p>
+
+          <h2 id="casos-limite">
+            Los casos límite, en tabla
+            <a href="#casos-limite" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El data provider cambia algo más profundo que la sintaxis: convierte "¿qué casos pruebo?" en una pregunta con sitio propio. Y la respuesta sistemática son los <strong>límites</strong>, porque los bugs viven en las fronteras, no en el centro del rango:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Tipo de caso</th><th>Ejemplos a cubrir</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Fronteras exactas</td><td>El valor donde cambia el comportamiento, y el inmediatamente anterior (10000 y 9900).</td></tr>
+                <tr><td>El cero y lo vacío</td><td><code>0</code>, <code>""</code>, array vacío, colección sin elementos.</td></tr>
+                <tr><td>Negativos e inválidos</td><td>¿Qué hace un subtotal negativo? Si debe lanzar, eso es otro test (lo vemos en la lección de excepciones).</td></tr>
+                <tr><td>Extremos del tipo</td><td>Valores enormes, strings larguísimos, <code>PHP_INT_MAX</code> si aplica.</td></tr>
+                <tr><td>El caso normal</td><td>Uno o dos representativos del centro del rango. No veinte.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El provider como documentación</p>
+              <p>Un provider con datasets bien nombrados es la especificación del comportamiento en formato tabla: cualquiera que lo lea sabe qué hace la función en cada frontera sin abrir la implementación. Es el tipo de test que <a href="tests-que-no-estorban.html">no estorba</a>: documenta comportamiento, no implementación.</p>
+            </div>
+          </div>
+
+          <h2 id="cuando-no">
+            Cuándo no usarlo
+            <a href="#cuando-no" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Dos abusos convierten la herramienta en un problema. El primero: <strong>lógica en el provider</strong>. Si el provider calcula los valores esperados con condicionales o, peor, reproduce la fórmula que estás probando, ya no pruebas nada — comparas la implementación consigo misma. Los datos del provider se escriben <em>literales</em>, calculados a mano o con una fuente independiente.</p>
+          <p>El segundo: <strong>el provider cajón de sastre</strong>. Si los casos no comparten la misma aserción —unos devuelven valor, otros lanzan excepción, otros tocan un colaborador— es que son comportamientos distintos, y cada comportamiento merece su propio test con su propio nombre. La señal: parámetros que solo usan algunos datasets, o un test lleno de <code>if</code> según el caso. Un test parametrizado prueba <em>una</em> regla con N entradas, no N reglas con una tabla.</p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Tests idénticos salvo los datos = un test + un data provider. Añadir un caso pasa a costar una línea.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Mecánica: método public static que devuelve iterable de arrays, conectado con #[DataProvider]; cada dataset cuenta como test independiente.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Nombra siempre los datasets (yield 'caso' => [...]): el fallo se explica solo, justo cuando más lo necesitas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los bugs viven en las fronteras: fronteras exactas, cero/vacío, negativos y extremos antes que veinte casos normales.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Sin lógica en el provider (datos literales) y sin cajones de sastre: una regla por test parametrizado.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="phpunit-primeros-pasos.html">
+              <small>← Anterior</small>
+              <b>PHPUnit: primeros pasos</b>
+            </a>
+            <a href="phpunit-fixtures.html" class="next">
+              <small>Siguiente →</small>
+              <b>Fixtures y ciclo de vida</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

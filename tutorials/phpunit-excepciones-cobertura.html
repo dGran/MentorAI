@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Testear excepciones y medir cobertura — MentorAI</title>
+    <meta name="description" content="El camino triste también se testea: expectException y compañía, en qué orden van, y la cobertura de código con pcov o Xdebug — cómo leer el informe, líneas vs ramas y por qué el 100% no es el objetivo." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Testing</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Testear excepciones y medir cobertura</h1>
+        <p class="tutorial-hero__lead">La mitad del valor de tu código está en cómo falla: validaciones que rechazan, límites que protegen. Esa mitad también se testea. Y para saber qué te queda sin probar existe la cobertura — una herramienta magnífica que se estropea en cuanto la conviertes en objetivo.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#camino-triste">El camino triste también se testea</a></li>
+            <li><a href="#expect">expectException y compañía</a></li>
+            <li><a href="#medir">Medir cobertura: pcov o Xdebug</a></li>
+            <li><a href="#leer">Leer el informe</a></li>
+            <li><a href="#cien">Por qué el 100% no es el objetivo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Si tu código sigue el criterio de <a href="manejo-errores.html">manejo de errores</a> —excepciones específicas, fail fast, validar en el constructor—, entonces lanzar es parte del contrato de tus clases. Y el contrato entero se prueba: lo que devuelve cuando va bien y lo que lanza cuando no debe seguir.</p>
+
+          <h2 id="camino-triste">
+            El camino triste también se testea
+            <a href="#camino-triste" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Piensa en un value object <code>Money</code> que no admite importes negativos, o en un <code>OrderService</code> que rechaza confirmar dos veces el mismo pedido. Esas negativas <em>son comportamiento</em>: alguien las diseñó, el dominio depende de ellas, y una regresión que las silencie (el pedido se confirma dos veces sin quejarse) es de los bugs más caros que existen — porque no rompe nada visible, solo corrompe datos.</p>
+          <p>Un test de excepción responde tres preguntas, de más a menos importante: ¿lanza? ¿lanza <em>la excepción correcta</em>? ¿con la información correcta? La primera sin la segunda vale poco: si esperabas <code>ImporteNegativo</code> y el código lanza <code>TypeError</code> por un bug anterior, un test que solo compruebe "lanza algo" da verde a un error.</p>
+
+          <h2 id="expect">
+            expectException y compañía
+            <a href="#expect" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La API se declara <strong>antes</strong> de ejecutar el código que debe lanzar — es una expectativa, no una aserción a posteriori:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · primero la expectativa, después el acto</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">#[Test]
+public function rechaza_importes_negativos(): void
+{
+    $this-&gt;expectException(ImporteNegativo::class);
+    $this-&gt;expectExceptionMessage('-100');
+
+    new Money(amountCents: -100, currency: 'EUR');
+}</code></pre>
+          </div>
+          <p>El orden importa por una razón mecánica: en cuanto la excepción se lanza, la ejecución del método de test <strong>se corta ahí</strong>. Cualquier línea posterior al acto no se ejecuta jamás — una expectativa (o aserción) colocada después es código muerto que da sensación de seguridad. De ahí también una regla de higiene: <strong>un test de excepción prueba una sola llamada que lanza</strong>; si necesitas comprobar más cosas después, son dos tests.</p>
+          <p>Las variantes: <code>expectExceptionMessage()</code> comprueba que el mensaje <em>contiene</em> el texto (no igualdad exacta — no acoples el test a la redacción completa), <code>expectExceptionCode()</code> para códigos, y <code>expectExceptionMessageMatches()</code> con una regex cuando el mensaje lleva partes variables.</p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Excepciones específicas, tests específicos</p>
+              <p>Aquí cobra sentido práctico la regla de <a href="manejo-errores.html">no lanzar \Exception genérica</a>: <code>expectException(ImporteNegativo::class)</code> documenta el contrato con precisión. Si todo lanza <code>\Exception</code>, el test no puede distinguir tu negativa deliberada de un fallo accidental — y dará verde a ambos.</p>
+            </div>
+          </div>
+
+          <h2 id="medir">
+            Medir cobertura: pcov o Xdebug
+            <a href="#medir" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La <strong>cobertura</strong> registra qué líneas de tu código ejecutaron los tests. PHPUnit no la mide solo: necesita una extensión que instrumente el intérprete (<a href="extensiones-php.html">una extensión de PHP</a>, literalmente). Hay dos opciones y la elección es fácil:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Extensión</th><th>Qué es</th><th>Cuándo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>pcov</strong></td><td>Extensión mínima, solo cobertura de líneas. Apenas ralentiza la suite.</td><td>La elección por defecto para CI y uso diario.</td></tr>
+                <tr><td><strong>Xdebug</strong></td><td>El depurador completo, con cobertura entre sus modos (<code>XDEBUG_MODE=coverage</code>). Más lento, pero mide también ramas y caminos.</td><td>Si ya lo tienes para depurar, o quieres cobertura de ramas.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · generar el informe</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash"># resumen rápido en la terminal
+vendor/bin/phpunit --coverage-text
+
+# informe navegable completo
+vendor/bin/phpunit --coverage-html build/coverage
+
+# con Xdebug hay que activar el modo
+XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-text</code></pre>
+          </div>
+          <p>Falta decirle a PHPUnit <em>qué</em> código medir (tu <code>src/</code>, no <code>vendor/</code>), en <code>phpunit.xml</code>: el elemento <code>&lt;source&gt;</code> con un <code>&lt;include&gt;</code> del directorio. Sin eso, el porcentaje mezcla tu código con el ajeno y no significa nada.</p>
+
+          <h2 id="leer">
+            Leer el informe
+            <a href="#leer" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El informe HTML pinta cada fichero con sus líneas en verde (ejecutadas) o rojo (nunca ejecutadas). La forma <em>correcta</em> de leerlo no es mirar el porcentaje: es <strong>pasear por el rojo preguntando "¿me importa esto?"</strong>. Un getter trivial en rojo da igual; el <code>catch</code> del pago fallido en rojo significa que el camino más delicado de tu facturación no lo ha ejecutado nadie nunca — ni tus tests ni, con suerte, producción todavía.</p>
+          <p>Segunda lectura importante: línea cubierta no es línea probada a fondo. La cobertura de líneas dice que la línea <em>se ejecutó</em>; si una condición tiene dos salidas y tus tests solo pasan por una, la línea luce verde igual. Para eso existe la <strong>cobertura de ramas</strong> (Xdebug): mide salidas de cada decisión, no líneas. No hace falta usarla siempre — basta saber que el verde de líneas es un techo optimista, no una garantía.</p>
+
+          <h2 id="cien">
+            Por qué el 100% no es el objetivo
+            <a href="#cien" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La cobertura mide <em>ejecución</em>, no <em>verificación</em>. Un test sin aserciones que llame a todo tu código da 100% de cobertura y comprueba exactamente nada — es <a href="tests-que-no-estorban.html">la cobertura engañosa</a> que ya viste en fundamentos, y la razón de fondo por la que perseguir la cifra corrompe la métrica: en cuanto el 100% es la meta, aparecen tests que ejecutan sin verificar, escritos para pintar verde.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Cobertura como objetivo</h4>
+              <ul>
+                <li>"No baja del 95%" como regla ciega.</li>
+                <li>Tests sin aserciones para pintar verde.</li>
+                <li>Tests de getters para subir la cifra.</li>
+                <li>La métrica manda sobre el criterio.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Cobertura como linterna</h4>
+              <ul>
+                <li>El rojo como mapa de riesgo: ¿qué no probé que importa?</li>
+                <li>Caminos tristes y fronteras primero.</li>
+                <li>Vigilar la <em>tendencia</em> (¿el código nuevo llega testeado?).</li>
+                <li>El criterio manda sobre la métrica.</li>
+              </ul>
+            </div>
+          </div>
+          <p>¿Un número razonable? El que salga de testear lo que importa: en dominio y servicios suele acabar alto (85-95%) sin perseguirlo; en código pegamento (controladores finos, adaptadores) es naturalmente más bajo y no pasa nada. Si en CI quieres una red, ponla como <strong>suelo que evite retrocesos</strong> (el PR no baja la cobertura existente), no como listón que obligue a inflarla.</p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Las negativas de tu código son contrato: se testean con expectException + expectExceptionMessage, declaradas ANTES del acto.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Tras la excepción el test se corta: nada de aserciones después del acto, y una sola llamada que lanza por test.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Cobertura: pcov para el día a día y CI; Xdebug si quieres ramas. Define el source en phpunit.xml o el porcentaje no significa nada.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El informe se lee paseando por el rojo ("¿me importa esto?"), no mirando el porcentaje; línea verde ≠ comportamiento verificado.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La cobertura es linterna, no objetivo: como meta produce tests que ejecutan sin verificar. En CI, como suelo anti-retroceso.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="phpunit-mocks.html">
+              <small>← Anterior</small>
+              <b>Stubs y mocks en la práctica</b>
+            </a>
+            <a href="phpunit-integracion-bbdd.html" class="next">
+              <small>Siguiente →</small>
+              <b>Tests de integración con BD</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
