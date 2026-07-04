@@ -22,6 +22,22 @@
 
 window.MENTORAI_COURSES = [
   {
+    slug: "patrones-diseno",
+    title: "Patrones de diseño GoF",
+    summary:
+      "El vocabulario compartido del diseño orientado a objetos: los 11 patrones más frecuentes en código de producción, agrupados por familia, con PHP y con los ojos puestos en Symfony y Laravel.",
+    level: "Intermedio",
+    icon: "code",
+    lessons: [
+      "patrones-introduccion",
+      "patrones-creacionales",
+      "patrones-estructurales",
+      "patrones-comportamiento-1",
+      "patrones-comportamiento-2",
+      "patrones-en-el-framework",
+    ],
+  },
+  {
     slug: "sql-aplicado",
     title: "SQL aplicado avanzado",
     summary:

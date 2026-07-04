@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Patrones creacionales: Factory, Builder y Singleton — MentorAI</title>
+    <meta
+      name="description"
+      content="Factory Method para delegar la creación, Abstract Factory para familias de objetos, Builder para construir paso a paso y Singleton: la explicación del patrón más odiado y por qué lo es."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Arquitectura</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Patrones creacionales: Factory, Builder y Singleton</h1>
+        <p class="tutorial-hero__lead">Los patrones creacionales resuelven cómo crear objetos sin acoplar el código a clases concretas. Factory Method delega la decisión, Builder construye paso a paso, y Singleton — el más conocido y el más mal usado — gestiona una única instancia.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#factory-method">Factory Method</a></li>
+            <li><a href="#abstract-factory">Abstract Factory</a></li>
+            <li><a href="#builder">Builder</a></li>
+            <li><a href="#singleton">Singleton</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">El problema común de los patrones creacionales: el código que usa un objeto no debería saber cómo se crea. Si lo sabe, está acoplado a la implementación concreta y cualquier cambio en la creación se propaga por todo el sistema.</p>
+
+          <h2 id="factory-method">
+            Factory Method
+            <a href="#factory-method" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El problema: tienes código que necesita crear un objeto, pero el tipo concreto depende de algo externo (configuración, contexto, tipo de entrada). Si metes el <code>new ClaseConcreto()</code> directamente, el código queda acoplado a esa clase y cualquier variante exige modificarlo.</p>
+
+          <p>La solución del Factory Method: delega la creación a un método que las subclases (o implementaciones de una interfaz) sobreescriben. El código que llama trabaja con la interfaz; el método factory decide qué clase concreta instanciar.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · NotificationFactory.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+interface Notification
+{
+    public function send(string $message): void;
+}
+
+class EmailNotification implements Notification
+{
+    public function send(string $message): void
+    {
+        // envía email
+    }
+}
+
+class SmsNotification implements Notification
+{
+    public function send(string $message): void
+    {
+        // envía SMS
+    }
+}
+
+class NotificationFactory
+{
+    public static function create(string $channel): Notification
+    {
+        return match ($channel) {
+            'email' => new EmailNotification(),
+            'sms'   => new SmsNotification(),
+            default => throw new \InvalidArgumentException("Canal desconocido: {$channel}"),
+        };
+    }
+}
+
+// El código que usa la notificación no sabe qué clase concreta recibe
+$notification = NotificationFactory::create($config['channel']);
+$notification-&gt;send('Pedido confirmado');</code></pre>
+          </div>
+
+          <p>El código cliente trabaja con la interfaz <code>Notification</code>. Añadir un nuevo canal (push, slack) es añadir una clase y ampliar el <code>match</code> en la factory — nada más cambia. Esto es lo que DIP recomendaba: depender de abstracciones, no de implementaciones concretas.</p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Simple Factory vs Factory Method</p>
+              <p>Lo del ejemplo es técnicamente una <em>Simple Factory</em> (un método estático que centraliza la creación). El Factory Method GoF puro delega en subclases. En la práctica, la Simple Factory resuelve el mismo problema con menos complejidad y es más frecuente en PHP. El nombre "Factory Method" se usa indistintamente para ambas formas.</p>
+            </div>
+          </div>
+
+          <h2 id="abstract-factory">
+            Abstract Factory
+            <a href="#abstract-factory" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Cuando no es un solo objeto sino una <em>familia</em> de objetos que deben ser compatibles entre sí, el Factory Method solo no basta. Abstract Factory proporciona una interfaz para crear familias enteras de objetos relacionados sin especificar sus clases concretas.</p>
+
+          <p>Ejemplo clásico: un sistema que soporta varios motores de almacenamiento (MySQL, PostgreSQL). Cada motor tiene su propia implementación de conexión, constructor de consultas y gestor de transacciones — y deben ser compatibles entre sí. No puedes mezclar una conexión de MySQL con un query builder de PostgreSQL.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · DatabaseFactory.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+interface DatabaseFactory
+{
+    public function createConnection(): Connection;
+    public function createQueryBuilder(): QueryBuilder;
+}
+
+class MysqlFactory implements DatabaseFactory
+{
+    public function createConnection(): Connection
+    {
+        return new MysqlConnection();
+    }
+
+    public function createQueryBuilder(): QueryBuilder
+    {
+        return new MysqlQueryBuilder();
+    }
+}
+
+class PostgresFactory implements DatabaseFactory
+{
+    public function createConnection(): Connection
+    {
+        return new PostgresConnection();
+    }
+
+    public function createQueryBuilder(): QueryBuilder
+    {
+        return new PostgresQueryBuilder();
+    }
+}
+
+// El código de aplicación recibe la factory y crea objetos compatibles entre sí
+function buildRepository(DatabaseFactory $factory): Repository
+{
+    $connection   = $factory-&gt;createConnection();
+    $queryBuilder = $factory-&gt;createQueryBuilder();
+
+    return new Repository($connection, $queryBuilder);
+}</code></pre>
+          </div>
+
+          <p>Cambiar el motor es cambiar qué factory se inyecta. El código de aplicación no sabe nada del motor concreto. Cruza directamente con el contenedor DI: la factory se registra en el contenedor y se inyecta donde se necesita.</p>
+
+          <h2 id="builder">
+            Builder
+            <a href="#builder" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Cuando un objeto necesita muchos parámetros para construirse y algunos son opcionales, el constructor se vuelve ilegible: <code>new Email(null, true, false, null, 'html', 3)</code>. Builder resuelve esto separando la construcción del objeto de su representación final, permitiendo construirlo paso a paso con métodos encadenados.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · EmailBuilder.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+class EmailBuilder
+{
+    private string $to = '';
+    private string $subject = '';
+    private string $body = '';
+    private string $contentType = 'text/plain';
+    private array $attachments = [];
+
+    public function to(string $address): static
+    {
+        $this-&gt;to = $address;
+
+        return $this;
+    }
+
+    public function subject(string $subject): static
+    {
+        $this-&gt;subject = $subject;
+
+        return $this;
+    }
+
+    public function htmlBody(string $html): static
+    {
+        $this-&gt;body = $html;
+        $this-&gt;contentType = 'text/html';
+
+        return $this;
+    }
+
+    public function attach(string $path): static
+    {
+        $this-&gt;attachments[] = $path;
+
+        return $this;
+    }
+
+    public function build(): Email
+    {
+        if ($this-&gt;to === '' || $this-&gt;subject === '') {
+            throw new \LogicException('to y subject son obligatorios');
+        }
+
+        return new Email($this-&gt;to, $this-&gt;subject, $this-&gt;body, $this-&gt;contentType, $this-&gt;attachments);
+    }
+}
+
+// Uso: legible, autodocumentado, sin posición de parámetros
+$email = (new EmailBuilder())
+    -&gt;to('user@example.com')
+    -&gt;subject('Confirmación de pedido')
+    -&gt;htmlBody('&lt;h1&gt;¡Gracias!&lt;/h1&gt;')
+    -&gt;attach('/tmp/factura.pdf')
+    -&gt;build();</code></pre>
+          </div>
+
+          <p>El Builder es omnipresente en PHP: los query builders de Doctrine o Eloquent, el <code>HttpClientBuilder</code> de Symfony, los form builders, los test fixtures con datos opcionales. Lo reconocerás en cualquier librería que use encadenamiento de métodos para configurar un objeto complejo antes de crearlo.</p>
+
+          <h2 id="singleton">
+            Singleton
+            <a href="#singleton" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Singleton garantiza que una clase tiene exactamente una instancia y proporciona un punto de acceso global a ella. En el papel resuelve un problema real: recursos costosos o únicos por naturaleza (una conexión a BD, un logger, un registro de configuración).</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Singleton clásico</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+class Registry
+{
+    private static ?self $instance = null;
+    private array $data = [];
+
+    private function __construct() {}
+
+    public static function getInstance(): static
+    {
+        if (static::$instance === null) {
+            static::$instance = new static();
+        }
+
+        return static::$instance;
+    }
+
+    public function get(string $key): mixed
+    {
+        return $this-&gt;data[$key] ?? null;
+    }
+
+    public function set(string $key, mixed $value): void
+    {
+        $this-&gt;data[$key] = $value;
+    }
+}</code></pre>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Por qué el Singleton se odia</p>
+              <p>El acceso global esconde dependencias. Si una clase llama a <code>Registry::getInstance()</code> internamente, esa dependencia es invisible desde fuera: no aparece en el constructor, no se puede sustituir en tests, no puedes inyectar una variante distinta. El Singleton viola DIP (depende de la implementación concreta) y SRP (gestiona su propio ciclo de vida además de su responsabilidad principal). En la práctica, los contenedores DI resuelven el mismo problema —una sola instancia compartida— sin estos inconvenientes.</p>
+            </div>
+          </div>
+
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Singleton — dependencia oculta</h4>
+              <div class="code-block">
+                <div class="code-block__head">
+                  <span class="code-block__lang">php</span>
+                  <button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button>
+                </div>
+                <pre><code data-lang="php">&lt;?php
+class OrderService
+{
+    public function process(Order $order): void
+    {
+        // dependencia oculta, no testeable
+        $logger = Logger::getInstance();
+        $logger-&gt;info('procesando pedido');
+    }
+}</code></pre>
+              </div>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Inyección — dependencia explícita</h4>
+              <div class="code-block">
+                <div class="code-block__head">
+                  <span class="code-block__lang">php</span>
+                  <button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button>
+                </div>
+                <pre><code data-lang="php">&lt;?php
+class OrderService
+{
+    public function __construct(
+        private readonly LoggerInterface $logger
+    ) {}
+
+    public function process(Order $order): void
+    {
+        $this-&gt;logger-&gt;info('procesando pedido');
+    }
+}</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <p>El contenedor DI gestiona que <code>LoggerInterface</code> resuelva siempre a la misma instancia si así se configura — el efecto del Singleton, sin sus problemas. Conoce el patrón para reconocerlo en código legacy; en código nuevo, usa inyección de dependencias.</p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Factory Method: delega la creación a un método que decide qué clase concreta instanciar. El código cliente trabaja con la interfaz.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Abstract Factory: crea familias de objetos relacionados que deben ser compatibles entre sí. Cambiar la factory cambia toda la familia.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Builder: construye objetos complejos paso a paso con métodos encadenados. Elimina constructores con muchos parámetros opcionales.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Singleton: una única instancia con acceso global. El problema es que oculta dependencias y dificulta los tests. En código nuevo, el contenedor DI lo reemplaza.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="patrones-introduccion.html">
+              <small>← Anterior</small>
+              <b>Introducción a los patrones</b>
+            </a>
+            <a href="patrones-estructurales.html">
+              <small>Siguiente →</small>
+              <b>Patrones estructurales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

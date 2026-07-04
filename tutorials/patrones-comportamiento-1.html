@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Strategy y Observer: comportamiento intercambiable y eventos — MentorAI</title>
+    <meta
+      name="description"
+      content="Strategy para encapsular algoritmos intercambiables y eliminar condicionales, Observer para notificar cambios sin acoplamiento directo entre emisor y receptores."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Arquitectura</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Strategy y Observer: comportamiento intercambiable y eventos</h1>
+        <p class="tutorial-hero__lead">Strategy encapsula un algoritmo en un objeto para intercambiarlo sin tocar el código que lo usa — el OCP llevado a la práctica. Observer desacopla al emisor de sus receptores: uno publica, muchos escuchan, ninguno se conoce.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#strategy">Strategy</a></li>
+            <li><a href="#strategy-vs-if">Strategy vs condicionales</a></li>
+            <li><a href="#observer">Observer</a></li>
+            <li><a href="#observer-eventos">Observer y eventos de dominio</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Estos dos patrones son los más frecuentes en código de producción moderno. Strategy aparece cada vez que tienes un condicional que elige entre variantes de comportamiento. Observer aparece cada vez que algo ocurre y otros partes del sistema deben enterarse sin que la fuente sepa quiénes son.</p>
+
+          <h2 id="strategy">
+            Strategy
+            <a href="#strategy" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El problema: tienes un algoritmo que varía según el contexto — el descuento de un pedido cambia según el tipo de cliente, el método de envío de una notificación cambia según la preferencia del usuario, el formato de exportación cambia según lo que pida el cliente de la API. El código que orquesta esa lógica acaba lleno de <code>if</code> y <code>switch</code> que crecen cada vez que aparece una variante nueva.</p>
+
+          <p>Strategy extrae cada variante de comportamiento a su propia clase que implementa una interfaz común. El contexto recibe la estrategia correcta por inyección de dependencias y la llama sin saber cuál es.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · DiscountStrategy.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+interface DiscountStrategy
+{
+    public function calculate(int $totalCents): int;
+}
+
+class NoDiscount implements DiscountStrategy
+{
+    public function calculate(int $totalCents): int
+    {
+        return 0;
+    }
+}
+
+class PercentageDiscount implements DiscountStrategy
+{
+    public function __construct(
+        private readonly int $percentage
+    ) {}
+
+    public function calculate(int $totalCents): int
+    {
+        return (int) ($totalCents * $this-&gt;percentage / 100);
+    }
+}
+
+class FlatDiscount implements DiscountStrategy
+{
+    public function __construct(
+        private readonly int $discountCents
+    ) {}
+
+    public function calculate(int $totalCents): int
+    {
+        return min($this-&gt;discountCents, $totalCents);
+    }
+}
+
+// El contexto no sabe qué estrategia tiene; solo la llama
+class Order
+{
+    public function __construct(
+        private readonly int $totalCents,
+        private readonly DiscountStrategy $discount
+    ) {}
+
+    public function finalTotal(): int
+    {
+        return $this-&gt;totalCents - $this-&gt;discount-&gt;calculate($this-&gt;totalCents);
+    }
+}</code></pre>
+          </div>
+
+          <p>Añadir un nuevo tipo de descuento es añadir una nueva clase — nada más. Ni <code>Order</code> ni ningún otro código existente cambia. Esto es exactamente OCP: abierto a extensión (nueva clase), cerrado a modificación (código existente intacto).</p>
+
+          <h2 id="strategy-vs-if">
+            Strategy vs condicionales
+            <a href="#strategy-vs-if" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>No todo condicional necesita un Strategy. La regla práctica: cuando el condicional tiene más de dos o tres ramas que representan comportamientos genuinamente distintos y es probable que crezca, Strategy vale la pena. Cuando es una condición simple y estable, un <code>if</code> es más claro.</p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Sin Strategy — crece con el negocio</h4>
+              <div class="code-block">
+                <div class="code-block__head">
+                  <span class="code-block__lang">php</span>
+                  <button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button>
+                </div>
+                <pre><code data-lang="php">&lt;?php
+// Cada nuevo tipo de cliente = modificar este método
+public function discount(string $type, int $total): int
+{
+    if ($type === 'vip') {
+        return (int) ($total * 0.20);
+    }
+
+    if ($type === 'regular') {
+        return (int) ($total * 0.05);
+    }
+
+    return 0;
+}</code></pre>
+              </div>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Con Strategy — extensible sin modificar</h4>
+              <div class="code-block">
+                <div class="code-block__head">
+                  <span class="code-block__lang">php</span>
+                  <button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button>
+                </div>
+                <pre><code data-lang="php">&lt;?php
+// Nuevo tipo de cliente = nueva clase, nada más cambia
+public function discount(DiscountStrategy $strategy, int $total): int
+{
+    return $strategy-&gt;calculate($total);
+}</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <p>El condicional no desaparece del todo: alguien tiene que decidir qué Strategy usar. Ese condicional se mueve a la Factory o al contenedor DI — donde vive la lógica de construcción, no la lógica de negocio.</p>
+
+          <h2 id="observer">
+            Observer
+            <a href="#observer" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El problema: cuando algo ocurre en el sistema (un pedido se confirma, un usuario se registra, una factura se genera), varias partes del sistema necesitan reaccionar. Si el objeto que genera el evento llama directamente a cada uno de los que deben reaccionar, queda acoplado a todos ellos. Añadir una reacción nueva exige modificar el emisor.</p>
+
+          <p>Observer define una relación de suscripción: el sujeto (emisor) mantiene una lista de observadores y los notifica cuando ocurre algo. El emisor no sabe quiénes son los observadores; los observadores no saben nada del emisor salvo el evento que reciben.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · OrderObserver.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+// El evento: lo que ocurrió
+final class OrderConfirmed
+{
+    public function __construct(
+        public readonly int $orderId,
+        public readonly string $customerEmail,
+        public readonly int $totalCents
+    ) {}
+}
+
+// La interfaz del observador
+interface OrderObserver
+{
+    public function onOrderConfirmed(OrderConfirmed $event): void;
+}
+
+// Dos observadores independientes
+class SendConfirmationEmail implements OrderObserver
+{
+    public function onOrderConfirmed(OrderConfirmed $event): void
+    {
+        // envía email de confirmación
+    }
+}
+
+class UpdateInventory implements OrderObserver
+{
+    public function onOrderConfirmed(OrderConfirmed $event): void
+    {
+        // actualiza stock
+    }
+}
+
+// El emisor notifica sin saber quiénes escuchan
+class OrderService
+{
+    /** @var OrderObserver[] */
+    private array $observers = [];
+
+    public function subscribe(OrderObserver $observer): void
+    {
+        $this-&gt;observers[] = $observer;
+    }
+
+    public function confirm(Order $order): void
+    {
+        $order-&gt;markAsConfirmed();
+
+        $event = new OrderConfirmed($order-&gt;id(), $order-&gt;customerEmail(), $order-&gt;totalCents());
+
+        foreach ($this-&gt;observers as $observer) {
+            $observer-&gt;onOrderConfirmed($event);
+        }
+    }
+}</code></pre>
+          </div>
+
+          <p>Añadir una nueva reacción (generar factura, notificar al almacén, actualizar analytics) es crear un nuevo observador y suscribirlo — sin tocar <code>OrderService</code>.</p>
+
+          <h2 id="observer-eventos">
+            Observer y eventos de dominio
+            <a href="#observer-eventos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El Observer del GoF es el antepasado directo de los sistemas de eventos modernos. Symfony's EventDispatcher, los listeners de Laravel, los domain events de DDD — todos son variantes del mismo patrón con nomenclatura y abstracciones distintas.</p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Observer GoF vs eventos de dominio</p>
+              <p>En el Observer clásico, el sujeto gestiona la lista de observadores. En los sistemas de eventos modernos, un <em>dispatcher</em> centralizado actúa de intermediario: el emisor publica un evento al dispatcher sin saber nada de los listeners; el dispatcher los resuelve. El resultado es el mismo desacoplamiento con más flexibilidad para registrar listeners desde configuración.</p>
+            </div>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Symfony EventDispatcher</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+// En Symfony: el emisor no sabe nada de los listeners
+class OrderService
+{
+    public function __construct(
+        private readonly EventDispatcherInterface $dispatcher
+    ) {}
+
+    public function confirm(Order $order): void
+    {
+        $order-&gt;markAsConfirmed();
+        $this-&gt;dispatcher-&gt;dispatch(new OrderConfirmed($order-&gt;id(), $order-&gt;customerEmail(), $order-&gt;totalCents()));
+    }
+}
+
+// Cada listener se registra en services.yaml con #[AsEventListener]
+#[AsEventListener]
+class SendConfirmationEmailListener
+{
+    public function __invoke(OrderConfirmed $event): void
+    {
+        // envía email
+    }
+}</code></pre>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Strategy: encapsula variantes de comportamiento en clases separadas con interfaz común. El contexto no sabe cuál usa — solo la llama.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Strategy elimina condicionales de comportamiento. El condicional de selección se mueve a la Factory o al contenedor, no desaparece.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Observer: el emisor notifica a una lista de observadores sin saber quiénes son. Añadir una reacción nueva no modifica el emisor.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los sistemas de eventos (Symfony EventDispatcher, domain events) son Observer con un dispatcher centralizado. Mismo patrón, más flexibilidad de registro.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="patrones-estructurales.html">
+              <small>← Anterior</small>
+              <b>Patrones estructurales</b>
+            </a>
+            <a href="patrones-comportamiento-2.html">
+              <small>Siguiente →</small>
+              <b>Template Method, Command y Chain of Responsibility</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
