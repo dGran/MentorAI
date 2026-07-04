@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Logs estructurados — MentorAI</title>
+    <meta name="description" content="Logging efectivo en PHP: niveles de severidad, log estructurado en JSON vs texto plano, qué no loguear nunca (secretos y PII), correlación con request id y PSR-3 para no acoplarte al logger." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Observabilidad</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Logs estructurados</h1>
+        <p class="tutorial-hero__lead">Un log de texto libre es útil para leer; un log estructurado en JSON es útil para buscar, filtrar, agregar y correlacionar. La diferencia entre "grep en un fichero de 200GB" y "dame todos los errores del tenant 42 en los últimos 10 minutos" es el formato de lo que logueaste.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#niveles">Niveles de severidad</a></li>
+            <li><a href="#estructurado">Texto plano vs log estructurado</a></li>
+            <li><a href="#que-loguear">Qué loguear y qué no</a></li>
+            <li><a href="#correlacion">Correlación con request id</a></li>
+            <li><a href="#psr3">PSR-3: el contrato en PHP</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">El primer pilar de la observabilidad son los logs, pero un log mal diseñado es ruido. Este tutorial cubre los fundamentos para que tus logs sean señal: qué nivel usar, cómo estructurarlos, qué no incluir nunca y cómo conectar eventos de una misma petición con un <em>request id</em>.</p>
+
+          <h2 id="niveles">
+            Niveles de severidad
+            <a href="#niveles" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El nivel de un log indica su importancia y filtra el ruido. PSR-3 define ocho niveles, de mayor a menor severidad:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Nivel</th><th>Cuándo</th><th>Acción esperada</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>emergency</strong></td><td>Sistema inutilizable.</td><td>Despertar a todo el equipo ahora.</td></tr>
+                <tr><td><strong>alert</strong></td><td>Acción inmediata requerida.</td><td>Llamada de madrugada.</td></tr>
+                <tr><td><strong>critical</strong></td><td>Condición crítica. Componente fallido.</td><td>Intervención urgente.</td></tr>
+                <tr><td><strong>error</strong></td><td>Error de ejecución. No requiere acción inmediata.</td><td>Revisar en cuanto sea posible.</td></tr>
+                <tr><td><strong>warning</strong></td><td>Situación inesperada pero manejada. Algo a vigilar.</td><td>Revisar en horario laboral.</td></tr>
+                <tr><td><strong>notice</strong></td><td>Evento normal pero significativo.</td><td>Sin acción, solo registro.</td></tr>
+                <tr><td><strong>info</strong></td><td>Información de operación normal.</td><td>Sin acción.</td></tr>
+                <tr><td><strong>debug</strong></td><td>Información detallada para desarrollo.</td><td>No en producción.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>En la práctica, el error más frecuente es <strong>inflar el nivel</strong>: loguear como <code>error</code> algo que es un <code>warning</code>, o como <code>warning</code> algo que es <code>info</code>. Cuando todo es error, nada lo es — la señal se pierde en el ruido y las alertas dejan de ser útiles. Regla de oro: <code>error</code> solo para cosas que requieren atención de alguien; <code>warning</code> para cosas que no rompen pero indican un problema latente.</p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Debug solo en desarrollo</p>
+              <p>Los logs de <code>debug</code> en producción llenan disco y ralentizan la aplicación. Configura el nivel mínimo por entorno: <code>debug</code> en local, <code>info</code> o <code>warning</code> en producción. Monolog y la mayoría de frameworks lo soportan con un parámetro de entorno.</p>
+            </div>
+          </div>
+
+          <h2 id="estructurado">
+            Texto plano vs log estructurado
+            <a href="#estructurado" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un log de texto libre se escribe rápido pero se consulta mal:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">texto plano · difícil de parsear y filtrar</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>[2026-07-04 12:34:56] ERROR: Payment failed for order 8421, amount 99.90, reason: card_declined</code></pre>
+          </div>
+          <p>Para filtrar todos los errores del pedido 8421 tienes que usar grep y esperar que el formato sea consistente. El log estructurado emite JSON: cada campo es clave-valor y el almacén de logs puede indexarlos e interrogarlos directamente:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">json · filtrable, indexable, correlacionable</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>{
+  "timestamp": "2026-07-04T12:34:56Z",
+  "level": "error",
+  "message": "Payment failed",
+  "order_id": 8421,
+  "amount_cents": 9990,
+  "reason": "card_declined",
+  "request_id": "req-a3f9b2",
+  "user_id": 1042
+}</code></pre>
+          </div>
+          <p>Con este formato, Loki o Elasticsearch pueden responder en segundos: "dame todos los logs donde <code>reason=card_declined</code> y <code>amount_cents &gt; 5000</code> en la última hora".</p>
+          <p>En PHP, Monolog con el <code>JsonFormatter</code> lo hace automáticamente:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Monolog con JsonFormatter</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+use Monolog\Formatter\JsonFormatter;
+
+$handler = new StreamHandler('php://stdout');
+$handler-&gt;setFormatter(new JsonFormatter());
+
+$logger = new Logger('app');
+$logger-&gt;pushHandler($handler);
+
+$logger-&gt;error('Payment failed', [
+    'order_id'    =&gt; $order-&gt;id(),
+    'amount_cents' =&gt; $order-&gt;totalCents(),
+    'reason'      =&gt; $reason,
+]);</code></pre>
+          </div>
+          <p>El array de contexto (segundo parámetro) es el lugar de todos los campos estructurados. El mensaje es corto y constante — algo que puedas agrupar —; los datos variables van en el contexto.</p>
+
+          <h2 id="que-loguear">
+            Qué loguear y qué no
+            <a href="#que-loguear" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La lista de qué <em>nunca</em> debe aparecer en un log es corta pero crítica:</p>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="10.29 3.86 1.82 18 22.18 18 13.71 3.86 10.29 3.86"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Nunca loguear esto</p>
+              <ul>
+                <li><strong>Contraseñas y tokens</strong> en ningún formato, ni hasheados.</li>
+                <li><strong>Números de tarjeta</strong> completos (los últimos 4 dígitos sí son habituales).</li>
+                <li><strong>PII sensible</strong>: DNI, número de seguridad social, datos de salud.</li>
+                <li><strong>Secretos de configuración</strong>: API keys, credenciales de BD.</li>
+                <li><strong>Payloads completos</strong> de peticiones si contienen alguno de los anteriores.</li>
+              </ul>
+            </div>
+          </div>
+          <p>Los logs viajan por varios sistemas (stdout → agregador → almacén → dashboards) y son accesibles por varios equipos. Un secreto en un log tiene el radio de exposición de todos esos sistemas.</p>
+          <p>La regla para el resto: loguea los eventos que necesitas para depurar o auditar, con el contexto suficiente para entender el estado del sistema en ese momento. Los errores deben tener el contexto completo (qué entidad, qué operación, qué valores relevantes). Los eventos <code>info</code> deben ser suficientemente descriptivos pero concisos.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Qué loguear</th><th>Nivel</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Excepción no controlada con stack trace</td><td>error / critical</td></tr>
+                <tr><td>Excepción de negocio esperada (pago rechazado, stock agotado)</td><td>warning o info</td></tr>
+                <tr><td>Inicio y fin de jobs / workers de larga duración</td><td>info</td></tr>
+                <tr><td>Acciones de usuario importantes (login, compra, baja)</td><td>info</td></tr>
+                <tr><td>Llamadas a servicios externos (con duración y código de respuesta)</td><td>info / debug</td></tr>
+                <tr><td>Cada petición HTTP (habitualmente lo hace el framework)</td><td>info</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="correlacion">
+            Correlación con request id
+            <a href="#correlacion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>En un sistema concurrente, los logs de distintas peticiones se entrelazan en la salida. Sin un identificador compartido, reconstruir el hilo de una petición concreta es buscar una aguja en un pajar.</p>
+          <p>El patrón es sencillo: al inicio de cada petición HTTP generas un <em>request id</em> (UUID o id aleatorio corto), lo añades como campo a todos los logs de esa petición y lo devuelves en la respuesta como cabecera (<code>X-Request-Id</code>) para que el cliente pueda reportarlo si algo falla:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · middleware que inyecta el request id en el logger</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+final class RequestIdMiddleware
+{
+    public function __construct(private readonly LoggerInterface $logger) {}
+
+    public function process(Request $request, RequestHandler $handler): Response
+    {
+        $requestId = $request-&gt;headers-&gt;get('X-Request-Id') ?? bin2hex(random_bytes(8));
+
+        $this-&gt;logger-&gt;pushProcessor(
+            fn(array $record) =&gt; array_merge($record, ['extra' =&gt; ['request_id' =&gt; $requestId]])
+        );
+
+        $response = $handler-&gt;handle($request);
+        $response-&gt;headers-&gt;set('X-Request-Id', $requestId);
+
+        return $response;
+    }
+}</code></pre>
+          </div>
+          <p>Con esto, todos los logs de la petición comparten el mismo <code>request_id</code>. Cuando alguien reporta un error, pide el valor de la cabecera <code>X-Request-Id</code> y búscalo en Loki o en tu almacén de logs: obtienes toda la secuencia de eventos de esa petición exacta.</p>
+
+          <h2 id="psr3">
+            PSR-3: el contrato en PHP
+            <a href="#psr3" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p><a href="https://www.php-fig.org/psr/psr-3/">PSR-3</a> define la interfaz <code>Psr\Log\LoggerInterface</code> con un método por nivel más el genérico <code>log()</code>. El motivo de usarla es el mismo de siempre: no acoplarte a la implementación concreta.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · depender de la interfaz PSR-3, no de Monolog</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+use Psr\Log\LoggerInterface;
+
+final class PaymentService
+{
+    public function __construct(
+        private readonly PaymentGateway $gateway,
+        private readonly LoggerInterface $logger,
+    ) {}
+
+    public function charge(Order $order): void
+    {
+        try {
+            $this-&gt;gateway-&gt;charge($order-&gt;totalCents(), $order-&gt;paymentMethod());
+            $this-&gt;logger-&gt;info('Payment processed', ['order_id' =&gt; $order-&gt;id()]);
+        } catch (CardDeclinedException $exception) {
+            $this-&gt;logger-&gt;warning('Card declined', [
+                'order_id' =&gt; $order-&gt;id(),
+                'reason'   =&gt; $exception-&gt;reason(),
+            ]);
+            throw $exception;
+        }
+    }
+}</code></pre>
+          </div>
+          <p>Si mañana cambias de Monolog a otro logger, o en los tests inyectas un <code>NullLogger</code> o un <code>TestLogger</code> para verificar qué se logueó, el código de dominio no cambia. Monolog, Symfony y Laravel implementan <code>LoggerInterface</code>, así que en la práctica siempre tienes una implementación disponible.</p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Este tutorial prepara el de Loki</p>
+              <p>Cuando llegues a <a href="loki-logql.html">Loki y LogQL</a>, los logs que aprendiste a estructurar aquí son exactamente lo que Loki indexa y LogQL consulta. El parser <code>json</code> de LogQL extrae los campos del JSON — <code>order_id</code>, <code>level</code>, <code>request_id</code> — y permite filtrar y agregar sobre ellos.</p>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Usa el nivel correcto: <code>error</code> solo para lo que requiere atención; inflar niveles destruye la señal. <code>debug</code> nunca en producción.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Log estructurado en JSON: mensaje corto y constante, datos variables en el contexto. Permite filtrar y agregar sin parsear texto.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Nunca en un log: contraseñas, tokens, números de tarjeta completos, PII sensible ni secretos de configuración.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Request id propagado como campo en todos los logs de la petición: permite reconstruir el hilo exacto de cualquier incidente con un solo filtro.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Depende de <code>Psr\Log\LoggerInterface</code>, no de Monolog. El dominio no sabe qué logger usa; en tests inyectas un <code>NullLogger</code> o un <code>TestLogger</code>.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="observabilidad-pilares.html">
+              <small>← Anterior</small>
+              <b>Los tres pilares de la observabilidad</b>
+            </a>
+            <a href="sentry-error-tracking.html" class="next">
+              <small>Siguiente →</small>
+              <b>Captura de errores con Sentry</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

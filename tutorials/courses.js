@@ -214,6 +214,41 @@ window.MENTORAI_COURSES = [
     ],
   },
   {
+    slug: "observabilidad",
+    title: "Observabilidad y monitoring",
+    summary:
+      "Logs, métricas y trazas — los tres pilares — con el stack de facto: Sentry para errores, Prometheus y PromQL para métricas, Loki y LogQL para logs, Grafana para dashboards y Alertmanager para alertas que se atienden.",
+    level: "Avanzado",
+    icon: "signal",
+    modules: [
+      {
+        title: "Fundamentos",
+        summary: "Los tres pilares y cómo estructurar los logs para que sean consultables.",
+        lessons: ["observabilidad-pilares", "logs-estructurados"],
+      },
+      {
+        title: "Errores con Sentry",
+        summary: "Capturar, agrupar y priorizar excepciones en producción.",
+        lessons: ["sentry-error-tracking", "sentry-a-fondo"],
+      },
+      {
+        title: "Métricas con Prometheus",
+        summary: "Instrumentar, scrappear y consultar métricas con PromQL.",
+        lessons: ["metricas-prometheus", "promql"],
+      },
+      {
+        title: "Logs y dashboards con Grafana",
+        summary: "Visualizar métricas y consultar logs con Loki desde el mismo panel.",
+        lessons: ["grafana-dashboards", "loki-logql"],
+      },
+      {
+        title: "Alerting",
+        summary: "Alertas que se atienden: síntomas, SLO, error budget y fatiga cero.",
+        lessons: ["alerting"],
+      },
+    ],
+  },
+  {
     slug: "phpunit",
     title: "PHPUnit en profundidad",
     summary:

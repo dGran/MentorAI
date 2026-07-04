@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Grafana: dashboards — MentorAI</title>
+    <meta name="description" content="Grafana como capa de visualización unificada: fuentes de datos (Prometheus y Loki), tipos de panel, variables de dashboard para dashboards reutilizables y buenas prácticas de organización." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Observabilidad</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Grafana: dashboards</h1>
+        <p class="tutorial-hero__lead">Grafana es la capa de visualización que une los tres pilares: conecta Prometheus para las métricas, Loki para los logs y Tempo para las trazas — y los presenta en un mismo panel. El resultado es un observatorio desde el que ver el estado del sistema sin cambiar de herramienta.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#fuentes">Fuentes de datos</a></li>
+            <li><a href="#paneles">Tipos de panel</a></li>
+            <li><a href="#variables">Variables de dashboard</a></li>
+            <li><a href="#organizacion">Organización y estructura</a></li>
+            <li><a href="#buenas-practicas">Buenas prácticas</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Prometheus almacena; PromQL consulta; Grafana visualiza. Pero Grafana no es solo un envoltorio de Prometheus: puede conectarse a docenas de fuentes de datos distintas y, sobre todo, permite cruzar en un mismo dashboard métricas de Prometheus con logs de Loki — el cruce entre los dos pilares que acelera el diagnóstico de incidentes.</p>
+
+          <h2 id="fuentes">
+            Fuentes de datos
+            <a href="#fuentes" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una <strong>fuente de datos</strong> en Grafana es la configuración de conexión a un sistema externo. Se configura en Connections → Data Sources. Para el stack de observabilidad habitual:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Fuente</th><th>Lenguaje de consulta</th><th>Qué visualizas</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Prometheus</strong></td><td>PromQL</td><td>Métricas: latencia, tasa de error, uso de recursos.</td></tr>
+                <tr><td><strong>Loki</strong></td><td>LogQL</td><td>Logs: eventos, errores, flujo de peticiones.</td></tr>
+                <tr><td><strong>Tempo</strong></td><td>TraceQL</td><td>Trazas distribuidas: tiempo por span y servicio.</td></tr>
+                <tr><td><strong>Alertmanager</strong></td><td>—</td><td>Estado de alertas activas.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Una vez configuradas, puedes mezclar fuentes en el mismo dashboard. La potencia real está en la correlación: en un panel de logs (Loki) puedes hacer clic en un error y saltar a las trazas (Tempo) del mismo request id — todo sin salir de Grafana.</p>
+
+          <h2 id="paneles">
+            Tipos de panel
+            <a href="#paneles" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Cada panel es una visualización de una o varias consultas. Los más útiles:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Panel</th><th>Cuándo usarlo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Time series</strong></td><td>Evolución temporal de métricas: latencia, req/s, uso de CPU. El panel por defecto para series temporales.</td></tr>
+                <tr><td><strong>Stat</strong></td><td>Un número en grande: tasa de error actual, percentil 99 ahora mismo, uptime. Vista rápida de un KPI.</td></tr>
+                <tr><td><strong>Table</strong></td><td>Comparativa entre endpoints, instancias o servicios. Ordenable por columna.</td></tr>
+                <tr><td><strong>Gauge / Bar gauge</strong></td><td>Valor dentro de un rango conocido: utilización de workers (0-100%), porcentaje de error.</td></tr>
+                <tr><td><strong>Logs</strong></td><td>Panel nativo de Loki: muestra el flujo de logs en tiempo real con resaltado por nivel.</td></tr>
+                <tr><td><strong>Heatmap</strong></td><td>Distribución de latencias a lo largo del tiempo. Ideal para histogramas de Prometheus.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>La tentación es usar muchos tipos distintos. La realidad: <em>Time series</em> + <em>Stat</em> + <em>Table</em> cubren el 90% de los casos. Añade tipos exóticos solo cuando añaden información que el usuario necesita y no puede obtener de otra forma.</p>
+
+          <h2 id="variables">
+            Variables de dashboard
+            <a href="#variables" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Las variables permiten que el mismo dashboard funcione para distintos valores — un filtro interactivo que el usuario selecciona con un desplegable y que se inyecta en todas las consultas del dashboard.</p>
+          <p>Se definen en Dashboard Settings → Variables. Tipos comunes:</p>
+          <ul>
+            <li><strong>Query</strong>: obtiene los valores posibles de Prometheus o Loki. Ejemplo: <code>label_values(http_requests_total, endpoint)</code> lista todos los endpoints que tienen datos.</li>
+            <li><strong>Custom</strong>: valores fijos definidos a mano. Ejemplo: <code>production,staging</code> para seleccionar el entorno.</li>
+            <li><strong>Interval</strong>: rango de tiempo para usar en <code>rate()</code>. Permite al usuario elegir entre <code>5m</code>, <code>15m</code>, <code>1h</code>.</li>
+          </ul>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">PromQL · consulta con variable de Grafana</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code># $endpoint y $interval son variables del dashboard
+# el usuario las selecciona desde los desplegables
+rate(http_request_duration_seconds_count{endpoint="$endpoint"}[$interval])</code></pre>
+          </div>
+          <p>Con variables bien diseñadas, un único dashboard de "salud de endpoints" sirve para investigar cualquier endpoint, en cualquier ventana de tiempo, sin duplicar dashboards.</p>
+
+          <h2 id="organizacion">
+            Organización y estructura
+            <a href="#organizacion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un Grafana sin organización se convierte rápido en un cajón de sastre. La convención más práctica es crear dashboards orientados a <em>audiencias</em>, no a <em>fuentes de datos</em>:</p>
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Por fuente (confuso)</h4>
+              <ul>
+                <li>"Dashboard de Prometheus"</li>
+                <li>"Dashboard de Loki"</li>
+                <li>El usuario no sabe cuál mirar durante un incidente.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Por audiencia o propósito</h4>
+              <ul>
+                <li>"Salud del servicio API" (métricas RED + logs de error)</li>
+                <li>"Infraestructura" (CPU, memoria, disco, BD)</li>
+                <li>"Debugging de incidente" (logs + trazas + métricas correlacionados)</li>
+              </ul>
+            </div>
+          </div>
+          <p>Usa <strong>filas</strong> dentro de un dashboard para separar secciones colapsables. La primera fila suele ser el resumen ejecutivo (stats grandes de salud), las siguientes el detalle. Quien mira durante un incidente va de arriba hacia abajo: primero confirma que hay un problema, luego busca el detalle.</p>
+
+          <h2 id="buenas-practicas">
+            Buenas prácticas
+            <a href="#buenas-practicas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Práctica</th><th>Por qué</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Unidades explícitas en cada eje (segundos, req/s, bytes)</td><td>Sin unidades, el número no significa nada.</td></tr>
+                <tr><td>Thresholds visuales en stat panels (verde/amarillo/rojo)</td><td>El cerebro procesa color más rápido que un número.</td></tr>
+                <tr><td>Dashboards en código (JSON/Terraform/Grafonnet)</td><td>Version control, revisión en PR, reproducible en otro entorno.</td></tr>
+                <tr><td>Enlazar desde una alerta al dashboard relevante</td><td>Cuando llega la alerta, el oncall sabe exactamente dónde mirar.</td></tr>
+                <tr><td>No más de 20-25 paneles por dashboard</td><td>Dashboards con 50 paneles no los mira nadie; ralentizan el navegador.</td></tr>
+                <tr><td>Usar variables en lugar de duplicar dashboards</td><td>Un dashboard por entorno es 3× el trabajo de mantenimiento.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Grafana Community Dashboards</p>
+              <p>Antes de construir un dashboard desde cero, busca en grafana.com/grafana/dashboards. Existen dashboards mantenidos por la comunidad para node_exporter, MySQL, PHP-FPM, nginx y decenas de servicios más. Impórtalos, adáptalos a tu stack y usa ese tiempo en los dashboards que son propios de tu negocio.</p>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Grafana conecta Prometheus (PromQL) y Loki (LogQL) en un mismo dashboard. La correlación entre fuentes acelera el diagnóstico de incidentes.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Time series, Stat y Table cubren el 90% de los casos. Añade Heatmap para distribuciones de latencia y Logs para el flujo en tiempo real.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Variables de dashboard: un único dashboard parametrizado es mejor que N dashboards por entorno o servicio. Las de tipo Query se auto-populan desde Prometheus.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Organiza por audiencia o propósito, no por fuente de datos. Resumen arriba, detalle abajo. Thresholds de color para lectura rápida durante incidentes.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Dashboards en código (JSON versionado) y enlazados desde las alertas. Los de Grafana Community son un buen punto de partida para infraestructura estándar.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="promql.html">
+              <small>← Anterior</small>
+              <b>PromQL: consultar métricas</b>
+            </a>
+            <a href="loki-logql.html" class="next">
+              <small>Siguiente →</small>
+              <b>Loki y LogQL</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Los tres pilares de la observabilidad — MentorAI</title>
+    <meta name="description" content="Monitoring vs observabilidad, los tres pilares (logs, métricas, trazas), qué pregunta responde cada uno y cuándo usar cuál. La base conceptual antes de entrar en Sentry, Prometheus y Grafana." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Observabilidad</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Los tres pilares de la observabilidad</h1>
+        <p class="tutorial-hero__lead">Un sistema en producción no habla: silencia errores, acumula lentitud y falla de formas que nadie previó. La observabilidad es la disciplina de conseguir que el sistema cuente lo que le pasa — y para contarlo usa tres lenguajes distintos: logs, métricas y trazas.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#monitoring-vs-obs">Monitoring vs observabilidad</a></li>
+            <li><a href="#logs">Pilar 1: logs</a></li>
+            <li><a href="#metricas">Pilar 2: métricas</a></li>
+            <li><a href="#trazas">Pilar 3: trazas distribuidas</a></li>
+            <li><a href="#cuando">Cuándo usar cuál</a></li>
+            <li><a href="#cardinalidad">La trampa de la cardinalidad</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Cuando un usuario dice "la app va lenta" tienes tres preguntas que hacerte: ¿qué hizo exactamente el sistema? (log), ¿cuánto tardó y con qué frecuencia pasa? (métrica), ¿en qué servicio se perdió el tiempo? (traza). Cada pilar responde una pregunta distinta; juntos dan el cuadro completo.</p>
+
+          <h2 id="monitoring-vs-obs">
+            Monitoring vs observabilidad
+            <a href="#monitoring-vs-obs" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El <strong>monitoring</strong> es el conjunto de checks que defines por adelantado: "avísame si la CPU supera el 90%" o "alerta si el endpoint devuelve 500". Sabes qué va a fallar y preparas la alarma. Funciona bien cuando el espacio de fallos es conocido.</p>
+          <p>La <strong>observabilidad</strong> va más allá: es la capacidad de hacerle <em>cualquier pregunta</em> al sistema sobre su comportamiento interno, incluso preguntas que no habías imaginado cuando lo construiste. Un sistema observable no solo dispara alarmas predefinidas; permite explorar un incidente desde el síntoma hasta la causa raíz, paso a paso, usando los datos que emite.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Solo monitoring</h4>
+              <ul>
+                <li>Alertas sobre umbrales conocidos.</li>
+                <li>Preguntas definidas en el momento del diseño.</li>
+                <li>Si el fallo es nuevo, no hay alarma.</li>
+                <li>Responde "¿está roto?" pero no "¿por qué?".</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Monitoring + observabilidad</h4>
+              <ul>
+                <li>Alertas sobre síntomas de usuario (lentitud, errores).</li>
+                <li>Exploración ad hoc para causas desconocidas.</li>
+                <li>Cualquier pregunta, también las no anticipadas.</li>
+                <li>Responde "¿está roto?" y "¿dónde y por qué?".</li>
+              </ul>
+            </div>
+          </div>
+          <p>En la práctica no son opuestos: el monitoring sigue siendo necesario para las alertas operativas; la observabilidad añade la capacidad de investigar. Lo que cambia es el enfoque — de "qué alarmas pongo" a "qué datos emito".</p>
+
+          <h2 id="logs">
+            Pilar 1: logs
+            <a href="#logs" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un log es el registro de <strong>algo que ocurrió</strong>: un evento discreto con su contexto en un instante de tiempo. Es la forma más antigua y directa de instrumentación — un <code>echo</code> con fecha —, pero también la más expresiva: puedes incluir cualquier dato que tengas disponible en ese momento.</p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__step">Evento ocurre (excepción, petición, job)</div>
+              <div class="flow__arrow">↓</div>
+              <div class="flow__step">Logger emite una línea con timestamp, nivel y contexto</div>
+              <div class="flow__arrow">↓</div>
+              <div class="flow__step">Almacén de logs (archivo, Loki, Elasticsearch)</div>
+              <div class="flow__arrow">↓</div>
+              <div class="flow__step">Consulta para depurar o auditar</div>
+            </div>
+          </div>
+          <p>La pregunta que responden los logs es <strong>"¿qué ocurrió exactamente?"</strong> — los detalles de un evento concreto. Son insustituibles para depurar: cuando una excepción aterriza en Sentry, los logs del minuto anterior son el hilo que lleva hasta la causa. En el siguiente tutorial verás cómo estructurarlos bien para que sean consultables.</p>
+          <p>Su debilidad: no escalan bien como señal de volumen. Si quieres saber cuántas peticiones por segundo recibe tu endpoint, parsear logs para contarlas es caro y frágil. Para eso están las métricas.</p>
+
+          <h2 id="metricas">
+            Pilar 2: métricas
+            <a href="#metricas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una métrica es una <strong>medición numérica a lo largo del tiempo</strong>. No captura el detalle de cada evento sino su magnitud agregada: cuántas peticiones, cuánto tarda de media, cuánta memoria consume. Esa agregación es su fuerza: caben meses de datos en un espacio que ningún log ocuparía.</p>
+          <p>Las métricas responden la pregunta <strong>"¿cuánto y con qué frecuencia?"</strong>. Son la base de las alertas de rendimiento ("el percentil 95 de latencia supera 500ms"), los dashboards de salud del sistema y la detección temprana de tendencias ("el uso de memoria crece un 2% por hora").</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Tipo de métrica</th><th>Qué mide</th><th>Ejemplo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Counter</strong></td><td>Solo sube. Total acumulado de eventos.</td><td>Peticiones totales, errores totales.</td></tr>
+                <tr><td><strong>Gauge</strong></td><td>Sube y baja. Valor puntual.</td><td>Memoria actual, conexiones abiertas.</td></tr>
+                <tr><td><strong>Histogram</strong></td><td>Distribución de valores en buckets.</td><td>Latencia de peticiones (p50/p95/p99).</td></tr>
+                <tr><td><strong>Summary</strong></td><td>Percentiles precalculados en el cliente.</td><td>Como histogram pero menos flexible.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Su debilidad: no tienen contexto. Una métrica dice "el 3% de las peticiones falló en la última hora" pero no dice cuáles, de qué usuario, con qué payload. Para saber eso, vuelves a los logs.</p>
+
+          <h2 id="trazas">
+            Pilar 3: trazas distribuidas
+            <a href="#trazas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>En un sistema monolítico una petición toca un solo proceso y el log lo captura todo. En una arquitectura de servicios — API gateway, servicio de pedidos, servicio de inventario, worker de notificaciones — esa petición cruza cuatro procesos distintos, cada uno con sus propios logs. Sin coordinación, los fragmentos son inútiles: no sabes el orden, no sabes qué llamada tardó, no sabes si una falló en cadena.</p>
+          <p>Una <strong>traza distribuida</strong> resuelve esto: propaga un identificador único (<em>trace id</em>) a través de todos los servicios que toca la petición y registra cada operación como un <em>span</em> — un intervalo con inicio, duración y metadatos. El resultado es una línea de tiempo que muestra la petición entera, de principio a fin, con cada servicio y su tiempo.</p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__step">API Gateway (span: 180ms)</div>
+              <div class="flow__arrow">↓ trace-id: abc123</div>
+              <div class="flow__step">Servicio Pedidos (span: 150ms)</div>
+              <div class="flow__arrow">↓ trace-id: abc123</div>
+              <div class="flow__step">└ Consulta BD (span: 120ms) ← aquí está el cuello de botella</div>
+            </div>
+          </div>
+          <p>Las trazas responden la pregunta <strong>"¿dónde se perdió el tiempo?"</strong> en una petición concreta. Herramientas como Jaeger, Zipkin o la parte de performance de Sentry implementan este modelo. OpenTelemetry es el estándar abierto de instrumentación que alimenta a todos ellos.</p>
+          <p>En servicios pequeños o monolitos las trazas son menos urgentes: los logs y métricas suelen bastar. Se vuelven imprescindibles en cuanto el debugging requiere seguir una petición a través de varios procesos.</p>
+
+          <h2 id="cuando">
+            Cuándo usar cuál
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La elección no es exclusiva — se usan juntos —, pero cada pilar tiene su dominio natural:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Pregunta</th><th>Herramienta</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>¿Qué hizo el sistema cuando el usuario reportó el fallo?</td><td>Logs</td></tr>
+                <tr><td>¿El sistema está lento ahora mismo? ¿Cuánto?</td><td>Métricas</td></tr>
+                <tr><td>¿Dónde exactamente se pierde el tiempo en esta petición?</td><td>Trazas</td></tr>
+                <tr><td>¿Cuántas veces ha fallado este endpoint en la última hora?</td><td>Métricas</td></tr>
+                <tr><td>¿Qué excepción concreta lanzó y con qué contexto?</td><td>Logs / Sentry</td></tr>
+                <tr><td>¿El error del servicio A fue causado por el servicio B?</td><td>Trazas</td></tr>
+                <tr><td>¿Hay tendencia de degradación en el último mes?</td><td>Métricas</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>El flujo de un incidente típico combina los tres: una <em>alerta de métrica</em> avisa de que la tasa de error subió → los <em>logs</em> muestran qué excepción ocurre → si el origen no es obvio, las <em>trazas</em> identifican el servicio o la query responsable.</p>
+
+          <h2 id="cardinalidad">
+            La trampa de la cardinalidad
+            <a href="#cardinalidad" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La <strong>cardinalidad</strong> es el número de combinaciones únicas de etiquetas de una métrica. Es el concepto más importante para no arruinar tu sistema de métricas.</p>
+          <p>Imagina que instrumentas el tiempo de respuesta de cada petición y añades el <code>user_id</code> como etiqueta. Con 100.000 usuarios, esa métrica genera 100.000 series temporales distintas. Prometheus o cualquier sistema de métricas explota: el uso de memoria crece sin límite, las consultas se vuelven lentas y el coste se dispara.</p>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="10.29 3.86 1.82 18 22.18 18 13.71 3.86 10.29 3.86"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Alta cardinalidad → colapso de métricas</p>
+              <p>Nunca uses como etiqueta de métrica algo con valores ilimitados o muy variados: <code>user_id</code>, <code>request_id</code>, <code>ip</code>, <code>order_id</code>. Las etiquetas de métrica deben tener cardinalidad baja: <code>method</code> (GET/POST/…), <code>status_code</code> (200/404/500), <code>endpoint</code> (con un número fijo de rutas). Para datos de alta cardinalidad, usa los logs.</p>
+            </div>
+          </div>
+          <p>La regla práctica: una métrica responde "¿cuántos/cuánto en este grupo?"; un log responde "¿qué pasó con este específico?". Son complementarios, no competidores.</p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El correlation id une los tres pilares</p>
+              <p>El patrón que los conecta es el <em>correlation id</em> (o trace id): un identificador único que se genera al inicio de cada petición y se propaga — como campo en los logs, como etiqueta en las métricas (con cuidado), como trace id en las trazas. Cuando tienes el id de una alerta, buscas ese id en los logs y en las trazas: los tres pilares hablan del mismo evento.</p>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Monitoring = alertas sobre lo conocido. Observabilidad = capacidad de explorar cualquier pregunta sobre el sistema, incluidas las no anticipadas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Logs: qué ocurrió exactamente. Métricas: cuánto y con qué frecuencia. Trazas: dónde se perdió el tiempo en una petición que cruza servicios.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los tres pilares se usan juntos: la alerta de métrica avisa, los logs explican el qué, las trazas localizan el dónde.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Cardinalidad baja en etiquetas de métricas: nunca user_id, request_id ni IPs. Alta cardinalidad va en logs.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El correlation id conecta los tres: un mismo identificador en logs, métricas y trazas permite seguir un incidente de punta a punta.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../cursos.html">
+              <small>← Inicio del curso</small>
+              <b>Observabilidad y monitoring</b>
+            </a>
+            <a href="logs-estructurados.html" class="next">
+              <small>Siguiente →</small>
+              <b>Logs estructurados</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

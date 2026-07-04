@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PromQL: consultar métricas — MentorAI</title>
+    <meta name="description" content="PromQL desde los selectores hasta las consultas de alertas: instant vs range vectors, rate() e irate(), agregaciones sum by y avg, histogram_quantile para percentiles p95/p99, y los métodos RED y USE." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Observabilidad</span>
+        </nav>
+        <h1 class="tutorial-hero__title">PromQL: consultar métricas</h1>
+        <p class="tutorial-hero__lead">PromQL es el lenguaje de consultas de Prometheus. Con él transformas contadores crudos en tasas legibles, calculas el percentil 99 de latencia de todos tus endpoints a la vez y escribes las condiciones exactas que disparan tus alertas. Aprender a escribirlo bien es aprender a hablar con tus métricas.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            16 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#selectores">Selectores y filtros de label</a></li>
+            <li><a href="#vectors">Instant vs range vectors</a></li>
+            <li><a href="#rate">rate() e irate()</a></li>
+            <li><a href="#agregaciones">Agregaciones</a></li>
+            <li><a href="#percentiles">Percentiles con histogram_quantile</a></li>
+            <li><a href="#red-use">Métodos RED y USE</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">PromQL opera sobre series temporales. Una serie temporal es una secuencia de muestras (timestamp, valor) identificada por un nombre de métrica y un conjunto de labels. PromQL toma esas series y las transforma, combina o filtra para producir los valores que necesitas.</p>
+
+          <h2 id="selectores">
+            Selectores y filtros de label
+            <a href="#selectores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El selector básico es el nombre de la métrica:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">PromQL · selectores básicos</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code># todas las series de esta métrica
+http_requests_total
+
+# solo las peticiones con status 500
+http_requests_total{status="500"}
+
+# todos los status excepto 200
+http_requests_total{status!="200"}
+
+# status que empieza por 5 (regex)
+http_requests_total{status=~"5.."}
+
+# endpoint que NO es /health (regex negativa)
+http_requests_total{endpoint!~"/health.*"}</code></pre>
+          </div>
+          <p>Los operadores de label son: <code>=</code> (igual exacto), <code>!=</code> (distinto), <code>=~</code> (regex), <code>!~</code> (regex negativa). Las regex son anchored: <code>5..</code> coincide con cadenas que son exactamente 3 caracteres empezando por 5.</p>
+
+          <h2 id="vectors">
+            Instant vs range vectors
+            <a href="#vectors" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>PromQL distingue dos tipos de resultado:</p>
+          <ul>
+            <li><strong>Instant vector</strong>: el valor más reciente de cada serie. Es lo que devuelve <code>http_requests_total{status="500"}</code> — un número por cada combinación de labels.</li>
+            <li><strong>Range vector</strong>: una ventana temporal de muestras. Se especifica con <code>[5m]</code>, <code>[1h]</code>, etc. Es lo que necesitan funciones como <code>rate()</code>.</li>
+          </ul>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">PromQL · instant vector vs range vector</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code># instant vector: valor actual del counter (siempre creciente, poco útil solo)
+http_requests_total
+
+# range vector: todas las muestras de los últimos 5 minutos
+http_requests_total[5m]</code></pre>
+          </div>
+          <p>Un range vector solo tiene utilidad pasado por una función de agregación temporal — <code>rate()</code>, <code>increase()</code>, <code>avg_over_time()</code>. Solo no produce nada útil en Grafana.</p>
+
+          <h2 id="rate">
+            rate() e irate()
+            <a href="#rate" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p><code>rate()</code> calcula la tasa de incremento por segundo de un counter a lo largo de la ventana temporal. Es la función más usada en PromQL:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">PromQL · rate() para convertir counter en tasa</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code># peticiones por segundo en los últimos 5 minutos
+rate(http_requests_total[5m])
+
+# errores 5xx por segundo
+rate(http_requests_total{status=~"5.."}[5m])
+
+# tasa de error: errores / total
+rate(http_requests_total{status=~"5.."}[5m])
+  /
+rate(http_requests_total[5m])</code></pre>
+          </div>
+          <p>La ventana <code>[5m]</code> es el intervalo sobre el que se calcula la tasa. Ventanas más grandes suavizan los picos; más cortas los muestran. Para dashboards, <code>[5m]</code> o <code>[10m]</code> es el equilibrio habitual.</p>
+          <p><code>irate()</code> usa solo las dos últimas muestras de la ventana: reacciona a picos instantáneos mucho más rápido pero es más ruidoso. Útil para detectar spikes en tiempo real; <code>rate()</code> es mejor para dashboards y alertas.</p>
+
+          <h2 id="agregaciones">
+            Agregaciones
+            <a href="#agregaciones" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Las funciones de agregación combinan series temporales. Todas aceptan el modificador <code>by</code> (conserva solo los labels indicados) o <code>without</code> (descarta los indicados):</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">PromQL · agregaciones comunes</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code># peticiones totales por segundo sumando todos los endpoints y métodos
+sum(rate(http_requests_total[5m]))
+
+# peticiones por segundo desglosadas por endpoint
+sum by (endpoint) (rate(http_requests_total[5m]))
+
+# latencia media por endpoint (usando _sum y _count del histogram)
+sum by (endpoint) (rate(http_request_duration_seconds_sum[5m]))
+  /
+sum by (endpoint) (rate(http_request_duration_seconds_count[5m]))
+
+# número de instancias corriendo (gauge)
+count(up{job="myapp"} == 1)
+
+# top 5 endpoints más lentos (media)
+topk(5,
+  sum by (endpoint) (rate(http_request_duration_seconds_sum[5m]))
+  /
+  sum by (endpoint) (rate(http_request_duration_seconds_count[5m]))
+)</code></pre>
+          </div>
+          <p>Las funciones de agregación más comunes: <code>sum</code>, <code>avg</code>, <code>max</code>, <code>min</code>, <code>count</code>, <code>topk(n, expr)</code>, <code>bottomk(n, expr)</code>.</p>
+
+          <h2 id="percentiles">
+            Percentiles con histogram_quantile
+            <a href="#percentiles" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La media de latencia oculta los valores extremos. El percentil 95 (p95) dice que el 95% de las peticiones tardan menos de X — un valor mucho más representativo de lo que experimentan los usuarios.</p>
+          <p><code>histogram_quantile(φ, range_vector)</code> calcula el percentil φ (entre 0 y 1) a partir de los buckets de un histogram:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">PromQL · percentiles p50, p95 y p99</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code># p50 (mediana) de latencia en los últimos 5 minutos
+histogram_quantile(0.50, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))
+
+# p95
+histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))
+
+# p99 desglosado por endpoint
+histogram_quantile(0.99,
+  sum by (le, endpoint) (rate(http_request_duration_seconds_bucket[5m]))
+)</code></pre>
+          </div>
+          <p>El <code>sum by (le)</code> es obligatorio: agrupa por el label especial <code>le</code> (less or equal), que es el que identifica cada bucket del histogram. Sin él, <code>histogram_quantile</code> no puede reconstruir la distribución.</p>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="10.29 3.86 1.82 18 22.18 18 13.71 3.86 10.29 3.86"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El resultado es una estimación interpolada</p>
+              <p><code>histogram_quantile</code> interpola dentro del bucket donde cae el percentil. La precisión depende de la granularidad de tus buckets — si el p99 cae en el bucket <code>le="1.0"</code> a <code>le="+Inf"</code> porque no definiste buckets intermedios, el resultado es impreciso. Define buckets que cubran bien la distribución real de tus tiempos.</p>
+            </div>
+          </div>
+
+          <h2 id="red-use">
+            Métodos RED y USE
+            <a href="#red-use" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Más allá de las consultas individuales, hay dos frameworks que guían qué métricas importan monitorizar:</p>
+          <p><strong>RED</strong> (Rate, Errors, Duration) — para servicios que manejan peticiones: ¿cuántas peticiones por segundo recibe? ¿qué porcentaje falla? ¿cuánto tardan? Son los tres indicadores que mejor representan la experiencia del usuario de un servicio.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">PromQL · las tres consultas RED</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code># Rate: peticiones por segundo
+sum(rate(http_requests_total[5m]))
+
+# Errors: tasa de error
+sum(rate(http_requests_total{status=~"5.."}[5m]))
+  /
+sum(rate(http_requests_total[5m]))
+
+# Duration: p95 de latencia
+histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))</code></pre>
+          </div>
+          <p><strong>USE</strong> (Utilization, Saturation, Errors) — para recursos físicos: ¿qué porcentaje del recurso está en uso? ¿hay cola de espera (saturación)? ¿cuántos errores? Aplica a CPU, disco, red, workers de PHP-FPM.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">PromQL · USE para PHP-FPM workers</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code># Utilization: porcentaje de workers activos
+phpfpm_active_processes / phpfpm_max_children
+
+# Saturation: peticiones en cola (señal de saturación)
+phpfpm_listen_queue
+
+# Errors: slow requests
+phpfpm_slow_requests_total</code></pre>
+          </div>
+          <p>RED y USE no son excluyentes: se aplican a distintos niveles. RED para los endpoints de tu API; USE para los recursos del sistema. Juntos dan una imagen completa de salud: si el RED está bien (peticiones rápidas y sin errores) pero el USE muestra saturación (workers al 100%), sabes que el sistema está al límite aunque no haya rototo aún.</p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Selectores de label con <code>=</code>, <code>!=</code>, <code>=~</code>, <code>!~</code>. Instant vector para el valor actual; range vector (<code>[5m]</code>) para funciones de tasa.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>rate(counter[5m])</code> convierte counters en tasas por segundo. <code>irate()</code> para picos instantáneos; <code>rate()</code> para dashboards y alertas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>sum by (label)</code>, <code>avg</code>, <code>topk</code>: las agregaciones combinan series; <code>by</code> controla qué labels conservar en el resultado.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>histogram_quantile(0.95, sum by (le) (rate(duration_bucket[5m])))</code>: el patrón canónico del p95. El <code>sum by (le)</code> es obligatorio.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>RED (Rate, Errors, Duration) para servicios. USE (Utilization, Saturation, Errors) para recursos. Son los frameworks que guían qué monitorizar, no solo cómo.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="metricas-prometheus.html">
+              <small>← Anterior</small>
+              <b>Métricas con Prometheus</b>
+            </a>
+            <a href="grafana-dashboards.html" class="next">
+              <small>Siguiente →</small>
+              <b>Grafana: dashboards</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

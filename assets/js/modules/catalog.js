@@ -62,6 +62,7 @@
       oop: "Orientación a objetos",
       herramientas: "Herramientas",
       testing: "Testing",
+      observabilidad: "Observabilidad",
       ia: "Programar con IA",
     };
 

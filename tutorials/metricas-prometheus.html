@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Métricas con Prometheus — MentorAI</title>
+    <meta name="description" content="Qué es Prometheus y el modelo pull: tipos de métrica (counter, gauge, histogram, summary), labels y cardinalidad, exporters y cómo instrumentar una aplicación PHP para que Prometheus la scrappe." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Observabilidad</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Métricas con Prometheus</h1>
+        <p class="tutorial-hero__lead">Prometheus es el sistema de métricas de facto en el ecosistema cloud-native: simple, potente y basado en el modelo pull — él va a buscar tus métricas, no tú se las envías. Entender su modelo de datos es la clave para instrumentar tu aplicación correctamente.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#pull">El modelo pull y el scraping</a></li>
+            <li><a href="#tipos">Tipos de métrica</a></li>
+            <li><a href="#labels">Labels y cardinalidad</a></li>
+            <li><a href="#exporters">Exporters: métricas del sistema</a></li>
+            <li><a href="#php">Instrumentar una app PHP</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">El segundo pilar de la observabilidad son las métricas. Mientras Sentry cubre los errores de forma especializada, Prometheus cubre el comportamiento cuantitativo del sistema: cuántas peticiones llegan, cuánto tardan y cómo evoluciona cada magnitud a lo largo del tiempo.</p>
+
+          <h2 id="pull">
+            El modelo pull y el scraping
+            <a href="#pull" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La mayoría de sistemas de métricas tradicionales usan el modelo <strong>push</strong>: la aplicación envía métricas al servidor central cada cierto tiempo. Prometheus invierte esto con el modelo <strong>pull</strong>: Prometheus llama periódicamente a un endpoint <code>/metrics</code> de cada aplicación y recoge los datos. Este endpoint expone el estado actual de todas las métricas en el formato de texto de Prometheus.</p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__step">Tu app expone GET /metrics (formato Prometheus)</div>
+              <div class="flow__arrow">↑ cada 15s Prometheus scrappe</div>
+              <div class="flow__step">Prometheus almacena la serie temporal en su TSDB</div>
+              <div class="flow__arrow">↓</div>
+              <div class="flow__step">Grafana o Alertmanager consultan vía PromQL</div>
+            </div>
+          </div>
+          <p>El intervalo de scraping por defecto es 15 segundos — configurable por target. El formato de texto que devuelve <code>/metrics</code> es simple:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">formato de texto Prometheus en /metrics</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code># HELP http_requests_total Total HTTP requests
+# TYPE http_requests_total counter
+http_requests_total{method="GET",status="200"} 1234
+http_requests_total{method="POST",status="201"} 87
+http_requests_total{method="POST",status="500"} 3
+
+# HELP http_request_duration_seconds Request duration in seconds
+# TYPE http_request_duration_seconds histogram
+http_request_duration_seconds_bucket{le="0.05"} 980
+http_request_duration_seconds_bucket{le="0.5"} 1230
+http_request_duration_seconds_bucket{le="1.0"} 1234
+http_request_duration_seconds_bucket{le="+Inf"} 1234
+http_request_duration_seconds_sum 312.4
+http_request_duration_seconds_count 1234</code></pre>
+          </div>
+          <p>La ventaja del modelo pull: Prometheus sabe si un target está caído (no puede scrappe → alerta de target down), no hay que configurar la dirección del servidor central en cada aplicación y el endpoint <code>/metrics</code> es también útil para depuración manual.</p>
+
+          <h2 id="tipos">
+            Tipos de métrica
+            <a href="#tipos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Ya viste los cuatro tipos en el tutorial de <a href="observabilidad-pilares.html">los pilares</a>. Aquí los concretamos con su semántica en Prometheus:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Tipo</th><th>Semántica</th><th>Operaciones útiles en PromQL</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Counter</strong></td><td>Solo sube. Se reinicia al reiniciar el proceso.</td><td><code>rate()</code>, <code>increase()</code></td></tr>
+                <tr><td><strong>Gauge</strong></td><td>Sube y baja. Valor puntual.</td><td>Valor directo, <code>avg_over_time()</code></td></tr>
+                <tr><td><strong>Histogram</strong></td><td>Distribución en buckets predefinidos. Permite percentiles.</td><td><code>histogram_quantile()</code>, <code>rate()</code> sobre <code>_count</code></td></tr>
+                <tr><td><strong>Summary</strong></td><td>Percentiles precalculados en el cliente.</td><td>Valor directo. Menos flexible que histogram.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>La elección entre histogram y summary es importante: los histogramas calculan percentiles <em>en el servidor</em> (Prometheus) sobre ventanas de tiempo arbitrarias y se pueden agregar entre múltiples instancias; los summaries los calculan <em>en el cliente</em> (tu app) con una ventana fija y no son agregables. Para latencia de endpoints, usa siempre histogram.</p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Buckets del histogram: piénsalos antes</p>
+              <p>Los buckets del histogram son fijos en tiempo de instrumentación. Si tu aplicación tarda habitualmente entre 10ms y 500ms, define buckets como <code>[0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5]</code> (en segundos). Si todos tus valores caen en el último bucket <code>+Inf</code>, el percentil 95 será siempre ese valor máximo — los buckets pierden toda utilidad.</p>
+            </div>
+          </div>
+
+          <h2 id="labels">
+            Labels y cardinalidad
+            <a href="#labels" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Los <strong>labels</strong> (etiquetas) son pares clave-valor que diferencian series temporales dentro de la misma métrica. Una métrica con dos labels distintos de valores es en realidad dos series temporales distintas que Prometheus almacena y consulta por separado.</p>
+          <p>Como viste en el tutorial de los pilares, la <strong>cardinalidad</strong> es el número de combinaciones únicas de labels. Una métrica <code>http_requests_total</code> con labels <code>method</code> (5 valores), <code>status</code> (10 valores) y <code>endpoint</code> (50 rutas) genera 5×10×50 = 2.500 series temporales. Eso es manejable. Si añades <code>user_id</code> con 100.000 usuarios: 250 millones de series — Prometheus colapsa.</p>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="10.29 3.86 1.82 18 22.18 18 13.71 3.86 10.29 3.86"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Labels de alta cardinalidad → colapso</p>
+              <p>Nunca uses como label: <code>user_id</code>, <code>order_id</code>, <code>request_id</code>, IPs, emails ni ningún valor que crezca sin límite. Los labels de Prometheus deben tener un conjunto acotado y pequeño de valores posibles. Los datos de alta cardinalidad van en los logs.</p>
+            </div>
+          </div>
+          <p>Labels útiles y seguros: <code>method</code> (GET/POST/…), <code>status_code</code> (200/404/500), <code>endpoint</code> (plantilla de ruta, no URL concreta), <code>job</code> (nombre del servicio), <code>instance</code> (nodo concreto, lo gestiona Prometheus).</p>
+
+          <h2 id="exporters">
+            Exporters: métricas del sistema
+            <a href="#exporters" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>No todo lo que quieres monitorizar es tu código: el servidor, la base de datos y el propio contenedor también producen métricas valiosas. Los <strong>exporters</strong> son procesos separados que exponen métricas de sistemas externos en formato Prometheus.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Exporter</th><th>Qué expone</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>node_exporter</strong></td><td>CPU, memoria, disco, red del servidor Linux.</td></tr>
+                <tr><td><strong>mysqld_exporter</strong></td><td>Queries por segundo, conexiones, innodb, replicación.</td></tr>
+                <tr><td><strong>postgres_exporter</strong></td><td>Tablas bloqueadas, conexiones, vacuums, tamaño de tablas.</td></tr>
+                <tr><td><strong>redis_exporter</strong></td><td>Hit rate, memoria, comandos por segundo, claves.</td></tr>
+                <tr><td><strong>nginx-prometheus-exporter</strong></td><td>Peticiones activas, estados de conexión, req/s.</td></tr>
+                <tr><td><strong>php-fpm_exporter</strong></td><td>Workers activos/idle, queue, slow requests.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>En Docker, los exporters se añaden como servicios adicionales en el <code>docker-compose.yml</code> y Prometheus los scrappe igual que a tu aplicación.</p>
+
+          <h2 id="php">
+            Instrumentar una app PHP
+            <a href="#php" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La librería más usada es <code>promphp/prometheus_client_php</code>. Las métricas se almacenan en un backend compartido entre todos los procesos de PHP-FPM (Redis o APCu, porque cada petición es un proceso distinto):</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · instalar la librería</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">composer require promphp/prometheus_client_php</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · registrar counter + histogram en un middleware</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+use Prometheus\CollectorRegistry;
+use Prometheus\Storage\Redis;
+
+final class MetricsMiddleware
+{
+    private CollectorRegistry $registry;
+
+    public function __construct()
+    {
+        $this-&gt;registry = new CollectorRegistry(new Redis(['host' =&gt; 'redis']));
+    }
+
+    public function process(Request $request, RequestHandler $handler): Response
+    {
+        $start = microtime(as_float: true);
+        $response = $handler-&gt;handle($request);
+        $duration = microtime(as_float: true) - $start;
+
+        $labels = [
+            'method'   =&gt; $request-&gt;getMethod(),
+            'endpoint' =&gt; $request-&gt;getRoute(),
+            'status'   =&gt; (string) $response-&gt;getStatusCode(),
+        ];
+
+        $this-&gt;registry
+            -&gt;getOrRegisterCounter('app', 'http_requests_total', 'Total HTTP requests', ['method', 'endpoint', 'status'])
+            -&gt;inc($labels);
+
+        $this-&gt;registry
+            -&gt;getOrRegisterHistogram('app', 'http_request_duration_seconds', 'Request duration', ['method', 'endpoint'], [0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5])
+            -&gt;observe($duration, array_slice($labels, 0, 2));
+
+        return $response;
+    }
+}</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · endpoint /metrics que scrappe Prometheus</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">$registry = new CollectorRegistry(new Redis(['host' =&gt; 'redis']));
+$renderer = new RenderTextFormat();
+
+header('Content-Type: ' . RenderTextFormat::MIME_TYPE);
+echo $renderer-&gt;render($registry-&gt;getMetricFamilySamples());</code></pre>
+          </div>
+          <p>En producción protege el endpoint <code>/metrics</code> con autenticación o limítalo a la IP de Prometheus — expone información del estado interno de la aplicación.</p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Modelo pull: Prometheus scrappe tu <code>/metrics</code> cada 15s. La app expone; Prometheus recoge. Si no puede scrappe, sabe que el target está caído.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Counter para totales acumulados (usa <code>rate()</code> en PromQL), gauge para valores puntuales, histogram para distribuciones y percentiles de latencia.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Labels con cardinalidad baja: method, status_code, endpoint (plantilla). Nunca user_id, order_id ni IPs — destruyen Prometheus.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Exporters para el sistema: node_exporter (servidor), mysqld_exporter (BD), php-fpm_exporter (workers PHP). No hace falta tocar tu código para tener métricas de infraestructura.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>PHP-FPM es multiproceso: las métricas necesitan un backend compartido (Redis o APCu) entre procesos. Define los buckets del histogram pensando en la distribución real de tus tiempos.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="sentry-a-fondo.html">
+              <small>← Anterior</small>
+              <b>Sentry a fondo</b>
+            </a>
+            <a href="promql.html" class="next">
+              <small>Siguiente →</small>
+              <b>PromQL: consultar métricas</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

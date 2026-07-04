@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sentry a fondo — MentorAI</title>
+    <meta name="description" content="Releases y regresiones, entornos, performance monitoring con transacciones y sampling, alertas en Sentry y cómo reducir el ruido para que las notificaciones sigan siendo útiles." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Observabilidad</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Sentry a fondo</h1>
+        <p class="tutorial-hero__lead">Sentry hace más que capturar excepciones: sabe en qué versión apareció un error, puede medir la latencia de tus endpoints como trazas distribuidas y te deja configurar alertas que avisas cuando algo empeora. El reto es no ahogarte en notificaciones.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#releases">Releases y regresiones</a></li>
+            <li><a href="#entornos">Entornos: separar ruido de señal</a></li>
+            <li><a href="#performance">Performance monitoring</a></li>
+            <li><a href="#sampling">Sampling: no envíes todo</a></li>
+            <li><a href="#alertas">Alertas con criterio</a></li>
+            <li><a href="#ruido">Reducir el ruido</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Este tutorial asume que ya tienes el SDK integrado del <a href="sentry-error-tracking.html">tutorial anterior</a> y te adentra en las funcionalidades que convierten Sentry en una herramienta de observabilidad real, no solo en un buzón de excepciones.</p>
+
+          <h2 id="releases">
+            Releases y regresiones
+            <a href="#releases" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un <strong>release</strong> en Sentry es una versión identificada de tu aplicación. Cuando configuras el campo <code>release</code> en la inicialización del SDK, Sentry puede decirte en qué versión apareció un issue por primera vez, en cuáles se vio y si en la versión actual ya no ocurre.</p>
+          <p>La funcionalidad más valiosa es la detección de <strong>regresiones</strong>: si marcas un issue como resuelto y vuelve a aparecer en una versión posterior, Sentry lo reabre automáticamente y notifica. Sin releases, un issue resuelto puede volver sin que nadie se entere.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · crear release desde CI/CD (sentry-cli)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">sentry-cli releases new "$VERSION"
+sentry-cli releases set-commits "$VERSION" --auto
+sentry-cli releases finalize "$VERSION"</code></pre>
+          </div>
+          <p>El <code>set-commits</code> asocia commits al release: Sentry puede mostrar qué commits entraron en la versión donde apareció el error — en muchos casos el culpable salta a la vista.</p>
+
+          <h2 id="entornos">
+            Entornos: separar ruido de señal
+            <a href="#entornos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El campo <code>environment</code> permite filtrar la vista de Sentry por entorno. Mezclar los errores de staging con los de producción destruye la señal: staging tiene errores esperados de datos de prueba que contaminarían las alertas de producción.</p>
+          <p>La convención es configurar alertas y notificaciones <strong>solo para el entorno production</strong>. En staging deja que los errores se registren para depurar, pero sin disparar notificaciones al equipo. En local o CI, desactiva Sentry completamente o usa un DSN de proyecto de desarrollo separado.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · desactivar Sentry fuera de producción</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">\Sentry\init([
+    'dsn'         =&gt; $_ENV['APP_ENV'] === 'production' ? $_ENV['SENTRY_DSN'] : null,
+    'environment' =&gt; $_ENV['APP_ENV'],
+    'release'     =&gt; $_ENV['APP_VERSION'] ?? null,
+]);</code></pre>
+          </div>
+          <p>Con <code>dsn: null</code> el SDK queda en modo noop: todas las llamadas se ignoran sin lanzar errores, así el código de tu aplicación no cambia entre entornos.</p>
+
+          <h2 id="performance">
+            Performance monitoring
+            <a href="#performance" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Sentry puede actuar también como sistema de trazas distribuidas: mide el tiempo de cada operación dentro de una petición (una <em>transacción</em> en su terminología) y subdivide ese tiempo en <em>spans</em> — consultas a la BD, llamadas HTTP a servicios externos, renders de templates.</p>
+          <p>El resultado es una vista similar a la que viste en el tutorial de trazas distribuidas: una línea de tiempo que muestra dónde se fue el tiempo en cada petición. Los SDKs de Symfony y Laravel instrumentan automáticamente las queries de Doctrine/Eloquent, los middlewares y las llamadas HTTP salientes.</p>
+          <p>Para instrumentar operaciones propias:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · span manual para medir una operación crítica</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">$span = \Sentry\startSpan(
+    new \Sentry\Tracing\SpanContext('payment.gateway.charge')
+);
+
+try {
+    $result = $this-&gt;gateway-&gt;charge($order);
+    $span-&gt;setStatus(\Sentry\Tracing\SpanStatus::ok());
+    return $result;
+} catch (\Throwable $exception) {
+    $span-&gt;setStatus(\Sentry\Tracing\SpanStatus::internalError());
+    throw $exception;
+} finally {
+    $span-&gt;finish();
+}</code></pre>
+          </div>
+
+          <h2 id="sampling">
+            Sampling: no envíes todo
+            <a href="#sampling" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Para errores, Sentry envía el 100% de los eventos — quieres enterarte de cada excepción. Para transacciones de performance, enviar el 100% de las peticiones en un sistema con miles de req/s es caro e innecesario: una muestra representativa es suficiente para detectar tendencias de latencia.</p>
+          <p>El <code>traces_sample_rate</code> que viste en la inicialización controla esa muestra. Un valor de <code>0.1</code> envía el 10% de las transacciones. En producción con tráfico alto, valores entre 0.01 y 0.1 suelen dar una señal estadísticamente sólida con un coste razonable.</p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Sampling dinámico con tracesSampler</p>
+              <p>Si quieres siempre trazar las peticiones lentas pero muestrear las rápidas, usa <code>traces_sampler</code> como función: recibe el contexto de la petición y devuelve la tasa de sampling. Puedes devolver 1.0 para peticiones de checkout y 0.01 para las de healthcheck.</p>
+            </div>
+          </div>
+
+          <h2 id="alertas">
+            Alertas con criterio
+            <a href="#alertas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Sentry permite configurar alertas que se disparan cuando un issue supera umbrales: "avísame si este error ocurre más de 100 veces en 10 minutos" o "avísame si la tasa de errores supera el 1% de las peticiones".</p>
+          <p>Las alertas más útiles son las basadas en <strong>síntomas de usuario</strong>, no en causas técnicas internas:</p>
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Alertas sobre causas</h4>
+              <ul>
+                <li>Alerta cuando <code>NullPointerException</code> aparece.</li>
+                <li>Alerta cuando <code>QueryException</code> aparece.</li>
+                <li>Alerta para cada nueva excepción.</li>
+                <li>Mucho ruido, muchas notificaciones.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Alertas sobre síntomas</h4>
+              <ul>
+                <li>Alerta cuando la tasa de error supera el 1%.</li>
+                <li>Alerta cuando un issue nuevo afecta a más de 10 usuarios.</li>
+                <li>Alerta cuando un issue resuelto regresa (regresión).</li>
+                <li>Menos notificaciones, más accionables.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="ruido">
+            Reducir el ruido
+            <a href="#ruido" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El mayor riesgo de Sentry es la fatiga de alertas: si notifica demasiado, el equipo empieza a ignorarlo — y ese día que hay un error real, nadie actúa. Estas son las palancas para reducir el ruido:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Palanca</th><th>Qué hace</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Inbound filters</strong></td><td>Ignora errores de bots, crawlers o IPs conocidas de tests.</td></tr>
+                <tr><td><strong>Rate limiting</strong></td><td>Cap de eventos por proyecto/hora para no agotar la cuota con un loop de errores.</td></tr>
+                <tr><td><strong>Ignorar issues</strong></td><td>Marca como ignorado un error que es esperado y no tiene solución (librería de terceros, deprecation warnings).</td></tr>
+                <tr><td><strong>before_send hook</strong></td><td>Filtra o modifica eventos antes de enviarlos: descarta excepciones de tipos esperados o elimina campos sensibles del payload.</td></tr>
+                <tr><td><strong>Alertas con threshold</strong></td><td>No notificar la primera ocurrencia sino cuando supera N ocurrencias — evita ruido de errores esporádicos.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · filtrar excepciones esperadas en before_send</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">'before_send' =&gt; function (\Sentry\Event $event): ?\Sentry\Event {
+    $exception = $event-&gt;getExceptions()[0] ?? null;
+
+    $ignoredTypes = [
+        NotFoundException::class,
+        ValidationException::class,
+        AuthorizationException::class,
+    ];
+
+    if (in_array($exception?-&gt;getType(), $ignoredTypes, strict: true)) {
+        return null;
+    }
+
+    return $event;
+},</code></pre>
+          </div>
+          <p>Devolver <code>null</code> desde <code>before_send</code> descarta el evento: no se envía a Sentry y no consume cuota. Las excepciones de negocio esperadas (no encontrado, validación fallida) no son bugs — no deben llenar el dashboard de Sentry.</p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Releases: en qué versión apareció el error y si regresó tras marcarlo resuelto. Créalos desde CI con <code>sentry-cli</code> asociando commits.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Entornos separados: alertas solo en production. DSN null en local y CI para evitar ruido y coste.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Performance monitoring: Sentry mide transacciones y spans igual que un sistema de trazas. Con sampling entre 1% y 10% según el tráfico.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Alertas sobre síntomas (tasa de error, usuarios afectados, regresiones), no sobre tipos de excepción concretos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Reduce el ruido con <code>before_send</code> para filtrar excepciones esperadas. La fatiga de alertas es el mayor riesgo de cualquier sistema de notificaciones.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="sentry-error-tracking.html">
+              <small>← Anterior</small>
+              <b>Captura de errores con Sentry</b>
+            </a>
+            <a href="metricas-prometheus.html" class="next">
+              <small>Siguiente →</small>
+              <b>Métricas con Prometheus</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
