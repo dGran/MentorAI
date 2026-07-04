@@ -503,6 +503,75 @@ Cuarto curso del `plan-practica-backend.md`. Catálogo: **88 publicados, 12 curs
   12-factor y Composer como artículos sueltos. Y montar la ruta "carrera"/"construir un
   servicio" en paths.js (ya hay material: git, apis-rest, acceso-a-datos, docker).
 
+## Curso CI/CD + artículos Config y Composer — plan-practica-backend COMPLETO (2026-07-04) — HECHO (commit local, push pendiente de confirmar)
+Quinto y último curso del frente práctico + los 2 artículos sueltos. **El plan queda
+cerrado en contenido** (solo falta la ruta "construir un servicio", ver abajo).
+Catálogo: **94 publicados, 13 cursos**. Estructura aprobada vía AskUserQuestion:
+4 lecciones, GitHub Actions como herramienta de ejemplo, artículos en la misma tanda.
+- **Curso `ci-cd`** ("CI/CD: integración y despliegue continuos", 4 lecciones, en
+  courses.js tras `docker`). Categoría `devops` (reusada), topic "CI/CD", icon `bolt`.
+  Bloques bash con data-lang y YAML **sin data-lang** (mismo criterio que Docker).
+  featured movido de docker-imagen-vs-contenedor → ci-cd-que-es.
+  - `ci-cd-que-es` (Int, 13m): integrar tarde duele (merge hell, coste del bug lejos
+    de su causa), CI = práctica no herramienta, tabla de las dos CD (entrega vs
+    despliegue = decisión humana), pipeline como "definición ejecutable de que el
+    código está bien" + YAML mínimo, cultura del verde (rojo = prioridad, feedback
+    en minutos). Cruza git-ramas-y-flujo, tdd-ciclo, tests-que-no-estorban.
+  - `pipeline-anatomia` (Int, 14m): workflow/trigger/job/step + runner efímero
+    (tabla), triggers (push/pull_request/schedule/workflow_dispatch), workflow real
+    línea a línea (run vs uses), artefactos (build once) vs caché (key =
+    hash(composer.lock), cruza dockerfile-y-capas), barato primero + needs.
+  - `ci-para-php` (Int, 15m, ["devops","php"]): 5 controles de barato a caro (tabla),
+    setup-php + composer validate --strict + caché, cs-fixer check + PHPStan por
+    niveles, PHPUnit con MySQL como service (healthcheck, 127.0.0.1, BD app_test),
+    build de imagen con needs + if main + tag github.sha, workflow completo +
+    branch protection. Cruza php-en-docker, docker-buenas-practicas, migraciones.
+  - `despliegue-continuo` (Int, 15m): deploy = cambiar qué imagen corre, staging =
+    ensayo general (paridad, promocionar artefacto no reconstruir), tabla+diagrama
+    rolling/blue-green/canary (conviven 2 versiones), BD con expandir/contraer
+    (destructivo en deploy posterior), rollback = re-desplegar imagen anterior pero
+    BD = roll forward, feature flags (deploy ≠ release), secrets del CI +
+    environment: production (el botón de la entrega continua). Cruza
+    migraciones-de-esquema, config-y-entornos.
+- **Artículo `config-y-entornos`** ("Configuración y entornos: la regla 12-factor",
+  Int, 13m, ["devops"], topic "Configuración", icon shield): config = lo que varía
+  entre entornos; el if($hostname) con contraseña; factor III + test "¿podrías hacer
+  el repo público?"; getenv/$_ENV con fail-fast (MissingEnvironmentVariable);
+  .env solo local vs .env.example al repo (compare); un build muchos entornos
+  (resolver al arrancar no al build); secretos: rotar no borrar (callout danger);
+  4 errores (default peligroso, debug en prod, config dispersa, entorno "casi" igual).
+  Cruza docker-compose, docker-buenas-practicas, owasp, inyeccion-dependencias.
+- **Artículo `composer`** ("Composer a fondo: dependencias, lock y autoload", Int,
+  14m, ["php","herramientas"], topic "Herramientas", icon code): grafo de deps +
+  Packagist, require vs require-dev (--no-dev en prod), json=intención vs
+  lock=foto exacta (compare) + install obedece/update reescribe, semver (tabla
+  mayor/menor/parche) + ^ vs ~ vs exacta, autoload PSR-4 (namespace→carpeta,
+  calcula no busca, --optimize-autoloader O(1) + opcache), chuleta de 11 comandos
+  (tabla, estilo git-comandos-esenciales) + scripts, 4 errores (editar vendor,
+  update en deploy, lock a mano, ignorar audit). Cruza opcache, extensiones-php,
+  git-comandos-esenciales, docker-buenas-practicas.
+- **paths.js NO tocado**: el usuario eligió "CI/CD" (no "rutas primero") en
+  AskUserQuestion. Con esto el material de la ruta "construir un servicio" está
+  COMPLETO: git → apis-rest → acceso-a-datos → docker → ci-cd (+ artículos).
+  Montarla es el siguiente paso natural junto a la macro-ruta "carrera".
+- Verificado: node --check (manifest/courses/paths), TOC↔h2 (0 ×6), escapado
+  (0 crudos ×6), enlaces internos (todos resuelven), cruces (94 entradas, 1
+  featured=ci-cd-que-es, 0 duplicados, 13 cursos, ci-cd 4/4, 0 refs rotas,
+  config-y-entornos y composer como artículos sueltos), render headless de
+  ci-para-php (tokens bash, route-nav+actions inyectados), cursos.html (curso
+  CI/CD visible), articulos.html (2 artículos nuevos visibles), 0 errores JS
+  en ci-cd-que-es e index.
+- **Además esta sesión (2026-07-04):** revisión "¿suficiente para profesional
+  completo?" → nueva cola `plan-huecos-versatilidad.md` (SQL aplicado avanzado,
+  patrones GoF, framework por dentro, terminal/Linux, idea "Ponlo en práctica");
+  rules "Planes abiertos" actualizadas; el pendiente "2 lecciones huérfanas con
+  strings vacíos" anotado en la sesión de apis-rest se re-comprobó y NO reproduce
+  (0 huérfanas) — tachado.
+- **SIGUIENTE**: montar rutas en paths.js ("construir un servicio" + macro-ruta
+  "El grado que no hiciste", plan-carrera-completa) y/o arrancar
+  plan-testing-y-observabilidad (PHPUnit 6 + Observabilidad 9, estructura ya
+  decidida). Después, plan-huecos-versatilidad.
+
 ## Cómo añadir un tutorial
 Ver README.md → "Añadir un tutorial nuevo" (copiar plantilla, rellenar, añadir
 tarjeta en index.html con `data-categories`).

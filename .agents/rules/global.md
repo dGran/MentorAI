@@ -115,9 +115,15 @@ transversal "El grado que no hiciste" y cerrar los frentes de abajo.
   `di-contenedores` publicados 2026-06-27).
 - `plan-testing-y-observabilidad.md` — cursos `phpunit` y `observabilidad`
   (15 tutoriales). Pendiente de autoría.
-- `plan-practica-backend.md` — huecos del día a día (construir/operar un servicio
-  real): Git (referencia de comandos), APIs REST, acceso a datos/ORM, Docker,
-  CI/CD + config y Composer sueltos. Cola documentada, estructura por aprobar.
+- `plan-practica-backend.md` — **COMPLETO en contenido** (Git, APIs REST, acceso a
+  datos/ORM, Docker, CI/CD + artículos config-y-entornos y composer, 2026-07-04).
+  Queda montar la ruta "construir un servicio" en paths.js.
+- `plan-curso-go.md` — curso amplio de Go para aprender el lenguaje desde cero
+  (entorno dockerizado, editores y plugins incluidos). Encolado 2026-07-04,
+  estructura por aprobar.
+- `plan-huecos-versatilidad.md` — versatilidad transversal aprobada 2026-07-04:
+  SQL aplicado avanzado, patrones GoF, framework por dentro, terminal/Linux, y
+  la idea "Ponlo en práctica" (mini-retos al cierre de cada curso).
 
 Fase 2 (infraestructura, sin tocar):
 - `plan-buscador-fulltext.md` — búsqueda dentro del contenido (índice por el puente).

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CI para un proyecto PHP — MentorAI</title>
+    <meta name="description" content="El pipeline real de un proyecto PHP: Composer con caché, estilo con cs-fixer, análisis estático con PHPStan, PHPUnit con una base de datos de verdad y la construcción de la imagen Docker al final." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>DevOps</span>
+        </nav>
+        <h1 class="tutorial-hero__title">CI para un proyecto PHP</h1>
+        <p class="tutorial-hero__lead">La anatomía ya la conoces; ahora toca llenarla con las herramientas de tu stack: Composer, php-cs-fixer, PHPStan, PHPUnit y Docker. Al final de esta lección tendrás el workflow completo que valida un proyecto PHP de verdad.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#que-valida">Qué valida un pipeline PHP</a></li>
+            <li><a href="#composer">Composer, rápido y reproducible</a></li>
+            <li><a href="#estatico">Estilo y análisis estático</a></li>
+            <li><a href="#tests">PHPUnit con base de datos real</a></li>
+            <li><a href="#imagen">Construir la imagen al final</a></li>
+            <li><a href="#workflow">El workflow completo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Cada lenguaje tiene su ecosistema de validación, y el de PHP está muy maduro. La buena noticia: todas las herramientas de esta lección se ejecutan igual en tu máquina que en el runner, porque son binarios de <code>vendor/bin/</code>. El pipeline no hace nada que no puedas hacer tú en local; solo lo hace siempre.</p>
+
+          <h2 id="que-valida">
+            Qué valida un pipeline PHP
+            <a href="#que-valida" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un pipeline PHP maduro responde cinco preguntas, cada una con su herramienta y su coste, ordenadas de barata a cara:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Pregunta</th><th>Herramienta</th><th>Coste</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>¿Instala en limpio?</td><td><code>composer install</code> (+ <code>composer validate</code>)</td><td>Segundos con caché</td></tr>
+                <tr><td>¿Sigue el estilo del equipo?</td><td>php-cs-fixer / PHP_CodeSniffer</td><td>Segundos</td></tr>
+                <tr><td>¿Tiene errores detectables sin ejecutar?</td><td>PHPStan / Psalm</td><td>~1 min</td></tr>
+                <tr><td>¿Se comporta como debe?</td><td>PHPUnit</td><td>Minutos</td></tr>
+                <tr><td>¿Se empaqueta para producción?</td><td><code>docker build</code></td><td>Minutos</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>No hace falta empezar con las cinco. Un proyecto que hoy no tiene nada gana muchísimo solo con las dos primeras; las demás se añaden cuando el equipo se acostumbra al verde.</p>
+
+          <h2 id="composer">
+            Composer, rápido y reproducible
+            <a href="#composer" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Todo empieza por instalar dependencias, y aquí mandan dos reglas. Primera: el runner instala <strong>exactamente lo que dice <code>composer.lock</code></strong> — por eso el lock se versiona, para que CI, tus compañeros y producción usen las mismas versiones que tú. Segunda: con la caché de la lección anterior, la instalación baja de minutos a segundos.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">yaml · PHP + Composer con caché</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>- uses: shivammathur/setup-php@v2
+  with:
+    php-version: "8.3"
+    extensions: pdo_mysql, intl
+    coverage: none
+
+- uses: actions/cache@v4
+  with:
+    path: ~/.cache/composer
+    key: composer-${{ hashFiles('composer.lock') }}
+
+- run: composer validate --strict
+- run: composer install --prefer-dist --no-progress --no-interaction</code></pre>
+          </div>
+          <p>Fíjate en <code>extensions:</code>: el runner es una máquina genérica, así que las extensiones que tu app necesita (las mismas que declaras en <a href="php-en-docker.html">tu imagen de PHP</a>) hay que pedirlas explícitamente. Y <code>composer validate --strict</code> es el chequeo más barato de todos: detecta un <code>composer.json</code> mal formado o un lock desincronizado antes de descargar nada.</p>
+
+          <h2 id="estatico">
+            Estilo y análisis estático
+            <a href="#estatico" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Los dos siguientes controles no ejecutan tu código: lo <em>leen</em>. El primero, el estilo. En CI la herramienta no corrige, solo comprueba: <code>php-cs-fixer check</code> falla si algún fichero se desvía de las reglas del proyecto. El efecto colateral es el importante: <strong>las discusiones de formato desaparecen de las code reviews</strong>, porque las zanja una máquina antes de que nadie mire el diff.</p>
+          <p>El segundo es el análisis estático. PHPStan reconstruye los tipos de todo el proyecto y detecta, sin ejecutar nada, una categoría entera de errores: llamar a un método que no existe, pasar un <code>string</code> donde se espera un <code>int</code>, olvidar que algo puede ser <code>null</code>. En un lenguaje dinámico como PHP es lo más parecido a la fase de compilación de los lenguajes compilados — y con <code>declare(strict_types=1)</code> forman la pareja que convierte los tipos en garantías.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · los mismos comandos, en local y en CI</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash"># estilo: comprobar sin tocar nada (en local usarías "fix")
+vendor/bin/php-cs-fixer check --diff
+
+# análisis estático: nivel definido en phpstan.neon
+vendor/bin/phpstan analyse</code></pre>
+          </div>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">PHPStan se adopta por niveles</p>
+              <p>PHPStan tiene niveles de exigencia del 0 al 10. En un proyecto con historia, arrancar en el nivel máximo produce miles de errores y la tentación de rendirse. La estrategia sana: empieza en el nivel que ya pasa, fíjalo en <code>phpstan.neon</code>, y sube un nivel cuando el equipo tenga aire. El pipeline garantiza que nunca retrocedes.</p>
+            </div>
+          </div>
+
+          <h2 id="tests">
+            PHPUnit con base de datos real
+            <a href="#tests" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Los tests unitarios no necesitan nada especial: <code>vendor/bin/phpunit</code> y listo. La pregunta interesante llega con los tests de integración: ¿de dónde sale la base de datos? De un <strong>service</strong>: un contenedor que la plataforma de CI levanta junto al job y descarta al terminar. Es la idea de <a href="docker-compose.html">docker-compose</a> aplicada al pipeline: MySQL efímero, recién nacido para tus tests, destruido después.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">yaml · job de tests con MySQL como service</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>tests:
+  runs-on: ubuntu-latest
+  services:
+    mysql:
+      image: mysql:8.4
+      env:
+        MYSQL_DATABASE: app_test
+        MYSQL_ROOT_PASSWORD: secret
+      ports:
+        - 3306:3306
+      options: --health-cmd="mysqladmin ping" --health-interval=5s
+
+  steps:
+    # ... checkout, PHP, composer install ...
+    - run: vendor/bin/phpunit
+      env:
+        DATABASE_URL: mysql://root:secret@127.0.0.1:3306/app_test</code></pre>
+          </div>
+          <p>Dos detalles que ahorran tardes de depuración: el <code>--health-cmd</code> hace que el job espere a que MySQL esté listo de verdad (arrancar el contenedor no significa aceptar conexiones), y la conexión va por <code>127.0.0.1</code> con el puerto publicado, porque los steps no corren dentro de la red del service. La base de datos de test es <code>app_test</code>, nunca una compartida: cada ejecución parte de cero, ejecuta <a href="migraciones-de-esquema.html">las migraciones</a> y prueba sobre un esquema limpio.</p>
+
+          <h2 id="imagen">
+            Construir la imagen al final
+            <a href="#imagen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Cuando todo lo anterior está en verde, el pipeline construye el artefacto de despliegue: la imagen Docker. Aquí se juntan dos cosas que ya sabes. Del curso de Docker, el <a href="dockerfile-y-capas.html">Dockerfile</a> con <a href="docker-buenas-practicas.html">multi-stage y buenas prácticas</a>. De la lección anterior, el principio del artefacto: <strong>se construye una vez, etiquetada con el hash del commit, y esa imagen exacta es la que viajará por los entornos</strong>.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">yaml · build solo si la validación pasó</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>build:
+  needs: [estilo, estatico, tests]
+  if: github.ref == 'refs/heads/main'
+  runs-on: ubuntu-latest
+  steps:
+    - uses: actions/checkout@v4
+    - run: docker build -t ghcr.io/mi-org/mi-app:${{ github.sha }} .
+    - run: docker push ghcr.io/mi-org/mi-app:${{ github.sha }}</code></pre>
+          </div>
+          <p>El <code>needs</code> encadena: este job ni arranca si algo falló. El <code>if</code> limita el build a <code>main</code>: las pull requests se validan pero no producen imagen. Y la etiqueta con <code>github.sha</code> hace cada imagen trazable hasta su commit — cuando algo falle en producción sabrás exactamente qué código contiene.</p>
+
+          <h2 id="workflow">
+            El workflow completo
+            <a href="#workflow" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Todo junto: tres jobs de validación en paralelo (fallar rápido, cada uno con su pregunta) y el build esperándolos. Esta es la estructura que puedes llevarte a cualquier proyecto PHP:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">yaml · .github/workflows/ci.yml completo (esqueleto)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  estilo:
+    runs-on: ubuntu-latest
+    steps:
+      # checkout + setup-php + composer (con caché)
+      - run: vendor/bin/php-cs-fixer check
+
+  estatico:
+    runs-on: ubuntu-latest
+    steps:
+      # checkout + setup-php + composer (con caché)
+      - run: vendor/bin/phpstan analyse
+
+  tests:
+    runs-on: ubuntu-latest
+    services:
+      mysql: # como en la sección anterior
+    steps:
+      # checkout + setup-php + composer (con caché)
+      - run: vendor/bin/phpunit
+
+  build:
+    needs: [estilo, estatico, tests]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t ghcr.io/mi-org/mi-app:${{ github.sha }} .
+      - run: docker push ghcr.io/mi-org/mi-app:${{ github.sha }}</code></pre>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Protege la rama con el verde</p>
+              <p>El último clic para cerrar el círculo no está en el YAML sino en la configuración del repo: marca los jobs como <em>required status checks</em> de <code>main</code> (branch protection). A partir de ahí, ninguna pull request se puede mezclar en rojo — el pipeline deja de ser un aviso y pasa a ser la puerta.</p>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Cinco controles ordenados de barato a caro: instala, estilo, análisis estático, tests, build. No hace falta empezar con todos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>CI instala lo que dice <code>composer.lock</code>, con la caché keyed por su hash; <code>composer validate --strict</code> es el chequeo más barato del pipeline.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>cs-fixer saca el formato de las reviews; PHPStan detecta errores sin ejecutar código y se adopta subiendo de nivel, sin retroceder jamás.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los tests de integración usan services efímeros (MySQL con healthcheck, por 127.0.0.1) y una BD de test que nace y muere con el job.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La imagen se construye una vez, etiquetada con el commit, solo tras el verde — y la protección de rama convierte el pipeline en la puerta de main.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="pipeline-anatomia.html">
+              <small>← Anterior</small>
+              <b>Anatomía de un pipeline</b>
+            </a>
+            <a href="despliegue-continuo.html" class="next">
+              <small>Siguiente →</small>
+              <b>Despliegue continuo</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

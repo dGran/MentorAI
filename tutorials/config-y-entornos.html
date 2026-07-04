@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Configuración y entornos: la regla 12-factor — MentorAI</title>
+    <meta name="description" content="Por qué la configuración no es código: variables de entorno, el papel real de los ficheros .env, un solo build para todos los entornos, gestión de secretos y los errores de configuración que acaban en incidente." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>DevOps</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Configuración y entornos: la regla 12-factor</h1>
+        <p class="tutorial-hero__lead">La contraseña de la base de datos no es código, la URL de la API de pagos no es código, el modo debug no es código. Y sin embargo, en miles de repos, viven dentro del código. Este artículo es sobre la línea que separa ambas cosas y sobre qué pasa cuando se cruza.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#linea">La config no es código</a></li>
+            <li><a href="#doce-factor">La regla 12-factor</a></li>
+            <li><a href="#env">Variables de entorno y .env</a></li>
+            <li><a href="#un-build">Un build, muchos entornos</a></li>
+            <li><a href="#secretos">Los secretos, aparte</a></li>
+            <li><a href="#errores">Errores que acaban en incidente</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Configuración es todo aquello que <em>varía entre entornos</em> mientras el código permanece idéntico: credenciales, URLs de servicios, flags de comportamiento. La definición parece obvia, pero tiene una consecuencia afilada: si algo varía entre entornos y está escrito en el código, tienes un problema esperando fecha.</p>
+
+          <h2 id="linea">
+            La config no es código
+            <a href="#linea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El síntoma más reconocible de la línea cruzada es este condicional, que existe en más producciones de las que nadie admite:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · el olor a config dentro del código</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">if ($hostname === 'servidor-produccion-3') {
+    $databasePassword = 'Pr0d2024!';
+}
+
+if ($environment === 'staging') {
+    $paymentApiUrl = 'https://sandbox.pagos.com';
+}</code></pre>
+          </div>
+          <p>Los problemas vienen en racimo. La contraseña está en el historial de git <em>para siempre</em> (ni borrándola del fichero desaparece del historial). Añadir un entorno nuevo exige tocar código y redesplegar. El código conoce por su nombre a servidores concretos, que cambiarán. Y cualquiera con acceso de lectura al repo tiene las llaves de producción.</p>
+          <p>La dirección correcta es una sola: <strong>el código pregunta por su configuración al entorno donde corre</strong>, en lugar de saberla. El mismo binario, la misma imagen, el mismo commit — y lo que cambia de un sitio a otro entra desde fuera.</p>
+
+          <h2 id="doce-factor">
+            La regla 12-factor
+            <a href="#doce-factor" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El nombre viene de <em>The Twelve-Factor App</em>, un manifiesto de 2011 escrito por gente de Heroku con doce principios para aplicaciones desplegables en la nube. Ha envejecido notablemente bien —los contenedores materializaron medio manifiesto—, y su factor III es el que nos ocupa: <strong>"almacena la configuración en el entorno"</strong>.</p>
+          <p>El manifiesto propone además un test práctico que vale como definición operativa: ¿podrías hacer público el repositorio ahora mismo sin comprometer ninguna credencial? Si la respuesta es no, hay config (o peor, secretos) donde no debe.</p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Config de entorno ≠ config de aplicación</p>
+              <p>No todo lo que llaman "config" varía entre entornos. Las rutas, la definición de servicios del contenedor o el mapeo del ORM son <em>config de aplicación</em>: idénticas en todos los entornos, versionadas con el código, donde deben estar. La regla 12-factor aplica solo a lo que cambia entre dev, staging y producción.</p>
+            </div>
+          </div>
+
+          <h2 id="env">
+            Variables de entorno y .env
+            <a href="#env" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El mecanismo universal para "entrar desde fuera" son las <strong>variables de entorno</strong>: pares nombre-valor que el sistema operativo asocia al proceso al arrancarlo. Todo las entiende —cualquier lenguaje, Docker, systemd, tu CI—, no viven en ningún fichero del repo y cada entorno define las suyas. En PHP se leen con <code>getenv()</code> o <code>$_ENV</code>:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · la app pregunta al entorno, y falla pronto si falta</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">final class EnvironmentConfiguration
+{
+    public static function requireVariable(string $name): string
+    {
+        $value = getenv($name);
+
+        if ($value === false || $value === '') {
+            throw new MissingEnvironmentVariable($name);
+        }
+
+        return $value;
+    }
+}
+
+$databaseUrl = EnvironmentConfiguration::requireVariable('DATABASE_URL');</code></pre>
+          </div>
+          <p>¿Y los famosos ficheros <code>.env</code>? Son un atajo <strong>para desarrollo local</strong>: exportar quince variables a mano cada mañana es inviable, así que una librería (o el propio framework) lee un fichero <code>KEY=valor</code> y puebla el entorno al arrancar. La disciplina que los acompaña es innegociable:</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>.env.example — al repo</h4>
+              <ul>
+                <li>Lista <em>qué</em> variables necesita la app.</li>
+                <li>Valores de ejemplo o vacíos, jamás reales.</li>
+                <li>Documentación viva: clonas, copias a .env, rellenas.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>.env — jamás al repo</h4>
+              <ul>
+                <li>Tus valores reales, locales, con credenciales.</li>
+                <li>Va en <code>.gitignore</code> desde el primer commit.</li>
+                <li>Si un .env con secretos tocó el historial: rota los secretos.</li>
+              </ul>
+            </div>
+          </div>
+          <p>En producción, lo limpio es que el <code>.env</code> ni exista: las variables las inyecta la plataforma — el <code>environment:</code> de <a href="docker-compose.html">docker-compose</a>, la definición del servicio, el orquestador. El fichero es la muleta de desarrollo, no el mecanismo.</p>
+
+          <h2 id="un-build">
+            Un build, muchos entornos
+            <a href="#un-build" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Aquí la regla 12-factor se encuentra con el pipeline. Si la configuración entra por el entorno, entonces <strong>el artefacto que construyes es único y neutro</strong>: la misma imagen corre en staging y en producción, y solo cambian las variables que recibe al arrancar. La alternativa —hornear la config dentro con un "build de staging" y un "build de producción"— rompe la promesa central de la <a href="despliegue-continuo.html">entrega continua</a>: lo que probaste ya no es lo que despliegas.</p>
+          <p>Este principio decide dónde se resuelve la configuración: <strong>en tiempo de arranque, no de build</strong>. Al construir la imagen no se copia ningún <code>.env</code> ni se ejecuta nada que fije credenciales en una capa (recuerda de <a href="docker-buenas-practicas.html">las buenas prácticas de Docker</a>: lo que entra en una capa, se queda). La imagen sabe <em>qué</em> variables necesita; sus <em>valores</em> los pone cada entorno.</p>
+
+          <h2 id="secretos">
+            Los secretos, aparte
+            <a href="#secretos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Dentro de la configuración hay una subespecie con reglas más duras: los <strong>secretos</strong> — contraseñas, claves de API, tokens de firma. Un secreto filtrado no se "corrige": se <strong>rota</strong> (se invalida y se emite uno nuevo), porque no hay forma de saber quién lo copió mientras estuvo expuesto. De ahí las tres reglas:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Regla</th><th>Por qué</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Nunca en el repo, ni privado</td><td>El historial de git es para siempre, y el acceso de lectura se regala con facilidad (CI, herramientas, ex-compañeros).</td></tr>
+                <tr><td>Nunca en logs ni en trazas de error</td><td>El volcado de la excepción que imprime <code>$_ENV</code> entero acaba en un sistema de logs que lee media empresa.</td></tr>
+                <tr><td>Almacén dedicado con acceso controlado</td><td>Los Secrets del CI para el pipeline; un gestor (Vault, Secrets Manager) o los secrets del orquestador para producción.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El commit con la contraseña no se borra: se rota</p>
+              <p>Si un secreto llegó a un commit —aunque lo elimines en el siguiente—, hay bots escaneando repos públicos que lo encontraron en minutos, y en uno privado sigue visible para cualquiera con acceso al historial. Reescribir el historial no revoca nada: <strong>asume que está comprometido y rótalo</strong>. Luego, si quieres, limpia el historial.</p>
+            </div>
+          </div>
+
+          <h2 id="errores">
+            Errores que acaban en incidente
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Cuatro patrones de configuración que se repiten en las historias de terror:</p>
+          <p><strong>El default peligroso.</strong> <code>getenv('APP_ENV') ?: 'dev'</code> parece inofensivo hasta que a una máquina de producción se le olvida definir la variable y arranca en modo desarrollo: debug activado, errores con stack trace al navegador, cachés desactivadas. La regla del código de arriba: para config crítica, <strong>faltar = no arrancar</strong>. Un error ruidoso en el deploy es infinitamente más barato que un modo debug silencioso en producción.</p>
+          <p><strong>Debug encendido en producción.</strong> El caso particular tan frecuente que merece mención propia: páginas de error con rutas, consultas SQL y variables de entorno a la vista de cualquier usuario. Es una filtración de información de manual — de las que abren la puerta al resto del <a href="owasp.html">Top 10 de OWASP</a>.</p>
+          <p><strong>La config dispersa.</strong> Mitad en variables de entorno, mitad en un fichero <code>parameters.php</code> que alguien edita a mano por SSH, mitad en la base de datos. Cuando algo falla, nadie sabe qué configuración está corriendo de verdad. Un solo mecanismo de entrada y un solo punto del código que lee el entorno (el resto recibe valores <a href="inyeccion-dependencias.html">por inyección</a>, sin <code>getenv()</code> espolvoreado por el dominio).</p>
+          <p><strong>El entorno "casi" igual.</strong> Staging apuntando a la API de pagos real "solo mientras probamos una cosa". Los datos de producción copiados a un entorno con contraseñas débiles. La paridad entre entornos es de forma, no de contenido: <strong>misma estructura de config, valores estancos</strong> — lo de cada entorno no sale de él.</p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Configuración es lo que varía entre entornos con el código idéntico; si está escrita en el código, es un incidente con fecha pendiente.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Factor III del manifiesto 12-factor: la config vive en el entorno. Test rápido: ¿podrías hacer el repo público ahora mismo?</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>.env</code> es la muleta de desarrollo local (en .gitignore); <code>.env.example</code> documenta las variables; en producción las inyecta la plataforma.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un solo build para todos los entornos: la config se resuelve al arrancar, nunca al construir la imagen.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los secretos van en almacenes dedicados y, si se filtran, se rotan; y la config crítica que falta debe impedir el arranque, no activar un default.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../articulos.html">
+              <small>← Volver</small>
+              <b>Artículos</b>
+            </a>
+            <a href="despliegue-continuo.html" class="next">
+              <small>Relacionado →</small>
+              <b>Despliegue continuo</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Composer a fondo: dependencias, lock y autoload — MentorAI</title>
+    <meta name="description" content="Cómo funciona de verdad Composer: composer.json vs composer.lock, versionado semántico y sus restricciones (^ y ~), el autoload PSR-4 que conecta namespaces con carpetas, y la chuleta de comandos del día a día." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Herramientas</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Composer a fondo: dependencias, lock y autoload</h1>
+        <p class="tutorial-hero__lead">Lo usas todos los días y probablemente nunca te ha exigido entenderlo: ese es el mérito de Composer. Pero saber qué hace por debajo —qué es el lock, qué promete un ^, de dónde sale el autoload— es lo que separa usarlo de depender de la suerte.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#que-resuelve">Qué resuelve Composer</a></li>
+            <li><a href="#json-vs-lock">composer.json vs composer.lock</a></li>
+            <li><a href="#semver">Semver: qué promete un ^</a></li>
+            <li><a href="#autoload">El autoload PSR-4</a></li>
+            <li><a href="#chuleta">Comandos del día a día</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Antes de 2012, usar una librería PHP era descargar un zip, descomprimirlo en <code>lib/</code> y encadenar <code>require</code> a mano — y rezar para que sus dependencias no chocaran con las tuyas. Composer resolvió las dos mitades del problema de golpe: <em>conseguir</em> el código (gestión de dependencias) y <em>cargarlo</em> (autoload). Este artículo recorre ambas.</p>
+
+          <h2 id="que-resuelve">
+            Qué resuelve Composer
+            <a href="#que-resuelve" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El corazón del asunto es que las dependencias forman un <strong>grafo</strong>: tú dependes de cinco paquetes, cada uno depende de otros, y varios pueden exigir versiones distintas del mismo paquete. Resolver qué conjunto de versiones satisface a todo el mundo a la vez es un problema computacionalmente serio, y eso —no descargar zips— es el trabajo de Composer: lee las restricciones de tu <code>composer.json</code>, consulta el registro central (<a href="https://packagist.org">Packagist</a>), resuelve el grafo completo y materializa el resultado en <code>vendor/</code>.</p>
+          <p>Un paquete se identifica como <code>vendor/nombre</code> (<code>symfony/console</code>, <code>phpunit/phpunit</code>) y se declara en una de dos listas, y la distinción importa:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Bloque</th><th>Qué contiene</th><th>Ejemplos</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>require</code></td><td>Lo que la aplicación necesita <em>para funcionar</em>.</td><td>El framework, el ORM, el cliente HTTP</td></tr>
+                <tr><td><code>require-dev</code></td><td>Lo que solo se usa <em>para desarrollarla</em>.</td><td>PHPUnit, PHPStan, php-cs-fixer</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>La recompensa de mantener la frontera limpia llega en el despliegue: <code>composer install --no-dev</code> deja fuera de la imagen de producción todo el utillaje de desarrollo — menos peso y menos superficie de ataque, como pedían <a href="docker-buenas-practicas.html">las buenas prácticas de Docker</a>.</p>
+
+          <h2 id="json-vs-lock">
+            composer.json vs composer.lock
+            <a href="#json-vs-lock" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Aquí vive el malentendido más común del ecosistema. Son dos ficheros con papeles opuestos:</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>composer.json — la intención</h4>
+              <ul>
+                <li>Lo escribes tú.</li>
+                <li>"Quiero symfony/console, versión 7 o compatible".</li>
+                <li>Restricciones flexibles: <code>^7.1</code>.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>composer.lock — la foto exacta</h4>
+              <ul>
+                <li>Lo escribe Composer al resolver.</li>
+                <li>"Quedó instalada exactamente la 7.1.4, con este hash".</li>
+                <li>Todo el grafo, clavado a versiones concretas.</li>
+              </ul>
+            </div>
+          </div>
+          <p>Y de ahí la diferencia entre los dos comandos que más se confunden. <strong><code>composer install</code> obedece al lock</strong>: instala exactamente lo que dice, sin resolver nada; es el comando de CI, de producción y del compañero que acaba de clonar. <strong><code>composer update</code> re-resuelve</strong>: busca las versiones más nuevas que cumplan el <code>composer.json</code> y <em>reescribe el lock</em>; es una acción deliberada de actualización, con su PR y su pipeline.</p>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El lock SE COMMITEA. vendor/, no.</p>
+              <p>Sin el lock en el repo, cada <code>composer install</code> resuelve por su cuenta y cada máquina acaba con versiones distintas: el "en mi máquina funciona" de las dependencias. El lock garantiza que tú, el CI y producción usan <em>el mismo grafo al byte</em>. En cambio <code>vendor/</code> va al <code>.gitignore</code>: es regenerable desde el lock, y versionarlo es meter miles de ficheros ajenos en cada diff.</p>
+            </div>
+          </div>
+
+          <h2 id="semver">
+            Semver: qué promete un ^
+            <a href="#semver" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Las restricciones del <code>composer.json</code> se apoyan en un contrato social: el <strong>versionado semántico</strong>. Una versión <code>MAYOR.MENOR.PARCHE</code> (por ejemplo <code>7.1.4</code>) comunica el tipo de cambio con cada número:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Número</th><th>Sube cuando…</th><th>Puedo actualizar sin tocar código</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>MAYOR</strong> (7.x.x)</td><td>Hay cambios incompatibles: algo que usabas cambia o desaparece.</td><td>❌ Requiere migración</td></tr>
+                <tr><td><strong>MENOR</strong> (x.1.x)</td><td>Se añade funcionalidad compatible.</td><td>✅ En teoría, sí</td></tr>
+                <tr><td><strong>PARCHE</strong> (x.x.4)</td><td>Se corrigen bugs, sin API nueva.</td><td>✅ Sí</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Las dos restricciones que escribirás el 95&nbsp;% de las veces expresan cuánta confianza depositas en ese contrato:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Restricción</th><th>Significa</th><th>Acepta</th><th>Rechaza</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>^7.1</code> (caret, la habitual)</td><td>"Cualquier 7.x desde la 7.1"</td><td>7.1.4, 7.2, 7.9</td><td>8.0</td></tr>
+                <tr><td><code>~7.1.0</code> (tilde, conservadora)</td><td>"Solo parches de la 7.1"</td><td>7.1.4, 7.1.9</td><td>7.2</td></tr>
+                <tr><td><code>7.1.4</code> (exacta, excepcional)</td><td>"Esta y ninguna otra"</td><td>7.1.4</td><td>Todo lo demás</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>El caret dice: "confío en que el paquete respeta semver — dame mejoras y parches, pero jamás una mayor". Por eso es el default sano. La versión exacta clavada en el json es casi siempre una mala señal (esa rigidez ya te la da el lock); se reserva para esquivar temporalmente una versión rota.</p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Semver es una promesa, no una ley física</p>
+              <p>Nada impide técnicamente que una versión menor rompa algo (a veces por accidente, a veces porque dependías de un detalle no documentado). Por eso <code>composer update</code> se trata como cualquier cambio: rama, PR y pipeline en verde antes de mezclar. La restricción define el riesgo que aceptas; los tests comprueban que la apuesta salió bien.</p>
+            </div>
+          </div>
+
+          <h2 id="autoload">
+            El autoload PSR-4
+            <a href="#autoload" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La segunda mitad del invento. En PHP, usar una clase exige que su fichero se haya cargado; encadenar <code>require</code> a mano murió con los autoloaders: PHP permite registrar una función que, al encontrarse una clase desconocida, averigüe qué fichero cargarla. Lo que estandarizó el ecosistema fue la <em>convención</em> para ese "averiguar": <strong>PSR-4, que mapea prefijos de namespace a directorios</strong>.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">json · composer.json — el mapeo de tu propio código</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>{
+    "autoload": {
+        "psr-4": { "App\\": "src/" }
+    },
+    "autoload-dev": {
+        "psr-4": { "App\\Tests\\": "tests/" }
+    }
+}</code></pre>
+          </div>
+          <p>Con ese mapeo, la clase <code>App\Billing\InvoiceCalculator</code> vive —sin excepción posible— en <code>src/Billing/InvoiceCalculator.php</code>: se sustituye el prefijo por su directorio y el resto del namespace se convierte en carpetas. La clase se encuentra <em>calculando</em>, no buscando. Y el <code>vendor/autoload.php</code> que tu <code>index.php</code> incluye al principio es simplemente el autoloader que Composer genera con los mapeos de tu proyecto <strong>más los de cada paquete instalado</strong>: por eso "instalar y usar" funciona sin ningún require intermedio.</p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">En producción: autoloader optimizado</p>
+              <p>El cálculo namespace→fichero se puede precomputar: <code>composer install --no-dev --optimize-autoloader</code> genera un mapa clase→fichero completo (un array gigante) y la resolución pasa a ser una consulta O(1). En producción es gratis y siempre conviene; junto con <a href="opcache.html">OPcache</a>, deja el coste de cargar clases prácticamente en cero.</p>
+            </div>
+          </div>
+
+          <h2 id="chuleta">
+            Comandos del día a día
+            <a href="#chuleta" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La referencia rápida, en la línea de <a href="git-comandos-esenciales.html">la chuleta de Git</a>:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Qué hace</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>composer install</code></td><td>Instala exactamente lo que dice el lock. El comando de clonar, de CI y de producción.</td></tr>
+                <tr><td><code>composer require vendor/paquete</code></td><td>Añade la dependencia al json, resuelve, actualiza el lock e instala. Con <code>--dev</code>, a require-dev.</td></tr>
+                <tr><td><code>composer remove vendor/paquete</code></td><td>La operación inversa: quita del json y del lock, y desinstala.</td></tr>
+                <tr><td><code>composer update</code></td><td>Re-resuelve todo el grafo al máximo que permita el json y reescribe el lock. Acción deliberada.</td></tr>
+                <tr><td><code>composer update vendor/paquete</code></td><td>Actualiza solo ese paquete (y sus dependencias). Mucho más quirúrgico.</td></tr>
+                <tr><td><code>composer outdated</code></td><td>Qué paquetes tienen versión más nueva; en rojo, las mayores (rompen).</td></tr>
+                <tr><td><code>composer show vendor/paquete</code></td><td>Ficha del paquete instalado: versión, dependencias, ruta.</td></tr>
+                <tr><td><code>composer why vendor/paquete</code></td><td>Quién exige este paquete. Oro para entender el grafo.</td></tr>
+                <tr><td><code>composer validate</code></td><td>¿El json está bien formado y el lock sincronizado? El primer paso del pipeline.</td></tr>
+                <tr><td><code>composer audit</code></td><td>Cruza el lock con las bases de datos de vulnerabilidades conocidas.</td></tr>
+                <tr><td><code>composer dump-autoload</code></td><td>Regenera el autoloader (tras crear clases en carpetas nuevas, p. ej.).</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Mención aparte para los <strong>scripts</strong>: alias de proyecto definidos en el json (<code>"test": "phpunit"</code>, <code>"lint": "php-cs-fixer check"</code>) que se lanzan con <code>composer test</code>. Dan un vocabulario común al equipo y al pipeline: todo el mundo ejecuta lo mismo, se llame como se llame la herramienta por debajo.</p>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p><strong>Editar algo en <code>vendor/</code>.</strong> Funciona hasta el siguiente <code>composer install</code>, que lo pisa sin avisar. Si un paquete necesita un arreglo: repórtalo, usa un fork mientras tanto, o aplica un parche gestionado — nunca la edición directa.</p>
+          <p><strong><code>composer update</code> en el deploy.</strong> El clásico doloroso: producción resolviendo versiones nuevas que nadie probó, en el peor momento posible. En deploy y en CI, <em>siempre</em> <code>install</code>; <code>update</code> es una tarea de desarrollo con su propia PR.</p>
+          <p><strong>Resolver el conflicto del lock a mano.</strong> Dos ramas actualizaron dependencias y git marca conflicto en <code>composer.lock</code>. Editar sus miles de líneas a mano corrompe los hashes: se resuelve el conflicto del <code>composer.json</code> (si lo hay) y se deja que Composer regenere la parte del lock con <code>composer update --lock</code> o re-ejecutando el require.</p>
+          <p><strong>Ignorar <code>composer audit</code>.</strong> Una dependencia con CVE conocida es una puerta abierta documentada públicamente — el atacante no tiene ni que buscarla. El audit cuesta segundos en el pipeline y te avisa el día que se publica, no el día que te toca.</p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Composer resuelve el grafo completo de dependencias contra Packagist; require es para funcionar, require-dev para desarrollar (y fuera de producción con --no-dev).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El json declara la intención; el lock clava la foto exacta y SE COMMITEA. install obedece al lock; update lo reescribe y es una acción deliberada.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Semver es un contrato: mayor rompe, menor añade, parche corrige. <code>^</code> acepta todo menos la mayor; los tests validan la apuesta.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>PSR-4 mapea namespaces a carpetas: la clase se encuentra calculando su ruta. En producción, --optimize-autoloader lo convierte en una consulta O(1).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Nunca edites vendor/, nunca update en el deploy, nunca resuelvas el lock a mano — y deja que composer audit vigile los CVE por ti.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../articulos.html">
+              <small>← Volver</small>
+              <b>Artículos</b>
+            </a>
+            <a href="extensiones-php.html" class="next">
+              <small>Relacionado →</small>
+              <b>Extensiones de PHP</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

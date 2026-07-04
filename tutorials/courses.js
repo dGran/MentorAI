@@ -80,6 +80,20 @@ window.MENTORAI_COURSES = [
     ],
   },
   {
+    slug: "ci-cd",
+    title: "CI/CD: integración y despliegue continuos",
+    summary:
+      "Del push a producción sin rituales: qué resuelven la integración y la entrega continuas, la anatomía de un pipeline (jobs, runners, artefactos, caché), el pipeline real de un proyecto PHP con PHPUnit y PHPStan, y desplegar sin miedo con blue-green, canary y rollback.",
+    level: "Intermedio",
+    icon: "bolt",
+    lessons: [
+      "ci-cd-que-es",
+      "pipeline-anatomia",
+      "ci-para-php",
+      "despliegue-continuo",
+    ],
+  },
+  {
     slug: "oop",
     title: "Programación orientada a objetos",
     summary:

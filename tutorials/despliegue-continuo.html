@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Despliegue continuo: del verde a producción — MentorAI</title>
+    <meta name="description" content="Lo que pasa después del pipeline en verde: entornos y staging, estrategias de despliegue (rolling, blue-green, canary), cómo conviven deploy y migraciones de base de datos, y cómo se deshace un despliegue que salió mal." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>DevOps</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Despliegue continuo: del verde a producción</h1>
+        <p class="tutorial-hero__lead">El pipeline dice verde y la imagen espera en el registry. Falta el último tramo, y es donde vive el miedo: llevar el cambio a producción sin cortar el servicio, con la base de datos migrando en caliente y una salida de emergencia si algo se tuerce.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#del-verde">Lo que queda tras el verde</a></li>
+            <li><a href="#entornos">Entornos: el ensayo general</a></li>
+            <li><a href="#estrategias">Rolling, blue-green, canary</a></li>
+            <li><a href="#migraciones">La base de datos en el deploy</a></li>
+            <li><a href="#rollback">Cuando sale mal: rollback</a></li>
+            <li><a href="#secretos">Config y secretos por entorno</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Desplegar era un ritual: la tarde reservada, la lista de pasos en un documento, la persona que "sabe desplegar". La entrega continua lo convierte en una operación aburrida y repetible. Esta lección recorre las decisiones que hacen posible ese aburrimiento — que es, en despliegues, la máxima aspiración.</p>
+
+          <h2 id="del-verde">
+            Lo que queda tras el verde
+            <a href="#del-verde" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Recapitulando el viaje del cambio: la pull request pasó la validación, el merge a <code>main</code> disparó el build y en el registry hay una imagen etiquetada con el hash del commit. A partir de aquí, <strong>desplegar significa una sola cosa: decirle a los servidores que ejecuten esa imagen en lugar de la anterior</strong>.</p>
+          <p>Que el deploy se reduzca a "cambiar qué imagen corre" no es casualidad: es la recompensa de todo lo anterior. La imagen es inmutable y trazable; la config vive fuera (ahora volvemos a esto); y el pipeline garantizó que lo que hay dentro funciona. Lo que queda por decidir es <em>dónde</em> se prueba primero, <em>cómo</em> se reemplaza lo viejo por lo nuevo y <em>qué</em> hacemos si sale mal.</p>
+
+          <h2 id="entornos">
+            Entornos: el ensayo general
+            <a href="#entornos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Entre tu máquina y producción suele haber al menos una parada intermedia. Cada entorno responde a una pregunta distinta:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Entorno</th><th>Quién lo usa</th><th>Qué pregunta responde</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Local</strong></td><td>Tú, con docker-compose</td><td>¿Funciona mientras lo desarrollo?</td></tr>
+                <tr><td><strong>Staging</strong></td><td>El equipo, QA, producto</td><td>¿Funciona el conjunto, con datos y servicios realistas?</td></tr>
+                <tr><td><strong>Producción</strong></td><td>Los usuarios</td><td>¿Funciona de verdad, con carga y datos de verdad?</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Staging es el ensayo general: <strong>la misma imagen</strong> que irá a producción, desplegada con la config de staging, contra una base de datos con forma realista. Su valor depende por completo de cuánto se parezca a producción — misma versión de PHP, de MySQL, mismas extensiones, mismo proxy. Cada diferencia es un sitio donde un bug puede esconderse del ensayo. Es la <em>paridad dev/prod</em> que los contenedores hicieron por fin barata: la imagen es idéntica por construcción, solo cambia el entorno que la rodea.</p>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Se promociona el artefacto, no el código</p>
+              <p>El antipatrón: reconstruir la imagen para cada entorno ("build de staging", "build de producción"). Lo que probaste en staging ya no es, byte a byte, lo que despliegas después. La regla de la lección anterior aplica de punta a punta: <strong>una imagen, construida una vez, promocionada de entorno en entorno</strong>.</p>
+            </div>
+          </div>
+
+          <h2 id="estrategias">
+            Rolling, blue-green, canary
+            <a href="#estrategias" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Con varios servidores (o varios contenedores) sirviendo tráfico, reemplazar la versión vieja por la nueva admite tres coreografías, cada una con su equilibrio entre coste y riesgo:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Estrategia</th><th>Cómo funciona</th><th>Coste</th><th>Riesgo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Rolling</strong></td><td>Reemplaza las instancias de una en una: saca una del balanceador, actualiza, reincorpora, siguiente.</td><td>Ninguno extra</td><td>Conviven versión vieja y nueva durante el proceso</td></tr>
+                <tr><td><strong>Blue-green</strong></td><td>Levanta un entorno completo con la versión nueva (green) junto al actual (blue) y conmuta el tráfico de golpe.</td><td>Doble infraestructura durante el deploy</td><td>Mínimo: la vuelta atrás es re-conmutar</td></tr>
+                <tr><td><strong>Canary</strong></td><td>Envía un porcentaje pequeño del tráfico (1-5&nbsp;%) a la versión nueva; si las métricas aguantan, amplía hasta el 100&nbsp;%.</td><td>Requiere balanceo fino y métricas</td><td>El mínimo posible: los errores afectan a pocos usuarios</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Canary al 5&nbsp;%</b><small>La versión nueva recibe una fracción del tráfico</small></span>
+              </div>
+              <div class="flow__arrow" data-label="métricas OK"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Ampliar al 50&nbsp;%</b><small>Errores y latencia siguen normales</small></span>
+              </div>
+              <div class="flow__arrow" data-label="métricas OK"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>100&nbsp;% y retirar la vieja</b><small>Si algo falla en el camino: volver al 0&nbsp;%</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">El canary convierte el deploy en un experimento controlado con salida de emergencia en cada paso.</p>
+          </div>
+          <p>Las tres comparten una consecuencia que a menudo se pasa por alto: <strong>durante el despliegue conviven dos versiones del código</strong> sirviendo tráfico a la vez. Eso obliga a que cada versión sea compatible con la anterior — en la API que expone y, sobre todo, en la base de datos que comparte. Que es exactamente el siguiente tema.</p>
+
+          <h2 id="migraciones">
+            La base de datos en el deploy
+            <a href="#migraciones" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El código se despliega por copias que conviven; la base de datos es <strong>una y compartida</strong>. Ahí nace el problema clásico: si tu migración renombra una columna y la ejecutas antes de terminar el despliegue, la versión vieja del código (que sigue sirviendo tráfico) consulta una columna que ya no existe. Downtime autoinfligido, con el pipeline en verde.</p>
+          <p>La solución es una disciplina, no una herramienta: <strong>expandir y contraer</strong>. Cada cambio de esquema se parte en fases donde el esquema es siempre compatible con las dos versiones del código que conviven:</p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Expandir</b><small>Añade la columna nueva sin tocar la vieja</small></span>
+              </div>
+              <div class="flow__arrow" data-label="deploy"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Transición</b><small>El código nuevo escribe en ambas y lee la nueva</small></span>
+              </div>
+              <div class="flow__arrow" data-label="datos migrados"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Contraer</b><small>Otro deploy después: eliminar la columna vieja</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Renombrar una columna sin downtime: tres pasos aburridos en lugar de uno arriesgado.</p>
+          </div>
+          <p>Las <a href="migraciones-de-esquema.html">migraciones versionadas</a> que ya conoces son el vehículo: viajan en el mismo commit que el código y el pipeline las ejecuta como paso previo al reemplazo de instancias. La regla operativa: <strong>toda migración que se ejecuta en un deploy debe ser compatible con el código que sigue corriendo</strong>. Los cambios destructivos (borrar, renombrar) siempre van en un deploy posterior, cuando ya nada usa lo viejo.</p>
+
+          <h2 id="rollback">
+            Cuando sale mal: rollback
+            <a href="#rollback" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Algo saldrá mal; el objetivo no es evitarlo siempre, es que deshacerlo sea barato. Y aquí las imágenes inmutables vuelven a pagar el esfuerzo: <strong>volver atrás es desplegar la imagen anterior</strong>, que sigue en el registry, intacta, con su hash. El rollback es un deploy más — mismo mecanismo, dirección contraria. Si tus despliegues son rutina, tus rollbacks también.</p>
+          <p>Con una excepción importante: <strong>la base de datos no se rollbackea</strong>. Revertir una migración en producción con datos ya escritos es una operación de riesgo (el <code>down()</code> que borra la columna se lleva los datos que llegaron después). Por eso el mundo real prefiere el <em>roll forward</em>: si la migración causó el problema, se escribe una migración nueva que lo corrija, y se despliega. La disciplina de expandir/contraer hace además que el rollback del <em>código</em> sea seguro: el esquema expandido sigue siendo compatible con la versión anterior.</p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Feature flags: desacoplar deploy de release</p>
+              <p>El truco definitivo para desplegar sin miedo: esconder la funcionalidad nueva tras un interruptor de configuración. El código llega a producción apagado (deploy) y se enciende cuando se decide (release) — para todos, para un porcentaje, para un usuario concreto. Si falla, se apaga el flag: la "vuelta atrás" ni siquiera necesita deploy.</p>
+            </div>
+          </div>
+
+          <h2 id="secretos">
+            Config y secretos por entorno
+            <a href="#secretos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Queda el cabo suelto que hemos ido bordeando: si la misma imagen corre en staging y en producción, ¿de dónde sale lo que cambia — la URL de la base de datos, las credenciales, las claves de APIs? Del <strong>entorno</strong>, nunca de dentro de la imagen. El deploy inyecta variables de entorno distintas en cada sitio, y la aplicación las lee al arrancar.</p>
+          <p>Los secretos merecen mención propia dentro del pipeline: las plataformas de CI tienen un almacén cifrado (en GitHub, <em>Secrets</em>) cuyos valores se inyectan en los jobs sin aparecer en el YAML ni en los logs. El token del registry o la clave de deploy viven ahí — <strong>jamás en el repo</strong>, ni siquiera en uno privado.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">yaml · el deploy usa secretos del almacén, no del repo</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>deploy:
+  needs: [build]
+  runs-on: ubuntu-latest
+  environment: production
+  steps:
+    - run: ./scripts/deploy.sh ${{ github.sha }}
+      env:
+        DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}</code></pre>
+          </div>
+          <p>El <code>environment: production</code> añade la pieza de la entrega continua: puedes exigir aprobación manual antes de que este job corra — el famoso botón. Cómo organizar toda la configuración por entornos (y qué hacer y no hacer con los <code>.env</code>) tiene artículo propio: <a href="config-y-entornos.html">Configuración y entornos</a>.</p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Desplegar es cambiar qué imagen corre: el artefacto se construye una vez y se promociona por los entornos, nunca se reconstruye.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Staging vale lo que se parezca a producción; los contenedores hacen esa paridad barata por construcción.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Rolling, blue-green y canary equilibran coste y riesgo; las tres implican que dos versiones conviven, y eso exige compatibilidad hacia atrás.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La BD se migra expandiendo y contrayendo: lo destructivo siempre en un deploy posterior. El código se rollbackea; la base de datos avanza (roll forward).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La config y los secretos viven en el entorno y en el almacén del CI, jamás en la imagen ni en el repo; los feature flags desacoplan deploy de release.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="ci-para-php.html">
+              <small>← Anterior</small>
+              <b>CI para un proyecto PHP</b>
+            </a>
+            <a href="../cursos.html" class="next">
+              <small>Fin del curso →</small>
+              <b>Ver todos los cursos</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

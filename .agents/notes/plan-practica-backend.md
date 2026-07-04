@@ -80,8 +80,9 @@ testing/observabilidad ya planificado (los tests que corren en el pipeline).
   PHP. 1 artículo (encaja en "PHP por dentro" o `herramientas`).
 
 ### Nice-to-have (no prioritarios)
-Patrones de diseño GoF (curso), validación de entrada a fondo, fechas/zonas
-horarias, rate limiting, RBAC/permisos.
+Validación de entrada a fondo, fechas/zonas horarias, rate limiting,
+RBAC/permisos. (Patrones GoF subido a cola real en
+`plan-huecos-versatilidad.md`, 2026-07-04.)
 
 ## Orden sugerido
 **Git** (rápido, útil ya, pedido) → **APIs REST** (fundamental) → **Acceso a
@@ -106,6 +107,9 @@ COMPLETO (OOP, SOLID, Clean Code, di-contenedores publicados 2026-06-27).
 - ✅ **Docker** publicado (2026-06-29, curso `docker`, 5 lecciones: imagen-vs-contenedor
   → dockerfile-y-capas → docker-compose → buenas-practicas → php-en-docker). Categoría
   nueva en uso `devops`.
-- ⬜ **SIGUIENTE: CI/CD** (curso `ci-cd`), último del frente. Config/12-factor y Composer
-  como artículos sueltos intercalados. Pendiente también montar ruta "construir un
-  servicio" en paths.js (ya hay material: git + apis-rest + acceso-a-datos + docker).
+- ✅ **CI/CD** publicado (2026-07-04, curso `ci-cd`, 4 lecciones: qué-es →
+  pipeline-anatomia → ci-para-php → despliegue-continuo, GitHub Actions como ejemplo).
+- ✅ **Config/12-factor** publicado (2026-07-04, artículo `config-y-entornos`).
+- ✅ **Composer** publicado (2026-07-04, artículo `composer`).
+- **PLAN COMPLETO en contenido.** Queda solo montar la ruta "construir un servicio"
+  en paths.js (material completo: git → apis-rest → acceso-a-datos → docker → ci-cd).
