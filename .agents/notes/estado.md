@@ -503,7 +503,7 @@ Cuarto curso del `plan-practica-backend.md`. Catálogo: **88 publicados, 12 curs
   12-factor y Composer como artículos sueltos. Y montar la ruta "carrera"/"construir un
   servicio" en paths.js (ya hay material: git, apis-rest, acceso-a-datos, docker).
 
-## Curso CI/CD + artículos Config y Composer — plan-practica-backend COMPLETO (2026-07-04) — HECHO (commit local, push pendiente de confirmar)
+## Curso CI/CD + artículos Config y Composer — plan-practica-backend COMPLETO (2026-07-04) — HECHO (commit+push: a481f3b + 9406066, incluye plan-curso-go)
 Quinto y último curso del frente práctico + los 2 artículos sueltos. **El plan queda
 cerrado en contenido** (solo falta la ruta "construir un servicio", ver abajo).
 Catálogo: **94 publicados, 13 cursos**. Estructura aprobada vía AskUserQuestion:
