@@ -22,6 +22,20 @@
 
 window.MENTORAI_COURSES = [
   {
+    slug: "sql-aplicado",
+    title: "SQL aplicado avanzado",
+    summary:
+      "El SQL que se escribe a diario en un proyecto real: JOINs con criterio, agregación con GROUP BY y HAVING, subconsultas y CTEs para consultas legibles, y window functions para ranking, acumulados y top-N por grupo.",
+    level: "Intermedio",
+    icon: "database",
+    lessons: [
+      "sql-joins",
+      "sql-agregacion",
+      "sql-subqueries-ctes",
+      "sql-window-functions",
+    ],
+  },
+  {
     slug: "git",
     title: "Git: control de versiones",
     summary:

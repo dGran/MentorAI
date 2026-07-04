@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JOINs a fondo: combinar tablas con criterio — MentorAI</title>
+    <meta
+      name="description"
+      content="INNER, LEFT, FULL OUTER, self-join y CROSS JOIN: cuándo usar cada uno, el error clásico de LEFT JOIN con agregación y cuándo sustituir un JOIN por una subconsulta."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Bases de datos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">JOINs a fondo: combinar tablas con criterio</h1>
+        <p class="tutorial-hero__lead">INNER, LEFT, self-join, el error clásico de contar con LEFT JOIN y cuándo una subconsulta le gana a un JOIN. El vocabulario para razonar sobre consultas, no solo escribirlas.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#modelo-mental">El modelo mental</a></li>
+            <li><a href="#inner-join">INNER JOIN</a></li>
+            <li><a href="#left-join">LEFT JOIN</a></li>
+            <li><a href="#otros-joins">RIGHT, FULL OUTER y self-join</a></li>
+            <li><a href="#error-clasico">El error clásico con COUNT</a></li>
+            <li><a href="#join-vs-subquery">JOIN vs subconsulta</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Un JOIN no es magia: es un producto cartesiano filtrado por una condición. Entender eso explica por qué hay distintos tipos, cuándo cada uno y qué pasa cuando mezclas JOINs con agregaciones.</p>
+
+          <h2 id="modelo-mental">
+            El modelo mental
+            <a href="#modelo-mental" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Cuando escribes <code>FROM pedidos JOIN clientes ON clientes.id = pedidos.cliente_id</code>, el motor toma cada fila de <code>pedidos</code>, la combina con cada fila de <code>clientes</code> y descarta las que no cumplen el <code>ON</code>. El tipo de JOIN decide qué pasa con las filas que <em>no tienen pareja</em>.</p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Producto cartesiano</b><small>Todas las combinaciones posibles entre ambas tablas</small></span>
+              </div>
+              <div class="flow__arrow" data-label="ON filtra"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Filas con pareja</b><small>Las que cumplen la condición del ON</small></span>
+              </div>
+              <div class="flow__arrow" data-label="tipo de JOIN decide"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Resultado final</b><small>¿Qué hacemos con las filas sin pareja?</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">El tipo de JOIN solo afecta al tercer paso: qué incluir cuando no hay match.</p>
+          </div>
+
+          <h2 id="inner-join">
+            INNER JOIN
+            <a href="#inner-join" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El más común. Solo devuelve filas que tienen correspondencia en <strong>ambas tablas</strong>. Si un pedido tiene un <code>cliente_id</code> que no existe en <code>clientes</code>, esa fila desaparece del resultado. Si un cliente no tiene pedidos, tampoco aparece.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">SELECT p.id, p.total, c.nombre
+FROM pedidos p
+INNER JOIN clientes c ON c.id = p.cliente_id;
+
+-- INNER es opcional: JOIN a secas es INNER JOIN
+SELECT p.id, p.total, c.nombre
+FROM pedidos p
+JOIN clientes c ON c.id = p.cliente_id;
+
+-- USING cuando el nombre de columna coincide en ambas tablas
+SELECT p.id, p.total, c.nombre
+FROM pedidos p
+JOIN clientes c USING (cliente_id);</code></pre>
+          </div>
+
+          <p>La palabra <code>INNER</code> es optativa: <code>JOIN</code> a secas es siempre INNER JOIN. <code>USING</code> es azúcar sintáctico para cuando la columna tiene el mismo nombre en ambas tablas; produce la misma consulta.</p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Alias de tabla</p>
+              <p>Pon siempre alias cortos (<code>p</code>, <code>c</code>) y califica cada columna con su tabla (<code>p.id</code>, <code>c.nombre</code>). En consultas con más de una tabla, las columnas sin alias son ambiguas para el lector y, si hay nombres repetidos, para el motor.</p>
+            </div>
+          </div>
+
+          <h2 id="left-join">
+            LEFT JOIN
+            <a href="#left-join" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Devuelve <strong>todas las filas de la tabla izquierda</strong> (la que va en <code>FROM</code>), independientemente de si tienen pareja en la derecha. Las columnas de la tabla derecha salen <code>NULL</code> cuando no hay match.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">-- Todos los clientes, tengan o no pedidos
+SELECT c.nombre, p.id AS pedido_id, p.total
+FROM clientes c
+LEFT JOIN pedidos p ON p.cliente_id = c.id;
+
+-- Los clientes sin ningún pedido (filtro sobre NULL de la derecha)
+SELECT c.nombre
+FROM clientes c
+LEFT JOIN pedidos p ON p.cliente_id = c.id
+WHERE p.id IS NULL;</code></pre>
+          </div>
+
+          <p>El patrón <code>LEFT JOIN ... WHERE derecha.id IS NULL</code> es la forma estándar de encontrar filas huérfanas: registros de la tabla izquierda que no tienen correspondencia en la derecha.</p>
+
+          <h2 id="otros-joins">
+            RIGHT, FULL OUTER y self-join
+            <a href="#otros-joins" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p><strong>RIGHT JOIN</strong> es el espejo del LEFT: devuelve todas las filas de la tabla <em>derecha</em>. En la práctica casi nadie lo usa porque siempre puedes reescribirlo como LEFT JOIN invirtiendo el orden de las tablas. Mantenerlos ambos en una base de código genera confusión sin ninguna ganancia.</p>
+
+          <p><strong>FULL OUTER JOIN</strong> devuelve todas las filas de ambos lados, con <code>NULL</code> donde no hay match en el lado opuesto. Es útil para detectar inconsistencias en cualquier dirección: "qué hay en A que no está en B, y qué hay en B que no está en A".</p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">MySQL no tiene FULL OUTER JOIN nativo</p>
+              <p>MySQL y MariaDB no implementan <code>FULL OUTER JOIN</code>. El workaround es un <code>UNION</code> de un LEFT JOIN y un RIGHT JOIN. PostgreSQL y SQL Server sí lo soportan directamente.</p>
+            </div>
+          </div>
+
+          <p><strong>Self-join</strong> es unir una tabla consigo misma, con alias distintos. El caso más frecuente en backend: una tabla con una clave foránea que apunta a la misma tabla, como empleados con su manager o categorías con subcategorías.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">-- empleados con su manager (LEFT para incluir el CEO que no tiene manager)
+SELECT e.nombre AS empleado, m.nombre AS manager
+FROM empleados e
+LEFT JOIN empleados m ON m.id = e.manager_id;</code></pre>
+          </div>
+
+          <p>El truco es tratarla como dos tablas distintas mediante alias: <code>empleados e</code> (el empleado) y <code>empleados m</code> (el manager). El motor resuelve la misma tabla dos veces sin problema.</p>
+
+          <h2 id="error-clasico">
+            El error clásico con COUNT
+            <a href="#error-clasico" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La trampa más frecuente al combinar LEFT JOIN con agregación: usar <code>COUNT(*)</code> en lugar de <code>COUNT(columna)</code>.</p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>COUNT(*) — incorrecto</h4>
+              <div class="code-block">
+                <div class="code-block__head">
+                  <span class="code-block__lang">sql</span>
+                  <button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button>
+                </div>
+                <pre><code data-lang="sql">SELECT c.nombre, COUNT(*) AS pedidos
+FROM clientes c
+LEFT JOIN pedidos p ON p.cliente_id = c.id
+GROUP BY c.id, c.nombre;</code></pre>
+              </div>
+              <p>Un cliente sin pedidos devuelve 1, no 0: <code>COUNT(*)</code> cuenta la fila aunque las columnas de <code>pedidos</code> sean todas NULL.</p>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>COUNT(columna) — correcto</h4>
+              <div class="code-block">
+                <div class="code-block__head">
+                  <span class="code-block__lang">sql</span>
+                  <button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button>
+                </div>
+                <pre><code data-lang="sql">SELECT c.nombre, COUNT(p.id) AS pedidos
+FROM clientes c
+LEFT JOIN pedidos p ON p.cliente_id = c.id
+GROUP BY c.id, c.nombre;</code></pre>
+              </div>
+              <p><code>COUNT(p.id)</code> ignora los NULL: un cliente sin pedidos devuelve 0, que es lo correcto.</p>
+            </div>
+          </div>
+
+          <p>El segundo error clásico aparece cuando haces dos LEFT JOINs con relaciones independientes: si un cliente tiene 3 pedidos y 2 teléfonos, el JOIN de ambas tablas produce 6 filas (el producto). La solución es <code>COUNT(DISTINCT p.id)</code> o mover una de las relaciones a una subconsulta.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">-- Dos JOINs independientes: los conteos se inflan mutuamente
+-- (3 pedidos × 2 teléfonos = 6 filas por cliente)
+SELECT c.nombre,
+       COUNT(DISTINCT p.id)  AS pedidos,
+       COUNT(DISTINCT t.id)  AS telefonos
+FROM clientes c
+LEFT JOIN pedidos   p ON p.cliente_id = c.id
+LEFT JOIN telefonos t ON t.cliente_id = c.id
+GROUP BY c.id, c.nombre;</code></pre>
+          </div>
+
+          <h2 id="join-vs-subquery">
+            JOIN vs subconsulta
+            <a href="#join-vs-subquery" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Regla práctica: usa JOIN cuando necesitas <strong>columnas de ambas tablas</strong> en el resultado. Usa una subconsulta (o <code>EXISTS</code>) cuando solo necesitas <strong>filtrar por existencia</strong>.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">-- "Clientes que tienen al menos un pedido"
+
+-- Con JOIN: puede devolver duplicados si hay varios pedidos
+SELECT DISTINCT c.nombre
+FROM clientes c
+JOIN pedidos p ON p.cliente_id = c.id;
+
+-- Con EXISTS: más explícito y sin riesgo de duplicados
+SELECT c.nombre
+FROM clientes c
+WHERE EXISTS (
+    SELECT 1 FROM pedidos p WHERE p.cliente_id = c.id
+);</code></pre>
+          </div>
+
+          <p><code>EXISTS</code> cortocircuita en cuanto encuentra una fila: no importa cuántos pedidos tenga el cliente, el motor para al primero. <code>IN</code> con subconsulta funciona igual para conjuntos pequeños, pero <code>EXISTS</code> escala mejor y deja la intención más clara: "comprueba si existe, no me traigas los datos".</p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Los optimizadores son listos, pero tú más</p>
+              <p>Los optimizadores modernos (MySQL 8+, PostgreSQL) frecuentemente convierten un <code>IN (subconsulta)</code> en un semi-join internamente, igualando el rendimiento. Aun así, escribe <code>EXISTS</code> cuando la intención sea "¿existe?": el código comunica mejor y no dependes del optimizador para evitar duplicados.</p>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un JOIN es un producto cartesiano filtrado por <code>ON</code>. El tipo decide qué hacer con las filas sin pareja.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>INNER JOIN: solo los que tienen correspondencia en ambos lados. LEFT JOIN: todo el izquierdo, NULLs donde no hay match.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Con LEFT JOIN y agregación, usa <code>COUNT(p.id)</code>, no <code>COUNT(*)</code>: los NULLs deben contar cero, no uno.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Dos JOINs independientes inflan los conteos. Usa <code>COUNT(DISTINCT id)</code> o separa en subconsultas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Self-join: dos alias de la misma tabla para relaciones jerárquicas (empleado→manager, categoría→padre).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Necesitas columnas de ambas tablas → JOIN. Solo filtras por existencia → <code>EXISTS</code> o subconsulta.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../cursos.html">
+              <small>← Volver</small>
+              <b>Catálogo de cursos</b>
+            </a>
+            <a href="sql-agregacion.html">
+              <small>Siguiente →</small>
+              <b>GROUP BY y HAVING</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

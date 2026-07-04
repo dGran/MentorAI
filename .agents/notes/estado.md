@@ -1068,35 +1068,37 @@ El usuario señaló con alarma "main.js +2000 loc" y eligió "un fichero por mó
 - `plan-resaltado-texto.md` — subrayar texto dentro de los tutoriales.
 - `plan-autocategorizacion.md` — que la IA proponga las categorías al generar.
 
-## Siguiente paso sugerido (actualizado 2026-06-27)
-Estado del sitio: **50 tutoriales publicados, 4 cursos** (fundamentos, testing,
-programar-con-ia, diseno-y-arquitectura), **3 rutas de aprendizaje** (php-a-fondo,
-diseno-oo, backend-cimientos). Todo **pusheado** a `origin/main` (último push tras
-montar rutas + progreso de lectura). Repo: `github.com/dGran/MentorAI`, Pages en
+## Siguiente paso sugerido (actualizado 2026-07-04)
+Estado del sitio: **109 tutoriales publicados, 15 cursos**, rutas montadas en
+`paths.js` (ruta transversal `el-grado-que-no-hiciste` incluida). Todo
+**pusheado** a `origin/main`. Repo: `github.com/dGran/MentorAI`, Pages en
 `dgran.github.io/MentorAI/`.
 
-**PENDIENTE PRINCIPAL — autoría de 35 tutoriales planificados (2 planes):**
-- `plan-diseno-y-calidad.md` — **20 tutoriales / 4 cursos**: `oop` (6),
-  `solid` (7), `clean-code` (6), `di-contenedores` (1 nuevo + reusa
-  inyeccion-dependencias). Orden: **OOP → SOLID → Clean Code → DI+contenedores**.
-- `plan-testing-y-observabilidad.md` — **15 tutoriales / 2 cursos**: `phpunit`
-  (6, + renombrar el curso testing actual a "TDD y fundamentos"), `observabilidad`
-  (9, con Prometheus/PromQL + Loki/LogQL + Sentry + Grafana).
-- Orden global sugerido y aprobado en estructura: OOP → SOLID → Clean Code →
-  DI+contenedores → PHPUnit → Observabilidad. **El usuario ya dio OK a la
-  estructura; falta arrancar la autoría.** Todo es PHP salvo PromQL/LogQL/YAML
-  (que van sin `data-lang`).
+**PLANES COMPLETOS:**
+- `plan-diseno-y-calidad.md` — **COMPLETO** (oop, solid, clean-code, di-contenedores,
+  publicados 2026-06-27).
+- `plan-practica-backend.md` — **COMPLETO** (git, apis-rest, acceso-a-datos,
+  docker, ci-cd, artículos config-y-entornos y composer, ruta construir-un-servicio,
+  2026-07-04).
+- `plan-testing-y-observabilidad.md` — **COMPLETO** (phpunit 6 lecciones +
+  observabilidad 9 lecciones, publicados 2026-07-04).
+
+**PENDIENTE PRINCIPAL — tres planes encolados (estructura pendiente de aprobación):**
+- `plan-huecos-versatilidad.md` — versatilidad transversal aprobada 2026-07-04:
+  SQL aplicado avanzado, patrones GoF, framework por dentro, terminal/Linux, y
+  mini-retos "Ponlo en práctica" al cierre de cada curso. Estructura por definir.
+- `plan-curso-go.md` — curso Go desde cero (~20 lecciones / 5 módulos): entorno
+  dockerizado, editores, goroutines/channels, stdlib, HTTP con net/http. Lección
+  `go-que-es` incluye tabla Go vs Rust cruzada con el curso de Rust.
+- `plan-curso-rust.md` — curso Rust desde cero (~21 lecciones / 5 módulos):
+  ownership, borrowing, async con Tokio, backend con Axum/serde/sqlx. Lección
+  `rust-que-es` incluye tabla Go vs Rust cruzada con el curso de Go.
+- **Ambos cursos de lenguaje necesitan aprobación de estructura antes de arrancar autoría.**
 
 **PENDIENTES MENORES:**
-- Los 50 tutoriales + _PLANTILLA YA cargan `paths.js` (dato+módulo) y `init.js`
-  es defensivo (`if (MentorAI.Paths)`) — se arregló un bug que hacía desaparecer
-  los botones de acción por `TypeError`. Lo único que falta: el **enlace "Rutas"
-  en la navbar de los tutoriales** (solo cosmético; está en las 5 vistas). Añadir
-  por sed cuando se quiera consistencia total.
-- Script opcional `server/recalcular-minutos.js` (los `minutes` del manifest son
-  manuales; el usuario lo dejó como opcional).
-- **Al escribir cada tutorial/curso nuevo: revisar `tutorials/paths.js` para
-  encajarlo en una ruta** (regla en global.md).
+- Enlace "Rutas" en navbar de tutoriales (solo cosmético; está en las 5 vistas principales).
+- Script opcional `server/recalcular-minutos.js` (los `minutes` del manifest son manuales).
+- **Al añadir tutorial/curso nuevo: revisar `tutorials/paths.js` para encajarlo.**
 
 **PLANES DE FASE 2 (sin tocar):** `plan-buscador-fulltext.md`,
 `plan-resaltado-texto.md`, `plan-autocategorizacion.md`.

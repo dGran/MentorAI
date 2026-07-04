@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GROUP BY y HAVING: agregar con criterio — MentorAI</title>
+    <meta
+      name="description"
+      content="Qué hace GROUP BY realmente, las funciones de agregado y sus matices con NULL, el orden de evaluación WHERE→GROUP BY→HAVING y los errores más frecuentes al agregar datos en SQL."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Bases de datos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">GROUP BY y HAVING: agregar con criterio</h1>
+        <p class="tutorial-hero__lead">GROUP BY colapsa filas, las funciones de agregado las resumen, y HAVING filtra los grupos resultantes. Entender el orden de evaluación evita el 90% de los errores.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#que-hace">Qué hace GROUP BY</a></li>
+            <li><a href="#funciones">Funciones de agregado</a></li>
+            <li><a href="#orden">WHERE vs HAVING: el orden importa</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#expresiones">GROUP BY con expresiones</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Sin GROUP BY, una consulta devuelve una fila por registro. Con GROUP BY, devuelve una fila por grupo. El resto de la cláusula (SELECT, HAVING, ORDER BY) opera sobre esos grupos, no sobre filas individuales.</p>
+
+          <h2 id="que-hace">
+            Qué hace GROUP BY
+            <a href="#que-hace" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>GROUP BY toma todas las filas del resultado hasta ese punto y las colapsa en grupos: cada combinación única de los valores especificados forma un grupo. El resultado tiene una fila por grupo.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">-- Sin GROUP BY: una fila por pedido
+SELECT estado, total FROM pedidos;
+
+-- Con GROUP BY: una fila por estado, el total es un agregado
+SELECT estado, COUNT(*) AS cantidad, SUM(total) AS importe_total
+FROM pedidos
+GROUP BY estado;</code></pre>
+          </div>
+
+          <p>La regla que deriva de esto: después de GROUP BY, en el <code>SELECT</code> solo puedes poner columnas que formen parte del agrupador (están en el <code>GROUP BY</code>) o expresiones de agregado sobre las demás. Cualquier otra columna es ambigua: el grupo tiene varias filas con valores distintos, ¿cuál devuelves?</p>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">MySQL en modo permisivo: la trampa silenciosa</p>
+              <p>MySQL sin <code>ONLY_FULL_GROUP_BY</code> acepta columnas no agregadas en el SELECT aunque no estén en el GROUP BY. Devuelve un valor arbitrario del grupo. El resultado parece correcto hasta que los datos cambian. PostgreSQL y MySQL 5.7+ con la configuración por defecto rechazan esto con error.</p>
+            </div>
+          </div>
+
+          <h2 id="funciones">
+            Funciones de agregado
+            <a href="#funciones" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Función</th>
+                  <th>Qué hace</th>
+                  <th>Con NULL</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>COUNT(*)</code></td>
+                  <td>Cuenta filas del grupo</td>
+                  <td>Los cuenta (una fila con todo NULL suma 1)</td>
+                </tr>
+                <tr>
+                  <td><code>COUNT(expr)</code></td>
+                  <td>Cuenta filas donde expr no es NULL</td>
+                  <td>Ignora los NULL</td>
+                </tr>
+                <tr>
+                  <td><code>COUNT(DISTINCT expr)</code></td>
+                  <td>Cuenta valores únicos no-NULL</td>
+                  <td>Ignora los NULL</td>
+                </tr>
+                <tr>
+                  <td><code>SUM(expr)</code></td>
+                  <td>Suma los valores</td>
+                  <td>Ignora los NULL; grupo vacío → NULL</td>
+                </tr>
+                <tr>
+                  <td><code>AVG(expr)</code></td>
+                  <td>Promedio</td>
+                  <td>Ignora los NULL; grupo vacío → NULL</td>
+                </tr>
+                <tr>
+                  <td><code>MIN(expr)</code> / <code>MAX(expr)</code></td>
+                  <td>Mínimo / máximo</td>
+                  <td>Ignoran los NULL</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>El matiz de <code>AVG</code>: ignora los NULL al calcular la media, lo que no siempre es lo que quieres. Si tienes 10 filas y 4 tienen NULL en el campo medido, el promedio se calcula sobre 6, no sobre 10. Considera si los NULL deben tratarse como cero o como ausencia de dato.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">-- Estadísticas de pedidos por cliente
+SELECT
+    c.nombre,
+    COUNT(p.id)           AS total_pedidos,
+    COUNT(DISTINCT p.id)  AS pedidos_unicos,
+    SUM(p.total)          AS importe_total,
+    AVG(p.total)          AS ticket_medio,
+    MIN(p.total)          AS pedido_minimo,
+    MAX(p.total)          AS pedido_maximo
+FROM clientes c
+LEFT JOIN pedidos p ON p.cliente_id = c.id
+GROUP BY c.id, c.nombre;</code></pre>
+          </div>
+
+          <h2 id="orden">
+            WHERE vs HAVING: el orden importa
+            <a href="#orden" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El motor ejecuta una consulta en este orden lógico, independientemente del orden en que lo escribas:</p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>FROM + JOIN</b><small>Construye el conjunto de filas de trabajo</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>WHERE</b><small>Filtra filas individuales antes de agrupar</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>GROUP BY</b><small>Colapsa filas en grupos</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">4</span>
+                <span><b>HAVING</b><small>Filtra grupos completos</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">5</span>
+                <span><b>SELECT</b><small>Proyecta las columnas del resultado</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">6</span>
+                <span><b>ORDER BY + LIMIT</b><small>Ordena y recorta</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">WHERE opera sobre filas; HAVING opera sobre grupos. No son intercambiables.</p>
+          </div>
+
+          <p>La consecuencia práctica: <strong>si puedes filtrar en WHERE, hazlo</strong>. El motor agrupa menos filas y la consulta es más eficiente. HAVING solo tiene sentido cuando la condición depende del resultado de una función de agregado.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">-- Clientes con más de 3 pedidos en el último mes
+SELECT c.nombre, COUNT(p.id) AS total
+FROM clientes c
+JOIN pedidos p ON p.cliente_id = c.id
+WHERE p.fecha >= '2026-06-01'     -- filtra filas antes de agrupar (eficiente)
+GROUP BY c.id, c.nombre
+HAVING COUNT(p.id) > 3;           -- filtra grupos: solo cuando la condición usa un agregado
+
+-- Mala práctica: mover el filtro de fecha al HAVING
+-- HAVING p.fecha >= '2026-06-01' AND COUNT(p.id) > 3
+-- El motor agrupa TODOS los pedidos históricos y luego descarta; mucho más lento.</code></pre>
+          </div>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p><strong>Alias de SELECT en HAVING.</strong> El <code>SELECT</code> se evalúa después del <code>HAVING</code>, así que el alias definido en <code>SELECT</code> no existe aún en el momento en que HAVING se ejecuta. PostgreSQL da error. MySQL lo acepta como extensión, pero es una dependencia del motor que evitar.</p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>No funciona en PostgreSQL</h4>
+              <div class="code-block">
+                <div class="code-block__head">
+                  <span class="code-block__lang">sql</span>
+                  <button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button>
+                </div>
+                <pre><code data-lang="sql">SELECT cliente_id, COUNT(*) AS total
+FROM pedidos
+GROUP BY cliente_id
+HAVING total > 5;</code></pre>
+              </div>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Portátil entre motores</h4>
+              <div class="code-block">
+                <div class="code-block__head">
+                  <span class="code-block__lang">sql</span>
+                  <button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button>
+                </div>
+                <pre><code data-lang="sql">SELECT cliente_id, COUNT(*) AS total
+FROM pedidos
+GROUP BY cliente_id
+HAVING COUNT(*) > 5;</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <p><strong>Columnas ambiguas en el GROUP BY.</strong> Cuando agrupas por <code>id</code> de una tabla y necesitas el nombre, incluye ambos en el GROUP BY o usa <code>ANY_VALUE(nombre)</code> en MySQL si el nombre es funcionalmente dependiente del id. En PostgreSQL, si el id es clave primaria del FROM, puedes agrupar solo por id y seleccionar cualquier columna de esa tabla.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">-- MySQL y PostgreSQL: incluir todas las columnas no agregadas en GROUP BY
+SELECT c.id, c.nombre, COUNT(p.id) AS pedidos
+FROM clientes c
+LEFT JOIN pedidos p ON p.cliente_id = c.id
+GROUP BY c.id, c.nombre;
+
+-- PostgreSQL: si c.id es PK de clientes, agrupar solo por c.id es suficiente
+-- GROUP BY c.id;</code></pre>
+          </div>
+
+          <h2 id="expresiones">
+            GROUP BY con expresiones
+            <a href="#expresiones" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El agrupador no está limitado a columnas: puede ser cualquier expresión. El caso más habitual en backend es agrupar por fecha truncada para generar informes por día, semana o mes.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">-- Pedidos por mes (MySQL/MariaDB)
+SELECT DATE_FORMAT(fecha, '%Y-%m') AS mes, COUNT(*) AS total, SUM(importe) AS facturado
+FROM pedidos
+WHERE fecha >= '2026-01-01'
+GROUP BY DATE_FORMAT(fecha, '%Y-%m')
+ORDER BY mes;
+
+-- Equivalente en PostgreSQL con DATE_TRUNC
+SELECT DATE_TRUNC('month', fecha) AS mes, COUNT(*) AS total, SUM(importe) AS facturado
+FROM pedidos
+WHERE fecha >= '2026-01-01'
+GROUP BY DATE_TRUNC('month', fecha)
+ORDER BY mes;</code></pre>
+          </div>
+
+          <p>GROUP BY sobre múltiples columnas forma grupos por la combinación única de todos los valores. Si agrupas por <code>estado</code> y <code>categoria</code>, obtienes una fila por cada par (estado, categoria) que exista en los datos.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">-- Una fila por cada combinación (estado, categoria)
+SELECT estado, categoria, COUNT(*) AS total
+FROM pedidos
+GROUP BY estado, categoria
+ORDER BY estado, categoria;</code></pre>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>GROUP BY colapsa filas. En el SELECT solo puedes usar columnas del agrupador o funciones de agregado.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Orden lógico: WHERE → GROUP BY → HAVING → SELECT. WHERE filtra filas; HAVING filtra grupos ya formados.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Si puedes filtrar en WHERE, hazlo: agrupa menos filas y la consulta es más eficiente.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>COUNT(*)</code> cuenta filas (incluye NULLs). <code>COUNT(columna)</code> cuenta no-NULLs. <code>COUNT(DISTINCT columna)</code> cuenta únicos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>AVG</code> y <code>SUM</code> ignoran los NULL. Un grupo vacío devuelve NULL, no cero.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En HAVING, repite la expresión de agregado en lugar de usar el alias del SELECT: es más portable y correcto.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="sql-joins.html">
+              <small>← Anterior</small>
+              <b>JOINs a fondo</b>
+            </a>
+            <a href="sql-subqueries-ctes.html">
+              <small>Siguiente →</small>
+              <b>Subconsultas y CTEs</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

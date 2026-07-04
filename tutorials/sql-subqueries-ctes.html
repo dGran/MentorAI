@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Subconsultas y CTEs: SQL legible y eficiente — MentorAI</title>
+    <meta
+      name="description"
+      content="Subconsultas en WHERE, FROM y SELECT, la diferencia entre EXISTS e IN, CTEs con WITH para consultas legibles y la CTE recursiva para árboles y jerarquías."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Bases de datos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Subconsultas y CTEs: SQL legible y eficiente</h1>
+        <p class="tutorial-hero__lead">Una subconsulta es una consulta dentro de otra. Una CTE es lo mismo con nombre y estructura. Saber cuándo usar cada forma —y cuándo la subconsulta correlacionada te mete en un O(n)— marca la diferencia entre SQL que funciona y SQL que escala.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#tipos">Tipos de subconsulta</a></li>
+            <li><a href="#en-where">Subconsulta en WHERE</a></li>
+            <li><a href="#en-from">Subconsulta en FROM</a></li>
+            <li><a href="#correlacionada">Subconsulta correlacionada</a></li>
+            <li><a href="#ctes">CTEs con WITH</a></li>
+            <li><a href="#cte-recursiva">CTE recursiva</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Una subconsulta es simplemente una consulta SQL dentro de otra. El motor la resuelve primero y usa su resultado como si fuera un valor, un conjunto o una tabla. CTEs (Common Table Expressions) son el mismo concepto con nombre, lo que las hace reutilizables y mucho más fáciles de leer.</p>
+
+          <h2 id="tipos">
+            Tipos de subconsulta
+            <a href="#tipos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Devuelve</th>
+                  <th>Dónde se usa</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Escalar</td>
+                  <td>1 fila, 1 columna</td>
+                  <td>SELECT, WHERE, SET</td>
+                </tr>
+                <tr>
+                  <td>De tabla (derived table)</td>
+                  <td>N filas, N columnas</td>
+                  <td>FROM (necesita alias)</td>
+                </tr>
+                <tr>
+                  <td>De conjunto</td>
+                  <td>N filas, 1 columna</td>
+                  <td>WHERE … IN (…)</td>
+                </tr>
+                <tr>
+                  <td>Correlacionada</td>
+                  <td>Cualquier forma</td>
+                  <td>WHERE EXISTS, SELECT</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="en-where">
+            Subconsulta en WHERE
+            <a href="#en-where" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El uso más frecuente: filtrar filas en función de datos de otra tabla sin necesitar columnas de esa tabla en el resultado.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">-- Escalar: productos más caros que la media de su categoría
+SELECT nombre, precio
+FROM productos
+WHERE precio > (SELECT AVG(precio) FROM productos);
+
+-- IN: clientes de España con pedidos
+SELECT nombre
+FROM clientes
+WHERE id IN (
+    SELECT DISTINCT cliente_id
+    FROM pedidos
+    WHERE pais_envio = 'ES'
+);
+
+-- EXISTS: clientes que tienen al menos un pedido (cortocircuita en la primera coincidencia)
+SELECT nombre
+FROM clientes c
+WHERE EXISTS (
+    SELECT 1 FROM pedidos p WHERE p.cliente_id = c.id
+);</code></pre>
+          </div>
+
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>IN — cuidado con conjuntos grandes</h4>
+              <p>Materializa todo el conjunto antes de filtrar. Con millones de filas en la subconsulta el rendimiento cae. Y si la subconsulta devuelve un NULL, <code>IN</code> nunca es <code>TRUE</code> para la fila (el NULL envenena la comparación).</p>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>EXISTS — más predecible</h4>
+              <p>Para en cuanto encuentra la primera fila que cumple. No le afectan los NULL de la subconsulta. Es el idioma natural para "¿existe al menos uno?".</p>
+            </div>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">NOT EXISTS vs NOT IN con NULLs</p>
+              <p><code>NOT IN (subconsulta)</code> devuelve cero filas si la subconsulta contiene algún NULL, porque <code>x != NULL</code> es <code>UNKNOWN</code>, no <code>TRUE</code>. <code>NOT EXISTS</code> no tiene ese problema. Cuando la columna puede tener NULLs, usa <code>NOT EXISTS</code>.</p>
+            </div>
+          </div>
+
+          <h2 id="en-from">
+            Subconsulta en FROM
+            <a href="#en-from" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Cuando necesitas operar sobre datos ya agregados —filtrar, calcular porcentajes, unir con otra tabla— puedes poner una subconsulta en el FROM y tratarla como si fuera una tabla. Necesita obligatoriamente un alias.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">-- Porcentaje de pedidos por estado sobre el total
+SELECT
+    resumen.estado,
+    resumen.cantidad,
+    ROUND(resumen.cantidad * 100.0 / totales.total, 1) AS porcentaje
+FROM (
+    SELECT estado, COUNT(*) AS cantidad
+    FROM pedidos
+    GROUP BY estado
+) AS resumen
+CROSS JOIN (
+    SELECT COUNT(*) AS total FROM pedidos
+) AS totales
+ORDER BY resumen.cantidad DESC;</code></pre>
+          </div>
+
+          <p>Esta es exactamente la situación que las CTEs resuelven con más elegancia. La subconsulta en FROM se puede leer, pero con CTEs el nombre de cada parte aparece antes de su definición y la consulta final queda mucho más limpia.</p>
+
+          <h2 id="correlacionada">
+            Subconsulta correlacionada
+            <a href="#correlacionada" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una subconsulta correlacionada referencia una columna de la consulta exterior. Esto la hace dependiente de cada fila de fuera: <strong>se ejecuta una vez por cada fila del resultado exterior</strong>.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">-- La fecha del último pedido de cada cliente (correlacionada)
+SELECT c.nombre, (
+    SELECT MAX(p.fecha)
+    FROM pedidos p
+    WHERE p.cliente_id = c.id   -- referencia a la fila exterior
+) AS ultimo_pedido
+FROM clientes c;
+
+-- Equivalente con JOIN + GROUP BY (una sola pasada sobre pedidos)
+SELECT c.nombre, MAX(p.fecha) AS ultimo_pedido
+FROM clientes c
+LEFT JOIN pedidos p ON p.cliente_id = c.id
+GROUP BY c.id, c.nombre;</code></pre>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La correlacionada es O(n): escala mal</p>
+              <p>Con 10.000 clientes, la versión correlacionada ejecuta 10.000 subqueries. La versión con JOIN ejecuta una sola. Los optimizadores modernos a veces transforman la correlacionada en un join internamente, pero no siempre. Si puedes reescribirla como JOIN o CTE, hazlo.</p>
+            </div>
+          </div>
+
+          <h2 id="ctes">
+            CTEs con WITH
+            <a href="#ctes" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una CTE define una "tabla temporal con nombre" que existe solo durante la ejecución de esa consulta. Se declara antes del SELECT principal con la cláusula <code>WITH</code>.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">-- Una sola CTE
+WITH pedidos_recientes AS (
+    SELECT cliente_id, COUNT(*) AS total, SUM(importe) AS facturado
+    FROM pedidos
+    WHERE fecha >= '2026-01-01'
+    GROUP BY cliente_id
+)
+SELECT c.nombre, pr.total, pr.facturado
+FROM clientes c
+JOIN pedidos_recientes pr ON pr.cliente_id = c.id
+WHERE pr.facturado > 1000
+ORDER BY pr.facturado DESC;
+
+-- Múltiples CTEs: se separan por coma, cada una puede usar las anteriores
+WITH
+clientes_activos AS (
+    SELECT id, nombre
+    FROM clientes
+    WHERE activo = 1
+),
+pedidos_por_cliente AS (
+    SELECT cliente_id, SUM(importe) AS total_anual
+    FROM pedidos
+    WHERE YEAR(fecha) = 2026
+    GROUP BY cliente_id
+)
+SELECT ca.nombre, ppc.total_anual
+FROM clientes_activos ca
+JOIN pedidos_por_cliente ppc ON ppc.cliente_id = ca.id
+ORDER BY ppc.total_anual DESC;</code></pre>
+          </div>
+
+          <p>La ventaja sobre las subconsultas en FROM no es de rendimiento —la mayoría de motores las tratan igual internamente— sino de <strong>legibilidad</strong>: cada pieza tiene nombre, el orden de lectura es natural (defines primero, usas después) y puedes aislar una CTE para probarla por separado.</p>
+
+          <h2 id="cte-recursiva">
+            CTE recursiva
+            <a href="#cte-recursiva" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una CTE puede referenciar su propio nombre, lo que permite iterar sobre datos jerárquicos sin procedimientos almacenados. Tiene dos partes unidas por <code>UNION ALL</code>: el caso base (las filas iniciales) y el caso recursivo (que lee de la CTE y añade más filas).</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">-- Árbol de organización: todos los subordinados de un manager
+WITH RECURSIVE subordinados AS (
+    -- Caso base: el punto de partida
+    SELECT id, nombre, manager_id, 0 AS nivel
+    FROM empleados
+    WHERE id = 5
+
+    UNION ALL
+
+    -- Caso recursivo: subordinados directos de cada fila ya en la CTE
+    SELECT e.id, e.nombre, e.manager_id, s.nivel + 1
+    FROM empleados e
+    INNER JOIN subordinados s ON s.id = e.manager_id
+)
+SELECT nombre, nivel
+FROM subordinados
+ORDER BY nivel, nombre;</code></pre>
+          </div>
+
+          <p>El motor ejecuta el caso base, añade las filas al resultado, luego ejecuta el caso recursivo usando esas filas como entrada, y repite hasta que el caso recursivo no devuelve filas nuevas.</p>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Ciclos en los datos → recursión infinita</p>
+              <p>Si los datos tienen un ciclo (A es manager de B, B es manager de A), la CTE recursiva no termina. Protégete añadiendo un límite de profundidad con <code>WHERE nivel &lt; 50</code>, o usa la cláusula <code>CYCLE</code> de PostgreSQL 14+ que detecta ciclos automáticamente.</p>
+            </div>
+          </div>
+
+          <p>Otros usos habituales de la CTE recursiva: categorías con subcategorías anidadas, generar series de fechas sin tablas auxiliares, recorrer grafos acíclicos.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">-- Serie de fechas del mes actual (sin tabla calendario)
+WITH RECURSIVE calendario AS (
+    SELECT CAST('2026-07-01' AS DATE) AS dia
+
+    UNION ALL
+
+    SELECT dia + INTERVAL 1 DAY
+    FROM calendario
+    WHERE dia < '2026-07-31'
+)
+SELECT dia
+FROM calendario;</code></pre>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Subconsulta escalar → un valor; en FROM → tabla temporal nombrada; en WHERE → EXISTS o IN para filtrar por existencia.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Usa <code>EXISTS</code> en lugar de <code>IN</code> para "¿existe al menos uno?": cortocircuita y no tiene el problema de los NULL.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Subconsulta correlacionada: referencia la fila exterior, se ejecuta O(n) veces. Reescríbela como JOIN si puedes.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>CTE (<code>WITH nombre AS (…)</code>) es una subconsulta nombrada y reutilizable. Igual de eficiente que en FROM, pero mucho más legible.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Múltiples CTEs: separadas por coma; cada una puede referenciar las anteriores. Ideal para consultas con varias etapas de preparación de datos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>CTE recursiva: caso base <code>UNION ALL</code> caso recursivo. Para jerarquías y árboles. Añade límite de profundidad para protegerte de ciclos.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="sql-agregacion.html">
+              <small>← Anterior</small>
+              <b>GROUP BY y HAVING</b>
+            </a>
+            <a href="sql-window-functions.html">
+              <small>Siguiente →</small>
+              <b>Window functions</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
