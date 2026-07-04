@@ -1068,36 +1068,78 @@ El usuario señaló con alarma "main.js +2000 loc" y eligió "un fichero por mó
 - `plan-resaltado-texto.md` — subrayar texto dentro de los tutoriales.
 - `plan-autocategorizacion.md` — que la IA proponga las categorías al generar.
 
-## Siguiente paso sugerido (actualizado 2026-07-04)
-Estado del sitio: **109 tutoriales publicados, 15 cursos**, rutas montadas en
+## Cursos SQL + GoF + Framework por dentro (2026-07-04/05) — HECHO (pusheados)
+
+**SQL aplicado avanzado** (`sql-aplicado`, 4 lecciones, commit en sesión anterior):
+- `sql-joins` (Int, 14m): JOIN como producto cartesiano filtrado, INNER/LEFT/RIGHT/
+  FULL OUTER/self-join, COUNT(*) vs COUNT(col) con LEFT JOIN, EXISTS vs IN.
+- `sql-agregacion` (Int, 13m): GROUP BY colapsa filas, regla SELECT, ONLY_FULL_GROUP_BY,
+  AVG ignora NULLs, orden de evaluación, HAVING alias, GROUP BY con expresiones.
+- `sql-subqueries-ctes` (Int, 14m): 4 tipos de subconsulta, NOT IN + NULL, subcorrelacionada
+  O(n), WITH clause, múltiples CTEs, recursiva + protección ciclos.
+- `sql-window-functions` (Avz, 16m): OVER PARTITION BY ORDER BY, ROW_NUMBER/RANK/
+  DENSE_RANK, LAG/LEAD, acumulados, top-N por grupo con CTE.
+
+**Patrones de diseño GoF** (`patrones-diseno`, 6 lecciones, commit 9c919dc 2026-07-04):
+- `patrones-introduccion` (Int, 12m): vocabulario compartido, los 23 en tabla.
+- `patrones-creacionales` (Int, 15m): Factory Method, Abstract Factory, Builder, Singleton
+  + por qué el contenedor DI lo reemplaza.
+- `patrones-estructurales` (Int, 15m): Adapter, Decorator, Facade, Proxy.
+- `patrones-comportamiento-1` (Int, 14m): Strategy (OCP), Observer (GoF vs EventDispatcher).
+- `patrones-comportamiento-2` (Int, 15m): Template Method (final), Command (undo/CQRS),
+  Chain of Responsibility (middleware).
+- `patrones-en-el-framework` (Avz, 14m): contenedor (Abstract Factory + Singleton + Proxy),
+  ciclo HTTP (CoR + Strategy + Observer), EventDispatcher, FormBuilder=Builder,
+  Doctrine=Facade+Proxy, Twig=Template Method, Messenger=Command.
+
+**Framework por dentro** (`framework-por-dentro`, 2 lecciones, commit b102c4a 2026-07-05):
+- `framework-ciclo-http` (Avz, 17m): nginx → FPM → index.php (front controller) → Kernel
+  (Template Method) → router (árbol compilado) → kernel events (Observer) → ArgumentResolver
+  (Strategy) → Response → fastcgi_finish_request → kernel.terminate.
+- `framework-extension-points` (Avz, 16m): Event Subscribers, middleware (Chain of Responsibility),
+  tagged services (OCP en el contenedor), compiler passes (compilación no runtime),
+  Service Providers de Laravel (register vs boot), tabla cuándo usar cada mecanismo.
+
+**paths.js NO tocado** en estos 3 cursos: patrones y framework encajarían en `diseno-oo`
+y/o `el-grado-que-no-hiciste`; SQL en `construir-un-servicio`. Valorar añadirlos al
+retomar si tiene sentido ampliar esas rutas.
+
+## Siguiente paso sugerido (actualizado 2026-07-05)
+Estado del sitio: **121 tutoriales publicados, 18 cursos**, rutas montadas en
 `paths.js` (ruta transversal `el-grado-que-no-hiciste` incluida). Todo
-**pusheado** a `origin/main`. Repo: `github.com/dGran/MentorAI`, Pages en
-`dgran.github.io/MentorAI/`.
+**pusheado** a `origin/main` (último commit: b102c4a). Repo: `github.com/dGran/MentorAI`,
+Pages en `dgran.github.io/MentorAI/`.
 
 **PLANES COMPLETOS:**
-- `plan-diseno-y-calidad.md` — **COMPLETO** (oop, solid, clean-code, di-contenedores,
-  publicados 2026-06-27).
-- `plan-practica-backend.md` — **COMPLETO** (git, apis-rest, acceso-a-datos,
-  docker, ci-cd, artículos config-y-entornos y composer, ruta construir-un-servicio,
-  2026-07-04).
-- `plan-testing-y-observabilidad.md` — **COMPLETO** (phpunit 6 lecciones +
-  observabilidad 9 lecciones, publicados 2026-07-04).
+- `plan-diseno-y-calidad.md` — **COMPLETO** (oop, solid, clean-code, di-contenedores, 2026-06-27).
+- `plan-practica-backend.md` — **COMPLETO** (git, apis-rest, acceso-a-datos, docker, ci-cd,
+  artículos config-y-entornos y composer, ruta construir-un-servicio, 2026-07-04).
+- `plan-testing-y-observabilidad.md` — **COMPLETO** (phpunit 6 + observabilidad 9, 2026-07-04).
 
-**PENDIENTE PRINCIPAL — tres planes encolados (estructura pendiente de aprobación):**
-- `plan-huecos-versatilidad.md` — versatilidad transversal aprobada 2026-07-04:
-  SQL aplicado avanzado, patrones GoF, framework por dentro, terminal/Linux, y
-  mini-retos "Ponlo en práctica" al cierre de cada curso. Estructura por definir.
-- `plan-curso-go.md` — curso Go desde cero (~20 lecciones / 5 módulos): entorno
-  dockerizado, editores, goroutines/channels, stdlib, HTTP con net/http. Lección
-  `go-que-es` incluye tabla Go vs Rust cruzada con el curso de Rust.
-- `plan-curso-rust.md` — curso Rust desde cero (~21 lecciones / 5 módulos):
-  ownership, borrowing, async con Tokio, backend con Axum/serde/sqlx. Lección
-  `rust-que-es` incluye tabla Go vs Rust cruzada con el curso de Go.
-- **Ambos cursos de lenguaje necesitan aprobación de estructura antes de arrancar autoría.**
+**plan-huecos-versatilidad.md — EN CURSO:**
+- SQL aplicado avanzado — **HECHO** (4 lecciones, curso `sql-aplicado`).
+- Patrones GoF — **HECHO** (6 lecciones, curso `patrones-diseno`).
+- Framework por dentro — **HECHO** (2 lecciones, curso `framework-por-dentro`).
+- **Terminal/Linux para desarrolladores** — **PENDIENTE** (~2-3 lecciones o artículo
+  denso). Contenido: navegación, pipes/redirección, grep/find, permisos, procesos, ssh/scp.
+  Categorías `herramientas` (ya existe). Bloques `bash`. Formato a decidir al retomar.
+- **"Ponlo en práctica" mini-retos** — **PENDIENTE** (decisión de producto antes de contenido):
+  sección al final de la última lección de cada curso, HTML/CSS puro, details/summary para
+  pistas y solución. Requiere diseño antes de autoría.
+
+**SIGUIENTE INMEDIATO al retomar:** Terminal/Linux (próximo ítem del plan-huecos-versatilidad).
+Proponer formato (2 lecciones: navegación+herramientas / permisos+procesos+red; o artículo
+denso ~18m tipo cheat-sheet) y aprobar estructura antes de arrancar autoría.
+
+**Después de huecos-versatilidad:**
+- `plan-curso-go.md` — curso Go desde cero (~20 lecciones / 5 módulos). Necesita aprobación
+  de estructura y añadir lexer `go` a syntax.js antes de arrancar.
+- `plan-curso-rust.md` — curso Rust desde cero (~21 lecciones / 5 módulos). Mismas condiciones.
+- Lecciones `go-que-es` y `rust-que-es` se cruzan (tabla Go vs Rust).
 
 **PENDIENTES MENORES:**
-- Enlace "Rutas" en navbar de tutoriales (solo cosmético; está en las 5 vistas principales).
 - Script opcional `server/recalcular-minutos.js` (los `minutes` del manifest son manuales).
+- Ampliar rutas `el-grado-que-no-hiciste` / `construir-un-servicio` con los cursos nuevos.
 - **Al añadir tutorial/curso nuevo: revisar `tutorials/paths.js` para encajarlo.**
 
 **PLANES DE FASE 2 (sin tocar):** `plan-buscador-fulltext.md`,
