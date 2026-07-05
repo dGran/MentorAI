@@ -306,13 +306,13 @@
   /* ---------- API pública ---------- */
   MentorAI.Offline = {
     init: function () {
+      injectNavLink();
+
       if (!isSupported()) return;
 
       navigator.serviceWorker.register("/sw.js").catch(function (err) {
         console.warn("[MentorAI] SW no registrado:", err);
       });
-
-      injectNavLink();
     },
 
     initCourseButtons: function () {
