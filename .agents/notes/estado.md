@@ -1132,17 +1132,25 @@ Repo: `github.com/dGran/MentorAI`, Pages en `dgran.github.io/MentorAI/`.
   ítem de producto pendiente de diseño (details/summary, HTML/CSS puro).
 - `plan-curso-go.md` — **COMPLETO** (2026-07-06).
 
+**COMPLETADO EN ESTA SESIÓN (continuación 2026-07-06):**
+- `plan-curso-rust.md` — **COMPLETO**. 21 lecciones, 5 módulos, commit `7d21367`.
+  Módulos: Intro (4), Fundamentos (5), Tipos avanzados/traits/ownership (5),
+  Concurrencia y async (3), Ecosistema y producción (4).
+  Lexer Rust añadido a syntax.js. Categorías rust/python en catalog.js.
+- Quizzes de Go — **COMPLETO**: 12 preguntas en quizzes.js.
+- Ruta "Más allá de PHP" — **CREADA** en paths.js (Go + Rust).
+- Curso Python — **ESQUELETO en courses.js** (21 lecciones planificadas, 5 módulos).
+  Lecciones con estado "Planificado" hasta que se escriban.
+
 **SIGUIENTE INMEDIATO al retomar:**
-- `plan-curso-rust.md` — Rust desde cero (~21 lecciones / 5 módulos). Estructura
-  pendiente de aprobación del usuario. Las lecciones `go-que-es` y `rust-que-es`
-  se cruzan con tabla comparativa Go vs Rust.
-- "Ponlo en práctica" mini-retos (último ítem de plan-huecos-versatilidad):
-  requiere decisión de diseño antes de contenido.
+- `plan-curso-python.md` — Python desde cero (21 lecciones, 5 módulos, FastAPI en M4).
+  Estructura ya en courses.js, pendiente de escribir los tutoriales.
+- "Ponlo en práctica" mini-retos (plan-huecos-versatilidad): requiere decisión de diseño.
 
 **PENDIENTES MENORES:**
-- Quizzes para el curso `go` en `tutorials/quizzes.js` (actualmente tiene 19 cursos, falta go).
+- Quizzes para el curso `rust` en `tutorials/quizzes.js`.
 - Script opcional `server/recalcular-minutos.js` (los `minutes` del manifest son manuales).
-- Ampliar rutas `el-grado-que-no-hiciste` / `construir-un-servicio` con cursos nuevos.
+- Ampliar ruta `el-grado-que-no-hiciste` con cursos de lenguajes si tiene sentido.
 - **Al añadir tutorial/curso nuevo: revisar `tutorials/paths.js` para encajarlo.**
 
 **PLANES DE FASE 2 (sin tocar):** `plan-buscador-fulltext.md`,
