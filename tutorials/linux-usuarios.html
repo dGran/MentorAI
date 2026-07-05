@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Linux: usuarios y grupos — MentorAI</title>
+    <meta name="description" content="Cómo gestiona Linux usuarios y grupos: /etc/passwd, /etc/shadow, useradd, usermod, grupos, sudo y /etc/sudoers explicados desde cero." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Terminal y Linux</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Linux: usuarios y grupos</h1>
+        <p class="tutorial-hero__lead">Linux es un sistema multiusuario desde sus cimientos. Entender cómo se almacenan los usuarios, cómo se organizan en grupos y cómo funciona sudo es fundamental para trabajar con seguridad en cualquier servidor.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>14 min de lectura</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Nivel Principiante</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#modelo">Modelo de usuarios y grupos</a></li>
+            <li><a href="#ficheros">Los ficheros del sistema</a></li>
+            <li><a href="#gestionar-usuarios">Gestionar usuarios</a></li>
+            <li><a href="#gestionar-grupos">Gestionar grupos</a></li>
+            <li><a href="#identidad">Identidad actual</a></li>
+            <li><a href="#sudo">sudo y sudoers</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">En un servidor real conviven varios usuarios: el tuyo, <code>www-data</code> (el servidor web), <code>mysql</code>, <code>redis</code>… Cada proceso corre con la identidad de un usuario, y eso determina a qué ficheros puede acceder.</p>
+
+          <h2 id="modelo">Modelo de usuarios y grupos<a href="#modelo" class="anchor" aria-hidden="true">#</a></h2>
+          <p>Cada usuario tiene un <strong>UID</strong> (User ID) numérico. El kernel usa UIDs, no nombres: los nombres son solo una conveniencia humana. Lo mismo para los grupos (GID).</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Rango UID</th><th>Tipo</th><th>Ejemplos</th></tr></thead>
+              <tbody>
+                <tr><td>0</td><td>root</td><td>El superusuario; tiene acceso sin restricciones</td></tr>
+                <tr><td>1 – 999</td><td>Usuarios del sistema</td><td><code>www-data</code> (UID 33), <code>mysql</code> (UID 105), <code>redis</code></td></tr>
+                <tr><td>1000+</td><td>Usuarios humanos</td><td><code>david</code>, <code>alice</code>, <code>deploy</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Un usuario pertenece a un <strong>grupo primario</strong> (el que aparece en el inodo como grupo propietario de los ficheros que crea) y puede pertenecer a grupos secundarios adicionales. Por ejemplo, para que tu usuario pueda ejecutar Docker, se añade al grupo <code>docker</code>.</p>
+
+          <h2 id="ficheros">Los ficheros del sistema<a href="#ficheros" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · /etc/passwd</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">cat /etc/passwd
+# Cada línea: nombre:x:UID:GID:comentario:home:shell
+# david:x:1000:1000:David Gran:/home/david:/bin/bash
+# www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+# mysql:x:105:108:MySQL Server:/nonexistent:/bin/false
+#
+# La 'x' en el campo contraseña significa que está en /etc/shadow
+# /usr/sbin/nologin y /bin/false = no pueden iniciar sesión interactiva</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · /etc/shadow y /etc/group</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash"># /etc/shadow: contraseñas hasheadas (solo root puede leer)
+# david:$6$salt$hash...:19500:0:99999:7:::
+# campos: nombre:hash:ultimo_cambio:min:max:warn:inactivo:expira
+
+# /etc/group: definición de grupos
+cat /etc/group
+# docker:x:999:david,alice     (grupo:x:GID:miembros)
+# www-data:x:33:
+# sudo:x:27:david</code></pre>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Por qué las contraseñas se movieron a /etc/shadow</p>
+              <p><code>/etc/passwd</code> necesita ser legible por todos (muchos programas necesitan resolver UID a nombre). Pero guardar hashes de contraseñas donde todos pueden leer es un riesgo: un atacante con acceso local podría intentar romperlos por fuerza bruta. <code>/etc/shadow</code> es solo legible por root, así que los hashes están protegidos.</p>
+            </div>
+          </div>
+
+          <h2 id="gestionar-usuarios">Gestionar usuarios<a href="#gestionar-usuarios" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · useradd, usermod, userdel</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash"># Crear usuario
+useradd -m -s /bin/bash david     # -m crea home, -s asigna shell
+useradd -r -s /bin/false deploy   # -r usuario de sistema (UID &lt; 1000), sin login
+
+# Establecer contraseña
+passwd david                      # interactivo
+echo "david:contraseña" | chpasswd   # para scripts (cuidado con el historial)
+
+# Modificar usuario
+usermod -aG docker david          # -a append: añade al grupo docker (no reemplaza)
+usermod -aG sudo david            # añade al grupo sudo
+usermod -s /bin/bash david        # cambia la shell
+usermod -d /nuevo/home david      # cambia el directorio home
+usermod -l nuevo_nombre david     # renombra el usuario
+usermod -L david                  # Lock: deshabilita la cuenta
+usermod -U david                  # Unlock: la reactiva
+
+# Borrar usuario
+userdel david                     # borra el usuario (conserva el home)
+userdel -r david                  # borra el usuario Y su directorio home</code></pre>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">usermod -aG: sin la -a se pierden los grupos</p>
+              <p><code>usermod -G docker david</code> (sin <code>-a</code>) <em>reemplaza</em> todos los grupos secundarios de david por solo <code>docker</code>. El usuario perdería <code>sudo</code> y cualquier otro grupo. Siempre <code>-aG</code> para añadir.</p>
+            </div>
+          </div>
+
+          <h2 id="gestionar-grupos">Gestionar grupos<a href="#gestionar-grupos" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">groupadd developers              # crea el grupo
+groupdel developers              # borra el grupo
+gpasswd -a david developers      # añade david al grupo (alternativa a usermod -aG)
+gpasswd -d david developers      # elimina david del grupo
+groups david                     # grupos a los que pertenece david
+getent group docker              # miembros del grupo docker</code></pre>
+          </div>
+
+          <h2 id="identidad">Identidad actual<a href="#identidad" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">whoami              # nombre del usuario actual
+id                  # uid, gid y todos los grupos
+id david            # ídem para otro usuario
+who                 # usuarios conectados ahora mismo
+w                   # igual que who pero con más detalle (carga, comando)
+last                # historial de inicios de sesión
+lastlog             # último login de cada usuario del sistema</code></pre>
+          </div>
+
+          <h2 id="sudo">sudo y sudoers<a href="#sudo" class="anchor" aria-hidden="true">#</a></h2>
+          <p><code>sudo</code> permite ejecutar comandos con los privilegios de otro usuario (por defecto, root) sin conocer su contraseña. La configuración vive en <code>/etc/sudoers</code> y en <code>/etc/sudoers.d/</code>.</p>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · uso de sudo</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">sudo comando                    # ejecuta como root (pide TU contraseña)
+sudo -u www-data comando        # ejecuta como www-data
+sudo -i                         # abre shell de root (root interactivo)
+sudo su -                       # alternativa para abrir shell de root
+sudo !!                         # repite el último comando como root
+
+# Ver qué puede hacer tu usuario con sudo:
+sudo -l</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · /etc/sudoers (editar con visudo, nunca a mano)</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">visudo                    # editor seguro de sudoers (valida sintaxis antes de guardar)
+
+# Formato de una regla:
+# usuario   HOST=(usuario_destino) COMANDOS
+# %grupo    HOST=(usuario_destino) COMANDOS
+
+# Ejemplos en /etc/sudoers:
+david   ALL=(ALL:ALL) ALL            # david puede hacer todo con sudo
+%sudo   ALL=(ALL:ALL) ALL            # todos los del grupo sudo también
+deploy  ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart nginx   # sin contraseña, solo ese comando
+
+# Ficheros en /etc/sudoers.d/ (mejor práctica: un fichero por usuario/rol):
+echo "deploy ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart nginx" \
+  | sudo tee /etc/sudoers.d/deploy
+sudo chmod 440 /etc/sudoers.d/deploy</code></pre>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Nunca edites /etc/sudoers directamente con nano/vim</p>
+              <p>Un error de sintaxis en <code>/etc/sudoers</code> puede dejarte sin acceso a sudo y bloqueado fuera del sistema. Usa siempre <code>visudo</code>: valida la sintaxis antes de guardar. Si el fichero está corrupto y tienes sesión de root abierta, corrígelo antes de cerrarla.</p>
+            </div>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · su: cambiar de usuario</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">su - david              # cambia al usuario david (pide la contraseña de david)
+su -                    # cambia a root (pide contraseña de root)
+su -c "comando" david   # ejecuta un comando como david sin abrir shell
+exit                    # vuelve al usuario anterior</code></pre>
+          </div>
+
+          <h2 id="resumen">Resumen<a href="#resumen" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="keypoints">
+            <h3><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Lo que te llevas</h3>
+            <ul>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>El kernel trabaja con UIDs numéricos; <code>/etc/passwd</code> traduce a nombres. <code>/etc/shadow</code> guarda los hashes y solo root puede leerlo.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Los usuarios de sistema (UID &lt; 1000) como <code>www-data</code> o <code>mysql</code> tienen <code>/bin/false</code> o <code>/usr/sbin/nologin</code> como shell: no pueden abrir sesión interactiva.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><code>usermod -aG grupo usuario</code> para añadir a un grupo. Sin <code>-a</code> se pierden los grupos actuales. Los cambios de grupo requieren nueva sesión para que surtan efecto.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><code>id</code> muestra tu UID, GID y grupos; <code>groups usuario</code> lista los grupos de cualquier usuario.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><code>sudo</code> permite ejecutar como root con tu contraseña. Edita <code>/etc/sudoers</code> siempre con <code>visudo</code>, nunca directamente: un error te puede bloquear el acceso.</span></li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="linux-permisos.html"><small>← Anterior</small><b>Permisos y propiedad</b></a>
+            <a href="linux-busquedas.html"><small>Siguiente →</small><b>Búsquedas: find, grep y xargs</b></a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

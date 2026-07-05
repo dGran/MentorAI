@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Linux: permisos y propiedad — MentorAI</title>
+    <meta name="description" content="El modelo de permisos de Linux: leer rwx, cambiar con chmod (octal y simbólico), chown, umask y los bits especiales setuid, setgid y sticky." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Terminal y Linux</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Linux: permisos y propiedad</h1>
+        <p class="tutorial-hero__lead">El modelo rwx de Linux define quién puede leer, escribir y ejecutar cada fichero. Entenderlo evita los dos errores más comunes en servidores: dejar todo con 777 o quedarse bloqueado sin saber por qué.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>13 min de lectura</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Nivel Principiante</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#modelo">El modelo de permisos</a></li>
+            <li><a href="#leer">Leer los permisos</a></li>
+            <li><a href="#chmod">Cambiar permisos: chmod</a></li>
+            <li><a href="#chown">Cambiar propietario: chown</a></li>
+            <li><a href="#umask">Permisos por defecto: umask</a></li>
+            <li><a href="#especiales">Bits especiales</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Los permisos de Linux parecen crípticos al principio, pero el sistema es sencillo y elegante. Una vez lo internalizas, leer <code>rwxr-xr-x</code> es tan inmediato como leer texto.</p>
+
+          <h2 id="modelo">El modelo de permisos<a href="#modelo" class="anchor" aria-hidden="true">#</a></h2>
+          <p>Cada fichero tiene tres conjuntos de permisos y cada conjunto tiene tres bits:</p>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · anatomía de los permisos</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash"> -  rwx  r-x  r--
+ │   │    │    └── others (resto del mundo): solo lectura
+ │   │    └── group (grupo propietario): lectura y ejecución
+ │   └── user/owner (propietario): lectura, escritura y ejecución
+ └── tipo de fichero (- fichero, d directorio, l symlink...)</code></pre>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Bit</th><th>En fichero</th><th>En directorio</th></tr></thead>
+              <tbody>
+                <tr><td><code>r</code> (read, 4)</td><td>Leer el contenido</td><td>Listar con <code>ls</code></td></tr>
+                <tr><td><code>w</code> (write, 2)</td><td>Modificar o borrar el contenido</td><td>Crear, renombrar y borrar ficheros dentro</td></tr>
+                <tr><td><code>x</code> (execute, 1)</td><td>Ejecutar como programa</td><td>Entrar con <code>cd</code> y acceder a su contenido</td></tr>
+                <tr><td><code>-</code></td><td colspan="2">Sin permiso</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">x en directorios es especial</p>
+              <p>Para acceder a un fichero dentro de un directorio necesitas <code>x</code> en ese directorio aunque tengas <code>r</code> en el fichero. <code>r</code> sin <code>x</code> en un directorio permite listar los nombres pero no acceder a los ficheros. En la práctica, casi siempre van juntos (<code>rx</code>).</p>
+            </div>
+          </div>
+
+          <h2 id="leer">Leer los permisos<a href="#leer" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · ejemplos reales</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">-rw-r--r-- david www-data  config.php   # owner rw, group r, others r
+-rwxr-xr-x root  root      /bin/ls      # owner rwx, group rx, others rx
+drwxr-x--- david www-data  storage/     # directorio; others sin acceso
+-rw------- root  root      /etc/shadow  # solo root puede leer</code></pre>
+          </div>
+
+          <h2 id="chmod">Cambiar permisos: chmod<a href="#chmod" class="anchor" aria-hidden="true">#</a></h2>
+          <p><code>chmod</code> acepta dos formas: <strong>octal</strong> (más rápido) y <strong>simbólico</strong> (más legible para cambios parciales).</p>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · notación octal</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash"># Cada dígito octal = suma de bits activos (r=4, w=2, x=1)
+# 7 = 4+2+1 = rwx
+# 6 = 4+2   = rw-
+# 5 = 4+1   = r-x
+# 4 = 4     = r--
+# 0 = 0     = ---
+
+chmod 644 config.php     # rw-r--r-- (ficheros de configuración)
+chmod 755 script.sh      # rwxr-xr-x (scripts ejecutables, directorios)
+chmod 600 .env           # rw------- (solo el propietario; ficheros secretos)
+chmod 700 ~/.ssh         # rwx------ (directorio SSH privado)
+chmod -R 755 public/     # -R recursivo: aplica a todo el árbol</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · notación simbólica</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash"># [u=user/g=group/o=others/a=all] [+/-/=] [r/w/x]
+chmod +x script.sh        # añade x a todos (owner, group, others)
+chmod u+x script.sh       # añade x solo al owner
+chmod g-w fichero.txt     # quita w al grupo
+chmod o= fichero.txt      # quita todos los permisos a others
+chmod u=rw,g=r,o= .env    # asigna exactamente (= reemplaza)</code></pre>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Permisos típicos para un servidor web PHP</p>
+              <p>Los ficheros PHP son leídos por php-fpm (corre como <code>www-data</code>): <code>644</code> (rw-r--r--) para ficheros, <code>755</code> (rwxr-xr-x) para directorios. El directorio de uploads necesita escritura del grupo: <code>775</code>. Nunca <code>777</code>: cualquier usuario del sistema podría escribir.</p>
+            </div>
+          </div>
+
+          <h2 id="chown">Cambiar propietario: chown<a href="#chown" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">chown david fichero.txt           # cambia solo el propietario
+chown david:www-data fichero.txt  # propietario y grupo
+chown :www-data fichero.txt       # solo el grupo (equivalente a chgrp)
+chown -R www-data:www-data /var/www/html   # recursivo
+
+# Caso típico: después de desplegar código como root, ajustar para php-fpm:
+chown -R www-data:www-data /var/www/miapp
+find /var/www/miapp -type f -exec chmod 644 {} \;
+find /var/www/miapp -type d -exec chmod 755 {} \;</code></pre>
+          </div>
+
+          <h2 id="umask">Permisos por defecto: umask<a href="#umask" class="anchor" aria-hidden="true">#</a></h2>
+          <p>Cuando creas un fichero o directorio, los permisos iniciales no son <code>666</code>/<code>777</code> directamente: el kernel aplica una máscara (<strong>umask</strong>) que quita bits. La umask habitual es <code>022</code>.</p>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash"># Con umask 022:
+# fichero: 666 - 022 = 644 (rw-r--r--)
+# directorio: 777 - 022 = 755 (rwxr-xr-x)
+
+umask            # muestra la umask actual
+umask 022        # la cambia para la sesión actual
+umask 027        # más restrictiva: group sin w, others sin nada (rw-r-----)
+
+# La umask por defecto se configura en /etc/profile o ~/.bashrc</code></pre>
+          </div>
+
+          <h2 id="especiales">Bits especiales<a href="#especiales" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Bit</th><th>Octal</th><th>Efecto en ficheros</th><th>Efecto en directorios</th></tr></thead>
+              <tbody>
+                <tr><td>setuid (<code>s</code> en user)</td><td>4xxx</td><td>Se ejecuta con los permisos del propietario del fichero, no del que lo lanza. Ejemplo: <code>/usr/bin/passwd</code> (necesita tocar <code>/etc/shadow</code>).</td><td>Sin efecto en Linux.</td></tr>
+                <tr><td>setgid (<code>s</code> en group)</td><td>2xxx</td><td>Se ejecuta con los permisos del grupo del fichero.</td><td>Los ficheros creados dentro heredan el grupo del directorio (útil para carpetas compartidas).</td></tr>
+                <tr><td>sticky (<code>t</code> en others)</td><td>1xxx</td><td>Sin efecto moderno.</td><td>Solo el propietario puede borrar sus ficheros aunque others tenga <code>w</code>. Clásico en <code>/tmp</code>.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · bits especiales en la práctica</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">ls -la /usr/bin/passwd     # -rwsr-xr-x (s = setuid activo)
+ls -la /tmp                # drwxrwxrwt (t = sticky activo)
+
+# Carpeta compartida con setgid (los nuevos ficheros heredan el grupo):
+mkdir /var/uploads
+chown :www-data /var/uploads
+chmod 2775 /var/uploads    # 2 = setgid; 775 = rwxrwxr-x</code></pre>
+          </div>
+
+          <h2 id="resumen">Resumen<a href="#resumen" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="keypoints">
+            <h3><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Lo que te llevas</h3>
+            <ul>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Los permisos son tres tríos rwx: owner, group, others. Cada bit tiene valor numérico: r=4, w=2, x=1.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><code>chmod 644</code> para ficheros de texto, <code>755</code> para directorios y ejecutables, <code>600</code> para secretos. Nunca <code>777</code>.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>La notación simbólica (<code>chmod +x</code>, <code>chmod g-w</code>) es más legible para cambios parciales; la octal es más rápida para asignar desde cero.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><code>chown -R www-data:www-data /var/www</code> es el ajuste habitual tras desplegar código.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>La umask (<code>022</code> por defecto) define los permisos iniciales al crear ficheros: 666-022=644, 777-022=755.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>El sticky bit en <code>/tmp</code> protege los ficheros de cada usuario aunque todos tengan permisos de escritura en el directorio.</span></li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="linux-navegacion.html"><small>← Anterior</small><b>Navegación y manipulación de ficheros</b></a>
+            <a href="linux-usuarios.html"><small>Siguiente →</small><b>Usuarios y grupos</b></a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

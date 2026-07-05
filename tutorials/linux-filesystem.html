@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Linux: el árbol de directorios, inodos y discos — MentorAI</title>
+    <meta name="description" content="El filesystem de Linux desde los cimientos: la filosofía 'todo es un fichero', el árbol FHS, tipos de fichero, inodos y cómo gestionar discos y espacio en disco." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Terminal y Linux</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Linux: el árbol de directorios, inodos y discos</h1>
+        <p class="tutorial-hero__lead">Antes de ejecutar comandos, conviene entender sobre qué terreno pisas. Cómo está organizado el sistema de ficheros, qué significa que "todo sea un fichero", qué es un inodo y cómo gestionar el espacio en disco.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>16 min de lectura</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Nivel Principiante</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#filosofia">Todo es un fichero</a></li>
+            <li><a href="#fhs">El árbol FHS</a></li>
+            <li><a href="#tipos">Tipos de fichero</a></li>
+            <li><a href="#inodos">Inodos</a></li>
+            <li><a href="#discos">Discos y filesystems</a></li>
+            <li><a href="#espacio">Gestionar el espacio</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Linux hereda la filosofía Unix. Antes de aprender comandos, entender esa filosofía cambia cómo lees el sistema: deja de ser una caja negra y empieza a tener sentido.</p>
+
+          <h2 id="filosofia">Todo es un fichero<a href="#filosofia" class="anchor" aria-hidden="true">#</a></h2>
+          <p>La idea central de Unix/Linux es que casi todo el sistema se expone como un fichero. No solo los documentos y scripts: los discos, los dispositivos, los procesos, las conexiones de red y la configuración del kernel son ficheros o se comportan como tales.</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Recurso</th><th>Ruta en el filesystem</th><th>Para qué sirve</th></tr></thead>
+              <tbody>
+                <tr><td>Disco duro</td><td><code>/dev/sda</code>, <code>/dev/nvme0n1</code></td><td>Leer/escribir sectores directamente</td></tr>
+                <tr><td>Proceso (PID 1234)</td><td><code>/proc/1234/</code></td><td>Ver memoria, ficheros abiertos, estado</td></tr>
+                <tr><td>Kernel tunable</td><td><code>/proc/sys/net/ipv4/ip_forward</code></td><td><code>echo 1 &gt; ruta</code> activa el routing</td></tr>
+                <tr><td>Terminal actual</td><td><code>/dev/tty</code></td><td>Leer/escribir en la consola</td></tr>
+                <tr><td>Memoria del sistema</td><td><code>/proc/meminfo</code></td><td>RAM total, libre, buffers, caché</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>La consecuencia práctica: las mismas herramientas que usas para ficheros de texto (<code>cat</code>, <code>grep</code>, <code>tail</code>) funcionan en buena parte de estos "ficheros especiales". <code>cat /proc/meminfo</code> muestra el estado de la memoria; <code>tail -f /var/log/syslog</code> sigue el log del sistema en tiempo real.</p>
+
+          <h2 id="fhs">El árbol FHS<a href="#fhs" class="anchor" aria-hidden="true">#</a></h2>
+          <p>El <strong>Filesystem Hierarchy Standard (FHS)</strong> define dónde va cada cosa en Linux. El árbol arranca en <code>/</code> (raíz) y todo cuelga de ahí. No hay letras de unidad como en Windows.</p>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · árbol simplificado</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">/
+├── bin/        # Binarios esenciales del sistema (ls, cp, bash...)
+├── sbin/       # Binarios de administración (fdisk, iptables...)
+├── etc/        # Configuración del sistema (ficheros de texto)
+├── home/       # Directorios personales de los usuarios (/home/david)
+├── root/       # Directorio personal del usuario root
+├── var/        # Datos variables: logs, colas, bases de datos locales
+│   ├── log/    # Logs del sistema y aplicaciones
+│   └── www/    # Web roots (en algunas distros)
+├── tmp/        # Temporal; se borra al reiniciar (en la mayoría)
+├── usr/        # Programas y datos de usuario (el "segundo árbol")
+│   ├── bin/    # Binarios de usuario (git, php, python...)
+│   ├── lib/    # Librerías
+│   └── share/  # Datos compartidos independientes de arquitectura
+├── lib/        # Librerías esenciales del sistema
+├── proc/       # Sistema de ficheros virtual: estado del kernel y procesos
+├── sys/        # Sistema de ficheros virtual: dispositivos y kernel
+├── dev/        # Dispositivos (discos, terminales, /dev/null, /dev/random)
+├── mnt/        # Punto de montaje temporal para discos externos
+├── media/      # Montaje automático (USB, CD...)
+├── opt/        # Software de terceros instalado fuera del gestor de paquetes
+├── srv/        # Datos servidos (HTTP, FTP...)
+└── boot/       # Kernel e initramfs (lo que arranca el sistema)</code></pre>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Directorio</th><th>Qué encontrarás allí como desarrollador</th></tr></thead>
+              <tbody>
+                <tr><td><code>/etc</code></td><td>Configuración de nginx, PHP-FPM, MySQL, SSH, cron… Todo en texto plano.</td></tr>
+                <tr><td><code>/var/log</code></td><td>Logs de nginx (<code>access.log</code>, <code>error.log</code>), PHP, MySQL, syslog.</td></tr>
+                <tr><td><code>/tmp</code></td><td>Ficheros temporales. Nunca guardes nada importante aquí.</td></tr>
+                <tr><td><code>/proc</code></td><td>Lee <code>/proc/cpuinfo</code>, <code>/proc/meminfo</code>, <code>/proc/&lt;pid&gt;/cmdline</code>.</td></tr>
+                <tr><td><code>/dev/null</code></td><td>El "agujero negro": todo lo que escribes desaparece. Útil para silenciar salidas.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">/etc siempre en texto plano</p>
+              <p>Una de las mejores decisiones de Unix: la configuración del sistema son ficheros de texto legibles. <code>cat /etc/nginx/nginx.conf</code>, <code>grep -r "listen" /etc/nginx/</code>, <code>git diff /etc/nginx/</code>. Todo funciona.</p>
+            </div>
+          </div>
+
+          <h2 id="tipos">Tipos de fichero<a href="#tipos" class="anchor" aria-hidden="true">#</a></h2>
+          <p>En Linux no todo lo que aparece como "fichero" en un listado es lo mismo. <code>ls -l</code> muestra el tipo en el primer carácter de los permisos:</p>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">-rw-r--r--  fichero regular (texto, binario, imagen...)
+drwxr-xr-x  directorio
+lrwxrwxrwx  enlace simbólico (symlink)
+brw-rw----  dispositivo de bloque (disco, partición)
+crw-rw-rw-  dispositivo de carácter (terminal, /dev/null)
+prw-r--r--  pipe con nombre (FIFO)
+srwxrwxrwx  socket Unix</code></pre>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Tipo</th><th>Ejemplos reales</th><th>Cuándo te lo encuentras</th></tr></thead>
+              <tbody>
+                <tr><td>Regular (<code>-</code>)</td><td>Scripts, binarios, logs, configs</td><td>Todo el tiempo</td></tr>
+                <tr><td>Directorio (<code>d</code>)</td><td><code>/etc</code>, <code>/var/log</code></td><td>Todo el tiempo</td></tr>
+                <tr><td>Symlink (<code>l</code>)</td><td><code>/usr/bin/php</code> → <code>php8.2</code></td><td>Versiones de PHP, alternativas</td></tr>
+                <tr><td>Bloque (<code>b</code>)</td><td><code>/dev/sda</code>, <code>/dev/nvme0n1</code></td><td>Al gestionar discos</td></tr>
+                <tr><td>Socket (<code>s</code>)</td><td><code>/var/run/php/php-fpm.sock</code></td><td>PHP-FPM, MySQL, Redis</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="inodos">Inodos<a href="#inodos" class="anchor" aria-hidden="true">#</a></h2>
+          <p>Un <strong>inodo</strong> (index node) es la estructura de datos que el filesystem mantiene por cada fichero: guarda los metadatos (permisos, propietario, tamaño, timestamps, bloques de datos en disco) pero <em>no</em> el nombre del fichero. El nombre vive en el directorio que apunta al inodo.</p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start"><span class="flow__num">1</span><span><b>Directorio</b><small>/home/david/app</small></span></div>
+              <div class="flow__arrow" data-label="nombre → número de inodo"></div>
+              <div class="flow__node"><span class="flow__num">2</span><span><b>Inodo 48291</b><small>permisos, owner, size, timestamps, bloques</small></span></div>
+              <div class="flow__arrow" data-label="punteros a bloques"></div>
+              <div class="flow__node flow__node--end"><span class="flow__num">3</span><span><b>Bloques de datos</b><small>el contenido real del fichero</small></span></div>
+            </div>
+            <p class="diagram__caption">El nombre es solo un alias que apunta a un inodo. Un inodo puede tener varios nombres (hard links).</p>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · ver inodos</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">ls -li archivo.txt          # -i muestra el número de inodo
+stat archivo.txt            # todos los metadatos del inodo
+df -i /                     # inodos usados/libres en cada partición</code></pre>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Se pueden agotar los inodos sin llenar el disco</p>
+              <p>Cada filesystem tiene un número fijo de inodos (reservado al formatearlo). Si creas millones de ficheros pequeños (logs, caché, sesiones PHP) puedes quedarte sin inodos aunque quede espacio libre. <code>df -i</code> lo muestra; es el primer diagnóstico cuando el sistema dice "no space left" pero <code>df -h</code> muestra espacio libre.</p>
+            </div>
+          </div>
+
+          <h2 id="discos">Discos y filesystems<a href="#discos" class="anchor" aria-hidden="true">#</a></h2>
+          <p>En Linux un disco no se "conecta" automáticamente al árbol: hay que <strong>montarlo</strong> en un punto de montaje (un directorio vacío). El kernel mapea ese directorio al filesystem del disco.</p>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · dispositivos y montaje</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">lsblk                       # árbol de discos y particiones
+lsblk -f                    # añade filesystem, UUID y punto de montaje
+
+# Ejemplo de salida:
+# NAME        FSTYPE  SIZE  MOUNTPOINT
+# sda                  50G
+# ├─sda1      ext4     48G  /
+# └─sda2      swap      2G  [SWAP]
+
+cat /proc/mounts            # lo que está montado ahora mismo
+mount | grep "^/dev"        # equivalente, más legible
+
+# Montar manualmente (necesita root):
+mount /dev/sdb1 /mnt/datos
+umount /mnt/datos           # desmontar antes de extraer
+
+# /etc/fstab: montaje automático al arrancar
+cat /etc/fstab</code></pre>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Filesystem</th><th>Uso típico</th><th>Característica clave</th></tr></thead>
+              <tbody>
+                <tr><td><code>ext4</code></td><td>Discos de datos, raíz del sistema</td><td>Robusto, journaling, el más común en Linux</td></tr>
+                <tr><td><code>xfs</code></td><td>Servidores de alta carga, RHEL/CentOS</td><td>Muy eficiente con ficheros grandes</td></tr>
+                <tr><td><code>btrfs</code></td><td>Snapshots, RAID en software</td><td>Copy-on-write, checksums, subvolúmenes</td></tr>
+                <tr><td><code>tmpfs</code></td><td><code>/tmp</code>, <code>/run</code></td><td>Reside en RAM; se pierde al reiniciar</td></tr>
+                <tr><td><code>proc</code></td><td><code>/proc</code></td><td>Virtual; expone estado del kernel</td></tr>
+                <tr><td><code>overlay</code></td><td>Capas de imagen Docker</td><td>Copy-on-write sobre otra carpeta</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="espacio">Gestionar el espacio<a href="#espacio" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · df y du</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash"># df: espacio por filesystem (Disk Free)
+df -h                       # -h = human readable (GB, MB)
+df -h /var/log              # solo el filesystem donde vive esa ruta
+df -i                       # inodos en lugar de bloques
+
+# du: espacio ocupado por directorios (Disk Usage)
+du -sh /var/log             # total del directorio (-s summary, -h human)
+du -sh /var/log/*           # por subdirectorio
+du -h /var/log | sort -rh | head -20   # los 20 directorios más grandes
+
+# Buscar ficheros grandes rápidamente:
+find /var -size +100M -type f          # ficheros mayores de 100 MB
+find /tmp -mtime +7 -type f            # ficheros no tocados en 7 días</code></pre>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El disco "lleno" más común en servidores PHP</p>
+              <p>Los candidatos habituales son <code>/var/log</code> (logs de nginx/PHP sin rotar), <code>/tmp</code> (sesiones PHP acumuladas) y el directorio de uploads sin política de retención. <code>du -sh /var/log/* | sort -rh | head</code> suele señalar al culpable en segundos.</p>
+            </div>
+          </div>
+
+          <h2 id="resumen">Resumen<a href="#resumen" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="keypoints">
+            <h3><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Lo que te llevas</h3>
+            <ul>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>"Todo es un fichero": dispositivos, procesos y configuración del kernel se exponen como ficheros y responden a las mismas herramientas.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>El árbol FHS define dónde va cada cosa: <code>/etc</code> = configs, <code>/var/log</code> = logs, <code>/tmp</code> = temporal, <code>/proc</code> = kernel virtual, <code>/dev</code> = dispositivos.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>El tipo de fichero se ve en el primer carácter de <code>ls -l</code>: <code>-</code> regular, <code>d</code> directorio, <code>l</code> symlink, <code>s</code> socket.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Un inodo guarda los metadatos del fichero; el nombre es solo un alias en el directorio. Los inodos se pueden agotar independientemente del espacio en disco.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><code>lsblk -f</code> muestra discos y particiones; <code>df -h</code> el espacio por filesystem; <code>du -sh directorio</code> el espacio que ocupa un árbol.</span></li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../cursos.html"><small>← Volver</small><b>Catálogo de cursos</b></a>
+            <a href="linux-navegacion.html"><small>Siguiente →</small><b>Navegación y manipulación de ficheros</b></a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

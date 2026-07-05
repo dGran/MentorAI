@@ -22,6 +22,25 @@
 
 window.MENTORAI_COURSES = [
   {
+    slug: "terminal-linux",
+    title: "Terminal y Linux para desarrolladores",
+    summary:
+      "De cero al día a día en Linux: el sistema de ficheros y el árbol FHS, navegación y gestión de ficheros, permisos, usuarios y grupos, búsquedas con find y grep, pipes y redirección, scripting bash, paquetes y cron, y diagnóstico de procesos, SSH y red.",
+    level: "Intermedio",
+    icon: "bolt",
+    lessons: [
+      "linux-filesystem",
+      "linux-navegacion",
+      "linux-permisos",
+      "linux-usuarios",
+      "linux-busquedas",
+      "linux-texto-y-pipes",
+      "linux-scripting",
+      "linux-sistema",
+      "linux-procesos-y-red",
+    ],
+  },
+  {
     slug: "framework-por-dentro",
     title: "Cómo funciona un framework por dentro",
     summary:

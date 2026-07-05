@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Linux: paquetes, compresión y cron — MentorAI</title>
+    <meta name="description" content="Gestión de paquetes con apt y dpkg, comprimir y descomprimir con tar/gzip/zip, y programar tareas periódicas con cron y crontab." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Terminal y Linux</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Linux: paquetes, compresión y cron</h1>
+        <p class="tutorial-hero__lead">Instalar software con apt, descomprimir archives con tar, y programar tareas automáticas con crontab. Tres herramientas de administración que usarás cada semana.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>14 min de lectura</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Nivel Principiante</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#apt">Gestión de paquetes: apt</a></li>
+            <li><a href="#dpkg">El nivel más bajo: dpkg</a></li>
+            <li><a href="#compresion">Compresión: tar y gzip</a></li>
+            <li><a href="#zip">zip y unzip</a></li>
+            <li><a href="#cron">Tareas programadas: cron</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+
+          <h2 id="apt">Gestión de paquetes: apt<a href="#apt" class="anchor" aria-hidden="true">#</a></h2>
+          <p>En Ubuntu/Debian el gestor de paquetes es <strong>apt</strong> (Advanced Package Tool). Descarga, instala y actualiza software desde repositorios mantenidos por la distribución.</p>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · apt esencial</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">apt update                      # actualiza el índice de paquetes disponibles
+apt upgrade                     # actualiza los paquetes instalados
+apt full-upgrade                # actualiza incluyendo cambios de dependencias
+
+apt install nginx               # instala nginx
+apt install php8.2 php8.2-fpm php8.2-mbstring   # instala varios
+apt install -y nginx            # -y responde sí automáticamente (scripts)
+apt remove nginx                # desinstala (conserva configs)
+apt purge nginx                 # desinstala + borra ficheros de configuración
+apt autoremove                  # elimina dependencias ya no necesarias
+
+apt search "nombre o descripción"   # buscar paquetes
+apt show nginx                      # información detallada de un paquete
+apt list --installed                # paquetes instalados
+apt list --upgradable               # paquetes con actualización disponible</code></pre>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">apt update antes de instalar, siempre</p>
+              <p>Si no actualizas el índice, apt puede intentar descargar versiones antiguas o que ya no existen en los repositorios. El flujo correcto es siempre <code>apt update &amp;&amp; apt install paquete</code>. En Dockerfiles se combina en un solo RUN para evitar que la caché de capas use un índice viejo.</p>
+            </div>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · repositorios externos (PPAs)</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash"># Añadir un repositorio externo (ejemplo: Ondrej para PHP en Ubuntu):
+apt install -y software-properties-common
+add-apt-repository ppa:ondrej/php
+apt update
+apt install php8.3
+
+# Ver repositorios configurados:
+cat /etc/apt/sources.list
+ls /etc/apt/sources.list.d/</code></pre>
+          </div>
+
+          <h2 id="dpkg">El nivel más bajo: dpkg<a href="#dpkg" class="anchor" aria-hidden="true">#</a></h2>
+          <p><code>dpkg</code> es la herramienta de bajo nivel que gestiona paquetes <code>.deb</code> individualmente. <code>apt</code> se apoya en ella y gestiona las dependencias automáticamente; <code>dpkg</code> no lo hace.</p>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">dpkg -i paquete.deb             # instalar un .deb descargado
+dpkg -r nombre-paquete          # desinstalar
+dpkg -l                         # listar todos los paquetes instalados
+dpkg -l | grep nginx            # buscar en los instalados
+dpkg -L nginx                   # ficheros que instaló el paquete nginx
+dpkg -S /usr/sbin/nginx         # qué paquete instaló ese fichero
+dpkg --get-selections           # lista de paquetes con su estado</code></pre>
+          </div>
+
+          <h2 id="compresion">Compresión: tar y gzip<a href="#compresion" class="anchor" aria-hidden="true">#</a></h2>
+          <p><code>tar</code> (Tape Archive) agrupa ficheros en un solo archivo; los algoritmos de compresión (<code>gzip</code>, <code>bzip2</code>, <code>xz</code>) reducen su tamaño. La combinación <code>.tar.gz</code> (tarball) es el estándar de facto en Linux.</p>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · tar: crear y extraer</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash"># Crear:
+tar -czf backup.tar.gz directorio/     # c=crear, z=gzip, f=fichero
+tar -cjf backup.tar.bz2 directorio/   # j=bzip2 (mejor ratio, más lento)
+tar -cJf backup.tar.xz directorio/    # J=xz (mejor ratio aún)
+tar -czf backup.tar.gz fichero1 fichero2 directorio/   # múltiples orígenes
+
+# Extraer:
+tar -xzf backup.tar.gz              # x=extraer, z=gzip, f=fichero
+tar -xzf backup.tar.gz -C /destino/ # extrae en un directorio específico
+tar -xzf backup.tar.gz fichero.txt  # extrae solo un fichero del archivo
+
+# Ver contenido sin extraer:
+tar -tzf backup.tar.gz              # lista los ficheros
+
+# Regla mnemotécnica: czf = Crear Zipped File; xzf = eXtraer Zipped File</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · gzip y otros</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">gzip fichero.log            # comprime y reemplaza por fichero.log.gz
+gzip -k fichero.log         # -k conserva el original
+gunzip fichero.log.gz        # descomprime
+zcat fichero.log.gz          # lee sin descomprimir (útil para grep)
+zcat fichero.log.gz | grep "error"</code></pre>
+          </div>
+
+          <h2 id="zip">zip y unzip<a href="#zip" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">zip -r backup.zip directorio/    # -r recursivo
+zip -r backup.zip *.php *.env    # múltiples patrones
+unzip backup.zip                 # extrae en el directorio actual
+unzip backup.zip -d /destino/    # extrae en directorio específico
+unzip -l backup.zip              # lista el contenido sin extraer
+unzip -p backup.zip fichero.txt  # muestra el contenido de un fichero por stdout</code></pre>
+          </div>
+
+          <h2 id="cron">Tareas programadas: cron<a href="#cron" class="anchor" aria-hidden="true">#</a></h2>
+          <p><code>cron</code> es el demonio que ejecuta comandos en horarios definidos. Cada usuario tiene su propia tabla de tareas (crontab).</p>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · sintaxis crontab</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash"># Formato: minuto hora dia_mes mes dia_semana comando
+# *=cualquiera, */n=cada n, valores separados por coma, rangos con -
+
+# Minuto (0-59)
+#   │ Hora (0-23)
+#   │   │ Día del mes (1-31)
+#   │   │   │ Mes (1-12)
+#   │   │   │   │ Día de semana (0=dom, 1=lun... 6=sáb)
+#   │   │   │   │   │ Comando
+#   *   *   *   *   *   /ruta/al/script.sh
+
+0   2   *   *   *   /usr/local/bin/backup.sh    # a las 2:00 todos los días
+*/15 *  *   *   *   /usr/local/bin/check.sh     # cada 15 minutos
+0   0   *   *   0   /usr/local/bin/weekly.sh    # domingos a medianoche
+0   9   1   *   *   /usr/local/bin/monthly.sh   # el 1 de cada mes a las 9h
+30  23  *   *  1-5  /usr/local/bin/work.sh      # lunes-viernes a las 23:30</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · gestionar crontab</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">crontab -e              # editar el crontab del usuario actual
+crontab -l              # listar las tareas actuales
+crontab -r              # borrar TODAS las tareas (cuidado)
+crontab -u david -l     # ver el crontab de otro usuario (como root)
+
+# Tareas del sistema (requieren root):
+ls /etc/cron.d/          # tareas de paquetes del sistema
+ls /etc/cron.daily/      # scripts que se ejecutan diariamente
+ls /etc/cron.weekly/     # semanalmente
+ls /etc/cron.monthly/    # mensualmente
+
+# Log de ejecuciones:
+grep CRON /var/log/syslog | tail -20
+journalctl -u cron | tail -20</code></pre>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Cron no hereda el PATH de tu shell</p>
+              <p>Los scripts de cron se ejecutan con un entorno mínimo. <code>php</code>, <code>composer</code> o <code>git</code> pueden no estar en el PATH de cron aunque sí estén en el tuyo. Solución: usa rutas absolutas (<code>/usr/bin/php</code>) o añade <code>PATH=/usr/local/bin:/usr/bin:/bin</code> al inicio del crontab.</p>
+            </div>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · crontab con salida controlada</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash"># Redirigir stdout y stderr a un log:
+0 2 * * * /usr/local/bin/backup.sh &gt;&gt; /var/log/backup.log 2&gt;&amp;1
+
+# Silenciar todo (si no hay log del demonio):
+0 2 * * * /usr/local/bin/backup.sh &gt; /dev/null 2&gt;&amp;1
+
+# Variables de entorno en crontab:
+PATH=/usr/local/bin:/usr/bin:/bin
+MAILTO=admin@midominio.com      # cron enviará emails con la salida si hay errores
+0 2 * * * /usr/local/bin/backup.sh</code></pre>
+          </div>
+
+          <h2 id="resumen">Resumen<a href="#resumen" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="keypoints">
+            <h3><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Lo que te llevas</h3>
+            <ul>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Siempre <code>apt update</code> antes de <code>apt install</code>. <code>apt purge</code> borra también los ficheros de configuración; <code>apt remove</code> los conserva.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><code>dpkg -L paquete</code> lista los ficheros instalados por ese paquete. <code>dpkg -S /ruta/fichero</code> dice qué paquete lo instaló.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><code>tar -czf backup.tar.gz dir/</code> crea; <code>tar -xzf backup.tar.gz</code> extrae. Mnemotécnica: c=crear, x=extraer, z=gzip, f=fichero.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>La sintaxis de crontab es <code>min hora dia mes diasemana comando</code>. <code>*</code> = cualquier valor; <code>*/15</code> = cada 15.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Cron no hereda el PATH del shell: usa rutas absolutas o define <code>PATH=</code> al inicio del crontab. Redirige la salida a un log para poder depurar.</span></li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="linux-scripting.html"><small>← Anterior</small><b>Scripting bash</b></a>
+            <a href="linux-procesos-y-red.html"><small>Siguiente →</small><b>Procesos, SSH y red</b></a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

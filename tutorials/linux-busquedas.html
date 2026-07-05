@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Linux: búsquedas con find, grep y xargs — MentorAI</title>
+    <meta name="description" content="Dominar find y grep transforma cómo trabajas en Linux. Ejemplos reales de búsqueda de ficheros por nombre, tipo, tamaño y fecha; búsqueda en contenido con expresiones regulares; y xargs para encadenar resultados." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Terminal y Linux</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Linux: búsquedas con find, grep y xargs</h1>
+        <p class="tutorial-hero__lead">Dos herramientas que, bien manejadas, te permiten localizar cualquier cosa en el sistema en segundos: find busca ficheros por atributos; grep busca texto dentro de ficheros. xargs las une.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>16 min de lectura</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Nivel Intermedio</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#find-basico">find básico</a></li>
+            <li><a href="#find-filtros">find: filtros avanzados</a></li>
+            <li><a href="#find-acciones">find: acciones</a></li>
+            <li><a href="#grep-basico">grep básico</a></li>
+            <li><a href="#grep-avanzado">grep avanzado</a></li>
+            <li><a href="#xargs">xargs: encadenar resultados</a></li>
+            <li><a href="#otros">locate, which, whereis</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">La búsqueda es una de las habilidades que más diferencia a quien usa el terminal como herramienta de quien simplemente lo tolera.</p>
+
+          <h2 id="find-basico">find básico<a href="#find-basico" class="anchor" aria-hidden="true">#</a></h2>
+          <p><code>find</code> recorre el árbol de directorios y filtra ficheros por sus atributos. La sintaxis es: <code>find [punto de partida] [condiciones] [acciones]</code>.</p>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · por nombre y tipo</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">find . -name "*.php"            # todos los .php desde aquí (recursivo)
+find /var/log -name "*.log"     # .log en /var/log
+find . -name "config.php"       # fichero exacto
+find . -iname "*.PHP"           # -iname: insensible a mayúsculas
+find . -name "*.php" -not -name "*test*"  # .php que no contengan "test"
+
+find . -type f                  # solo ficheros regulares
+find . -type d                  # solo directorios
+find . -type l                  # solo symlinks
+find /etc -type f -name "*.conf"   # ficheros .conf en /etc</code></pre>
+          </div>
+
+          <h2 id="find-filtros">find: filtros avanzados<a href="#find-filtros" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · por tamaño</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">find / -size +100M -type f      # ficheros de más de 100 MB
+find . -size -1k -type f        # ficheros de menos de 1 KB
+find . -size +1M -size -10M     # entre 1 MB y 10 MB
+# Unidades: c (bytes), k (KB), M (MB), G (GB)</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · por fecha de modificación</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">find . -mtime -1                # modificados en las últimas 24h
+find . -mtime +7                # modificados hace más de 7 días
+find . -mtime +30 -name "*.log" # logs de más de 30 días (candidatos a borrar)
+find . -newer referencia.txt    # más nuevos que referencia.txt
+find . -mmin -60                # modificados en los últimos 60 minutos</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · por permisos y propietario</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">find . -perm 777                # exactamente 777
+find . -perm -o+w               # others tiene write (permiso peligroso)
+find . -perm /u+s               # ficheros con setuid activo
+find /var/www -user www-data    # propietario es www-data
+find /var/www -group www-data   # grupo es www-data
+find . -user root -type f       # ficheros de root</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · combinar condiciones</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">find . -name "*.log" -a -size +10M          # AND (implícito)
+find . -name "*.log" -o -name "*.tmp"       # OR
+find . -not -name "*.php"                   # NOT (alias: !)
+find . \( -name "*.jpg" -o -name "*.png" \) -size +1M   # paréntesis agrupan
+
+# Profundidad de búsqueda:
+find . -maxdepth 2 -name "*.php"    # solo hasta 2 niveles de profundidad
+find . -mindepth 2 -name "*.php"    # desde el nivel 2 en adelante</code></pre>
+          </div>
+
+          <h2 id="find-acciones">find: acciones<a href="#find-acciones" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · -exec y -delete</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash"># -exec: ejecuta un comando por cada resultado
+# {} = el fichero encontrado; \; = fin del comando
+find . -name "*.php" -exec chmod 644 {} \;
+
+# -exec con +: pasa todos los resultados de una vez (más eficiente)
+find . -name "*.php" -exec chmod 644 {} +
+
+# Casos reales:
+find /tmp -mtime +7 -type f -delete         # borra logs viejos (cuidado)
+find /var/www -name "*.php" -exec grep -l "eval(" {} \;   # busca eval() en PHP
+find . -name "*.log" -exec gzip {} \;       # comprime todos los logs
+find . -empty -type f -delete               # borra ficheros vacíos
+find . -empty -type d -delete               # borra directorios vacíos</code></pre>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Prueba sin -delete primero</p>
+              <p>Antes de usar <code>find ... -delete</code> o <code>-exec rm</code>, ejecuta el mismo comando sin esa acción para ver exactamente qué va a afectar. Una vez borrado, no hay papelera.</p>
+            </div>
+          </div>
+
+          <h2 id="grep-basico">grep básico<a href="#grep-basico" class="anchor" aria-hidden="true">#</a></h2>
+          <p><code>grep</code> busca texto dentro de ficheros. Imprime las líneas que contienen el patrón.</p>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · grep esencial</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">grep "patrón" fichero.txt           # líneas que contienen el patrón
+grep -i "error" access.log          # -i insensible a mayúsculas
+grep -n "Exception" app.log         # -n muestra número de línea
+grep -c "404" access.log            # -c cuenta el número de coincidencias
+grep -v "200" access.log            # -v invierte: líneas que NO contienen el patrón
+grep -l "TODO" *.php                # -l solo muestra el nombre de fichero (no las líneas)
+grep -r "DB_PASSWORD" /var/www      # -r recursivo en directorio
+grep -rn "die()" /var/www/html      # recursivo + número de línea</code></pre>
+          </div>
+
+          <h2 id="grep-avanzado">grep avanzado<a href="#grep-avanzado" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · contexto y regex</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">grep -A 3 "Fatal error" error.log   # -A 3: muestra 3 líneas después del match
+grep -B 2 "Fatal error" error.log   # -B 2: muestra 2 líneas antes
+grep -C 2 "Fatal error" error.log   # -C 2: 2 antes Y 2 después (Context)
+
+# Expresiones regulares extendidas con -E (o usar egrep):
+grep -E "error|warning|fatal" app.log   # OR entre patrones
+grep -E "^2026-07" app.log              # líneas que empiezan por "2026-07"
+grep -E "\b404\b" access.log            # palabra exacta 404
+grep -E "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}" access.log  # IPs
+
+# Buscar string literal (sin interpretar regex):
+grep -F "function()" fichero.php    # -F fijo, no interpreta . * etc.
+
+# Excluir ficheros o directorios:
+grep -r "password" /var/www --include="*.php"    # solo en .php
+grep -r "TODO" . --exclude="*.min.js"            # excluye minificados
+grep -r "TODO" . --exclude-dir=vendor            # excluye directorio vendor</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · casos reales de grep</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash"># Buscar errores PHP en el log:
+grep -E "PHP (Fatal|Warning|Error)" /var/log/php/error.log | tail -50
+
+# Contar peticiones 500 del día de hoy:
+grep "$(date +%d/%b/%Y)" /var/log/nginx/access.log | grep -c " 500 "
+
+# Buscar qué ficheros PHP usan una función deprecada:
+grep -rn "mysql_query" /var/www --include="*.php" -l
+
+# Encontrar todas las rutas de API en el código:
+grep -rE "@Route\(\"(/api/[^\"]+)" src/ -h -o | sort -u</code></pre>
+          </div>
+
+          <h2 id="xargs">xargs: encadenar resultados<a href="#xargs" class="anchor" aria-hidden="true">#</a></h2>
+          <p><code>xargs</code> toma líneas de la entrada estándar y las pasa como argumentos a otro comando. Es el puente entre <code>find</code>/<code>grep</code> y las herramientas que actúan sobre los resultados.</p>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash"># find piped a xargs (más eficiente que -exec para muchos ficheros):
+find . -name "*.log" -mtime +30 | xargs rm
+find . -name "*.php" | xargs grep -l "eval("   # busca eval() en todos los .php
+
+# Cuando los nombres tienen espacios: usar -print0 + xargs -0
+find . -name "* *" -print0 | xargs -0 ls -la
+
+# -I {} para controlar dónde va el argumento:
+find . -name "*.sql" | xargs -I {} gzip {}
+
+# -P para paralelismo:
+find . -name "*.jpg" | xargs -P 4 -I {} convert {} -resize 800x {}
+
+# grep + xargs para buscar en los ficheros encontrados por find:
+find . -name "*.php" | xargs grep -n "password"
+
+# Contar líneas de todos los PHP del proyecto:
+find . -name "*.php" | xargs wc -l | tail -1</code></pre>
+          </div>
+
+          <h2 id="otros">locate, which, whereis<a href="#otros" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">locate php.ini          # busca en una base de datos pre-indexada (muy rápido)
+updatedb                # actualiza la base de datos de locate (como root)
+# locate no ve cambios recientes hasta el próximo updatedb
+
+which php               # ruta del ejecutable que usaría el shell
+which php8.2            # ruta de php8.2
+which -a php            # -a muestra todas las coincidencias en el PATH
+
+whereis php             # binario + páginas de manual + código fuente
+type ls                 # si es alias, función, builtin o ejecutable
+type ll                 # "ll is aliased to 'ls -alF'"</code></pre>
+          </div>
+
+          <h2 id="resumen">Resumen<a href="#resumen" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="keypoints">
+            <h3><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Lo que te llevas</h3>
+            <ul>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><code>find [ruta] -name "*.ext" -type f</code> es la base. Añade <code>-size</code>, <code>-mtime</code>, <code>-user</code> y <code>-perm</code> para afinar.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><code>find ... -exec comando {} +</code> es más eficiente que <code>\;</code> para muchos ficheros. Siempre prueba sin la acción destructiva primero.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><code>grep -rn "patrón" directorio</code> busca recursivo con número de línea. <code>-l</code> solo muestra ficheros; <code>-v</code> invierte; <code>-C 2</code> añade contexto.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><code>grep -E</code> activa expresiones regulares extendidas: <code>error|warning</code>, anclas <code>^</code>/<code>$</code>, rangos <code>[0-9]+</code>.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><code>xargs</code> convierte líneas de stdin en argumentos. Con nombres con espacios: <code>find -print0 | xargs -0</code>.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><code>which php</code> dice qué ejecutable usa el shell. <code>locate</code> busca rapidísimo en un índice; <code>updatedb</code> actualiza ese índice.</span></li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="linux-usuarios.html"><small>← Anterior</small><b>Usuarios y grupos</b></a>
+            <a href="linux-texto-y-pipes.html"><small>Siguiente →</small><b>Texto, pipes y variables de entorno</b></a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

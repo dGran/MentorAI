@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Linux: texto, pipes y variables de entorno — MentorAI</title>
+    <meta name="description" content="El poder del terminal Unix: pipes para conectar comandos, redirección de entrada/salida, herramientas de texto (cat, head, tail, sort, awk, sed) y variables de entorno." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Terminal y Linux</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Linux: texto, pipes y variables de entorno</h1>
+        <p class="tutorial-hero__lead">El modelo stdio de Unix — stdin, stdout, stderr y pipes — es lo que hace que pequeños comandos se conviertan en pipelines poderosos. Cat, head, tail, sort, awk, sed y las variables de entorno.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>15 min de lectura</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Nivel Intermedio</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#stdio">stdin, stdout, stderr</a></li>
+            <li><a href="#pipes">Pipes</a></li>
+            <li><a href="#redireccion">Redirección</a></li>
+            <li><a href="#ver-texto">Ver texto</a></li>
+            <li><a href="#procesar">Procesar texto</a></li>
+            <li><a href="#sed-awk">sed y awk</a></li>
+            <li><a href="#entorno">Variables de entorno</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">La filosofía Unix: cada herramienta hace una sola cosa bien, y las pipes las conectan. Es lo que hace que <code>cat access.log | grep "500" | awk '{print $1}' | sort | uniq -c | sort -rn | head -10</code> tenga sentido.</p>
+
+          <h2 id="stdio">stdin, stdout, stderr<a href="#stdio" class="anchor" aria-hidden="true">#</a></h2>
+          <p>Todo proceso en Linux tiene tres flujos de datos abiertos por defecto:</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Flujo</th><th>Descriptor</th><th>Por defecto</th><th>Para qué</th></tr></thead>
+              <tbody>
+                <tr><td>stdin</td><td>0</td><td>Teclado</td><td>Entrada del proceso</td></tr>
+                <tr><td>stdout</td><td>1</td><td>Terminal</td><td>Salida normal</td></tr>
+                <tr><td>stderr</td><td>2</td><td>Terminal</td><td>Errores y diagnósticos</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Los pipes y la redirección son simplemente formas de conectar o redirigir estos flujos entre procesos y ficheros.</p>
+
+          <h2 id="pipes">Pipes<a href="#pipes" class="anchor" aria-hidden="true">#</a></h2>
+          <p>El pipe (<code>|</code>) conecta el stdout de un proceso con el stdin del siguiente. Ambos procesos corren en paralelo; el kernel gestiona el buffer entre ellos.</p>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · pipelines reales</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash"># Las 10 IPs con más errores 500:
+cat /var/log/nginx/access.log | grep " 500 " | awk '{print $1}' | sort | uniq -c | sort -rn | head -10
+
+# Procesos que más memoria consumen:
+ps aux | sort -k4 -rn | head -10
+
+# Contar líneas únicas en un log:
+cat error.log | grep "Exception" | sort | uniq | wc -l
+
+# URLs más solicitadas:
+awk '{print $7}' /var/log/nginx/access.log | sort | uniq -c | sort -rn | head -20</code></pre>
+          </div>
+
+          <h2 id="redireccion">Redirección<a href="#redireccion" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · operadores de redirección</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">comando &gt; fichero.txt       # stdout → fichero (sobreescribe)
+comando &gt;&gt; fichero.txt      # stdout → fichero (añade al final)
+comando &lt; fichero.txt       # stdin ← fichero
+comando 2&gt; errores.txt      # stderr → fichero
+comando 2&gt;&gt; errores.txt     # stderr → fichero (añade)
+comando &gt; out.txt 2&gt;&1      # stdout y stderr → mismo fichero
+comando &gt;&amp; fichero.txt      # atajo: stdout y stderr juntos (bash)
+comando 2&gt;/dev/null         # descarta stderr
+comando &gt;/dev/null 2&gt;&1     # descarta todo (stdout y stderr)
+
+# tee: escribe en fichero Y sigue pasando por stdout
+comando | tee fichero.txt          # guarda y muestra
+comando | tee -a fichero.txt       # añade (no sobreescribe)
+comando | tee fichero.txt | grep "error"   # guarda todo, filtra lo que ves
+
+# Here-doc: stdin multilínea en el script
+cat &lt;&lt; EOF
+Línea 1
+Línea 2
+EOF</code></pre>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">2&gt;&amp;1: el orden importa</p>
+              <p><code>comando &gt; out.txt 2&gt;&amp;1</code> funciona porque primero redirige stdout a <code>out.txt</code> y luego redirige stderr al mismo sitio que stdout (ya apunta a <code>out.txt</code>). Al revés (<code>2&gt;&amp;1 &gt; out.txt</code>) el stderr sigue yendo a la terminal.</p>
+            </div>
+          </div>
+
+          <h2 id="ver-texto">Ver texto<a href="#ver-texto" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · cat, head, tail, less</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">cat fichero.txt              # muestra todo el contenido
+cat -n fichero.txt           # con números de línea
+cat a.txt b.txt              # concatena dos ficheros
+
+head fichero.txt             # primeras 10 líneas
+head -n 50 fichero.txt       # primeras 50 líneas
+head -c 1024 fichero.bin     # primeros 1024 bytes
+
+tail fichero.txt             # últimas 10 líneas
+tail -n 100 error.log        # últimas 100 líneas
+tail -f /var/log/nginx/access.log     # -f sigue en tiempo real (follow)
+tail -f access.log | grep "500"       # sigue y filtra errores 500
+
+less fichero.txt             # paginador interactivo (q=salir, /=buscar, G=final)</code></pre>
+          </div>
+
+          <h2 id="procesar">Procesar texto<a href="#procesar" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · wc, sort, uniq, cut</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash"># wc: contar
+wc -l fichero.txt       # número de líneas
+wc -w fichero.txt       # palabras
+wc -c fichero.txt       # bytes
+wc -l *.php             # líneas de cada .php + total
+
+# sort: ordenar
+sort fichero.txt                # orden alfabético
+sort -r fichero.txt             # inverso
+sort -n numeros.txt             # numérico
+sort -rn numeros.txt            # numérico inverso (el mayor primero)
+sort -k2 fichero.txt            # ordena por columna 2
+sort -t: -k3 -n /etc/passwd     # separa por : y ordena por columna 3 (UID)
+sort -u fichero.txt             # elimina duplicados mientras ordena
+
+# uniq: eliminar o contar duplicados (requiere entrada ordenada)
+sort fichero.txt | uniq         # líneas únicas
+sort fichero.txt | uniq -c      # con conteo de repeticiones
+sort fichero.txt | uniq -d      # solo las que aparecen más de una vez
+sort fichero.txt | uniq -u      # solo las que aparecen exactamente una vez
+
+# cut: extraer columnas
+cut -d: -f1 /etc/passwd         # campo 1 separado por : (nombres de usuario)
+cut -d: -f1,3 /etc/passwd       # campos 1 y 3 (nombre y UID)
+cut -c1-10 fichero.txt          # caracteres 1 al 10 de cada línea</code></pre>
+          </div>
+
+          <h2 id="sed-awk">sed y awk<a href="#sed-awk" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · sed: editar streams</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash"># sed 's/patrón/reemplazo/' (por defecto solo la primera ocurrencia por línea)
+echo "hola mundo" | sed 's/hola/adiós/'          # adiós mundo
+echo "aaa bbb aaa" | sed 's/aaa/xxx/g'           # xxx bbb xxx (g = global)
+sed -i 's/localhost/production.db/g' config.php  # -i edita el fichero en sitio
+
+# Borrar líneas:
+sed '/^#/d' fichero.txt                # borra líneas que empiezan por #
+sed '/^$/d' fichero.txt                # borra líneas vacías
+sed '5d' fichero.txt                   # borra la línea 5
+
+# Mostrar solo ciertas líneas:
+sed -n '10,20p' fichero.txt            # líneas 10 a 20
+sed -n '/ERROR/p' app.log             # líneas que contienen ERROR</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash · awk: procesar columnas</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash"># awk divide cada línea en campos ($1, $2... $NF=último)
+awk '{print $1}' access.log             # primera columna (la IP)
+awk '{print $7}' access.log             # séptima columna (la URL)
+awk '{print $1, $9}' access.log         # IP y código de estado
+
+# Filtrar con condiciones:
+awk '$9 == "500"' access.log            # solo las líneas con código 500
+awk '$9 >= 500' access.log             # 5xx
+awk 'NR &gt; 10 &amp;&amp; NR &lt;= 20' fichero.txt  # líneas 11 a 20
+
+# Separador personalizado:
+awk -F: '{print $1}' /etc/passwd        # -F: separador es ':'
+awk -F: '{print $1, $3}' /etc/passwd    # nombre y UID
+
+# Cálculos:
+awk '{sum += $NF} END {print sum}' numeros.txt    # suma de la última columna
+awk 'END {print NR}' fichero.txt                  # número de líneas (como wc -l)</code></pre>
+          </div>
+
+          <h2 id="entorno">Variables de entorno<a href="#entorno" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="code-block">
+            <div class="code-block__head"><span class="code-block__lang">bash</span><button class="copy-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="copy-btn__label">Copiar</span></button></div>
+            <pre><code data-lang="bash">env                         # muestra todas las variables de entorno
+printenv PATH               # valor de PATH
+echo $HOME                  # directorio home
+echo $USER                  # usuario actual
+echo $PWD                   # directorio actual
+echo $SHELL                 # shell en uso
+
+# Definir variables (solo en el proceso actual):
+MI_VAR="hola"
+echo $MI_VAR
+
+# Exportar (disponible para subprocesos):
+export DATABASE_URL="mysql://user:pass@localhost/db"
+export -p                   # muestra todas las exportadas
+
+# Eliminar:
+unset MI_VAR
+
+# Ficheros de configuración del shell (se ejecutan al arrancar):
+# ~/.bashrc      → sesiones interactivas no-login (la más usada)
+# ~/.bash_profile → sesiones login (SSH)
+# ~/.zshrc        → equivalente para zsh
+# /etc/environment → variables globales del sistema (todos los usuarios)
+
+# alias: atajos de comandos
+alias ll='ls -lah'
+alias ..='cd ..'
+alias grep='grep --color=auto'
+# Para persistirlos, añadirlos al ~/.bashrc</code></pre>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">PATH: dónde busca el shell los ejecutables</p>
+              <p><code>PATH</code> es una lista de directorios separados por <code>:</code>. Cuando escribes <code>php</code>, el shell los recorre en orden hasta encontrar el ejecutable. Añadir un directorio: <code>export PATH="$HOME/.composer/vendor/bin:$PATH"</code> (en <code>~/.bashrc</code> para que sea permanente).</p>
+            </div>
+          </div>
+
+          <h2 id="resumen">Resumen<a href="#resumen" class="anchor" aria-hidden="true">#</a></h2>
+          <div class="keypoints">
+            <h3><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Lo que te llevas</h3>
+            <ul>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>El pipe (<code>|</code>) conecta stdout de un proceso con stdin del siguiente. Es la base de los pipelines Unix: herramientas pequeñas compuestas.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><code>&gt;</code> sobreescribe, <code>&gt;&gt;</code> añade. <code>2&gt;&amp;1</code> redirige stderr al mismo sitio que stdout. <code>2&gt;/dev/null</code> descarta errores. <code>tee</code> bifurca la salida.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><code>tail -f</code> sigue logs en tiempo real. Combínalo con <code>| grep</code> para filtrar sobre la marcha.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><code>sort | uniq -c | sort -rn | head</code> es el pipeline para encontrar las N cosas más frecuentes en cualquier log.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><code>awk '{print $7}'</code> extrae columnas de logs; <code>sed 's/viejo/nuevo/g'</code> reemplaza texto en streams.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span><code>export VARIABLE=valor</code> la disponibiliza para subprocesos. <code>~/.bashrc</code> persiste alias y exports entre sesiones.</span></li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="linux-busquedas.html"><small>← Anterior</small><b>Búsquedas: find, grep y xargs</b></a>
+            <a href="linux-scripting.html"><small>Siguiente →</small><b>Scripting bash</b></a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
