@@ -107,6 +107,7 @@ window.MENTORAI_PATHS = [
     steps: [
       { type: "course", ref: "go" },
       { type: "course", ref: "rust" },
+      { type: "course", ref: "python" },
     ],
   },
 ];
