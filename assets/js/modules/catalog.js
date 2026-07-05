@@ -64,6 +64,7 @@
       testing: "Testing",
       observabilidad: "Observabilidad",
       ia: "Programar con IA",
+      go: "Go",
     };
 
     const CLOCK_SVG =

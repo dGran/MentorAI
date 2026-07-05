@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Funciones y control de flujo en Go — MentorAI</title>
+    <meta name="description" content="Retornos múltiples y el idioma valor, err. Un único bucle for que lo hace todo. Switch sin fallthrough accidental. defer para limpiar recursos." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" /><link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" /><meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" /><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" /><meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a><a href="../rutas.html" class="nav__link">Rutas</a><a href="../cursos.html" class="nav__link">Cursos</a><a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb"><a href="../index.html">MentorAI</a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><span>Go</span></nav>
+        <h1 class="tutorial-hero__title">Funciones y control de flujo en Go</h1>
+        <p class="tutorial-hero__lead">Go tiene retornos múltiples, un único bucle for que hace todo lo que PHP hace con while/foreach/for, un switch que no cae al siguiente caso por defecto, y defer para garantizar limpieza de recursos.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>13 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg>Principiante</span>
+          <span>Go</span>
+        </div>
+      </div>
+    </section>
+    <div class="container tutorial-layout">
+      <aside class="toc">
+        <p class="toc__title">En este tutorial</p>
+        <ol class="toc__list">
+          <li><a href="#funciones">Funciones</a></li>
+          <li><a href="#multiples-retornos">Retornos múltiples</a></li>
+          <li><a href="#if">if y el if con init</a></li>
+          <li><a href="#for">El único bucle: for</a></li>
+          <li><a href="#switch">switch sin fallthrough</a></li>
+          <li><a href="#defer">defer: garantizar limpieza</a></li>
+          <li><a href="#resumen">Resumen</a></li>
+        </ol>
+      </aside>
+      <article class="prose">
+        <h2 id="funciones">Funciones</h2>
+        <p>La sintaxis de una función en Go es diferente de PHP: el tipo va después del nombre, no antes:</p>
+
+        <div class="compare">
+          <div>
+            <p class="compare__label">PHP</p>
+            <pre><code data-lang="php">function sumar(int $a, int $b): int {
+    return $a + $b;
+}
+</code></pre>
+          </div>
+          <div>
+            <p class="compare__label">Go</p>
+            <pre><code data-lang="go">func sumar(a int, b int) int {
+    return a + b
+}
+
+// Tipos iguales consecutivos: se puede simplificar
+func sumar(a, b int) int {
+    return a + b
+}
+</code></pre>
+          </div>
+        </div>
+
+        <p>Las funciones son valores de primera clase en Go: se pueden asignar a variables, pasar como argumentos y devolver desde otras funciones:</p>
+
+        <pre><code data-lang="go">// Función como variable
+operacion := func(a, b int) int {
+    return a + b
+}
+resultado := operacion(3, 4)   // 7
+
+// Función que devuelve una función (closure)
+func multiplicador(factor int) func(int) int {
+    return func(x int) int {
+        return x * factor
+    }
+}
+
+doble := multiplicador(2)
+triple := multiplicador(3)
+fmt.Println(doble(5))    // 10
+fmt.Println(triple(5))   // 15
+</code></pre>
+
+        <h2 id="multiples-retornos">Retornos múltiples</h2>
+        <p>Go puede devolver varios valores de una función. Este mecanismo es la base del manejo de errores en Go (ver lección <a href="go-errores.html">go-errores</a>):</p>
+
+        <pre><code data-lang="go">func dividir(a, b float64) (float64, error) {
+    if b == 0 {
+        return 0, fmt.Errorf("no se puede dividir por cero")
+    }
+
+    return a / b, nil
+}
+
+// El llamador maneja ambos valores
+resultado, err := dividir(10, 3)
+
+if err != nil {
+    log.Fatal(err)
+}
+
+fmt.Printf("%.2f\n", resultado)   // 3.33
+</code></pre>
+
+        <p>El guión bajo (<code>_</code>) descarta un valor de retorno que no necesitas:</p>
+
+        <pre><code data-lang="go">resultado, _ := dividir(10, 2)   // ignoramos el error (solo si estamos seguros)
+</code></pre>
+
+        <div class="callout callout--warning">
+          Ignorar el error con <code>_</code> es legítimo cuando sabes con certeza que no puede fallar. Hacerlo por comodidad es una fuente de bugs silenciosos. Cuando no estés seguro, maneja el error.
+        </div>
+
+        <h2 id="if">if y el if con init</h2>
+        <p>El <code>if</code> de Go no necesita paréntesis alrededor de la condición (si los pones, <code>gofmt</code> los elimina). Las llaves son obligatorias:</p>
+
+        <pre><code data-lang="go">if edad &gt;= 18 {
+    fmt.Println("adulto")
+} else if edad &gt;= 13 {
+    fmt.Println("adolescente")
+} else {
+    fmt.Println("menor")
+}
+</code></pre>
+
+        <p>El <code>if</code> con inicializador es idiomático en Go: permite declarar una variable en el propio <code>if</code>, cuyo ámbito queda limitado al bloque:</p>
+
+        <pre><code data-lang="go">// En lugar de:
+resultado, err := dividir(10, 3)
+if err != nil {
+    return err
+}
+
+// Idioma Go: declarar y comprobar en la misma línea
+if resultado, err := dividir(10, 3); err != nil {
+    return err
+} else {
+    fmt.Println(resultado)   // resultado solo existe aquí
+}
+</code></pre>
+
+        <h2 id="for">El único bucle: for</h2>
+        <p>Go tiene un solo tipo de bucle: <code>for</code>. Pero es tan flexible que sustituye a <code>while</code>, <code>foreach</code> y <code>for</code> de PHP:</p>
+
+        <pre><code data-lang="go">// For clásico (equivalente al for de PHP)
+for i := 0; i &lt; 5; i++ {
+    fmt.Println(i)
+}
+
+// For como while (condición sola)
+n := 1
+for n &lt; 100 {
+    n *= 2
+}
+
+// Bucle infinito
+for {
+    // solo sale con break o return
+    if condicion {
+        break
+    }
+}
+
+// Range sobre un slice (equivalente al foreach de PHP)
+frutas := []string{"manzana", "pera", "uva"}
+
+for i, fruta := range frutas {
+    fmt.Printf("[%d] %s\n", i, fruta)
+}
+
+// Range descartando el índice
+for _, fruta := range frutas {
+    fmt.Println(fruta)
+}
+
+// Range sobre un map
+precios := map[string]float64{"manzana": 1.5, "pera": 2.0}
+
+for clave, valor := range precios {
+    fmt.Printf("%s: %.2f€\n", clave, valor)
+}
+
+// Range sobre un string itera sobre runes (caracteres Unicode)
+for i, caracter := range "hola" {
+    fmt.Printf("[%d] %c\n", i, caracter)
+}
+</code></pre>
+
+        <h2 id="switch">switch sin fallthrough</h2>
+        <p>El <code>switch</code> de Go no necesita <code>break</code> al final de cada caso: por defecto no cae al siguiente. Es lo contrario de PHP/JavaScript, donde hay que acordarse de poner <code>break</code>:</p>
+
+        <div class="compare">
+          <div>
+            <p class="compare__label compare__label--bad">PHP: fallthrough por defecto</p>
+            <pre><code data-lang="php">switch ($nivel) {
+    case "principiante":
+        echo "verde";
+        break;        // si te olvidas, cae al siguiente
+    case "avanzado":
+        echo "rojo";
+        break;
+}
+</code></pre>
+          </div>
+          <div>
+            <p class="compare__label compare__label--good">Go: no cae por defecto</p>
+            <pre><code data-lang="go">switch nivel {
+case "principiante":
+    fmt.Println("verde")    // no necesita break
+case "avanzado":
+    fmt.Println("rojo")
+}
+</code></pre>
+          </div>
+        </div>
+
+        <p>Si quieres el fallthrough explícito (raro), usa la palabra clave <code>fallthrough</code>. El switch puede evaluar condiciones en cada caso, sin variable:</p>
+
+        <pre><code data-lang="go">// Switch con condición en cada case
+switch {
+case edad &lt; 13:
+    fmt.Println("niño")
+case edad &lt; 18:
+    fmt.Println("adolescente")
+default:
+    fmt.Println("adulto")
+}
+
+// Switch con type assertion (útil con interfaces)
+switch v := interfaz.(type) {
+case int:
+    fmt.Printf("entero: %d\n", v)
+case string:
+    fmt.Printf("cadena: %s\n", v)
+default:
+    fmt.Printf("tipo desconocido: %T\n", v)
+}
+</code></pre>
+
+        <h2 id="defer">defer: garantizar limpieza</h2>
+        <p><code>defer</code> pospone la ejecución de una función hasta que la función que la contiene retorna. Se ejecuta siempre: aunque haya un error de por medio. Es el mecanismo de Go para garantizar que los recursos se liberen.</p>
+
+        <pre><code data-lang="go">func leerFichero(ruta string) error {
+    f, err := os.Open(ruta)
+
+    if err != nil {
+        return err
+    }
+
+    defer f.Close()   // se ejecuta cuando leerFichero retorne, pase lo que pase
+
+    // ... leer contenido del fichero
+    return nil
+}
+</code></pre>
+
+        <p>Múltiples <code>defer</code> se ejecutan en orden LIFO (último en declararse, primero en ejecutarse):</p>
+
+        <pre><code data-lang="go">func ejemplo() {
+    defer fmt.Println("tercero")
+    defer fmt.Println("segundo")
+    defer fmt.Println("primero")
+    fmt.Println("cuerpo")
+}
+// Salida:
+// cuerpo
+// primero
+// segundo
+// tercero
+</code></pre>
+
+        <div class="callout callout--tip">
+          El patrón más común de <code>defer</code>: abrir un recurso → diferir su cierre → trabajar con él. Así nunca se olvida cerrar el fichero, liberar el mutex o cerrar la conexión a la BD, aunque la función salga por un return inesperado.
+        </div>
+
+        <h2 id="resumen">Resumen</h2>
+        <ul class="keypoints">
+          <li>La sintaxis de función en Go pone los tipos después del nombre: <code>func nombre(param tipo) tipo</code>.</li>
+          <li>Los retornos múltiples son idiomáticos: la segunda variable de retorno suele ser <code>error</code>.</li>
+          <li><code>_</code> descarta valores de retorno no necesarios.</li>
+          <li>Un solo bucle <code>for</code> cubre los casos de <code>for</code>, <code>while</code> y <code>foreach</code> de PHP. <code>range</code> itera sobre slices, maps y strings.</li>
+          <li>El <code>switch</code> no cae al siguiente caso por defecto. No se necesita <code>break</code>.</li>
+          <li><code>defer</code> garantiza que una función se ejecute al salir del scope, independientemente de cómo: el mecanismo estándar para liberar recursos.</li>
+        </ul>
+      </article>
+    </div>
+    <footer class="footer"><div class="container footer__inner"><span class="footer__copy">© <span id="year"></span> MentorAI</span></div></footer>
+    <script src="../tutorials/manifest.js"></script><script src="../tutorials/courses.js"></script><script src="../tutorials/paths.js"></script><script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script><script src="../assets/js/modules/storage.js"></script><script src="../assets/js/modules/catalog.js"></script><script src="../assets/js/modules/courses.js"></script><script src="../assets/js/modules/paths.js"></script><script src="../assets/js/modules/home.js"></script><script src="../assets/js/modules/syntax.js"></script><script src="../assets/js/modules/bridge.js"></script><script src="../assets/js/modules/tutorial.js"></script><script src="../assets/js/modules/quiz.js"></script><script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

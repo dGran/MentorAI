@@ -22,6 +22,41 @@
 
 window.MENTORAI_COURSES = [
   {
+    slug: "go",
+    title: "Go desde cero",
+    summary:
+      "Aprende Go de principio a fin: el entorno dockerizado, los fundamentos del lenguaje, el modelo de interfaces y composición, la concurrencia con goroutines y channels, y cómo construir un servicio HTTP real. Con ejemplos prácticos y contraste constante con PHP.",
+    level: "Intermedio",
+    icon: "code",
+    modules: [
+      {
+        title: "El lenguaje y tu primer programa",
+        summary: "Por qué Go, cómo montar el entorno y escribir el primer programa que funciona.",
+        lessons: ["go-que-es", "go-entorno-docker", "go-editores", "go-primer-programa"],
+      },
+      {
+        title: "Fundamentos del lenguaje",
+        summary: "Las piezas básicas: paquetes, tipos, funciones, structs, punteros y colecciones.",
+        lessons: ["go-paquetes-y-modulos", "go-tipos-y-variables", "go-funciones-y-control", "go-structs-y-metodos", "go-punteros", "go-slices-y-maps"],
+      },
+      {
+        title: "El modelo de Go",
+        summary: "Las ideas que hacen Go diferente: interfaces implícitas, composición, errores como valores y generics.",
+        lessons: ["go-interfaces", "go-composicion", "go-errores", "go-generics"],
+      },
+      {
+        title: "Concurrencia: la joya",
+        summary: "Goroutines, channels y el modelo de concurrencia que distingue a Go.",
+        lessons: ["goroutines", "go-channels", "go-sync-y-context"],
+      },
+      {
+        title: "Backend con Go",
+        summary: "HTTP, JSON, base de datos, testing y producción: todo lo que necesitas para un servicio real.",
+        lessons: ["go-http", "go-json-y-bd", "go-testing", "go-a-produccion"],
+      },
+    ],
+  },
+  {
     slug: "terminal-linux",
     title: "Terminal y Linux para desarrolladores",
     summary:

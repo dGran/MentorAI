@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interfaces en Go: duck typing estático — MentorAI</title>
+    <meta name="description" content="Las interfaces de Go definen comportamiento sin herencia. Un tipo las implementa automáticamente si tiene los métodos correctos. Así se logra polimorfismo sin acoplamiento." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" /><link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" /><meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" /><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" /><meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a><a href="../rutas.html" class="nav__link">Rutas</a><a href="../cursos.html" class="nav__link">Cursos</a><a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb"><a href="../index.html">MentorAI</a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><span>Go</span></nav>
+        <h1 class="tutorial-hero__title">Interfaces: duck typing estático</h1>
+        <p class="tutorial-hero__lead">PHP implementa interfaces con <code>implements</code>. Go las implementa implícitamente: si tu tipo tiene los métodos correctos, implementa la interfaz. Sin declararlo. Sin acoplamiento al paquete que la define. Esto cambia cómo piensas el diseño.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>15 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg>Intermedio</span>
+          <span>Go</span>
+        </div>
+      </div>
+    </section>
+    <div class="container tutorial-layout">
+      <aside class="toc">
+        <p class="toc__title">En este tutorial</p>
+        <ol class="toc__list">
+          <li><a href="#que-es">Qué es una interfaz en Go</a></li>
+          <li><a href="#implementacion-implicita">Implementación implícita</a></li>
+          <li><a href="#vs-php">Comparación con PHP</a></li>
+          <li><a href="#stdlib">Las interfaces de la stdlib</a></li>
+          <li><a href="#type-assertion">Type assertion y type switch</a></li>
+          <li><a href="#empty-interface">La interfaz vacía: any</a></li>
+          <li><a href="#resumen">Resumen</a></li>
+        </ol>
+      </aside>
+      <article class="prose">
+        <h2 id="que-es">Qué es una interfaz en Go</h2>
+        <p>Una interfaz es un conjunto de firmas de método. Cualquier tipo que tenga esos métodos implementa la interfaz — automáticamente, sin declararlo.</p>
+
+        <pre><code data-lang="go">type Notificador interface {
+    Enviar(destinatario, mensaje string) error
+}
+</code></pre>
+
+        <p>Cualquier tipo con un método <code>Enviar(string, string) error</code> implementa <code>Notificador</code>. El compilador verifica esto en tiempo de compilación; no hay que declarar nada extra.</p>
+
+        <h2 id="implementacion-implicita">Implementación implícita</h2>
+        <p>Tres implementaciones distintas de la misma interfaz:</p>
+
+        <pre><code data-lang="go">type EmailNotificador struct {
+    Host string
+    Port int
+}
+
+func (e *EmailNotificador) Enviar(destinatario, mensaje string) error {
+    // lógica de envío por email...
+    return nil
+}
+
+type SMSNotificador struct {
+    ApiKey string
+}
+
+func (s *SMSNotificador) Enviar(destinatario, mensaje string) error {
+    // lógica de envío por SMS...
+    return nil
+}
+
+type LogNotificador struct{}   // para tests
+
+func (l LogNotificador) Enviar(destinatario, mensaje string) error {
+    fmt.Printf("[LOG] Para: %s — %s\n", destinatario, mensaje)
+    return nil
+}
+</code></pre>
+
+        <p>Ninguna de las tres declara <code>implements Notificador</code>. Las tres lo implementan porque tienen el método correcto. El polimorfismo llega solo:</p>
+
+        <pre><code data-lang="go">func notificarPedido(n Notificador, pedidoId int) error {
+    mensaje := fmt.Sprintf("Tu pedido #%d está listo", pedidoId)
+
+    return n.Enviar("cliente@ejemplo.com", mensaje)
+}
+
+// Funciona con cualquier implementación:
+notificarPedido(&amp;EmailNotificador{Host: "smtp.gmail.com"}, 42)
+notificarPedido(&amp;SMSNotificador{ApiKey: "xxx"}, 42)
+notificarPedido(LogNotificador{}, 42)   // en tests
+</code></pre>
+
+        <h2 id="vs-php">Comparación con PHP</h2>
+
+        <div class="compare">
+          <div>
+            <p class="compare__label">PHP: implementación explícita</p>
+            <pre><code data-lang="php">interface Notificador {
+    public function enviar(string $dest, string $msg): void;
+}
+
+class EmailNotificador implements Notificador {
+    public function enviar(string $dest, string $msg): void {
+        // ...
+    }
+}
+
+// El consumidor declara la interfaz como tipo:
+function notificar(Notificador $n, int $id): void {
+    $n-&gt;enviar("c@e.com", "Pedido #$id listo");
+}
+</code></pre>
+          </div>
+          <div>
+            <p class="compare__label">Go: implementación implícita</p>
+            <pre><code data-lang="go">type Notificador interface {
+    Enviar(dest, msg string) error
+}
+
+type EmailNotificador struct{ Host string }
+
+// Sin "implements": el método es suficiente
+func (e *EmailNotificador) Enviar(dest, msg string) error {
+    return nil
+}
+
+func notificar(n Notificador, id int) error {
+    return n.Enviar("c@e.com", fmt.Sprintf("Pedido #%d listo", id))
+}
+</code></pre>
+          </div>
+        </div>
+
+        <p>La diferencia práctica más importante: en Go puedes hacer que tipos de librerías externas (que no controlas) implementen tus interfaces, porque la implementación no requiere que el tipo lo declare. Defines la interfaz donde la necesitas, no donde defines el tipo.</p>
+
+        <div class="callout callout--tip">
+          <strong>Principio de diseño en Go:</strong> define las interfaces donde las consumes, no donde defines la implementación. Las interfaces pequeñas (1-2 métodos) son más reutilizables y fáciles de satisfacer que las grandes.
+        </div>
+
+        <h2 id="stdlib">Las interfaces de la stdlib</h2>
+        <p>La biblioteca estándar de Go está construida sobre interfaces pequeñas y precisas. Las más importantes que verás continuamente:</p>
+
+        <table>
+          <thead><tr><th>Interfaz</th><th>Método</th><th>Qué significa</th></tr></thead>
+          <tbody>
+            <tr><td><code>io.Reader</code></td><td><code>Read(p []byte) (n int, err error)</code></td><td>Cualquier fuente de bytes legible</td></tr>
+            <tr><td><code>io.Writer</code></td><td><code>Write(p []byte) (n int, err error)</code></td><td>Cualquier destino de bytes</td></tr>
+            <tr><td><code>error</code></td><td><code>Error() string</code></td><td>Cualquier error</td></tr>
+            <tr><td><code>fmt.Stringer</code></td><td><code>String() string</code></td><td>Representación de texto del tipo</td></tr>
+            <tr><td><code>http.Handler</code></td><td><code>ServeHTTP(w ResponseWriter, r *Request)</code></td><td>Cualquier manejador HTTP</td></tr>
+          </tbody>
+        </table>
+
+        <p>Ejemplo: implementar <code>fmt.Stringer</code> hace que tu tipo se imprima de forma personalizada con <code>fmt.Println</code>:</p>
+
+        <pre><code data-lang="go">type Producto struct {
+    Nombre string
+    Precio float64
+}
+
+func (p Producto) String() string {
+    return fmt.Sprintf("%s (%.2f€)", p.Nombre, p.Precio)
+}
+
+p := Producto{"Mesa", 299.99}
+fmt.Println(p)   // Mesa (299.99€) — gracias a Stringer
+</code></pre>
+
+        <h2 id="type-assertion">Type assertion y type switch</h2>
+        <p>Cuando tienes un valor de tipo interfaz y necesitas acceder al tipo concreto subyacente, usas una <em>type assertion</em>:</p>
+
+        <pre><code data-lang="go">var n Notificador = &amp;EmailNotificador{Host: "smtp.gmail.com"}
+
+// Forma segura (recomendada)
+email, esEmail := n.(*EmailNotificador)
+
+if esEmail {
+    fmt.Println("puerto:", email.Port)
+}
+</code></pre>
+
+        <p>Cuando el tipo concreto puede ser uno de varios, el <em>type switch</em> es más limpio:</p>
+
+        <pre><code data-lang="go">func describir(n Notificador) string {
+    switch impl := n.(type) {
+    case *EmailNotificador:
+        return fmt.Sprintf("email vía %s", impl.Host)
+    case *SMSNotificador:
+        return "SMS"
+    case LogNotificador:
+        return "log (solo para tests)"
+    default:
+        return "implementación desconocida"
+    }
+}
+</code></pre>
+
+        <h2 id="empty-interface">La interfaz vacía: any</h2>
+        <p>Una interfaz sin métodos la implementa cualquier tipo. Go la llama <code>any</code> (alias de <code>interface{}</code> desde Go 1.18):</p>
+
+        <pre><code data-lang="go">func imprimir(v any) {
+    fmt.Println(v)
+}
+
+imprimir(42)
+imprimir("hola")
+imprimir([]string{"a", "b"})   // todo funciona
+</code></pre>
+
+        <p><code>any</code> es el equivalente del tipado dinámico de PHP: flexible pero sin seguridad de tipos en tiempo de compilación. Úsala cuando genuinamente necesitas tratar valores de tipos arbitrarios (serialización, logging genérico). Si te encuentras usándola con frecuencia, suele indicar que el diseño con tipos concretos o interfaces específicas sería más robusto.</p>
+
+        <h2 id="resumen">Resumen</h2>
+        <ul class="keypoints">
+          <li>Una interfaz es un conjunto de firmas de método. Un tipo la implementa si tiene esos métodos: sin <code>implements</code>, sin declaración explícita.</li>
+          <li>Define interfaces donde las consumes (en el paquete que las necesita), no donde defines la implementación. Preferir interfaces pequeñas.</li>
+          <li>La stdlib usa interfaces de 1-2 métodos: <code>io.Reader</code>, <code>io.Writer</code>, <code>error</code>, <code>fmt.Stringer</code>. Implementarlas conecta tu tipo con el ecosistema de Go.</li>
+          <li>Type assertion (<code>v.(Tipo)</code>) extrae el valor concreto de una interfaz; usa la forma de dos valores (<code>v, ok := i.(T)</code>) para evitar panics.</li>
+          <li><code>any</code> (interfaz vacía) acepta cualquier tipo pero pierde seguridad de tipos. Usarla con moderación.</li>
+        </ul>
+      </article>
+    </div>
+    <footer class="footer"><div class="container footer__inner"><span class="footer__copy">© <span id="year"></span> MentorAI</span></div></footer>
+    <script src="../tutorials/manifest.js"></script><script src="../tutorials/courses.js"></script><script src="../tutorials/paths.js"></script><script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script><script src="../assets/js/modules/storage.js"></script><script src="../assets/js/modules/catalog.js"></script><script src="../assets/js/modules/courses.js"></script><script src="../assets/js/modules/paths.js"></script><script src="../assets/js/modules/home.js"></script><script src="../assets/js/modules/syntax.js"></script><script src="../assets/js/modules/bridge.js"></script><script src="../assets/js/modules/tutorial.js"></script><script src="../assets/js/modules/quiz.js"></script><script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

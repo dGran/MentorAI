@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Testing en Go: tests, benchmarks y cobertura — MentorAI</title>
+    <meta name="description" content="Go incluye testing en la stdlib. go test ejecuta tests, mide cobertura y corre benchmarks. Sin assertions ni mocks: el lenguaje te da las herramientas, tú decides el estilo." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" /><link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" /><meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" /><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" /><meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a><a href="../rutas.html" class="nav__link">Rutas</a><a href="../cursos.html" class="nav__link">Cursos</a><a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb"><a href="../index.html">MentorAI</a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><span>Go</span></nav>
+        <h1 class="tutorial-hero__title">Testing: tests, benchmarks y cobertura</h1>
+        <p class="tutorial-hero__lead">Go incluye testing en la stdlib. <code>go test</code> ejecuta tests, mide cobertura y corre benchmarks sin instalar nada. No hay assertions library obligatoria: el compilador y el paquete <code>testing</code> son suficientes.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>15 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg>Intermedio</span>
+          <span>Go · Testing</span>
+        </div>
+      </div>
+    </section>
+    <div class="container tutorial-layout">
+      <aside class="toc">
+        <p class="toc__title">En este tutorial</p>
+        <ol class="toc__list">
+          <li><a href="#estructura">Estructura de un test</a></li>
+          <li><a href="#go-test">go test y sus flags</a></li>
+          <li><a href="#table-tests">Table-driven tests</a></li>
+          <li><a href="#interfaces-test">Interfaces para tests: sin mocks</a></li>
+          <li><a href="#httptest">httptest: tests de handlers HTTP</a></li>
+          <li><a href="#benchmarks">Benchmarks</a></li>
+          <li><a href="#resumen">Resumen</a></li>
+        </ol>
+      </aside>
+      <article class="prose">
+        <h2 id="estructura">Estructura de un test</h2>
+        <p>En Go, los tests van en ficheros con sufijo <code>_test.go</code>, en el mismo paquete que el código que prueban. La función de test recibe <code>*testing.T</code>:</p>
+
+        <pre><code data-lang="go">// fichero: matematicas/suma_test.go
+package matematicas
+
+import "testing"
+
+func TestSuma(t *testing.T) {
+    resultado := Suma(3, 4)
+
+    if resultado != 7 {
+        t.Errorf("Suma(3, 4) = %d, se esperaba 7", resultado)
+    }
+}
+</code></pre>
+
+        <p>Los métodos más habituales de <code>*testing.T</code>:</p>
+
+        <pre><code data-lang="go">t.Errorf("mensaje: %v", valor)    // marca el test como fallido y continúa
+t.Fatalf("mensaje: %v", valor)    // marca el test como fallido y para
+t.Logf("info: %v", valor)         // log visible con -v
+t.Skip("razón")                   // omite el test
+t.Parallel()                      // ejecuta el test en paralelo con otros
+</code></pre>
+
+        <h2 id="go-test">go test y sus flags</h2>
+
+        <pre><code data-lang="bash"># Ejecutar todos los tests del módulo
+go test ./...
+
+# Con output detallado (ver nombres de tests que pasan)
+go test -v ./...
+
+# Un paquete específico
+go test ./matematicas
+
+# Cobertura de código
+go test -cover ./...
+go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out   # abre el informe en el navegador
+
+# Ejecutar solo tests que coinciden con el patrón
+go test -run TestSuma ./...
+
+# Con race detector
+go test -race ./...
+
+# Timeout (por defecto 10 minutos)
+go test -timeout 30s ./...
+</code></pre>
+
+        <h2 id="table-tests">Table-driven tests</h2>
+        <p>El patrón dominante en Go: una tabla de casos de prueba que se itera en un único test. Evita duplicación y hace trivial añadir casos:</p>
+
+        <pre><code data-lang="go">func TestSuma(t *testing.T) {
+    casos := []struct {
+        nombre    string
+        a, b      int
+        esperado  int
+    }{
+        {"positivos", 3, 4, 7},
+        {"negativos", -1, -2, -3},
+        {"mixto", -1, 5, 4},
+        {"cero", 0, 0, 0},
+    }
+
+    for _, tc := range casos {
+        t.Run(tc.nombre, func(t *testing.T) {
+            t.Parallel()   // cada subtest en paralelo
+
+            resultado := Suma(tc.a, tc.b)
+
+            if resultado != tc.esperado {
+                t.Errorf("Suma(%d, %d) = %d, se esperaba %d",
+                    tc.a, tc.b, resultado, tc.esperado)
+            }
+        })
+    }
+}
+</code></pre>
+
+        <p><code>t.Run</code> crea un subtest con nombre, lo que hace más legibles los errores: <code>--- FAIL: TestSuma/negativos</code>.</p>
+
+        <h2 id="interfaces-test">Interfaces para tests: sin mocks</h2>
+        <p>Go favorece un enfoque diferente al de PHP para los tests: en lugar de mocks que simulan dependencias completas, defines interfaces pequeñas e implementas versiones fake directamente. Así evitas librerías de mocking y mantienes los tests compilables:</p>
+
+        <pre><code data-lang="go">type EnviadorEmail interface {
+    Enviar(dest, asunto, cuerpo string) error
+}
+
+type ServicioRegistro struct {
+    emails EnviadorEmail
+}
+
+func (s *ServicioRegistro) Registrar(usuario string) error {
+    // ... lógica de registro
+    return s.emails.Enviar(usuario, "Bienvenido", "Tu cuenta está lista")
+}
+
+// Fake para tests: implementa la interfaz, captura las llamadas
+type fakeEmailer struct {
+    enviados []string
+}
+
+func (f *fakeEmailer) Enviar(dest, asunto, cuerpo string) error {
+    f.enviados = append(f.enviados, dest)
+    return nil
+}
+
+func TestRegistrar(t *testing.T) {
+    emailer := &amp;fakeEmailer{}
+    svc := &amp;ServicioRegistro{emails: emailer}
+
+    if err := svc.Registrar("ana@ejemplo.com"); err != nil {
+        t.Fatalf("error inesperado: %v", err)
+    }
+
+    if len(emailer.enviados) != 1 {
+        t.Errorf("se esperaba 1 email, se enviaron %d", len(emailer.enviados))
+    }
+}
+</code></pre>
+
+        <h2 id="httptest">httptest: tests de handlers HTTP</h2>
+        <p>El paquete <code>net/http/httptest</code> permite testear handlers HTTP sin levantar un servidor real:</p>
+
+        <pre><code data-lang="go">import (
+    "net/http"
+    "net/http/httptest"
+    "testing"
+)
+
+func TestListarProductos(t *testing.T) {
+    req := httptest.NewRequest(http.MethodGet, "/productos", nil)
+    w := httptest.NewRecorder()
+
+    listarProductos(w, req)   // llamamos al handler directamente
+
+    resp := w.Result()
+
+    if resp.StatusCode != http.StatusOK {
+        t.Errorf("status = %d, se esperaba 200", resp.StatusCode)
+    }
+
+    if ct := resp.Header.Get("Content-Type"); ct != "application/json" {
+        t.Errorf("Content-Type = %q, se esperaba application/json", ct)
+    }
+}
+</code></pre>
+
+        <h2 id="benchmarks">Benchmarks</h2>
+        <p>Los benchmarks siguen la misma convención: fichero <code>_test.go</code>, función con prefijo <code>Benchmark</code> que recibe <code>*testing.B</code>:</p>
+
+        <pre><code data-lang="go">func BenchmarkSuma(b *testing.B) {
+    for i := 0; i &lt; b.N; i++ {   // b.N lo ajusta el framework automáticamente
+        Suma(3, 4)
+    }
+}
+</code></pre>
+
+        <pre><code data-lang="bash"># Ejecutar benchmarks (no se ejecutan con go test normal)
+go test -bench=. ./...
+
+# Con memoria
+go test -bench=. -benchmem ./...
+
+# Salida: ns/op, B/op, allocs/op
+# BenchmarkSuma-8   1000000000   0.3 ns/op   0 B/op   0 allocs/op
+</code></pre>
+
+        <h2 id="resumen">Resumen</h2>
+        <ul class="keypoints">
+          <li>Tests en ficheros <code>_test.go</code>. Función <code>TestNombre(t *testing.T)</code>. <code>t.Errorf</code> falla y continúa; <code>t.Fatalf</code> falla y para.</li>
+          <li>Table-driven tests con <code>t.Run</code>: el patrón dominante en Go. Añadir un caso es añadir una línea a la tabla.</li>
+          <li>En lugar de mocks pesados, define interfaces pequeñas e implementa fakes directamente. Compilados, sin magia de runtime.</li>
+          <li><code>httptest.NewRequest</code> y <code>httptest.NewRecorder</code> permiten testear handlers HTTP sin servidor.</li>
+          <li>Benchmarks con <code>BenchmarkNombre(b *testing.B)</code> y <code>go test -bench=.</code>. El framework ajusta <code>b.N</code> automáticamente.</li>
+          <li><code>go test -race ./...</code> detecta race conditions. <code>go test -cover ./...</code> mide cobertura. Ambos deben pasar en CI.</li>
+        </ul>
+      </article>
+    </div>
+    <footer class="footer"><div class="container footer__inner"><span class="footer__copy">© <span id="year"></span> MentorAI</span></div></footer>
+    <script src="../tutorials/manifest.js"></script><script src="../tutorials/courses.js"></script><script src="../tutorials/paths.js"></script><script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script><script src="../assets/js/modules/storage.js"></script><script src="../assets/js/modules/catalog.js"></script><script src="../assets/js/modules/courses.js"></script><script src="../assets/js/modules/paths.js"></script><script src="../assets/js/modules/home.js"></script><script src="../assets/js/modules/syntax.js"></script><script src="../assets/js/modules/bridge.js"></script><script src="../assets/js/modules/tutorial.js"></script><script src="../assets/js/modules/quiz.js"></script><script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

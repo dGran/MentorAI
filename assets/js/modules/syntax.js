@@ -61,6 +61,16 @@
         { cls: "function", src: "\\b[a-zA-Z_]\\w*(?=\\s*\\()" },
         { cls: "number", src: "\\b\\d+(?:\\.\\d+)?\\b" },
       ],
+      go: [
+        { cls: "comment", src: "\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/" },
+        { cls: "string", src: "`[^`]*`|\"(?:\\\\.|[^\"\\\\])*\"" },
+        {
+          cls: "keyword",
+          src: "\\b(?:func|var|const|type|struct|interface|map|chan|go|select|defer|return|if|else|for|range|switch|case|default|break|continue|fallthrough|goto|package|import|make|new|nil|true|false|len|cap|append|copy|delete|panic|recover|close|error|any|int|int8|int16|int32|int64|uint|uint8|uint16|uint32|uint64|float32|float64|complex64|complex128|string|bool|byte|rune)\\b",
+        },
+        { cls: "function", src: "\\b[a-zA-Z_]\\w*(?=\\s*\\()" },
+        { cls: "number", src: "\\b\\d+(?:\\.\\d+)?\\b" },
+      ],
       redis: [
         { cls: "comment", src: "#[^\\n]*" },
         { cls: "string", src: "'(?:\\\\.|[^'\\\\])*'|\"(?:\\\\.|[^\"\\\\])*\"" },

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manejo de errores en Go — MentorAI</title>
+    <meta name="description" content="Go no tiene excepciones. Los errores son valores que se devuelven explícitamente. El patrón (valor, error) hace que los errores sean imposibles de ignorar accidentalmente." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" /><link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" /><meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" /><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" /><meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a><a href="../rutas.html" class="nav__link">Rutas</a><a href="../cursos.html" class="nav__link">Cursos</a><a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb"><a href="../index.html">MentorAI</a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><span>Go</span></nav>
+        <h1 class="tutorial-hero__title">Manejo de errores: errores como valores</h1>
+        <p class="tutorial-hero__lead">Go no tiene excepciones. Los errores son valores que las funciones devuelven explícitamente como segundo (o último) valor de retorno. El compilador obliga a manejarlos, lo que hace que ignorarlos sea una decisión consciente, no un olvido.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>15 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg>Intermedio</span>
+          <span>Go</span>
+        </div>
+      </div>
+    </section>
+    <div class="container tutorial-layout">
+      <aside class="toc">
+        <p class="toc__title">En este tutorial</p>
+        <ol class="toc__list">
+          <li><a href="#patron-error">El patrón (valor, error)</a></li>
+          <li><a href="#vs-php">Comparación con excepciones PHP</a></li>
+          <li><a href="#crear-errores">Crear errores: errors.New y fmt.Errorf</a></li>
+          <li><a href="#errores-tipados">Errores tipados</a></li>
+          <li><a href="#wrapping">Wrapping y unwrapping</a></li>
+          <li><a href="#panic">Panic y recover</a></li>
+          <li><a href="#resumen">Resumen</a></li>
+        </ol>
+      </aside>
+      <article class="prose">
+        <h2 id="patron-error">El patrón (valor, error)</h2>
+        <p>La convención de Go es devolver el resultado junto al error como último valor de retorno. <code>nil</code> significa sin error; cualquier otro valor significa que algo falló.</p>
+
+        <pre><code data-lang="go">func dividir(a, b float64) (float64, error) {
+    if b == 0 {
+        return 0, errors.New("división por cero")
+    }
+
+    return a / b, nil
+}
+
+resultado, err := dividir(10, 2)
+
+if err != nil {
+    fmt.Println("error:", err)
+    return
+}
+
+fmt.Println(resultado)   // 5
+</code></pre>
+
+        <p>El compilador obliga a asignar todos los valores de retorno. Si no quieres usar el error, tienes que descartarlo explícitamente con <code>_</code>, lo que hace visible la decisión de ignorarlo:</p>
+
+        <pre><code data-lang="go">resultado, _ := dividir(10, 2)   // descarto el error conscientemente
+</code></pre>
+
+        <h2 id="vs-php">Comparación con excepciones PHP</h2>
+
+        <div class="compare">
+          <div>
+            <p class="compare__label">PHP: excepciones</p>
+            <pre><code data-lang="php">function dividir(float $a, float $b): float {
+    if ($b === 0.0) {
+        throw new \DivisionByZeroError("División por cero");
+    }
+    return $a / $b;
+}
+
+// El try/catch puede olvidarse fácilmente
+try {
+    $resultado = dividir(10, 2);
+} catch (\DivisionByZeroError $e) {
+    echo "Error: " . $e-&gt;getMessage();
+}
+</code></pre>
+          </div>
+          <div>
+            <p class="compare__label">Go: error como valor</p>
+            <pre><code data-lang="go">func dividir(a, b float64) (float64, error) {
+    if b == 0 {
+        return 0, errors.New("división por cero")
+    }
+    return a / b, nil
+}
+
+// El compilador obliga a manejar el error o descartarlo con _
+resultado, err := dividir(10, 2)
+
+if err != nil {
+    fmt.Println("error:", err)
+    return
+}
+</code></pre>
+          </div>
+        </div>
+
+        <p>Las excepciones pueden propagarse silenciosamente por el call stack si nadie las captura. En Go, un error es un valor que tienes en la mano: o lo manejas, o lo subes explícitamente con <code>return ..., err</code>.</p>
+
+        <h2 id="crear-errores">Crear errores: errors.New y fmt.Errorf</h2>
+
+        <pre><code data-lang="go">import (
+    "errors"
+    "fmt"
+)
+
+// error simple
+err1 := errors.New("algo salió mal")
+
+// error con formato (como sprintf)
+usuario := "ana"
+err2 := fmt.Errorf("usuario %q no encontrado", usuario)
+
+fmt.Println(err1)   // algo salió mal
+fmt.Println(err2)   // usuario "ana" no encontrado
+</code></pre>
+
+        <p>El patrón idiomático al propagar errores es añadir contexto con <code>fmt.Errorf</code>:</p>
+
+        <pre><code data-lang="go">func obtenerPerfil(id int) (*Perfil, error) {
+    perfil, err := db.BuscarPerfil(id)
+
+    if err != nil {
+        return nil, fmt.Errorf("obtenerPerfil(%d): %w", id, err)
+    }
+
+    return perfil, nil
+}
+</code></pre>
+
+        <p>El <code>%w</code> es wrapping de error: preserva el error original para que pueda inspeccionarse después.</p>
+
+        <h2 id="errores-tipados">Errores tipados</h2>
+        <p>Para errores que el llamador puede necesitar diferenciar, crea un tipo que implemente la interfaz <code>error</code>:</p>
+
+        <pre><code data-lang="go">type ErrorNoEncontrado struct {
+    Recurso string
+    ID      int
+}
+
+func (e *ErrorNoEncontrado) Error() string {
+    return fmt.Sprintf("%s con id %d no encontrado", e.Recurso, e.ID)
+}
+
+func buscarProducto(id int) (*Producto, error) {
+    // simulando que no existe
+    return nil, &amp;ErrorNoEncontrado{Recurso: "Producto", ID: id}
+}
+</code></pre>
+
+        <p>El llamador puede comprobar el tipo con <code>errors.As</code>:</p>
+
+        <pre><code data-lang="go">producto, err := buscarProducto(42)
+
+if err != nil {
+    var errNE *ErrorNoEncontrado
+
+    if errors.As(err, &amp;errNE) {
+        fmt.Printf("el %s %d no existe, devolviendo 404\n", errNE.Recurso, errNE.ID)
+        return
+    }
+
+    fmt.Println("error inesperado:", err)
+    return
+}
+</code></pre>
+
+        <h2 id="wrapping">Wrapping y unwrapping</h2>
+        <p>Go 1.13 introdujo el wrapping de errores para preservar la cadena de causas mientras se añade contexto:</p>
+
+        <pre><code data-lang="go">// Wrapping con %w
+err := fmt.Errorf("capa de servicio: %w", errOriginal)
+
+// Comprobar si un error en la cadena es de un tipo concreto
+var errNE *ErrorNoEncontrado
+errors.As(err, &amp;errNE)   // busca en toda la cadena de wrapping
+
+// Comprobar si un error en la cadena es igual a un valor centinela
+var ErrNoAutorizado = errors.New("no autorizado")
+errors.Is(err, ErrNoAutorizado)   // también busca en la cadena
+</code></pre>
+
+        <p>Regla de uso:</p>
+        <ul>
+          <li><code>errors.Is</code>: para errores centinela (valores concretos como <code>ErrNoAutorizado</code>).</li>
+          <li><code>errors.As</code>: para errores tipados (tipos como <code>*ErrorNoEncontrado</code>).</li>
+          <li>Nunca uses comparación directa (<code>err == ErrAlgo</code>) si el error puede haber sido wrapeado.</li>
+        </ul>
+
+        <h2 id="panic">Panic y recover</h2>
+        <p>Go tiene <code>panic</code> para situaciones genuinamente irrecuperables: errores de programación, invariantes rotos. No es el equivalente a lanzar una excepción de negocio.</p>
+
+        <pre><code data-lang="go">// Panic: para bugs de programación
+func obtenerElemento(slice []int, i int) int {
+    if i &lt; 0 || i &gt;= len(slice) {
+        panic(fmt.Sprintf("índice %d fuera de rango [0, %d)", i, len(slice)))
+    }
+    return slice[i]
+}
+</code></pre>
+
+        <p><code>recover</code> captura un panic en curso, pero solo funciona dentro de una función llamada con <code>defer</code>:</p>
+
+        <pre><code data-lang="go">func ejecutarConSeguridad(fn func()) (err error) {
+    defer func() {
+        if r := recover(); r != nil {
+            err = fmt.Errorf("panic recuperado: %v", r)
+        }
+    }()
+
+    fn()
+    return nil
+}
+</code></pre>
+
+        <div class="callout callout--warning">
+          Usa <code>panic</code> solo para bugs de programación (índices fuera de rango, nil dereferences, invariantes imposibles). Para errores de negocio o de red, devuelve un <code>error</code>. Los frameworks web suelen usar recover en su middleware para evitar que un panic derrumbe el servidor entero.
+        </div>
+
+        <h2 id="resumen">Resumen</h2>
+        <ul class="keypoints">
+          <li>Los errores en Go son valores que se devuelven como último argumento de retorno. La convención es <code>(resultado, error)</code>.</li>
+          <li>Propaga errores con contexto: <code>fmt.Errorf("contexto: %w", err)</code>. El <code>%w</code> preserva el error original para inspección.</li>
+          <li>Usa <code>errors.Is</code> para comparar con errores centinela; <code>errors.As</code> para errores tipados. Ambos buscan en la cadena de wrapping.</li>
+          <li>Los errores tipados (structs que implementan <code>Error() string</code>) permiten al llamador distinguir entre distintas clases de fallo.</li>
+          <li><code>panic</code> es para bugs de programación, no para errores de negocio. <code>recover</code> solo funciona dentro de un <code>defer</code>.</li>
+        </ul>
+      </article>
+    </div>
+    <footer class="footer"><div class="container footer__inner"><span class="footer__copy">© <span id="year"></span> MentorAI</span></div></footer>
+    <script src="../tutorials/manifest.js"></script><script src="../tutorials/courses.js"></script><script src="../tutorials/paths.js"></script><script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script><script src="../assets/js/modules/storage.js"></script><script src="../assets/js/modules/catalog.js"></script><script src="../assets/js/modules/courses.js"></script><script src="../assets/js/modules/paths.js"></script><script src="../assets/js/modules/home.js"></script><script src="../assets/js/modules/syntax.js"></script><script src="../assets/js/modules/bridge.js"></script><script src="../assets/js/modules/tutorial.js"></script><script src="../assets/js/modules/quiz.js"></script><script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

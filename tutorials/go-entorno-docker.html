@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Entorno Go con Docker — MentorAI</title>
+    <meta name="description" content="Monta un entorno Go completamente dockerizado: imagen oficial, docker compose con bind mount y volumen de caché de módulos, hot reload con Air y sin instalar Go localmente." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Go</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Entorno Go con Docker</h1>
+        <p class="tutorial-hero__lead">No instalaremos Go localmente. Un contenedor con la imagen oficial, un compose con bind mount del código y un volumen para la caché de módulos: el mismo criterio que ya aplicas con PHP, pero para Go.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg>
+            Principiante
+          </span>
+          <span>Go</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container tutorial-layout">
+      <aside class="toc">
+        <p class="toc__title">En este tutorial</p>
+        <ol class="toc__list">
+          <li><a href="#imagen">La imagen oficial de Go</a></li>
+          <li><a href="#estructura">Estructura del proyecto</a></li>
+          <li><a href="#compose">docker compose para desarrollo</a></li>
+          <li><a href="#cache">La caché de módulos</a></li>
+          <li><a href="#air">Hot reload con Air</a></li>
+          <li><a href="#comandos">Comandos del día a día</a></li>
+          <li><a href="#resumen">Resumen</a></li>
+        </ol>
+      </aside>
+
+      <article class="prose">
+        <h2 id="imagen">La imagen oficial de Go</h2>
+        <p>Docker Hub ofrece la imagen oficial <code>golang</code> en varias variantes. Para desarrollo nos interesa la completa (no slim ni alpine) porque incluye <code>gcc</code> y las herramientas de sistema que algunas dependencias necesitan al compilar:</p>
+
+        <pre><code data-lang="bash">golang:1.23          # imagen completa basada en Debian Bookworm
+golang:1.23-alpine   # imagen ligera (25 MB vs 800 MB), sin gcc</code></pre>
+
+        <p>Para producción usarás multi-stage y la imagen final será mínima. Para desarrollo, la imagen completa evita sorpresas con dependencias que necesitan CGO.</p>
+
+        <h2 id="estructura">Estructura del proyecto</h2>
+        <p>Un proyecto Go mínimo tiene esta forma:</p>
+
+        <pre><code data-lang="bash">mi-servicio/
+├── cmd/
+│   └── server/
+│       └── main.go       # punto de entrada
+├── internal/             # código privado del proyecto
+├── go.mod                # declaración del módulo y dependencias
+├── go.sum                # checksums de dependencias (como composer.lock)
+├── Dockerfile
+├── compose.yaml
+└── .air.toml             # configuración de hot reload (opcional)</code></pre>
+
+        <p>La convención <code>cmd/</code> es donde van los puntos de entrada (<code>main.go</code>). <code>internal/</code> es código que Go no permite importar desde fuera del módulo: el compilador lo impone, no es solo una convención.</p>
+
+        <h2 id="compose">docker compose para desarrollo</h2>
+        <p>El compose de desarrollo tiene dos objetivos: montar el código fuente con un bind mount para que los cambios sean inmediatos, y separar el directorio de caché de módulos con un volumen named para no descargarlo en cada arranque.</p>
+
+        <pre><code data-lang="bash"># compose.yaml
+services:
+  app:
+    image: golang:1.23
+    working_dir: /app
+    volumes:
+      - .:/app                          # bind mount del código fuente
+      - go-modules:/go/pkg/mod          # caché de módulos persistente
+    ports:
+      - "8080:8080"
+    environment:
+      - GOPATH=/go
+    command: go run ./cmd/server/
+
+volumes:
+  go-modules:</code></pre>
+
+        <p>El volumen <code>go-modules</code> monta en <code>/go/pkg/mod</code>, que es donde Go almacena los módulos descargados. Sin él, cada <code>docker compose up</code> descargaría todas las dependencias de nuevo.</p>
+
+        <div class="callout callout--info">
+          <strong>Paralelo con PHP:</strong> es el mismo patrón que php-en-docker. El bind mount del código permite editar desde el host; el volumen de dependencias equivale a cachear el <code>vendor/</code> o el caché de Composer.
+        </div>
+
+        <h2 id="cache">La caché de módulos</h2>
+        <p>Go descarga los módulos en <code>$GOPATH/pkg/mod</code> la primera vez que se usan y los reutiliza. Dentro del contenedor <code>$GOPATH</code> es <code>/go</code> por defecto. Por eso el volumen monta ahí.</p>
+        <p>Para forzar la descarga de dependencias declaradas en <code>go.mod</code>:</p>
+
+        <pre><code data-lang="bash">docker compose run --rm app go mod download</code></pre>
+
+        <p>Y para añadir una dependencia nueva desde dentro del contenedor:</p>
+
+        <pre><code data-lang="bash">docker compose run --rm app go get github.com/some/package@v1.2.3</code></pre>
+
+        <p>Esto actualiza <code>go.mod</code> y <code>go.sum</code> en el host gracias al bind mount. Es el equivalente a <code>composer require</code>.</p>
+
+        <h2 id="air">Hot reload con Air</h2>
+        <p>Go no tiene hot reload nativo: hay que recompilar y relanzar. <a href="https://github.com/air-verse/air" rel="noopener">Air</a> lo hace automáticamente al detectar cambios en el código fuente.</p>
+
+        <p>Dockerfile de desarrollo con Air:</p>
+
+        <pre><code data-lang="bash"># Dockerfile.dev
+FROM golang:1.23
+
+WORKDIR /app
+
+# Instala Air
+RUN go install github.com/air-verse/air@latest
+
+# Las dependencias se cachean vía volumen, no aquí
+CMD ["air"]</code></pre>
+
+        <p>Y el compose actualizado para usar este Dockerfile:</p>
+
+        <pre><code data-lang="bash"># compose.yaml
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    working_dir: /app
+    volumes:
+      - .:/app
+      - go-modules:/go/pkg/mod
+    ports:
+      - "8080:8080"
+
+volumes:
+  go-modules:</code></pre>
+
+        <p>Air usa por defecto el fichero <code>.air.toml</code>. Uno mínimo:</p>
+
+        <pre><code data-lang="bash"># .air.toml
+root = "."
+main = "./cmd/server/"
+
+[build]
+  cmd = "go build -o /tmp/server ./cmd/server/"
+  bin = "/tmp/server"
+  include_ext = ["go"]
+  exclude_dir = ["vendor"]</code></pre>
+
+        <p>Con esto, cada vez que guardes un fichero <code>.go</code>, Air recompila y reinicia el proceso en menos de un segundo.</p>
+
+        <h2 id="comandos">Comandos del día a día</h2>
+        <p>Con el entorno montado, estos son los comandos que usarás constantemente:</p>
+
+        <pre><code data-lang="bash"># Levantar el entorno con hot reload
+docker compose up
+
+# Ejecutar un comando único dentro del contenedor
+docker compose run --rm app go test ./...
+docker compose run --rm app go vet ./...
+docker compose run --rm app go mod tidy
+
+# Añadir una dependencia
+docker compose run --rm app go get github.com/paquete@v1.0.0
+
+# Entrar al contenedor
+docker compose exec app bash
+
+# Compilar el binario (dentro del contenedor)
+docker compose run --rm app go build -o /tmp/servidor ./cmd/server/</code></pre>
+
+        <div class="callout callout--tip">
+          <strong>go mod tidy</strong> elimina dependencias no usadas y añade las que faltan en <code>go.sum</code>. Equivale a limpiar el <code>composer.lock</code>. Ejecútalo antes de cada commit.
+        </div>
+
+        <h2 id="resumen">Resumen</h2>
+        <ul class="keypoints">
+          <li>La imagen <code>golang:1.23</code> contiene el toolchain completo; para desarrollo vale la imagen completa.</li>
+          <li>Bind mount del código fuente + volumen named para <code>/go/pkg/mod</code>: el código cambia en tiempo real, las dependencias se cachean entre sesiones.</li>
+          <li>Air detecta cambios, recompila y reinicia automáticamente; ciclo de feedback de menos de un segundo.</li>
+          <li><code>go mod download</code> prefetcha dependencias; <code>go mod tidy</code> limpia el módulo.</li>
+          <li>Todos los comandos (<code>go test</code>, <code>go vet</code>, <code>go get</code>) se ejecutan dentro del contenedor, nunca en el host.</li>
+        </ul>
+
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span class="footer__copy">© <span id="year"></span> MentorAI</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

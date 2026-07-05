@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tipos y variables en Go — MentorAI</title>
+    <meta name="description" content="var y :=, el zero value que nunca es null, constantes e iota para enumeraciones, y por qué Go obliga a las conversiones explícitas entre tipos." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" /><link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" /><meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" /><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" /><meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a><a href="../rutas.html" class="nav__link">Rutas</a><a href="../cursos.html" class="nav__link">Cursos</a><a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb"><a href="../index.html">MentorAI</a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><span>Go</span></nav>
+        <h1 class="tutorial-hero__title">Tipos y variables en Go</h1>
+        <p class="tutorial-hero__lead">Go es estrictamente tipado: el compilador conoce el tipo de cada variable antes de ejecutar. Pero la inferencia con := hace que el código sea cómodo de escribir. Y el zero value elimina la clase entera de bugs del "usé una variable sin inicializar".</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>13 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg>Principiante</span>
+          <span>Go</span>
+        </div>
+      </div>
+    </section>
+    <div class="container tutorial-layout">
+      <aside class="toc">
+        <p class="toc__title">En este tutorial</p>
+        <ol class="toc__list">
+          <li><a href="#tipos-basicos">Tipos básicos</a></li>
+          <li><a href="#var-inferencia">var y := </a></li>
+          <li><a href="#zero-value">El zero value: nunca null</a></li>
+          <li><a href="#conversiones">Conversiones explícitas</a></li>
+          <li><a href="#constantes">Constantes e iota</a></li>
+          <li><a href="#strings">Strings en Go</a></li>
+          <li><a href="#resumen">Resumen</a></li>
+        </ol>
+      </aside>
+      <article class="prose">
+        <h2 id="tipos-basicos">Tipos básicos</h2>
+        <p>Go tiene un sistema de tipos más explícito que PHP. No hay un tipo numérico genérico: hay enteros con signo de distintos tamaños, enteros sin signo y flotantes:</p>
+
+        <table>
+          <thead><tr><th>Tipo</th><th>Tamaño</th><th>Rango / Descripción</th></tr></thead>
+          <tbody>
+            <tr><td><code>int</code></td><td>32 o 64 bits*</td><td>El tipo entero por defecto</td></tr>
+            <tr><td><code>int8/16/32/64</code></td><td>fijo</td><td>Enteros con signo de tamaño fijo</td></tr>
+            <tr><td><code>uint/uint8/16/32/64</code></td><td>fijo</td><td>Enteros sin signo</td></tr>
+            <tr><td><code>float32/float64</code></td><td>32/64 bits</td><td><code>float64</code> es el por defecto</td></tr>
+            <tr><td><code>bool</code></td><td>1 byte</td><td><code>true</code> o <code>false</code></td></tr>
+            <tr><td><code>string</code></td><td>variable</td><td>Secuencia de bytes UTF-8 inmutable</td></tr>
+            <tr><td><code>byte</code></td><td>1 byte</td><td>Alias de <code>uint8</code></td></tr>
+            <tr><td><code>rune</code></td><td>4 bytes</td><td>Alias de <code>int32</code>; un carácter Unicode</td></tr>
+          </tbody>
+        </table>
+
+        <p>* <code>int</code> es 32 bits en plataformas de 32 bits y 64 bits en plataformas de 64 bits. En la práctica casi siempre es 64 bits.</p>
+
+        <h2 id="var-inferencia">var y :=</h2>
+        <p>Hay dos formas de declarar variables. La diferencia no es de rendimiento sino de contexto:</p>
+
+        <pre><code data-lang="go">// var: declaración explícita del tipo
+var nombre string = "Ana"
+var edad int = 30
+var activo bool = true
+
+// var sin valor inicial: usa el zero value del tipo
+var contador int      // = 0
+var mensaje string    // = ""
+var encontrado bool   // = false
+
+// := inferencia de tipo (solo dentro de funciones)
+nombre := "Ana"       // string inferido
+edad := 30            // int inferido
+precio := 9.99        // float64 inferido
+</code></pre>
+
+        <p><code>:=</code> solo puede usarse dentro de funciones. Para variables a nivel de paquete (fuera de funciones), hay que usar <code>var</code>.</p>
+
+        <div class="compare">
+          <div>
+            <p class="compare__label compare__label--bad">PHP (tipado dinámico)</p>
+            <pre><code data-lang="php">$valor = 42;          // int
+$valor = "hola";      // ahora string, sin error
+$valor = true;        // ahora bool, sin error
+</code></pre>
+          </div>
+          <div>
+            <p class="compare__label compare__label--good">Go (tipado estático)</p>
+            <pre><code data-lang="go">valor := 42            // int
+valor = "hola"         // error: cannot use "hola" (string) as int
+valor = true           // error: cannot use true (bool) as int
+</code></pre>
+          </div>
+        </div>
+
+        <h2 id="zero-value">El zero value: nunca null</h2>
+        <p>En Go, toda variable declarada sin valor inicial tiene un <strong>zero value</strong> según su tipo. No existe el <code>null</code> como valor por defecto para tipos básicos. Esto elimina toda una clase de bugs del tipo "variable no inicializada".</p>
+
+        <pre><code data-lang="go">var i int       // 0
+var f float64   // 0.0
+var b bool      // false
+var s string    // "" (cadena vacía, no null)
+
+// El zero value de un struct inicializa todos sus campos
+type Punto struct {
+    X, Y float64
+}
+var p Punto   // p.X == 0.0, p.Y == 0.0
+</code></pre>
+
+        <div class="callout callout--info">
+          <strong>¿Entonces no hay null en Go?</strong> Sí lo hay, pero solo para tipos que son inherentemente referencias: punteros, slices, maps, channels, funciones e interfaces. Para un <code>string</code> o un <code>int</code>, el zero value es <code>""</code> y <code>0</code>, nunca <code>nil</code>.
+        </div>
+
+        <h2 id="conversiones">Conversiones explícitas</h2>
+        <p>Go no hace conversiones implícitas entre tipos numéricos. Ni siquiera entre <code>int</code> y <code>int64</code>. Todas las conversiones son explícitas:</p>
+
+        <pre><code data-lang="go">var i int = 42
+var f float64 = float64(i)   // conversión explícita
+var u uint = uint(f)          // otra conversión explícita
+
+// Esto no compila:
+var x int = 10
+var y float64 = x            // error: cannot use x (int) as float64
+</code></pre>
+
+        <p>La razón: las conversiones implícitas en C y C++ son fuente histórica de bugs sutiles. Go las prohíbe para que los datos que cambian de tipo sean siempre visibles en el código.</p>
+
+        <pre><code data-lang="go">// Conversión string ↔ bytes
+s := "hola"
+b := []byte(s)              // []byte{104, 111, 108, 97}
+s2 := string(b)             // "hola"
+
+// Rune ↔ string
+r := rune('ñ')              // 241 (el code point Unicode)
+s3 := string(r)             // "ñ"
+</code></pre>
+
+        <h2 id="constantes">Constantes e iota</h2>
+        <p>Las constantes en Go se evalúan en tiempo de compilación y no tienen tipo hasta que se usan (son "untyped" por defecto), lo que les da más flexibilidad que las constantes de PHP:</p>
+
+        <pre><code data-lang="go">const Pi = 3.14159          // untyped: se adapta al contexto
+const Nombre = "MentorAI"   // untyped string
+
+const (
+    StatusOK    = 200
+    StatusError = 500
+)
+</code></pre>
+
+        <p><code>iota</code> es un contador que se resetea a 0 en cada bloque <code>const</code> y se incrementa en 1 por cada constante. Ideal para enumeraciones:</p>
+
+        <pre><code data-lang="go">type Nivel int
+
+const (
+    Principiante Nivel = iota   // 0
+    Intermedio                   // 1
+    Avanzado                     // 2
+)
+
+type DiaSemana int
+
+const (
+    Lunes DiaSemana = iota + 1  // 1
+    Martes                        // 2
+    Miercoles                     // 3
+    Jueves                        // 4
+    Viernes                       // 5
+)
+</code></pre>
+
+        <h2 id="strings">Strings en Go</h2>
+        <p>Los strings en Go son inmutables y contienen bytes UTF-8. La distinción entre bytes y caracteres (runes) es explícita:</p>
+
+        <pre><code data-lang="go">s := "hola, 世界"
+
+fmt.Println(len(s))           // 13: número de BYTES, no de caracteres
+fmt.Println(len([]rune(s)))   // 9: número de CARACTERES Unicode
+
+// Iterar sobre bytes (puede partir caracteres multibyte)
+for i, b := range []byte(s) {
+    fmt.Printf("[%d]=%d ", i, b)
+}
+
+// Iterar sobre runes (caracteres Unicode completos)
+for i, r := range s {
+    fmt.Printf("[%d]=%c ", i, r)   // 世 ocupa bytes 7, 8, 9
+}
+
+// Concatenar (crea un nuevo string; para muchas concatenaciones, usar strings.Builder)
+saludo := "Hola" + ", " + "mundo"
+</code></pre>
+
+        <div class="callout callout--tip">
+          El paquete <code>strings</code> tiene todo lo que PHP tiene como funciones nativas: <code>strings.Contains</code>, <code>strings.HasPrefix</code>, <code>strings.ToUpper</code>, <code>strings.TrimSpace</code>, <code>strings.Split</code>, <code>strings.Join</code>...
+        </div>
+
+        <h2 id="resumen">Resumen</h2>
+        <ul class="keypoints">
+          <li>Go tiene tipos numéricos explícitos: <code>int</code>, <code>float64</code>, <code>bool</code>, <code>string</code>. El compilador los conoce todos en tiempo de compilación.</li>
+          <li><code>var nombre tipo = valor</code> para declaraciones explícitas; <code>nombre := valor</code> para inferencia dentro de funciones.</li>
+          <li>Toda variable tiene un zero value según su tipo: <code>0</code>, <code>""</code>, <code>false</code>. No hay null para tipos básicos.</li>
+          <li>Las conversiones entre tipos son siempre explícitas: <code>float64(i)</code>, <code>string(b)</code>. Nada implícito.</li>
+          <li><code>iota</code> en un bloque <code>const</code> genera enumeraciones incrementales sin repetir valores a mano.</li>
+        </ul>
+      </article>
+    </div>
+    <footer class="footer"><div class="container footer__inner"><span class="footer__copy">© <span id="year"></span> MentorAI</span></div></footer>
+    <script src="../tutorials/manifest.js"></script><script src="../tutorials/courses.js"></script><script src="../tutorials/paths.js"></script><script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script><script src="../assets/js/modules/storage.js"></script><script src="../assets/js/modules/catalog.js"></script><script src="../assets/js/modules/courses.js"></script><script src="../assets/js/modules/paths.js"></script><script src="../assets/js/modules/home.js"></script><script src="../assets/js/modules/syntax.js"></script><script src="../assets/js/modules/bridge.js"></script><script src="../assets/js/modules/tutorial.js"></script><script src="../assets/js/modules/quiz.js"></script><script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Go a producción: build, Docker y observabilidad — MentorAI</title>
+    <meta name="description" content="Compilar un binario estático, construir la imagen Docker mínima, configurar con variables de entorno y exponer métricas y healthchecks para producción." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" /><link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" /><meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" /><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" /><meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a><a href="../rutas.html" class="nav__link">Rutas</a><a href="../cursos.html" class="nav__link">Cursos</a><a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb"><a href="../index.html">MentorAI</a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><span>Go</span></nav>
+        <h1 class="tutorial-hero__title">Go a producción: build, Docker y observabilidad</h1>
+        <p class="tutorial-hero__lead">El superpower de Go en producción: un binario estático sin dependencias externas. Desplegarlo es copiar un fichero. La imagen Docker resultante puede ser de 10 MB con <code>FROM scratch</code>. Añade healthcheck, logging estructurado y métricas, y tienes un servicio listo.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>16 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg>Intermedio</span>
+          <span>Go · DevOps</span>
+        </div>
+      </div>
+    </section>
+    <div class="container tutorial-layout">
+      <aside class="toc">
+        <p class="toc__title">En este tutorial</p>
+        <ol class="toc__list">
+          <li><a href="#build">Compilar para producción</a></li>
+          <li><a href="#dockerfile">Dockerfile multistage</a></li>
+          <li><a href="#config">Configuración con variables de entorno</a></li>
+          <li><a href="#logging">Logging estructurado</a></li>
+          <li><a href="#healthcheck">Healthcheck y métricas</a></li>
+          <li><a href="#graceful">Apagado graceful</a></li>
+          <li><a href="#resumen">Resumen</a></li>
+        </ol>
+      </aside>
+      <article class="prose">
+        <h2 id="build">Compilar para producción</h2>
+        <p>Go compila a un binario estático: todas las dependencias se incrustan en él. No necesita runtime instalado, ni <code>vendor</code>, ni intérprete.</p>
+
+        <pre><code data-lang="bash"># Build básico para el OS actual
+go build -o bin/servidor ./cmd/servidor
+
+# Build para Linux desde Mac (cross-compilation)
+GOOS=linux GOARCH=amd64 go build -o bin/servidor-linux ./cmd/servidor
+
+# Build de producción: sin debug info, sin stack frames del linker
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -ldflags="-s -w" -o bin/servidor ./cmd/servidor
+</code></pre>
+
+        <p><code>-s -w</code> elimina la tabla de símbolos y la información de debug. El binario resultante es más pequeño (típicamente un 30% menos). <code>CGO_ENABLED=0</code> desactiva CGo para garantizar el binario estático puro.</p>
+
+        <p>Incrustar la versión en el binario con <code>ldflags</code>:</p>
+
+        <pre><code data-lang="bash">VERSION=$(git describe --tags --always)
+go build -ldflags="-s -w -X main.version=${VERSION}" ./cmd/servidor
+</code></pre>
+
+        <pre><code data-lang="go">// en main.go
+var version = "dev"   // sobreescrito en build por ldflags
+
+func main() {
+    fmt.Println("versión:", version)
+}
+</code></pre>
+
+        <h2 id="dockerfile">Dockerfile multistage</h2>
+        <p>El patrón estándar para Go: compilar en una imagen con Go instalado, copiar solo el binario a una imagen mínima:</p>
+
+        <pre><code data-lang="bash"># Dockerfile
+FROM golang:1.23-alpine AS builder
+
+WORKDIR /app
+
+# Copiar go.mod y go.sum primero (aprovecha la caché de Docker)
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o servidor ./cmd/servidor
+
+
+# Imagen final: solo el binario
+FROM scratch
+
+# Para hacer peticiones HTTPS: incluir certificados CA
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+COPY --from=builder /app/servidor /servidor
+
+EXPOSE 8080
+
+ENTRYPOINT ["/servidor"]
+</code></pre>
+
+        <p>Con <code>FROM scratch</code> la imagen tiene solo el binario y los certificados. Resultado típico: 10-15 MB frente a 500+ MB de una imagen PHP.</p>
+
+        <div class="compare">
+          <div>
+            <p class="compare__label">PHP en Docker</p>
+            <pre><code data-lang="bash">FROM php:8.3-fpm-alpine
+# instalar extensiones, composer, dependencias...
+# imagen final: ~200-500 MB
+# necesita php-fpm + nginx
+</code></pre>
+          </div>
+          <div>
+            <p class="compare__label">Go en Docker</p>
+            <pre><code data-lang="bash">FROM scratch
+COPY servidor /servidor
+# imagen final: ~10-15 MB
+# el binario es el servidor
+</code></pre>
+          </div>
+        </div>
+
+        <h2 id="config">Configuración con variables de entorno</h2>
+        <p>El patrón 12-factor: toda la configuración llega por variables de entorno. Sin ficheros de config que difieren entre entornos:</p>
+
+        <pre><code data-lang="go">type Config struct {
+    Puerto    string
+    DatabaseURL string
+    LogLevel  string
+    Debug     bool
+}
+
+func cargarConfig() Config {
+    return Config{
+        Puerto:      getenv("PORT", "8080"),
+        DatabaseURL: requireEnv("DATABASE_URL"),
+        LogLevel:    getenv("LOG_LEVEL", "info"),
+        Debug:       os.Getenv("DEBUG") == "true",
+    }
+}
+
+func getenv(clave, porDefecto string) string {
+    if v := os.Getenv(clave); v != "" {
+        return v
+    }
+    return porDefecto
+}
+
+func requireEnv(clave string) string {
+    v := os.Getenv(clave)
+
+    if v == "" {
+        log.Fatalf("variable de entorno requerida no definida: %s", clave)
+    }
+
+    return v
+}
+</code></pre>
+
+        <h2 id="logging">Logging estructurado</h2>
+        <p>Go 1.21 introdujo <code>log/slog</code>: logging estructurado en JSON, listo para ingestarse en cualquier sistema de observabilidad:</p>
+
+        <pre><code data-lang="go">import "log/slog"
+
+func main() {
+    // En producción: JSON para ingestar en Loki, Datadog, etc.
+    logger := slog.New(slog.NewJSONHandler(os.Stdout, &amp;slog.HandlerOptions{
+        Level: slog.LevelInfo,
+    }))
+
+    slog.SetDefault(logger)
+
+    // Logs con campos estructurados
+    slog.Info("servidor arrancado", "puerto", "8080")
+    slog.Error("error de base de datos", "error", err, "query", sql)
+    slog.Warn("latencia alta", "duracion_ms", 1500, "endpoint", "/api/productos")
+}
+</code></pre>
+
+        <p>Salida JSON:</p>
+
+        <pre><code data-lang="bash">{"time":"2026-07-05T10:30:00Z","level":"INFO","msg":"servidor arrancado","puerto":"8080"}
+{"time":"2026-07-05T10:30:01Z","level":"ERROR","msg":"error de base de datos","error":"connection refused","query":"SELECT * FROM productos"}
+</code></pre>
+
+        <h2 id="healthcheck">Healthcheck y métricas</h2>
+        <p>Dos endpoints que todo servicio en producción debe tener:</p>
+
+        <pre><code data-lang="go">func registrarEndpointsSistema(mux *http.ServeMux, db *sql.DB) {
+    // Healthcheck: para el orquestador (Kubernetes, Fly.io, etc.)
+    mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+        if err := db.PingContext(r.Context()); err != nil {
+            http.Error(w, `{"status":"unhealthy"}`, http.StatusServiceUnavailable)
+            return
+        }
+        w.Header().Set("Content-Type", "application/json")
+        w.Write([]byte(`{"status":"ok"}`))
+    })
+
+    // Readiness: el servicio está listo para recibir tráfico
+    mux.HandleFunc("GET /ready", func(w http.ResponseWriter, r *http.Request) {
+        w.Write([]byte("ok"))
+    })
+
+    // Métricas en formato Prometheus (con la lib expvar o pprof)
+    mux.Handle("GET /metrics", expvar.Handler())
+}
+</code></pre>
+
+        <p>Para métricas más avanzadas, la librería estándar de facto es <code>github.com/prometheus/client_golang</code>. Pero para empezar, el paquete <code>expvar</code> de la stdlib expone variables en JSON sin dependencias.</p>
+
+        <h2 id="graceful">Apagado graceful</h2>
+
+        <pre><code data-lang="go">func main() {
+    cfg := cargarConfig()
+
+    mux := http.NewServeMux()
+    registrarRutas(mux)
+    registrarEndpointsSistema(mux, db)
+
+    servidor := &amp;http.Server{
+        Addr:         ":" + cfg.Puerto,
+        Handler:      logger(mux),
+        ReadTimeout:  5 * time.Second,
+        WriteTimeout: 10 * time.Second,
+        IdleTimeout:  120 * time.Second,
+    }
+
+    // Capturar señales del OS
+    ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+    defer stop()
+
+    go func() {
+        slog.Info("servidor arrancado", "puerto", cfg.Puerto)
+
+        if err := servidor.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+            slog.Error("servidor caído inesperadamente", "error", err)
+            os.Exit(1)
+        }
+    }()
+
+    &lt;-ctx.Done()
+    slog.Info("apagando servidor...")
+
+    shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
+
+    if err := servidor.Shutdown(shutdownCtx); err != nil {
+        slog.Error("error en el apagado", "error", err)
+        os.Exit(1)
+    }
+
+    slog.Info("servidor apagado correctamente")
+}
+</code></pre>
+
+        <h2 id="resumen">Resumen</h2>
+        <ul class="keypoints">
+          <li><code>CGO_ENABLED=0 go build -ldflags="-s -w"</code> produce un binario estático sin dependencias externas, listo para copiar a cualquier servidor.</li>
+          <li>Dockerfile multistage: compila en <code>golang:alpine</code>, copia solo el binario a <code>FROM scratch</code>. Imagen final de ~10-15 MB.</li>
+          <li>Toda la configuración por variables de entorno (12-factor). Usa <code>log.Fatalf</code> para las requeridas si no están presentes.</li>
+          <li><code>log/slog</code> (Go 1.21+) para logging estructurado en JSON. Campos con <code>slog.Info("msg", "key", value)</code>.</li>
+          <li>Expón siempre <code>/health</code> (comprueba dependencias) y <code>/ready</code> (el proceso está vivo). Configura <code>ReadTimeout</code>, <code>WriteTimeout</code> e <code>IdleTimeout</code>.</li>
+          <li><code>signal.NotifyContext</code> + <code>server.Shutdown</code> para apagado graceful: las peticiones activas terminan antes de matar el proceso.</li>
+        </ul>
+      </article>
+    </div>
+    <footer class="footer"><div class="container footer__inner"><span class="footer__copy">© <span id="year"></span> MentorAI</span></div></footer>
+    <script src="../tutorials/manifest.js"></script><script src="../tutorials/courses.js"></script><script src="../tutorials/paths.js"></script><script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script><script src="../assets/js/modules/storage.js"></script><script src="../assets/js/modules/catalog.js"></script><script src="../assets/js/modules/courses.js"></script><script src="../assets/js/modules/paths.js"></script><script src="../assets/js/modules/home.js"></script><script src="../assets/js/modules/syntax.js"></script><script src="../assets/js/modules/bridge.js"></script><script src="../assets/js/modules/tutorial.js"></script><script src="../assets/js/modules/quiz.js"></script><script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

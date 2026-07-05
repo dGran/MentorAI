@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Composición en Go: embedding sin herencia — MentorAI</title>
+    <meta name="description" content="Go no tiene herencia. Tiene embedding: incrustar un tipo dentro de otro para reutilizar métodos sin jerarquía. La composición como primer ciudadano del lenguaje." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" /><link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" /><meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" /><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" /><meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a><a href="../rutas.html" class="nav__link">Rutas</a><a href="../cursos.html" class="nav__link">Cursos</a><a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb"><a href="../index.html">MentorAI</a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><span>Go</span></nav>
+        <h1 class="tutorial-hero__title">Composición: embedding sin herencia</h1>
+        <p class="tutorial-hero__lead">Go no tiene herencia. No hay <code>extends</code>. En su lugar tiene embedding: incrustar un tipo dentro de otro para que sus métodos sean accesibles directamente. Es composición a nivel de lenguaje, sin jerarquías de clases.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>14 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg>Intermedio</span>
+          <span>Go</span>
+        </div>
+      </div>
+    </section>
+    <div class="container tutorial-layout">
+      <aside class="toc">
+        <p class="toc__title">En este tutorial</p>
+        <ol class="toc__list">
+          <li><a href="#sin-herencia">Go no tiene herencia</a></li>
+          <li><a href="#embedding">Embedding de structs</a></li>
+          <li><a href="#metodos-promovidos">Métodos promovidos</a></li>
+          <li><a href="#vs-php">Comparación con PHP traits</a></li>
+          <li><a href="#interfaces-embedding">Embedding de interfaces</a></li>
+          <li><a href="#cuando-usar">Cuándo usar embedding</a></li>
+          <li><a href="#resumen">Resumen</a></li>
+        </ol>
+      </aside>
+      <article class="prose">
+        <h2 id="sin-herencia">Go no tiene herencia</h2>
+        <p>En PHP es habitual extender clases para reutilizar comportamiento. En Go no existe ese mecanismo. El lenguaje toma partido deliberadamente: la herencia crea acoplamientos frágiles; la composición construye sistemas más flexibles.</p>
+
+        <p>Si vienes de PHP, el cambio mental es: en vez de pensar "X es un Y" (herencia), piensas "X tiene un Y" (composición). Go refuerza esta idea con el embedding.</p>
+
+        <h2 id="embedding">Embedding de structs</h2>
+        <p>El embedding consiste en incluir un tipo dentro de otro struct sin darle un nombre de campo. Solo el tipo:</p>
+
+        <pre><code data-lang="go">type Animal struct {
+    Nombre string
+    Peso   float64
+}
+
+type Perro struct {
+    Animal        // embedding: sin nombre de campo, solo el tipo
+    Raza  string
+}
+
+p := Perro{
+    Animal: Animal{Nombre: "Rex", Peso: 30.5},
+    Raza:   "Pastor Alemán",
+}
+
+fmt.Println(p.Nombre)        // acceso directo: "Rex"
+fmt.Println(p.Animal.Nombre) // acceso explícito: también "Rex"
+fmt.Println(p.Raza)          // "Pastor Alemán"
+</code></pre>
+
+        <p>El tipo incrustado (<code>Animal</code>) sigue siendo accesible por su nombre como campo, pero sus campos también se "promueven" al tipo externo: puedes acceder a <code>p.Nombre</code> directamente.</p>
+
+        <h2 id="metodos-promovidos">Métodos promovidos</h2>
+        <p>Lo más útil del embedding: los métodos del tipo incrustado también se promueven. El tipo externo los hereda sin declarar nada:</p>
+
+        <pre><code data-lang="go">func (a *Animal) Describir() string {
+    return fmt.Sprintf("%s (%.1f kg)", a.Nombre, a.Peso)
+}
+
+p := Perro{
+    Animal: Animal{Nombre: "Rex", Peso: 30.5},
+    Raza:   "Pastor Alemán",
+}
+
+fmt.Println(p.Describir())   // "Rex (30.5 kg)" — método promovido
+</code></pre>
+
+        <p>Si el tipo externo define su propio método con el mismo nombre, ese método tiene prioridad (overriding sin jerarquía):</p>
+
+        <pre><code data-lang="go">func (d *Perro) Describir() string {
+    return fmt.Sprintf("%s, %s (%.1f kg)", d.Nombre, d.Raza, d.Peso)
+}
+
+fmt.Println(p.Describir())        // "Rex, Pastor Alemán (30.5 kg)"
+fmt.Println(p.Animal.Describir()) // "Rex (30.5 kg)": método original sigue accesible
+</code></pre>
+
+        <h2 id="vs-php">Comparación con PHP traits</h2>
+        <p>El embedding de Go se parece más a los traits de PHP que a la herencia clásica: ambos permiten reutilizar comportamiento sin herencia. Pero hay diferencias:</p>
+
+        <div class="compare">
+          <div>
+            <p class="compare__label">PHP traits</p>
+            <pre><code data-lang="php">trait Auditable {
+    private \DateTime $createdAt;
+    private \DateTime $updatedAt;
+
+    public function touch(): void {
+        $this-&gt;updatedAt = new \DateTime();
+    }
+}
+
+class Producto {
+    use Auditable;
+
+    public function __construct(
+        private string $nombre
+    ) {
+        $this-&gt;createdAt = new \DateTime();
+        $this-&gt;updatedAt = new \DateTime();
+    }
+}
+</code></pre>
+          </div>
+          <div>
+            <p class="compare__label">Go embedding</p>
+            <pre><code data-lang="go">type Auditable struct {
+    CreadoEn     time.Time
+    ActualizadoEn time.Time
+}
+
+func (a *Auditable) Actualizar() {
+    a.ActualizadoEn = time.Now()
+}
+
+type Producto struct {
+    Auditable       // embedding
+    Nombre string
+}
+
+p := Producto{
+    Auditable: Auditable{
+        CreadoEn:     time.Now(),
+        ActualizadoEn: time.Now(),
+    },
+    Nombre: "Mesa",
+}
+p.Actualizar()   // método promovido
+</code></pre>
+          </div>
+        </div>
+
+        <p>La diferencia clave: el embedding en Go usa un tipo real con su propia memoria. El trait PHP inyecta código en la clase. En Go, <code>p.Auditable</code> es un valor concreto al que puedes acceder directamente.</p>
+
+        <h2 id="interfaces-embedding">Embedding de interfaces</h2>
+        <p>También puedes incrustar interfaces dentro de otras interfaces para componerlas:</p>
+
+        <pre><code data-lang="go">type Lector interface {
+    Leer() ([]byte, error)
+}
+
+type Escritor interface {
+    Escribir([]byte) error
+}
+
+// Composición de interfaces
+type LectorEscritor interface {
+    Lector
+    Escritor
+}
+</code></pre>
+
+        <p>Este patrón es exactamente lo que hace la stdlib: <code>io.ReadWriter</code> es <code>io.Reader</code> + <code>io.Writer</code>. Permite construir interfaces más ricas a partir de partes pequeñas.</p>
+
+        <p>También es útil incrustar una interfaz dentro de un struct cuando solo quieres implementar parte de ella (para tests):</p>
+
+        <pre><code data-lang="go">type Notificador interface {
+    Enviar(dest, msg string) error
+    Estado() bool
+}
+
+// Stub de test que solo implementa Enviar
+type notificadorStub struct {
+    Notificador   // embedding: Estado() delega al zero value (nil panic si se llama)
+    mensajes []string
+}
+
+func (s *notificadorStub) Enviar(dest, msg string) error {
+    s.mensajes = append(s.mensajes, msg)
+    return nil
+}
+</code></pre>
+
+        <h2 id="cuando-usar">Cuándo usar embedding</h2>
+
+        <table>
+          <thead><tr><th>Situación</th><th>Recomendación</th></tr></thead>
+          <tbody>
+            <tr><td>Comportamiento compartido entre tipos (logging, auditoría, timestamps)</td><td>Embedding de struct</td></tr>
+            <tr><td>Extender una interfaz con más métodos</td><td>Embedding de interfaces</td></tr>
+            <tr><td>Stubs parciales en tests</td><td>Embedding de interfaz en struct</td></tr>
+            <tr><td>Relación "es un" que en PHP harías con extends</td><td>Replantearlo como composición; si hay polimorfismo, usar interfaz</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout callout--info">
+          El embedding promueve métodos pero no es herencia real. No hay <code>super</code>, no hay jerarquía de tipos, no hay subclassing. <code>Perro</code> no es un subtipo de <code>Animal</code>: son dos tipos distintos. Esto es intencional: evita los problemas de la herencia profunda.
+        </div>
+
+        <h2 id="resumen">Resumen</h2>
+        <ul class="keypoints">
+          <li>Go no tiene herencia. El mecanismo de reutilización es el embedding: incrustar un tipo dentro de otro sin nombre de campo.</li>
+          <li>Los campos y métodos del tipo incrustado se promueven al tipo externo y son accesibles directamente.</li>
+          <li>Si el tipo externo define un método con el mismo nombre, tiene prioridad. El método original sigue accesible vía el nombre del tipo incrustado.</li>
+          <li>Las interfaces también pueden incrustar otras interfaces para componer comportamientos más ricos.</li>
+          <li>El embedding no crea jerarquía de tipos: <code>Perro</code> no es un <code>Animal</code> para el sistema de tipos de Go.</li>
+        </ul>
+      </article>
+    </div>
+    <footer class="footer"><div class="container footer__inner"><span class="footer__copy">© <span id="year"></span> MentorAI</span></div></footer>
+    <script src="../tutorials/manifest.js"></script><script src="../tutorials/courses.js"></script><script src="../tutorials/paths.js"></script><script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script><script src="../assets/js/modules/storage.js"></script><script src="../assets/js/modules/catalog.js"></script><script src="../assets/js/modules/courses.js"></script><script src="../assets/js/modules/paths.js"></script><script src="../assets/js/modules/home.js"></script><script src="../assets/js/modules/syntax.js"></script><script src="../assets/js/modules/bridge.js"></script><script src="../assets/js/modules/tutorial.js"></script><script src="../assets/js/modules/quiz.js"></script><script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

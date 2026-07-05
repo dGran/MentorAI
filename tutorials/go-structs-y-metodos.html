@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Structs y métodos en Go — MentorAI</title>
+    <meta name="description" content="Los structs son los objetos de Go: agrupan campos y tienen métodos. Value receiver vs pointer receiver: cuándo usar cada uno y por qué importa." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" /><link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" /><meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" /><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" /><meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a><a href="../rutas.html" class="nav__link">Rutas</a><a href="../cursos.html" class="nav__link">Cursos</a><a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb"><a href="../index.html">MentorAI</a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><span>Go</span></nav>
+        <h1 class="tutorial-hero__title">Structs y métodos en Go</h1>
+        <p class="tutorial-hero__lead">Go no tiene clases. Tiene structs: tipos que agrupan campos, y métodos que se asocian a esos tipos. La distinción entre value receiver y pointer receiver es lo que determina si un método puede modificar el struct o solo leerlo.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>13 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg>Intermedio</span>
+          <span>Go</span>
+        </div>
+      </div>
+    </section>
+    <div class="container tutorial-layout">
+      <aside class="toc">
+        <p class="toc__title">En este tutorial</p>
+        <ol class="toc__list">
+          <li><a href="#structs">Definir y crear structs</a></li>
+          <li><a href="#campos">Campos y acceso</a></li>
+          <li><a href="#metodos">Métodos</a></li>
+          <li><a href="#value-vs-pointer">Value receiver vs pointer receiver</a></li>
+          <li><a href="#constructores">El patrón constructor en Go</a></li>
+          <li><a href="#structs-anidados">Structs anidados</a></li>
+          <li><a href="#resumen">Resumen</a></li>
+        </ol>
+      </aside>
+      <article class="prose">
+        <h2 id="structs">Definir y crear structs</h2>
+        <p>Un struct es un tipo que agrupa campos. Es el equivalente funcional de una clase PHP pero sin herencia ni encapsulación por palabras clave.</p>
+
+        <div class="compare">
+          <div>
+            <p class="compare__label">PHP</p>
+            <pre><code data-lang="php">class Producto {
+    public function __construct(
+        private string $nombre,
+        private float $precio,
+        private int $stock,
+    ) {}
+}
+
+$p = new Producto("Mesa", 299.99, 5);
+</code></pre>
+          </div>
+          <div>
+            <p class="compare__label">Go</p>
+            <pre><code data-lang="go">type Producto struct {
+    Nombre string
+    Precio float64
+    Stock  int
+}
+
+p := Producto{
+    Nombre: "Mesa",
+    Precio: 299.99,
+    Stock:  5,
+}
+</code></pre>
+          </div>
+        </div>
+
+        <p>Hay tres formas de crear un struct:</p>
+
+        <pre><code data-lang="go">// 1. Literal con nombres de campo (recomendado: explícito y resistente a cambios)
+p1 := Producto{Nombre: "Mesa", Precio: 299.99, Stock: 5}
+
+// 2. Literal posicional (frágil: depende del orden de los campos)
+p2 := Producto{"Mesa", 299.99, 5}
+
+// 3. new: devuelve un puntero al struct con zero values
+p3 := new(Producto)    // *Producto con Nombre="", Precio=0, Stock=0
+p3.Nombre = "Mesa"
+</code></pre>
+
+        <h2 id="campos">Campos y acceso</h2>
+        <p>Los campos de un struct son accesibles con el operador punto. La visibilidad (público/privado) sigue la regla de mayúsculas de Go:</p>
+
+        <pre><code data-lang="go">type Producto struct {
+    Nombre    string    // exportado: accesible desde fuera del paquete
+    Precio    float64   // exportado
+    stock     int       // no exportado: privado al paquete
+    categoria string    // no exportado
+}
+
+p := Producto{Nombre: "Mesa", Precio: 299.99}
+fmt.Println(p.Nombre)    // "Mesa"
+fmt.Println(p.Precio)    // 299.99
+// fmt.Println(p.stock)  // error si estás fuera del paquete
+</code></pre>
+
+        <p>Los structs en Go se copian por valor por defecto. Asignar un struct a otra variable crea una copia independiente:</p>
+
+        <pre><code data-lang="go">a := Producto{Nombre: "Mesa", Precio: 299.99}
+b := a           // copia
+b.Precio = 399.99
+
+fmt.Println(a.Precio)   // 299.99 (no cambia)
+fmt.Println(b.Precio)   // 399.99
+</code></pre>
+
+        <h2 id="metodos">Métodos</h2>
+        <p>Los métodos en Go son funciones con un <strong>receiver</strong>: el tipo al que pertenecen. El receiver va entre <code>func</code> y el nombre del método:</p>
+
+        <pre><code data-lang="go">type Producto struct {
+    Nombre string
+    Precio float64
+    Stock  int
+}
+
+// Método con value receiver
+func (p Producto) PrecioConIVA() float64 {
+    return p.Precio * 1.21
+}
+
+// Método con value receiver
+func (p Producto) EstaDisponible() bool {
+    return p.Stock &gt; 0
+}
+
+p := Producto{Nombre: "Mesa", Precio: 299.99, Stock: 5}
+fmt.Printf("%.2f€\n", p.PrecioConIVA())   // 362.99€
+fmt.Println(p.EstaDisponible())            // true
+</code></pre>
+
+        <h2 id="value-vs-pointer">Value receiver vs pointer receiver</h2>
+        <p>Aquí está la distinción clave que todo dev PHP tiene que interiorizar:</p>
+
+        <div class="compare">
+          <div>
+            <p class="compare__label">Value receiver (p Producto)</p>
+            <pre><code data-lang="go">func (p Producto) PrecioConIVA() float64 {
+    return p.Precio * 1.21
+    // p es una COPIA del struct
+    // cualquier cambio a p aquí NO afecta al original
+}
+</code></pre>
+            <p>Recibe una copia. Solo puede leer. Los cambios al receiver no afectan al original.</p>
+          </div>
+          <div>
+            <p class="compare__label">Pointer receiver (*p Producto)</p>
+            <pre><code data-lang="go">func (p *Producto) AplicarDescuento(pct float64) {
+    p.Precio = p.Precio * (1 - pct/100)
+    // p es un PUNTERO al struct original
+    // los cambios a p.Precio afectan al original
+}
+</code></pre>
+            <p>Recibe un puntero. Puede leer y modificar. Los cambios al receiver sí afectan al original.</p>
+          </div>
+        </div>
+
+        <pre><code data-lang="go">p := Producto{Nombre: "Mesa", Precio: 299.99}
+
+p.AplicarDescuento(10)   // el compilador pasa &p automáticamente
+fmt.Println(p.Precio)    // 269.99 (modificado)
+</code></pre>
+
+        <p>El compilador es inteligente: si llamas a un método con pointer receiver sobre un valor (no un puntero), Go toma la dirección automáticamente. Pero hay un caso en el que no puede hacerlo: valores temporales no direccionables.</p>
+
+        <p><strong>Regla práctica:</strong></p>
+        <ul>
+          <li>Usa <strong>pointer receiver</strong> si el método modifica el struct, o si el struct es grande (evitas copiar).</li>
+          <li>Usa <strong>value receiver</strong> si el método solo lee y el struct es pequeño.</li>
+          <li>Si un método de un tipo usa pointer receiver, lo habitual es que <em>todos</em> los métodos del tipo usen pointer receiver, para consistencia.</li>
+        </ul>
+
+        <h2 id="constructores">El patrón constructor en Go</h2>
+        <p>Go no tiene constructores como PHP, pero la convención es una función <code>New</code> o <code>NewTipo</code> que valida y devuelve el struct (generalmente un puntero):</p>
+
+        <pre><code data-lang="go">type Producto struct {
+    nombre string
+    precio float64
+    stock  int
+}
+
+func NewProducto(nombre string, precio float64, stock int) (*Producto, error) {
+    if precio &lt;= 0 {
+        return nil, fmt.Errorf("el precio debe ser positivo, got %f", precio)
+    }
+
+    if stock &lt; 0 {
+        return nil, fmt.Errorf("el stock no puede ser negativo")
+    }
+
+    return &amp;Producto{nombre: nombre, precio: precio, stock: stock}, nil
+}
+
+// Getters para campos privados
+func (p *Producto) Nombre() string  { return p.nombre }
+func (p *Producto) Precio() float64 { return p.precio }
+</code></pre>
+
+        <h2 id="structs-anidados">Structs anidados</h2>
+        <p>Los structs pueden contener otros structs como campos, o usar el embedding para promover sus métodos (esto se desarrolla en la lección de composición):</p>
+
+        <pre><code data-lang="go">type Direccion struct {
+    Calle   string
+    Ciudad  string
+    CP      string
+}
+
+type Cliente struct {
+    Nombre    string
+    Email     string
+    Direccion Direccion   // struct anidado
+}
+
+c := Cliente{
+    Nombre: "Ana García",
+    Email:  "ana@ejemplo.com",
+    Direccion: Direccion{
+        Calle:  "Calle Mayor 1",
+        Ciudad: "Madrid",
+        CP:     "28001",
+    },
+}
+
+fmt.Println(c.Direccion.Ciudad)   // "Madrid"
+</code></pre>
+
+        <h2 id="resumen">Resumen</h2>
+        <ul class="keypoints">
+          <li>Los structs agrupan campos con nombre y tipo. Son el equivalente funcional de las clases PHP, sin herencia.</li>
+          <li>Visibilidad por mayúsculas: campos en mayúscula = públicos; en minúscula = privados al paquete.</li>
+          <li>Los métodos llevan un receiver entre <code>func</code> y su nombre: <code>func (p Producto) método()</code>.</li>
+          <li>Value receiver recibe una copia (solo lectura del original); pointer receiver recibe la dirección (puede modificar el original).</li>
+          <li>Regla: usa pointer receiver si el método modifica el struct o el struct es grande.</li>
+          <li>El patrón constructor es una función <code>NewTipo()</code> que valida y devuelve un puntero al struct.</li>
+        </ul>
+      </article>
+    </div>
+    <footer class="footer"><div class="container footer__inner"><span class="footer__copy">© <span id="year"></span> MentorAI</span></div></footer>
+    <script src="../tutorials/manifest.js"></script><script src="../tutorials/courses.js"></script><script src="../tutorials/paths.js"></script><script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script><script src="../assets/js/modules/storage.js"></script><script src="../assets/js/modules/catalog.js"></script><script src="../assets/js/modules/courses.js"></script><script src="../assets/js/modules/paths.js"></script><script src="../assets/js/modules/home.js"></script><script src="../assets/js/modules/syntax.js"></script><script src="../assets/js/modules/bridge.js"></script><script src="../assets/js/modules/tutorial.js"></script><script src="../assets/js/modules/quiz.js"></script><script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

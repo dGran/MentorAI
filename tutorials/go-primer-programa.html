@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tu primer programa en Go — MentorAI</title>
+    <meta name="description" content="De cero a un programa que compila y se ejecuta: la estructura de un fichero Go, go run vs go build, go fmt y go vet, y un servidor HTTP en 10 líneas." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Go</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Tu primer programa en Go</h1>
+        <p class="tutorial-hero__lead">Antes de entrar en tipos, interfaces y concurrencia, necesitas el "ya funciona". Esta lección va de eso: escribir código Go, entender qué hace el compilador y llegar al servidor HTTP que responde en el navegador.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            12 min
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg>
+            Principiante
+          </span>
+          <span>Go</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container tutorial-layout">
+      <aside class="toc">
+        <p class="toc__title">En este tutorial</p>
+        <ol class="toc__list">
+          <li><a href="#estructura">Estructura de un fichero Go</a></li>
+          <li><a href="#hola-mundo">Hola, mundo</a></li>
+          <li><a href="#run-vs-build">go run vs go build</a></li>
+          <li><a href="#errores">El compilador es tu aliado</a></li>
+          <li><a href="#fmt-vet">go fmt y go vet</a></li>
+          <li><a href="#argumentos">Leer argumentos</a></li>
+          <li><a href="#servidor">Un servidor HTTP en 10 líneas</a></li>
+          <li><a href="#resumen">Resumen</a></li>
+        </ol>
+      </aside>
+
+      <article class="prose">
+        <h2 id="estructura">Estructura de un fichero Go</h2>
+        <p>Todo fichero Go empieza igual: declaración de paquete, imports y código. No hay opciones, no hay variantes.</p>
+
+        <pre><code data-lang="go">package main   // 1. a qué paquete pertenece este fichero
+
+import "fmt"   // 2. qué paquetes usa
+
+func main() {  // 3. el punto de entrada del programa
+    fmt.Println("Hola, mundo")
+}</code></pre>
+
+        <p>Tres reglas que el compilador impone sin negociación:</p>
+        <ol>
+          <li><strong>Todos los imports deben usarse.</strong> Si importas <code>"fmt"</code> y no usas ninguna de sus funciones, el programa no compila. No es un warning: es un error.</li>
+          <li><strong>Todas las variables declaradas deben usarse.</strong> Misma regla. Declarar y no usar es un error de compilación.</li>
+          <li><strong>El punto de entrada es siempre <code>func main()</code> en el paquete <code>main</code>.</strong> Sin excepciones.</li>
+        </ol>
+
+        <p>Estas restricciones son deliberadas: eliminan ruido del código antes de que llegue a revisión.</p>
+
+        <h2 id="hola-mundo">Hola, mundo</h2>
+        <p>Crea el módulo y el primer fichero dentro del contenedor:</p>
+
+        <pre><code data-lang="bash">docker compose run --rm app bash
+
+# dentro del contenedor:
+mkdir /tmp/hola && cd /tmp/hola
+go mod init hola               # crea go.mod con module hola
+
+cat &gt; main.go &lt;&lt;'EOF'
+package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Hola, mundo")
+    fmt.Printf("2 + 2 = %d\n", 2+2)
+}
+EOF</code></pre>
+
+        <p><code>go mod init</code> crea el fichero <code>go.mod</code>, que es la declaración del módulo (equivale a <code>composer.json</code> pero más simple). El argumento es el nombre del módulo.</p>
+
+        <h2 id="run-vs-build">go run vs go build</h2>
+
+        <div class="compare">
+          <div>
+            <p class="compare__label">go run</p>
+            <pre><code data-lang="bash">go run main.go
+# Hola, mundo
+# 2 + 2 = 4</code></pre>
+            <p>Compila en memoria y ejecuta directamente. No deja ningún fichero en disco. Ideal para desarrollo y pruebas rápidas.</p>
+          </div>
+          <div>
+            <p class="compare__label">go build</p>
+            <pre><code data-lang="bash">go build -o hola .
+./hola
+# Hola, mundo
+# 2 + 2 = 4</code></pre>
+            <p>Compila y genera un binario ejecutable. El <code>-o hola</code> fija el nombre de salida. El <code>.</code> compila el paquete del directorio actual.</p>
+          </div>
+        </div>
+
+        <p>Para desarrollo, <code>go run</code> es más cómodo. Para producción, siempre <code>go build</code>: el binario resultante no necesita Go instalado para ejecutarse.</p>
+
+        <h2 id="errores">El compilador es tu aliado</h2>
+        <p>Prueba a romper el programa a propósito para ver cómo responde el compilador:</p>
+
+        <pre><code data-lang="go">package main
+
+import (
+    "fmt"
+    "os"   // importado pero no usado
+)
+
+func main() {
+    x := 42   // declarado pero no usado
+    fmt.Println("hola")
+}</code></pre>
+
+        <pre><code data-lang="bash">go run main.go
+# ./main.go:5:2: "os" imported and not used
+# ./main.go:9:2: x declared and not used</code></pre>
+
+        <p>El compilador da el fichero, la línea y el mensaje exacto. No hay que adivinar nada. Esta precisión es una de las razones por las que el código Go en equipos grandes sigue siendo manejable: los errores se detectan antes de ejecutar.</p>
+
+        <h2 id="fmt-vet">go fmt y go vet</h2>
+        <p><code>go fmt</code> formatea el código según el estilo oficial. No tiene opciones porque no las necesita: hay un único estilo.</p>
+
+        <pre><code data-lang="bash">go fmt ./...        # formatea todos los ficheros del módulo
+go vet ./...        # detecta errores comunes que no son de compilación</code></pre>
+
+        <p><code>go vet</code> detecta errores que el compilador no puede: llamadas a <code>Printf</code> con el tipo de argumento incorrecto, variables de bucle capturadas en goroutines incorrectamente, comparaciones con <code>nil</code> que nunca son verdad.</p>
+
+        <pre><code data-lang="go">package main
+
+import "fmt"
+
+func main() {
+    // Printf espera string con %s, recibe int: vet lo detecta
+    fmt.Printf("%s\n", 42)
+}</code></pre>
+
+        <pre><code data-lang="bash">go vet main.go
+# ./main.go:7:2: fmt.Printf format %s has arg 42 of wrong type int</code></pre>
+
+        <div class="callout callout--tip">
+          En el día a día, el editor ejecuta <code>go fmt</code> al guardar y <code>go vet</code> en tiempo real. Solo necesitas ejecutarlos manualmente si trabajas fuera del editor o en CI.
+        </div>
+
+        <h2 id="argumentos">Leer argumentos</h2>
+        <p>Un programa un poco más útil: leer el nombre desde la línea de comandos.</p>
+
+        <pre><code data-lang="go">package main
+
+import (
+    "fmt"
+    "os"
+)
+
+func main() {
+    if len(os.Args) &lt; 2 {
+        fmt.Println("Uso: hola &lt;nombre&gt;")
+        os.Exit(1)
+    }
+
+    nombre := os.Args[1]
+    fmt.Printf("Hola, %s!\n", nombre)
+}</code></pre>
+
+        <pre><code data-lang="bash">go run main.go Ana
+# Hola, Ana!
+
+go run main.go
+# Uso: hola &lt;nombre&gt;</code></pre>
+
+        <p><code>os.Args</code> es un slice de strings. El índice 0 es siempre el nombre del programa; los argumentos empiezan en 1. <code>len()</code> devuelve la longitud del slice.</p>
+
+        <h2 id="servidor">Un servidor HTTP en 10 líneas</h2>
+        <p>La stdlib de Go incluye un servidor HTTP completo en el paquete <code>net/http</code>. Sin instalar nada extra:</p>
+
+        <pre><code data-lang="go">package main
+
+import (
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+        fmt.Fprintf(w, "Hola desde Go! Ruta: %s\n", r.URL.Path)
+    })
+
+    fmt.Println("Servidor en http://localhost:8080")
+    http.ListenAndServe(":8080", nil)
+}</code></pre>
+
+        <pre><code data-lang="bash">go run main.go
+# Servidor en http://localhost:8080
+
+# En otra terminal:
+curl http://localhost:8080/
+# Hola desde Go! Ruta: /
+
+curl http://localhost:8080/api/usuarios
+# Hola desde Go! Ruta: /api/usuarios</code></pre>
+
+        <p>Este servidor maneja concurrencia automáticamente: cada petición HTTP se atiende en su propia goroutine. Sin configuración, sin dependencias.</p>
+
+        <div class="callout callout--info">
+          <strong>¿Cuánto código equivalente en PHP?</strong> En PHP necesitas nginx o apache configurado, PHP-FPM, un <code>index.php</code> y un router. El servidor HTTP de la stdlib de Go hace todo eso en 10 líneas. Esa es una de las fortalezas que se mencionaba en la lección anterior.
+        </div>
+
+        <h2 id="resumen">Resumen</h2>
+        <ul class="keypoints">
+          <li>Todo fichero Go declara su paquete, sus imports y el código. No hay variaciones en la estructura.</li>
+          <li>El compilador rechaza imports no usados y variables no usadas: cero ruido de partida.</li>
+          <li><code>go run</code> compila y ejecuta sin dejar ficheros; <code>go build</code> genera el binario de producción.</li>
+          <li><code>go fmt</code> formatea el código sin opciones; <code>go vet</code> detecta errores sutiles que el compilador no ve.</li>
+          <li>La stdlib incluye un servidor HTTP de producción: concurrencia automática, sin dependencias externas.</li>
+        </ul>
+
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span class="footer__copy">© <span id="year"></span> MentorAI</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

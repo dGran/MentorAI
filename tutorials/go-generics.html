@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Generics en Go: funciones y tipos parametrizados — MentorAI</title>
+    <meta name="description" content="Go 1.18 introdujo generics: funciones y tipos que trabajan con cualquier tipo que cumpla una restricción. Menos código duplicado, sin perder seguridad de tipos." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" /><link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" /><meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" /><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" /><meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a><a href="../rutas.html" class="nav__link">Rutas</a><a href="../cursos.html" class="nav__link">Cursos</a><a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb"><a href="../index.html">MentorAI</a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><span>Go</span></nav>
+        <h1 class="tutorial-hero__title">Generics: funciones y tipos parametrizados</h1>
+        <p class="tutorial-hero__lead">Antes de Go 1.18 había que duplicar funciones para cada tipo o usar <code>any</code> y perder la seguridad de tipos. Los generics permiten escribir código que funciona con cualquier tipo que cumpla una restricción, verificada en tiempo de compilación.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>14 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg>Avanzado</span>
+          <span>Go</span>
+        </div>
+      </div>
+    </section>
+    <div class="container tutorial-layout">
+      <aside class="toc">
+        <p class="toc__title">En este tutorial</p>
+        <ol class="toc__list">
+          <li><a href="#problema">El problema antes de generics</a></li>
+          <li><a href="#funciones-genericas">Funciones genéricas</a></li>
+          <li><a href="#restricciones">Restricciones de tipo</a></li>
+          <li><a href="#tipos-genericos">Tipos genéricos</a></li>
+          <li><a href="#constraints">El paquete constraints</a></li>
+          <li><a href="#cuando-usar">Cuándo usar generics</a></li>
+          <li><a href="#resumen">Resumen</a></li>
+        </ol>
+      </aside>
+      <article class="prose">
+        <h2 id="problema">El problema antes de generics</h2>
+        <p>Imagina que quieres una función que devuelva el mayor de dos valores. Antes de Go 1.18, necesitabas una función por tipo o usar <code>any</code> perdiendo los checks del compilador:</p>
+
+        <pre><code data-lang="go">// Opción 1: duplicar para cada tipo (no escala)
+func maxInt(a, b int) int {
+    if a &gt; b {
+        return a
+    }
+    return b
+}
+
+func maxFloat64(a, b float64) float64 {
+    if a &gt; b {
+        return a
+    }
+    return b
+}
+
+// Opción 2: any (pierde seguridad de tipos)
+func maxAny(a, b any) any {
+    // necesitas type assertions: frágil y verboso
+    return a   // imposible implementar correctamente
+}
+</code></pre>
+
+        <p>Con generics, una sola función sirve para todos los tipos numéricos:</p>
+
+        <pre><code data-lang="go">func max[T int | float64](a, b T) T {
+    if a &gt; b {
+        return a
+    }
+    return b
+}
+
+max(3, 5)       // T inferido como int
+max(3.0, 5.0)   // T inferido como float64
+</code></pre>
+
+        <h2 id="funciones-genericas">Funciones genéricas</h2>
+        <p>Los parámetros de tipo van entre corchetes, antes de los parámetros normales:</p>
+
+        <pre><code data-lang="go">// [T any]: T puede ser cualquier tipo
+func Contiene[T comparable](slice []T, elemento T) bool {
+    for _, v := range slice {
+        if v == elemento {
+            return true
+        }
+    }
+    return false
+}
+
+// El compilador infiere T del argumento
+Contiene([]int{1, 2, 3}, 2)         // true
+Contiene([]string{"a", "b"}, "c")   // false
+
+// También puedes especificarlo explícitamente
+Contiene[int]([]int{1, 2, 3}, 2)
+</code></pre>
+
+        <p>Un caso muy útil: transformar un slice:</p>
+
+        <pre><code data-lang="go">func Map[T, U any](slice []T, fn func(T) U) []U {
+    resultado := make([]U, len(slice))
+
+    for i, v := range slice {
+        resultado[i] = fn(v)
+    }
+
+    return resultado
+}
+
+precios := []float64{10.0, 20.0, 30.0}
+conIVA := Map(precios, func(p float64) float64 { return p * 1.21 })
+// [12.1 24.2 36.3]
+
+nombres := []string{"ana", "luis", "eva"}
+longitudes := Map(nombres, func(s string) int { return len(s) })
+// [3 4 3]
+</code></pre>
+
+        <h2 id="restricciones">Restricciones de tipo</h2>
+        <p>La restricción define qué tipos puede tomar <code>T</code>. Las restricciones son interfaces — pero las interfaces para generics pueden listar tipos concretos con <code>|</code>:</p>
+
+        <pre><code data-lang="go">// Restricción: solo enteros con signo
+type Entero interface {
+    int | int8 | int16 | int32 | int64
+}
+
+func Suma[T Entero](valores []T) T {
+    var total T
+
+    for _, v := range valores {
+        total += v
+    }
+
+    return total
+}
+
+Suma([]int{1, 2, 3})    // 6
+Suma([]int64{10, 20})   // 30
+</code></pre>
+
+        <p>El operador <code>~</code> incluye todos los tipos cuyo tipo subyacente es el especificado. Útil cuando trabajas con tipos definidos sobre primitivos:</p>
+
+        <pre><code data-lang="go">type Celsius float64
+
+type Numerico interface {
+    ~int | ~float64   // ~ incluye tipos basados en int o float64
+}
+
+func Doblar[T Numerico](v T) T {
+    return v * 2
+}
+
+Doblar(5)               // 10 (int)
+Doblar(3.14)            // 6.28 (float64)
+Doblar(Celsius(20.0))   // Celsius(40.0) — funciona gracias a ~
+</code></pre>
+
+        <h2 id="tipos-genericos">Tipos genéricos</h2>
+        <p>No solo las funciones pueden ser genéricas. Los tipos también:</p>
+
+        <pre><code data-lang="go">// Cola genérica tipada
+type Cola[T any] struct {
+    elementos []T
+}
+
+func (c *Cola[T]) Encolar(v T) {
+    c.elementos = append(c.elementos, v)
+}
+
+func (c *Cola[T]) Desencolar() (T, bool) {
+    if len(c.elementos) == 0 {
+        var zero T
+        return zero, false
+    }
+
+    v := c.elementos[0]
+    c.elementos = c.elementos[1:]
+    return v, true
+}
+
+func (c *Cola[T]) Tamaño() int {
+    return len(c.elementos)
+}
+
+// Uso
+colaPedidos := Cola[int]{}
+colaPedidos.Encolar(1)
+colaPedidos.Encolar(2)
+pedido, ok := colaPedidos.Desencolar()   // 1, true
+</code></pre>
+
+        <h2 id="constraints">El paquete constraints</h2>
+        <p>El paquete <code>golang.org/x/exp/constraints</code> (experimental pero estable en la práctica) y la propia stdlib ofrecen restricciones predefinidas:</p>
+
+        <pre><code data-lang="go">import "golang.org/x/exp/constraints"
+
+// constraints.Ordered: cualquier tipo comparable con &lt;, &gt;, &lt;=, &gt;=
+func Min[T constraints.Ordered](a, b T) T {
+    if a &lt; b {
+        return a
+    }
+    return b
+}
+
+// comparable: builtin de Go — tipos que soportan == y !=
+// any: builtin de Go — cualquier tipo (alias de interface{})
+</code></pre>
+
+        <h2 id="cuando-usar">Cuándo usar generics</h2>
+
+        <table>
+          <thead><tr><th>Situación</th><th>Recomendación</th></tr></thead>
+          <tbody>
+            <tr><td>Funciones que operan sobre colecciones (map, filter, reduce)</td><td>Generics: código una vez, funciona para todos los tipos</td></tr>
+            <tr><td>Estructuras de datos reutilizables (cola, pila, caché)</td><td>Tipos genéricos</td></tr>
+            <tr><td>Polimorfismo de comportamiento (distintas implementaciones)</td><td>Interfaces, no generics</td></tr>
+            <tr><td>Lógica de negocio específica</td><td>Tipos concretos; generics añaden complejidad sin beneficio</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout callout--info">
+          La guía del equipo de Go: usa generics cuando escribirías el mismo código varias veces para distintos tipos, pero no cuando las interfaces ya cubren el caso. Los generics son para la capa de infraestructura y utilidades, no para la lógica de dominio.
+        </div>
+
+        <h2 id="resumen">Resumen</h2>
+        <ul class="keypoints">
+          <li>Los generics, introducidos en Go 1.18, permiten funciones y tipos parametrizados por tipo: una implementación sirve para varios tipos.</li>
+          <li>Los parámetros de tipo van en <code>[T restricción]</code> antes de los parámetros normales. El compilador infiere el tipo de los argumentos.</li>
+          <li>Las restricciones son interfaces que pueden incluir tipos concretos (<code>int | float64</code>) o usar <code>~</code> para incluir tipos derivados.</li>
+          <li><code>comparable</code> permite usar <code>==</code> y <code>!=</code>; <code>any</code> acepta cualquier tipo; <code>constraints.Ordered</code> permite comparaciones de orden.</li>
+          <li>Usa generics para colecciones y estructuras de datos reutilizables; usa interfaces para polimorfismo de comportamiento.</li>
+        </ul>
+      </article>
+    </div>
+    <footer class="footer"><div class="container footer__inner"><span class="footer__copy">© <span id="year"></span> MentorAI</span></div></footer>
+    <script src="../tutorials/manifest.js"></script><script src="../tutorials/courses.js"></script><script src="../tutorials/paths.js"></script><script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script><script src="../assets/js/modules/storage.js"></script><script src="../assets/js/modules/catalog.js"></script><script src="../assets/js/modules/courses.js"></script><script src="../assets/js/modules/paths.js"></script><script src="../assets/js/modules/home.js"></script><script src="../assets/js/modules/syntax.js"></script><script src="../assets/js/modules/bridge.js"></script><script src="../assets/js/modules/tutorial.js"></script><script src="../assets/js/modules/quiz.js"></script><script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

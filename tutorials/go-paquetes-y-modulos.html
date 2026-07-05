@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Paquetes y módulos en Go — MentorAI</title>
+    <meta name="description" content="Todo programa Go vive en paquetes. Los módulos (go.mod + go.sum) son el composer.json y composer.lock de Go: declaran dependencias y fijan versiones exactas." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Go</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Paquetes y módulos: la unidad de organización</h1>
+        <p class="tutorial-hero__lead">En Go el código se organiza en paquetes y los proyectos en módulos. go.mod y go.sum son el composer.json y el composer.lock de Go: declaran dependencias y fijan las versiones exactas que se usan.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>13 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg>Principiante</span>
+          <span>Go</span>
+        </div>
+      </div>
+    </section>
+    <div class="container tutorial-layout">
+      <aside class="toc">
+        <p class="toc__title">En este tutorial</p>
+        <ol class="toc__list">
+          <li><a href="#paquetes">Qué es un paquete</a></li>
+          <li><a href="#visibilidad">Visibilidad: mayúscula vs minúscula</a></li>
+          <li><a href="#modulos">Módulos: go.mod y go.sum</a></li>
+          <li><a href="#imports">Imports y alias</a></li>
+          <li><a href="#dependencias">Gestionar dependencias</a></li>
+          <li><a href="#internal">El directorio internal</a></li>
+          <li><a href="#resumen">Resumen</a></li>
+        </ol>
+      </aside>
+      <article class="prose">
+        <h2 id="paquetes">Qué es un paquete</h2>
+        <p>Un paquete en Go es un directorio con ficheros <code>.go</code> que comparten la misma declaración <code>package</code>. El nombre del paquete suele coincidir con el nombre del directorio, aunque no es obligatorio.</p>
+        <p>La stdlib de Go está organizada en paquetes: <code>fmt</code> para formateo, <code>net/http</code> para HTTP, <code>os</code> para el sistema operativo, <code>strings</code> para manipulación de cadenas. Cada uno es un directorio en la instalación de Go.</p>
+
+        <pre><code data-lang="go">// fichero: matematicas/suma.go
+package matematicas    // nombre del paquete
+
+func Suma(a, b int) int {
+    return a + b
+}
+
+func sumaInterna(a, b int) int {   // minúscula: solo visible dentro del paquete
+    return a + b
+}
+</code></pre>
+
+        <pre><code data-lang="go">// fichero: main.go
+package main
+
+import (
+    "fmt"
+    "mi-proyecto/matematicas"
+)
+
+func main() {
+    resultado := matematicas.Suma(3, 4)    // mayúscula: accesible
+    fmt.Println(resultado)                  // 7
+}
+</code></pre>
+
+        <h2 id="visibilidad">Visibilidad: mayúscula vs minúscula</h2>
+        <p>Go no tiene <code>public</code>, <code>private</code> ni <code>protected</code>. La regla es una sola: <strong>mayúscula inicial = exportado (visible desde fuera del paquete); minúscula inicial = no exportado (privado al paquete)</strong>.</p>
+
+        <div class="compare">
+          <div>
+            <p class="compare__label compare__label--bad">PHP</p>
+            <pre><code data-lang="php">class Calculadora {
+    public function sumar(int $a, int $b): int {
+        return $a + $b;
+    }
+
+    private function log(): void {}
+}
+</code></pre>
+          </div>
+          <div>
+            <p class="compare__label compare__label--good">Go</p>
+            <pre><code data-lang="go">// en el paquete calculadora
+func Sumar(a, b int) int {    // exportada
+    return a + b
+}
+
+func logear() {               // no exportada
+}
+</code></pre>
+          </div>
+        </div>
+
+        <p>La regla aplica a funciones, tipos, variables, constantes y campos de struct. Si el nombre empieza con mayúscula, es parte de la API pública del paquete.</p>
+
+        <h2 id="modulos">Módulos: go.mod y go.sum</h2>
+        <p>Un módulo es la unidad de distribución de Go: un árbol de paquetes con un fichero <code>go.mod</code> en la raíz. El módulo tiene un nombre (su ruta de importación) y declara sus dependencias.</p>
+
+        <pre><code data-lang="bash">// go.mod
+module github.com/usuario/mi-servicio
+
+go 1.23
+
+require (
+    github.com/gin-gonic/gin v1.10.0
+    github.com/lib/pq v1.10.9
+)
+</code></pre>
+
+        <div class="compare">
+          <div>
+            <p class="compare__label">PHP (composer.json)</p>
+            <pre><code data-lang="bash">{
+  "name": "usuario/mi-servicio",
+  "require": {
+    "laravel/framework": "^11.0",
+    "doctrine/orm": "^3.0"
+  }
+}
+</code></pre>
+          </div>
+          <div>
+            <p class="compare__label">Go (go.mod)</p>
+            <pre><code data-lang="bash">module github.com/usuario/mi-servicio
+
+go 1.23
+
+require (
+    github.com/gin-gonic/gin v1.10.0
+    github.com/jmoiron/sqlx v1.3.5
+)
+</code></pre>
+          </div>
+        </div>
+
+        <p><code>go.sum</code> fija los checksums criptográficos de cada dependencia y sus dependencias transitivas. Es el equivalente al <code>composer.lock</code>: garantiza que todos en el equipo (y el CI) usan exactamente los mismos binarios. Nunca se edita a mano.</p>
+
+        <h2 id="imports">Imports y alias</h2>
+        <p>Los imports usan la ruta completa del paquete pero se usan por el nombre corto final:</p>
+
+        <pre><code data-lang="go">import (
+    "fmt"                           // uso: fmt.Println
+    "net/http"                      // uso: http.Get
+    "github.com/gin-gonic/gin"      // uso: gin.New
+)
+</code></pre>
+
+        <p>Cuando dos paquetes tienen el mismo nombre final, se usa un alias:</p>
+
+        <pre><code data-lang="go">import (
+    pgx "github.com/jackc/pgx/v5"          // alias: pgx
+    stdlib "github.com/jackc/pgx/v5/stdlib" // alias: stdlib
+)
+</code></pre>
+
+        <p>El import con guión bajo descarta el paquete pero ejecuta su función <code>init()</code> — útil para registrar drivers de base de datos:</p>
+
+        <pre><code data-lang="go">import (
+    "database/sql"
+    _ "github.com/lib/pq"    // registra el driver postgres, no se usa directamente
+)
+</code></pre>
+
+        <h2 id="dependencias">Gestionar dependencias</h2>
+
+        <pre><code data-lang="bash"># Añadir una dependencia
+go get github.com/gin-gonic/gin@v1.10.0
+
+# Actualizar a la última versión compatible
+go get github.com/gin-gonic/gin@latest
+
+# Eliminar dependencias no usadas / añadir las que faltan
+go mod tidy
+
+# Ver el árbol de dependencias
+go mod graph
+
+# Descargar todas las dependencias al caché local
+go mod download
+</code></pre>
+
+        <div class="callout callout--tip">
+          <code>go mod tidy</code> es el equivalente a <code>composer install</code> + <code>composer dump-autoload</code>. Ejecútalo antes de cada commit para que <code>go.mod</code> y <code>go.sum</code> estén sincronizados.
+        </div>
+
+        <h2 id="internal">El directorio internal</h2>
+        <p>Go tiene un mecanismo de encapsulamiento a nivel de módulo: el directorio <code>internal/</code>. El compilador impide importar paquetes de <code>internal/</code> desde fuera del módulo al que pertenecen. No es una convención: es una regla del compilador.</p>
+
+        <pre><code data-lang="bash">mi-servicio/
+├── cmd/
+│   └── server/
+│       └── main.go        # puede importar internal/
+├── internal/
+│   ├── auth/              # solo importable desde mi-servicio
+│   └── db/                # solo importable desde mi-servicio
+└── pkg/
+    └── utils/             # importable desde cualquier módulo externo
+</code></pre>
+
+        <p>La convención es: <code>internal/</code> para código privado del módulo; <code>pkg/</code> para código que quieres ofrecer a otros módulos.</p>
+
+        <h2 id="resumen">Resumen</h2>
+        <ul class="keypoints">
+          <li>Un paquete = un directorio de ficheros <code>.go</code> con la misma declaración <code>package</code>.</li>
+          <li>Visibilidad: mayúscula inicial = exportado; minúscula inicial = privado al paquete. Sin <code>public/private</code>.</li>
+          <li><code>go.mod</code> declara el módulo y sus dependencias directas; <code>go.sum</code> fija los checksums. Nunca editar <code>go.sum</code> a mano.</li>
+          <li><code>go get</code> añade dependencias; <code>go mod tidy</code> las sincroniza. Equivale a <code>composer require</code> y <code>composer install</code>.</li>
+          <li>El directorio <code>internal/</code> es código privado del módulo: el compilador impide importarlo desde fuera.</li>
+        </ul>
+      </article>
+    </div>
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span class="footer__copy">© <span id="year"></span> MentorAI</span>
+      </div>
+    </footer>
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

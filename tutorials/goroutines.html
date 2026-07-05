@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Goroutines: concurrencia ligera en Go — MentorAI</title>
+    <meta name="description" content="Go lanza miles de goroutines con la misma naturalidad que PHP llama una función. Qué son, cómo se crean, y por qué son la clave de la concurrencia en Go." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" /><link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" /><meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" /><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" /><meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a><a href="../rutas.html" class="nav__link">Rutas</a><a href="../cursos.html" class="nav__link">Cursos</a><a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb"><a href="../index.html">MentorAI</a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><span>Go</span></nav>
+        <h1 class="tutorial-hero__title">Goroutines: concurrencia ligera</h1>
+        <p class="tutorial-hero__lead">PHP es principalmente single-threaded: una petición, un hilo, ejecución secuencial. Go nació para lo contrario: lanzar miles de tareas concurrentes es tan natural como llamar a una función. La palabra clave es <code>go</code>.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>16 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg>Avanzado</span>
+          <span>Go</span>
+        </div>
+      </div>
+    </section>
+    <div class="container tutorial-layout">
+      <aside class="toc">
+        <p class="toc__title">En este tutorial</p>
+        <ol class="toc__list">
+          <li><a href="#que-es">Qué es una goroutine</a></li>
+          <li><a href="#go-keyword">La palabra clave go</a></li>
+          <li><a href="#vs-threads">Goroutines vs threads del OS</a></li>
+          <li><a href="#sincronizar">Esperar goroutines: WaitGroup</a></li>
+          <li><a href="#race-condition">Race conditions</a></li>
+          <li><a href="#patron-worker">Patrón worker pool</a></li>
+          <li><a href="#resumen">Resumen</a></li>
+        </ol>
+      </aside>
+      <article class="prose">
+        <h2 id="que-es">Qué es una goroutine</h2>
+        <p>Una goroutine es una función que Go ejecuta de forma concurrente con el resto del programa. No es un thread del sistema operativo: es una unidad gestionada por el runtime de Go, mucho más ligera.</p>
+
+        <p>Un thread del OS ocupa entre 1 y 8 MB de memoria. Una goroutine empieza con 2 KB y crece dinámicamente según lo que necesite. Puedes tener cientos de miles de goroutines activas en el mismo proceso sin problemas.</p>
+
+        <div class="diagram">
+          <div class="flow">
+            <div class="flow__node">Runtime Go<br/><small>Scheduler</small></div>
+            <div class="flow__arrow">↓ multiplexea</div>
+            <div class="flow__node">OS Threads<br/><small>Uno por CPU core</small></div>
+            <div class="flow__arrow">↑ ejecutan</div>
+            <div class="flow__node">Goroutines<br/><small>Miles o millones</small></div>
+          </div>
+        </div>
+
+        <h2 id="go-keyword">La palabra clave go</h2>
+        <p>Para lanzar una goroutine, antepones <code>go</code> a cualquier llamada de función:</p>
+
+        <pre><code data-lang="go">func saludar(nombre string) {
+    fmt.Println("Hola,", nombre)
+}
+
+go saludar("Ana")   // lanza saludar en una goroutine nueva
+go saludar("Luis")  // otra goroutine, concurrente con la anterior
+
+// La función principal continúa aquí sin esperar
+</code></pre>
+
+        <p>El problema con este código: si <code>main</code> termina antes que las goroutines, el proceso muere y las goroutines no completan su ejecución. Necesitas un mecanismo para esperar.</p>
+
+        <pre><code data-lang="go">func main() {
+    go saludar("Ana")
+    go saludar("Luis")
+
+    // sin nada más, main termina y las goroutines mueren con él
+    // fmt.Println nunca llega a ejecutarse
+}
+</code></pre>
+
+        <p>Las goroutines también se lanzan con funciones anónimas, lo que es muy común en la práctica:</p>
+
+        <pre><code data-lang="go">for i := 0; i &lt; 5; i++ {
+    i := i   // copia local: importante para capturar el valor correcto en el closure
+    go func() {
+        fmt.Println("goroutine", i)
+    }()
+}
+</code></pre>
+
+        <div class="callout callout--warning">
+          El <code>i := i</code> es crítico. Sin él, el closure captura la variable del bucle (no su valor), y cuando la goroutine ejecuta, <code>i</code> ya puede haber cambiado. Es uno de los errores más comunes al empezar con goroutines.
+        </div>
+
+        <h2 id="vs-threads">Goroutines vs threads del OS</h2>
+
+        <table>
+          <thead><tr><th></th><th>OS Thread</th><th>Goroutine</th></tr></thead>
+          <tbody>
+            <tr><td>Stack inicial</td><td>1-8 MB</td><td>2 KB (crece dinámicamente)</td></tr>
+            <tr><td>Creación</td><td>~microsegundos, llamada al OS</td><td>~nanosegundos, gestionado por Go</td></tr>
+            <tr><td>Context switch</td><td>OS lo gestiona (costoso)</td><td>Go runtime (muy barato)</td></tr>
+            <tr><td>Cantidad práctica</td><td>Miles (limitado por RAM)</td><td>Millones posibles</td></tr>
+            <tr><td>Comunicación</td><td>Memoria compartida + locks</td><td>Channels (preferido) o memoria compartida</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="sincronizar">Esperar goroutines: WaitGroup</h2>
+        <p><code>sync.WaitGroup</code> es el mecanismo básico para esperar a que un grupo de goroutines termine:</p>
+
+        <pre><code data-lang="go">import "sync"
+
+func procesarLotes(ids []int) {
+    var wg sync.WaitGroup
+
+    for _, id := range ids {
+        wg.Add(1)   // incrementa el contador antes de lanzar la goroutine
+        id := id    // captura local
+
+        go func() {
+            defer wg.Done()   // decrementa cuando la goroutine termina
+
+            procesar(id)
+        }()
+    }
+
+    wg.Wait()   // bloquea hasta que el contador llega a 0
+    fmt.Println("todos los lotes procesados")
+}
+</code></pre>
+
+        <p>Tres reglas del WaitGroup:</p>
+        <ul>
+          <li><code>Add(1)</code> siempre antes de lanzar la goroutine. Si se llama dentro de la goroutine, puede haber una race condition entre Add y Wait.</li>
+          <li><code>Done()</code> siempre con <code>defer</code>, para garantizar que se llama aunque la goroutine haga un return anticipado o entre en pánico.</li>
+          <li>No reusar un WaitGroup que tiene goroutines activas.</li>
+        </ul>
+
+        <h2 id="race-condition">Race conditions</h2>
+        <p>Cuando múltiples goroutines acceden a la misma variable y al menos una escribe, hay una race condition: el resultado depende del orden de ejecución, que no está garantizado.</p>
+
+        <pre><code data-lang="go">// BUGGY: race condition
+contador := 0
+var wg sync.WaitGroup
+
+for i := 0; i &lt; 1000; i++ {
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+        contador++   // lectura + incremento + escritura: no atómico
+    }()
+}
+
+wg.Wait()
+fmt.Println(contador)   // puede ser cualquier número menor que 1000
+</code></pre>
+
+        <p>Go tiene un detector de race conditions integrado. Compila y ejecuta con <code>-race</code>:</p>
+
+        <pre><code data-lang="bash">go run -race main.go
+go test -race ./...
+</code></pre>
+
+        <p>La solución con <code>sync.Mutex</code> (se desarrolla en la siguiente lección):</p>
+
+        <pre><code data-lang="go">var mu sync.Mutex
+contador := 0
+
+for i := 0; i &lt; 1000; i++ {
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+        mu.Lock()
+        contador++
+        mu.Unlock()
+    }()
+}
+</code></pre>
+
+        <p>O con <code>sync/atomic</code> para operaciones simples:</p>
+
+        <pre><code data-lang="go">import "sync/atomic"
+
+var contador int64
+
+for i := 0; i &lt; 1000; i++ {
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+        atomic.AddInt64(&amp;contador, 1)   // atómico: seguro sin mutex
+    }()
+}
+</code></pre>
+
+        <h2 id="patron-worker">Patrón worker pool</h2>
+        <p>Lanzar una goroutine por cada tarea puede saturar los recursos si hay millones de tareas. El patrón worker pool limita la concurrencia a N goroutines activas:</p>
+
+        <pre><code data-lang="go">func procesarConWorkers(ids []int, numWorkers int) {
+    trabajos := make(chan int, len(ids))
+    var wg sync.WaitGroup
+
+    // Lanzar N workers
+    for range numWorkers {
+        wg.Add(1)
+        go func() {
+            defer wg.Done()
+
+            for id := range trabajos {   // el channel se cierra cuando no hay más
+                procesarID(id)
+            }
+        }()
+    }
+
+    // Enviar trabajos al channel
+    for _, id := range ids {
+        trabajos &lt;- id
+    }
+
+    close(trabajos)   // señala a los workers que no hay más trabajo
+    wg.Wait()
+}
+</code></pre>
+
+        <h2 id="resumen">Resumen</h2>
+        <ul class="keypoints">
+          <li>Una goroutine es una función lanzada con <code>go f()</code>. El runtime de Go multiplexa miles de goroutines sobre un pequeño número de threads del OS.</li>
+          <li>Una goroutine pesa ~2 KB frente a 1-8 MB de un thread. Crear cientos de miles es normal en Go.</li>
+          <li>Usa <code>sync.WaitGroup</code> para esperar a que un grupo de goroutines termine. <code>Add(1)</code> antes de lanzar; <code>defer Done()</code> dentro.</li>
+          <li>Las race conditions ocurren cuando múltiples goroutines acceden a la misma variable con al menos una escritura. Detecta con <code>go run -race</code>.</li>
+          <li>El patrón worker pool limita la concurrencia a N goroutines activas usando un channel como cola de trabajo.</li>
+        </ul>
+      </article>
+    </div>
+    <footer class="footer"><div class="container footer__inner"><span class="footer__copy">© <span id="year"></span> MentorAI</span></div></footer>
+    <script src="../tutorials/manifest.js"></script><script src="../tutorials/courses.js"></script><script src="../tutorials/paths.js"></script><script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script><script src="../assets/js/modules/storage.js"></script><script src="../assets/js/modules/catalog.js"></script><script src="../assets/js/modules/courses.js"></script><script src="../assets/js/modules/paths.js"></script><script src="../assets/js/modules/home.js"></script><script src="../assets/js/modules/syntax.js"></script><script src="../assets/js/modules/bridge.js"></script><script src="../assets/js/modules/tutorial.js"></script><script src="../assets/js/modules/quiz.js"></script><script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
