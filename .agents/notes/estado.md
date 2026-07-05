@@ -1104,42 +1104,45 @@ El usuario señaló con alarma "main.js +2000 loc" y eligió "un fichero por mó
 y/o `el-grado-que-no-hiciste`; SQL en `construir-un-servicio`. Valorar añadirlos al
 retomar si tiene sentido ampliar esas rutas.
 
-## Siguiente paso sugerido (actualizado 2026-07-05)
-Estado del sitio: **121 tutoriales publicados, 18 cursos**, rutas montadas en
-`paths.js` (ruta transversal `el-grado-que-no-hiciste` incluida). Todo
-**pusheado** a `origin/main` (último commit: b102c4a). Repo: `github.com/dGran/MentorAI`,
-Pages en `dgran.github.io/MentorAI/`.
+## Siguiente paso sugerido (actualizado 2026-07-06)
+
+Estado del sitio: **151 tutoriales publicados, 20 cursos** (+ curso Go). Commits
+pendientes de push: `68de188` (curso Go completo) y `bdaf4dd` (feature offline).
+Repo: `github.com/dGran/MentorAI`, Pages en `dgran.github.io/MentorAI/`.
+
+**COMPLETADO EN ESTA SESIÓN (2026-07-06):**
+- `plan-curso-go.md` — **COMPLETO**. 21 lecciones, 5 módulos, commit `68de188`.
+  Lexer Go añadido a `assets/js/modules/syntax.js`.
+  Lecciones: go-que-es, go-entorno-docker, go-editores, go-primer-programa,
+  go-tipos-y-variables, go-control-de-flujo, go-funciones, go-structs,
+  go-punteros, go-slices-y-maps, go-interfaces, go-composicion, go-errores,
+  go-generics, goroutines, go-channels, go-sync-y-context, go-http,
+  go-json-y-bd, go-testing, go-a-produccion.
+- **Feature "Guardar para viajar"** — **COMPLETO**, commit `bdaf4dd`.
+  Archivos: `sw.js` (Service Worker), `assets/js/modules/offline.js`,
+  `offline.html`, CSS añadido en `styles.css`, `init.js` y `cursos.html`
+  actualizados. Solo funciona en http/https; degrada silenciosamente en file://.
 
 **PLANES COMPLETOS:**
 - `plan-diseno-y-calidad.md` — **COMPLETO** (oop, solid, clean-code, di-contenedores, 2026-06-27).
 - `plan-practica-backend.md` — **COMPLETO** (git, apis-rest, acceso-a-datos, docker, ci-cd,
   artículos config-y-entornos y composer, ruta construir-un-servicio, 2026-07-04).
 - `plan-testing-y-observabilidad.md` — **COMPLETO** (phpunit 6 + observabilidad 9, 2026-07-04).
+- `plan-huecos-versatilidad.md` — **COMPLETO** salvo "Ponlo en práctica" (mini-retos),
+  ítem de producto pendiente de diseño (details/summary, HTML/CSS puro).
+- `plan-curso-go.md` — **COMPLETO** (2026-07-06).
 
-**plan-huecos-versatilidad.md — EN CURSO:**
-- SQL aplicado avanzado — **HECHO** (4 lecciones, curso `sql-aplicado`).
-- Patrones GoF — **HECHO** (6 lecciones, curso `patrones-diseno`).
-- Framework por dentro — **HECHO** (2 lecciones, curso `framework-por-dentro`).
-- **Terminal/Linux para desarrolladores** — **PENDIENTE** (~2-3 lecciones o artículo
-  denso). Contenido: navegación, pipes/redirección, grep/find, permisos, procesos, ssh/scp.
-  Categorías `herramientas` (ya existe). Bloques `bash`. Formato a decidir al retomar.
-- **"Ponlo en práctica" mini-retos** — **PENDIENTE** (decisión de producto antes de contenido):
-  sección al final de la última lección de cada curso, HTML/CSS puro, details/summary para
-  pistas y solución. Requiere diseño antes de autoría.
-
-**SIGUIENTE INMEDIATO al retomar:** Terminal/Linux (próximo ítem del plan-huecos-versatilidad).
-Proponer formato (2 lecciones: navegación+herramientas / permisos+procesos+red; o artículo
-denso ~18m tipo cheat-sheet) y aprobar estructura antes de arrancar autoría.
-
-**Después de huecos-versatilidad:**
-- `plan-curso-go.md` — curso Go desde cero (~20 lecciones / 5 módulos). Necesita aprobación
-  de estructura y añadir lexer `go` a syntax.js antes de arrancar.
-- `plan-curso-rust.md` — curso Rust desde cero (~21 lecciones / 5 módulos). Mismas condiciones.
-- Lecciones `go-que-es` y `rust-que-es` se cruzan (tabla Go vs Rust).
+**SIGUIENTE INMEDIATO al retomar:**
+- `plan-curso-rust.md` — Rust desde cero (~21 lecciones / 5 módulos). Estructura
+  pendiente de aprobación del usuario. Las lecciones `go-que-es` y `rust-que-es`
+  se cruzan con tabla comparativa Go vs Rust.
+- "Ponlo en práctica" mini-retos (último ítem de plan-huecos-versatilidad):
+  requiere decisión de diseño antes de contenido.
 
 **PENDIENTES MENORES:**
+- Quizzes para el curso `go` en `tutorials/quizzes.js` (actualmente tiene 19 cursos, falta go).
 - Script opcional `server/recalcular-minutos.js` (los `minutes` del manifest son manuales).
-- Ampliar rutas `el-grado-que-no-hiciste` / `construir-un-servicio` con los cursos nuevos.
+- Ampliar rutas `el-grado-que-no-hiciste` / `construir-un-servicio` con cursos nuevos.
 - **Al añadir tutorial/curso nuevo: revisar `tutorials/paths.js` para encajarlo.**
 
 **PLANES DE FASE 2 (sin tocar):** `plan-buscador-fulltext.md`,
