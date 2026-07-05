@@ -405,4 +405,126 @@ window.MENTORAI_COURSES = [
       },
     ],
   },
+  {
+    slug: "python",
+    title: "Python desde cero",
+    summary:
+      "Aprende Python de principio a fin: el entorno dockerizado, los fundamentos del lenguaje, los patrones idiomáticos de Python (comprehensions, decoradores, generadores), y cómo construir una API real con FastAPI y SQLAlchemy.",
+    level: "Intermedio",
+    icon: "code",
+    modules: [
+      {
+        title: "Introducción y entorno",
+        summary: "Qué es Python, para qué proyectos encaja y cómo montar un entorno dockerizado desde cero.",
+        lessons: [
+          "python-que-es",
+          "python-entorno-docker",
+          "python-editores",
+          "python-primer-programa",
+        ],
+      },
+      {
+        title: "Fundamentos del lenguaje",
+        summary: "Tipos dinámicos, control de flujo, funciones, clases y módulos.",
+        lessons: [
+          "python-tipos-y-variables",
+          "python-control-de-flujo",
+          "python-funciones",
+          "python-clases-y-oop",
+          "python-modulos-y-paquetes",
+        ],
+      },
+      {
+        title: "Patrones idiomáticos",
+        summary: "Comprehensions, generadores, decoradores, context managers y tipado estático con mypy.",
+        lessons: [
+          "python-comprehensions-y-generadores",
+          "python-decoradores",
+          "python-context-managers",
+          "python-tipado-con-mypy",
+        ],
+      },
+      {
+        title: "Backend con FastAPI",
+        summary: "Una API real con FastAPI: rutas, Pydantic, middleware, SQLAlchemy async y testing con pytest.",
+        lessons: [
+          "python-fastapi-intro",
+          "python-pydantic",
+          "python-sqlalchemy-async",
+          "python-testing-pytest",
+        ],
+      },
+      {
+        title: "Async y producción",
+        summary: "Async/await en profundidad, Docker, configuración por entornos y logging estructurado.",
+        lessons: [
+          "python-async-await",
+          "python-docker",
+          "python-configuracion",
+          "python-a-produccion",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "rust",
+    title: "Rust desde cero",
+    summary:
+      "Aprende Rust de principio a fin: el entorno dockerizado, los fundamentos del lenguaje, el sistema de ownership que lo hace único, la concurrencia sin data races y cómo construir un servicio web con Axum. Con ejemplos prácticos y contraste constante con PHP y Go.",
+    level: "Intermedio",
+    icon: "code",
+    modules: [
+      {
+        title: "Introducción y entorno",
+        summary: "Qué es Rust, por qué existe y cómo montar un entorno de trabajo dockerizado desde cero.",
+        lessons: [
+          "rust-que-es",
+          "rust-entorno-docker",
+          "rust-editores",
+          "rust-primer-programa",
+        ],
+      },
+      {
+        title: "Fundamentos del lenguaje",
+        summary: "Los bloques básicos: tipos, control de flujo, funciones, structs, enums y pattern matching.",
+        lessons: [
+          "rust-tipos-y-variables",
+          "rust-control-de-flujo",
+          "rust-funciones",
+          "rust-structs-y-enums",
+          "rust-pattern-matching",
+        ],
+      },
+      {
+        title: "El sistema de tipos avanzado",
+        summary: "Traits, el ownership que diferencia a Rust, borrowing, lifetimes y smart pointers.",
+        lessons: [
+          "rust-traits",
+          "rust-ownership",
+          "rust-borrowing",
+          "rust-lifetimes",
+          "rust-smart-pointers",
+        ],
+      },
+      {
+        title: "Concurrencia y asincronía",
+        summary: "Threads sin data races, canales, async/await con Tokio y manejo de errores con ?.",
+        lessons: [
+          "rust-concurrencia",
+          "rust-async-tokio",
+          "rust-errores",
+        ],
+      },
+      {
+        title: "Ecosistema y producción",
+        summary: "Cargo y crates, un servidor HTTP con Axum, serialización con Serde, testing y despliegue.",
+        lessons: [
+          "rust-cargo-y-crates",
+          "rust-axum",
+          "rust-serde-y-bd",
+          "rust-testing-y-produccion",
+        ],
+      },
+    ],
+  },
 ];

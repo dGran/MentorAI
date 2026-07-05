@@ -566,4 +566,32 @@ window.MENTORAI_QUIZZES = {
       o: ["Que requiere más clases y más código, justificado solo en dominios con alta complejidad y requisitos de auditoría", "Que es imposible usar un ORM con Event Sourcing", "Que el equipo debe dominar tres o más lenguajes de programación", "Que el despliegue requiere infraestructura de mensajería que no existe en la nube"], a: 0 },
   ]},
 
+  /* -------- Go (12) -------- */
+  "go": { questions: [
+    { q: "¿Cuánta memoria ocupa una goroutine al arrancar, frente a un thread del SO?",
+      o: ["La misma: ambos empiezan con 1 MB de stack", "Una goroutine empieza con ~2 KB; un thread del SO suele necesitar 1-8 MB", "Los goroutines no tienen stack propio; usan el del thread principal", "La goroutine ocupa más porque el scheduler de Go añade overhead"], a: 1 },
+    { q: "¿Qué ocurre al enviar un valor a un canal sin buffer cuando no hay receptor esperando?",
+      o: ["El valor se descarta silenciosamente", "La goroutine emisora se bloquea hasta que otra goroutine recibe el valor", "El programa lanza un panic inmediatamente", "El valor se encola internamente hasta que haya receptor"], a: 1 },
+    { q: "¿Para qué sirve `defer` en Go?",
+      o: ["Para ejecutar una función en otro goroutine", "Para aplazar la ejecución de una llamada a función hasta que la función que la contiene retorne", "Para marcar una función como de baja prioridad en el scheduler", "Para definir el comportamiento de limpieza de una interfaz"], a: 1 },
+    { q: "¿Cómo implementa un tipo una interfaz en Go?",
+      o: ["Usando la palabra clave `implements` seguida del nombre de la interfaz", "Declarando explícitamente que implementa la interfaz en la cabecera del struct", "Implementando todos los métodos de la interfaz; Go lo verifica automáticamente sin declaración explícita", "Heredando de un tipo base que ya implementa la interfaz"], a: 2 },
+    { q: "¿Cuál es el patrón idiomático de manejo de errores en Go?",
+      o: ["Usar panic/recover como equivalente a try/catch", "Retornar el error como último valor de la función y comprobar `if err != nil` en el caller", "Enviar el error a un canal de errores global", "Wrappear toda la lógica en un bloque `defer func() { if r := recover(); r != nil { } }()`"], a: 1 },
+    { q: "¿Qué diferencia hay entre un canal con buffer de tamaño 1 y uno sin buffer?",
+      o: ["No hay diferencia: ambos bloquean al emisor si no hay receptor", "El canal con buffer de 1 permite que el emisor envíe un valor sin bloquearse si el buffer está vacío; el sin buffer bloquea siempre hasta que haya receptor", "El canal con buffer es más lento porque gestiona memoria adicional", "El canal sin buffer no puede usarse entre goroutines distintas"], a: 1 },
+    { q: "¿Qué hace `select` en Go?",
+      o: ["Selecciona el case más rápido de una lista de operaciones de canal, bloqueándose si ninguno está listo", "Ejecuta todos los cases en paralelo y retorna el resultado del primero que termina", "Es el equivalente a switch/case pero para tipos de datos", "Selecciona una goroutine aleatoria del pool del scheduler"], a: 0 },
+    { q: "¿Para qué sirve `sync.WaitGroup`?",
+      o: ["Para limitar el número de goroutines que pueden ejecutarse simultáneamente", "Para esperar a que un conjunto de goroutines terminen antes de continuar", "Para sincronizar el acceso a variables compartidas entre goroutines", "Para establecer un timeout en operaciones de canal"], a: 1 },
+    { q: "¿Qué es el embedding en Go?",
+      o: ["Una forma de importar paquetes externos directamente en el struct", "Incluir un tipo dentro de otro struct para promover sus campos y métodos sin herencia", "Incrustar código ensamblador dentro de funciones Go para optimización", "Una directiva del compilador para inlinear funciones pequeñas"], a: 1 },
+    { q: "¿Cuál es la diferencia entre `new(T)` y `make(T)`?",
+      o: ["Son equivalentes; `new` es la forma antigua y `make` la moderna", "`new` aloca memoria para cualquier tipo y retorna un puntero al zero value; `make` inicializa slices, maps y canales con estado interno usable", "`make` aloca en el stack y `new` en el heap", "`new` retorna el valor directamente y `make` retorna un puntero"], a: 1 },
+    { q: "¿Qué garantiza `context.Context` en Go?",
+      o: ["Que las goroutines accedan a variables globales de forma segura", "Un mecanismo para propagar cancelación, deadlines y valores entre funciones y goroutines de forma coordinada", "Que las funciones async se ejecuten en orden FIFO", "El aislamiento de memoria entre goroutines concurrentes"], a: 1 },
+    { q: "¿Qué ventaja tiene el patrón de tabla de tests (table-driven tests) en Go?",
+      o: ["Que los tests se ejecutan más rápido que los tests convencionales", "Que se pueden definir múltiples casos de prueba como datos, evitando repetir la lógica de test y facilitando añadir nuevos casos", "Que permite usar mocks sin definir interfaces adicionales", "Que los tests generan automáticamente cobertura del 100%"], a: 1 },
+  ]},
+
 };

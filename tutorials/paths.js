@@ -98,4 +98,15 @@ window.MENTORAI_PATHS = [
       { type: "course", ref: "testing" },
     ],
   },
+  {
+    slug: "mas-alla-de-php",
+    title: "Más allá de PHP",
+    summary:
+      "Amplía tu stack aprendiendo lenguajes que abren puertas distintas: Go para servicios de alta concurrencia y Rust para sistemas con control total de memoria. Cada curso parte de cero y llega a producción.",
+    icon: "code",
+    steps: [
+      { type: "course", ref: "go" },
+      { type: "course", ref: "rust" },
+    ],
+  },
 ];

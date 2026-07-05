@@ -61,6 +61,16 @@
         { cls: "function", src: "\\b[a-zA-Z_]\\w*(?=\\s*\\()" },
         { cls: "number", src: "\\b\\d+(?:\\.\\d+)?\\b" },
       ],
+      rust: [
+        { cls: "comment", src: "\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/" },
+        { cls: "string", src: "r#*\"[\\s\\S]*?\"#*|\"(?:\\\\.|[^\"\\\\])*\"|'(?:\\\\.|[^'])'" },
+        {
+          cls: "keyword",
+          src: "\\b(?:fn|let|mut|const|static|struct|enum|trait|impl|for|while|loop|if|else|match|return|use|mod|pub|crate|super|self|Self|type|where|async|await|move|ref|in|break|continue|dyn|unsafe|extern|true|false|Box|Option|Result|Some|None|Ok|Err|Vec|String|str|i8|i16|i32|i64|i128|isize|u8|u16|u32|u64|u128|usize|f32|f64|bool|char|Rc|Arc|Cell|RefCell|Mutex|RwLock|HashMap|HashSet|BTreeMap|BTreeSet|Cow|Pin|PhantomData)\\b",
+        },
+        { cls: "function", src: "\\b[a-zA-Z_]\\w*(?=\\s*\\()" },
+        { cls: "number", src: "\\b\\d+(?:[._]\\d+)?(?:u8|u16|u32|u64|u128|usize|i8|i16|i32|i64|i128|isize|f32|f64)?\\b" },
+      ],
       go: [
         { cls: "comment", src: "\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/" },
         { cls: "string", src: "`[^`]*`|\"(?:\\\\.|[^\"\\\\])*\"" },

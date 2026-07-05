@@ -65,6 +65,8 @@
       observabilidad: "Observabilidad",
       ia: "Programar con IA",
       go: "Go",
+      rust: "Rust",
+      python: "Python",
     };
 
     const CLOCK_SVG =
