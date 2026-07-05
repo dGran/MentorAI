@@ -32,6 +32,12 @@
     MentorAI.initRefiner();
     MentorAI.initYear();
     MentorAI.SyntaxHighlighter.run();
+
+    if (MentorAI.Offline) {
+      MentorAI.Offline.init();
+      MentorAI.Offline.initCourseButtons();
+      MentorAI.Offline.initOfflinePage();
+    }
   });
 
   window.addEventListener("load", function () {
