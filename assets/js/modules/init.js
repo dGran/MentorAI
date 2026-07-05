@@ -27,6 +27,7 @@
     MentorAI.Home.initSearch();
     MentorAI.initHeroStat();
     MentorAI.initTutorialPage();
+    MentorAI.initQuiz();
     MentorAI.initComposer();
     MentorAI.initRefiner();
     MentorAI.initYear();
