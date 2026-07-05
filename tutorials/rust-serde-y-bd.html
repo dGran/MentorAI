@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem("academia-theme");
+        var d = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", t || (d ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Serde, JSON y base de datos en Rust — MentorAI</title>
+    <meta name="description" content="Serialización con Serde, manejo de JSON, y acceso a base de datos con sqlx: queries async, transacciones y el patrón Repository." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+  </head>
+  <body>
+    <div class="reading-progress" id="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <a href="../offline.html" class="nav__link offline-nav-link">Sin conexión</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+          <button class="nav__burger icon-btn" aria-label="Menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <div class="nav-drawer-backdrop"></div>
+    <div class="nav-drawer"><div class="nav-drawer__head"><span class="nav-drawer__title">MentorAI</span><div class="nav-drawer__head-actions"><button class="nav-drawer__close icon-btn" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div><div class="nav-drawer__links"><a href="../index.html" class="nav-drawer__link">Inicio</a><a href="../rutas.html" class="nav-drawer__link">Rutas</a><a href="../cursos.html" class="nav-drawer__link">Cursos</a><a href="../articulos.html" class="nav-drawer__link">Artículos</a><a href="../offline.html" class="nav-drawer__link">Sin conexión</a></div><div class="nav-drawer__footer"><span class="nav-drawer__theme">Tema</span><button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div>
+
+    <main>
+      <section class="tutorial-hero container">
+        <div class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <a href="../curso.html?slug=rust">Rust desde cero</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Rust</span>
+        </div>
+        <h1 class="tutorial-hero__title">Serde, JSON y base de datos en Rust</h1>
+        <p class="tutorial-hero__lead">Serialización con Serde, manejo de JSON, y acceso a base de datos con sqlx: queries async, transacciones y el patrón Repository.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>15 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Intermedio</span>
+          <span>Rust · BBDD</span>
+        </div>
+        <div class="tutorial-actions">
+          <button class="tutorial-action" id="btn-listen" aria-label="Escuchar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Escuchar</button>
+          <button class="tutorial-action tutorial-action--done" id="btn-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar como completado</button>
+          <button class="tutorial-action tutorial-action--reset" id="btn-reset" title="Reiniciar progreso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg><span>Reiniciar</span></button>
+        </div>
+        <div class="tutorial-progress"><div class="tutorial-progress__bar"><span></span></div><div class="tutorial-progress__label"></div></div>
+      </section>
+
+      <div class="container tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En este tutorial</p>
+          <ol class="toc__list">
+            <li><a href="#serde">Serde: el framework de serialización</a></li>
+            <li><a href="#struct-tags">Atributos de Serde</a></li>
+            <li><a href="#sqlx">sqlx: queries async tipadas</a></li>
+            <li><a href="#queries">sqlx::query_as! y fetch</a></li>
+            <li><a href="#transacciones">Transacciones</a></li>
+            <li><a href="#repository">Patrón Repository en Rust</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ol>
+          <button class="toc__toggle" aria-label="Índice"><span>En este tutorial</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </aside>
+
+        <article class="prose">
+          <h2 id="serde">Serde: el framework de serialización</h2>
+          <p>Serde es el framework de serialización y deserialización de Rust. Soporta JSON, TOML, YAML, MessagePack, Bincode y decenas de formatos más, todos con la misma API. Es la crate más descargada del ecosistema Rust.</p>
+          <pre><code data-lang="rust">use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Producto {
+    id: u32,
+    nombre: String,
+    precio: f64,
+    disponible: bool,
+}
+
+fn main() {
+    let producto = Producto {
+        id: 1,
+        nombre: "Teclado mecánico".to_string(),
+        precio: 89.99,
+        disponible: true,
+    };
+
+    let json = serde_json::to_string(&amp;producto).unwrap();
+    println!("{}", json);
+    // {"id":1,"nombre":"Teclado mecánico","precio":89.99,"disponible":true}
+
+    let producto2: Producto = serde_json::from_str(&amp;json).unwrap();
+    println!("{:?}", producto2);
+}</code></pre>
+          <p>El <code>#[derive(Serialize, Deserialize)]</code> genera el código de serialización en compilación. No hay reflexión en runtime como en PHP: el compilador genera código especializado para cada tipo, con el rendimiento resultante.</p>
+          <p>Para JSON dinámico (cuando no conoces la estructura), usa <code>serde_json::Value</code>:</p>
+          <pre><code data-lang="rust">use serde_json::{json, Value};
+
+fn main() {
+    let valor: Value = json!({
+        "nombre": "Rust",
+        "version": 2021,
+        "features": ["seguro", "rápido", "concurrente"]
+    });
+
+    println!("{}", valor["nombre"]); // Rust
+    println!("{}", valor["version"].as_u64().unwrap()); // 2021
+}</code></pre>
+
+          <h2 id="struct-tags">Atributos de Serde</h2>
+          <p>Serde tiene un sistema de atributos para personalizar la serialización sin código adicional, equivalente a las anotaciones del Symfony Serializer:</p>
+          <pre><code data-lang="rust">use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize)]
+struct UsuarioApi {
+    #[serde(rename = "userId")]
+    id: u32,
+
+    #[serde(rename = "fullName")]
+    nombre_completo: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    email: Option&lt;String&gt;,
+
+    #[serde(default)]
+    activo: bool,
+
+    #[serde(skip)]
+    password_hash: String,
+}</code></pre>
+          <ul>
+            <li><code>#[serde(rename = "nombre")]</code>: nombre distinto en JSON. Útil para APIs que usan camelCase mientras el código Rust usa snake_case.</li>
+            <li><code>#[serde(skip_serializing_if = "Option::is_none")]</code>: omite el campo en el JSON cuando es <code>None</code>, en lugar de serializar <code>null</code>.</li>
+            <li><code>#[serde(default)]</code>: usa el valor por defecto del tipo si el campo no está en el JSON de entrada.</li>
+            <li><code>#[serde(skip)]</code>: excluye el campo de la serialización y deserialización completamente.</li>
+          </ul>
+          <p>Para renombrar todos los campos automáticamente de snake_case a camelCase:</p>
+          <pre><code data-lang="rust">#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PerfilUsuario {
+    nombre_usuario: String, // serializa como "nombreUsuario"
+    fecha_creacion: String, // serializa como "fechaCreacion"
+}</code></pre>
+
+          <h2 id="sqlx">sqlx: queries async tipadas</h2>
+          <p>sqlx es la librería de acceso a base de datos más usada en Rust async. A diferencia de un ORM como Doctrine, sqlx trabaja con SQL directamente. Su característica diferencial: verifica las queries contra el esquema de la base de datos en tiempo de compilación.</p>
+          <pre><code data-lang="rust">use sqlx::postgres::PgPoolOptions;
+use sqlx::PgPool;
+
+#[derive(sqlx::FromRow, Debug)]
+struct Usuario {
+    id: i32,
+    nombre: String,
+    email: String,
+    activo: bool,
+}
+
+async fn crear_pool() -&gt; PgPool {
+    PgPoolOptions::new()
+        .max_connections(10)
+        .connect("postgres://usuario:password@localhost/mi_bd")
+        .await
+        .expect("No se pudo conectar a la base de datos")
+}</code></pre>
+          <p>El trait <code>sqlx::FromRow</code> permite que sqlx mapee las filas de un resultado al struct automáticamente. Los nombres de los campos del struct deben coincidir con los alias de la columna en la query (o usar <code>#[sqlx(rename = "nombre")]</code>).</p>
+          <p>Cargo.toml:</p>
+          <pre><code data-lang="rust">[dependencies]
+sqlx = { version = "0.7", features = ["postgres", "runtime-tokio-rustls", "macros"] }</code></pre>
+
+          <h2 id="queries">sqlx::query_as! y fetch</h2>
+          <p>sqlx ofrece dos formas de ejecutar queries:</p>
+          <p><strong>Sin verificación de compilación</strong> (más flexible):</p>
+          <pre><code data-lang="rust">async fn obtener_usuarios(pool: &amp;PgPool) -&gt; Result&lt;Vec&lt;Usuario&gt;, sqlx::Error&gt; {
+    sqlx::query_as::<_, Usuario>("SELECT id, nombre, email, activo FROM usuarios")
+        .fetch_all(pool)
+        .await
+}</code></pre>
+          <p><strong>Con verificación de compilación</strong> (la macro <code>query_as!</code> necesita <code>DATABASE_URL</code> en el entorno al compilar):</p>
+          <pre><code data-lang="rust">async fn obtener_usuario(pool: &amp;PgPool, id: i32) -&gt; Result&lt;Option&lt;Usuario&gt;, sqlx::Error&gt; {
+    sqlx::query_as!(
+        Usuario,
+        "SELECT id, nombre, email, activo FROM usuarios WHERE id = $1",
+        id
+    )
+    .fetch_optional(pool)
+    .await
+}
+
+async fn crear_usuario(pool: &amp;PgPool, nombre: &amp;str, email: &amp;str) -&gt; Result&lt;i32, sqlx::Error&gt; {
+    let resultado = sqlx::query!(
+        "INSERT INTO usuarios (nombre, email) VALUES ($1, $2) RETURNING id",
+        nombre,
+        email
+    )
+    .fetch_one(pool)
+    .await?;
+
+    Ok(resultado.id)
+}</code></pre>
+          <p>Los métodos de fetch:</p>
+          <ul>
+            <li><code>.fetch_one(pool)</code>: exactamente una fila o error.</li>
+            <li><code>.fetch_optional(pool)</code>: cero o una fila (<code>Option&lt;T&gt;</code>).</li>
+            <li><code>.fetch_all(pool)</code>: todas las filas (<code>Vec&lt;T&gt;</code>).</li>
+            <li><code>.execute(pool)</code>: ejecuta sin retornar filas (INSERT, UPDATE, DELETE).</li>
+          </ul>
+
+          <h2 id="transacciones">Transacciones</h2>
+          <pre><code data-lang="rust">async fn transferir(
+    pool: &amp;PgPool,
+    origen_id: i32,
+    destino_id: i32,
+    cantidad: f64,
+) -&gt; Result&lt;(), sqlx::Error&gt; {
+    let mut transaccion = pool.begin().await?;
+
+    sqlx::query!(
+        "UPDATE cuentas SET saldo = saldo - $1 WHERE id = $2",
+        cantidad,
+        origen_id
+    )
+    .execute(&amp;mut *transaccion)
+    .await?;
+
+    sqlx::query!(
+        "UPDATE cuentas SET saldo = saldo + $1 WHERE id = $2",
+        cantidad,
+        destino_id
+    )
+    .execute(&amp;mut *transaccion)
+    .await?;
+
+    transaccion.commit().await?;
+
+    Ok(())
+}</code></pre>
+          <p>La transacción se revierte automáticamente si se hace drop de ella sin llamar a <code>.commit()</code>. Si alguna de las queries falla y el operador <code>?</code> hace un early return, la transacción sale de scope y se hace rollback automático. Este es el patrón RAII aplicado a transacciones de base de datos.</p>
+
+          <h2 id="repository">Patrón Repository en Rust</h2>
+          <p>El patrón Repository separa la lógica de acceso a datos del resto del dominio. En Rust, se implementa con un trait que define el contrato y una implementación concreta sobre el pool:</p>
+          <pre><code data-lang="rust">use async_trait::async_trait;
+use std::sync::Arc;
+
+#[async_trait]
+pub trait UsuarioRepository: Send + Sync {
+    async fn buscar_por_id(&amp;self, id: i32) -&gt; Result&lt;Option&lt;Usuario&gt;, sqlx::Error&gt;;
+    async fn buscar_todos(&amp;self) -&gt; Result&lt;Vec&lt;Usuario&gt;, sqlx::Error&gt;;
+    async fn guardar(&amp;self, nombre: &amp;str, email: &amp;str) -&gt; Result&lt;i32, sqlx::Error&gt;;
+}
+
+pub struct SqlxUsuarioRepository {
+    pool: PgPool,
+}
+
+impl SqlxUsuarioRepository {
+    pub fn new(pool: PgPool) -&gt; Self {
+        Self { pool }
+    }
+}
+
+#[async_trait]
+impl UsuarioRepository for SqlxUsuarioRepository {
+    async fn buscar_por_id(&amp;self, id: i32) -&gt; Result&lt;Option&lt;Usuario&gt;, sqlx::Error&gt; {
+        sqlx::query_as::<_, Usuario>(
+            "SELECT id, nombre, email, activo FROM usuarios WHERE id = $1"
+        )
+        .bind(id)
+        .fetch_optional(&amp;self.pool)
+        .await
+    }
+
+    async fn buscar_todos(&amp;self) -&gt; Result&lt;Vec&lt;Usuario&gt;, sqlx::Error&gt; {
+        sqlx::query_as::<_, Usuario>("SELECT id, nombre, email, activo FROM usuarios")
+            .fetch_all(&amp;self.pool)
+            .await
+    }
+
+    async fn guardar(&amp;self, nombre: &amp;str, email: &amp;str) -&gt; Result&lt;i32, sqlx::Error&gt; {
+        let row = sqlx::query!("INSERT INTO usuarios (nombre, email) VALUES ($1, $2) RETURNING id", nombre, email)
+            .fetch_one(&amp;self.pool)
+            .await?;
+        Ok(row.id)
+    }
+}
+
+struct AppState {
+    usuarios: Arc&lt;dyn UsuarioRepository&gt;,
+}
+</code></pre>
+          <p>La crate <code>async_trait</code> es necesaria porque los traits con métodos async no son directamente estables en Rust todavía. Añade el boilerplate de <code>Box&lt;dyn Future&gt;</code> automáticamente.</p>
+          <div class="callout callout--tip">
+            <strong>Para tests</strong>: el trait <code>UsuarioRepository</code> permite crear una implementación fake en memoria para tests unitarios, sin tocar la base de datos. Esto es el equivalente a mockear el repositorio en PHP.
+          </div>
+
+          <h2 id="resumen">Resumen</h2>
+          <ul class="keypoints">
+            <li>Serde genera código de serialización en compilación con <code>#[derive(Serialize, Deserialize)]</code>. Soporta docenas de formatos con la misma API.</li>
+            <li>Los atributos <code>#[serde(...)]</code> personalizan la serialización por campo: rename, skip, default, skip_serializing_if. Equivalentes a las anotaciones del Symfony Serializer.</li>
+            <li>sqlx ejecuta queries SQL async con el pool de conexiones. La macro <code>query_as!</code> verifica la query contra el esquema de BD en compilación.</li>
+            <li>Las transacciones usan RAII: si la transacción sale de scope sin commit, se hace rollback automático. El operador <code>?</code> en early return garantiza esto.</li>
+            <li>El patrón Repository en Rust usa un trait con <code>#[async_trait]</code> para definir el contrato y una implementación concreta sobre PgPool. El trait permite implementaciones fake para tests.</li>
+          </ul>
+        </article>
+      </div>
+    </main>
+
+    <footer class="footer"><div class="container footer__inner"><span><strong>MentorAI</strong> · Formación técnica iterada con IA</span><span>© <span data-year>2026</span></span></div></footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

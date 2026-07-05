@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem("academia-theme");
+        var d = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", t || (d ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart pointers: Box, Rc, Arc y RefCell — MentorAI</title>
+    <meta name="description" content="Cuándo necesitas un puntero inteligente: heap con Box, conteo de referencias con Rc y Arc, y mutabilidad interior con RefCell y Mutex." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+  </head>
+  <body>
+    <div class="reading-progress" id="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <a href="../offline.html" class="nav__link offline-nav-link">Sin conexión</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+          <button class="nav__burger icon-btn" aria-label="Menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <div class="nav-drawer-backdrop"></div>
+    <div class="nav-drawer"><div class="nav-drawer__head"><span class="nav-drawer__title">MentorAI</span><div class="nav-drawer__head-actions"><button class="nav-drawer__close icon-btn" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div><div class="nav-drawer__links"><a href="../index.html" class="nav-drawer__link">Inicio</a><a href="../rutas.html" class="nav-drawer__link">Rutas</a><a href="../cursos.html" class="nav-drawer__link">Cursos</a><a href="../articulos.html" class="nav-drawer__link">Artículos</a><a href="../offline.html" class="nav-drawer__link">Sin conexión</a></div><div class="nav-drawer__footer"><span class="nav-drawer__theme">Tema</span><button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div>
+
+    <main>
+      <section class="tutorial-hero container">
+        <div class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <a href="../curso.html?slug=rust">Rust desde cero</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Rust</span>
+        </div>
+        <h1 class="tutorial-hero__title">Smart pointers: Box, Rc, Arc y RefCell</h1>
+        <p class="tutorial-hero__lead">Cuándo necesitas un puntero inteligente: heap con Box, conteo de referencias con Rc y Arc, y mutabilidad interior con RefCell y Mutex.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>12 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Intermedio</span>
+          <span>Rust</span>
+        </div>
+        <div class="tutorial-actions">
+          <button class="tutorial-action" id="btn-listen" aria-label="Escuchar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Escuchar</button>
+          <button class="tutorial-action tutorial-action--done" id="btn-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar como completado</button>
+          <button class="tutorial-action tutorial-action--reset" id="btn-reset" title="Reiniciar progreso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg><span>Reiniciar</span></button>
+        </div>
+        <div class="tutorial-progress"><div class="tutorial-progress__bar"><span></span></div><div class="tutorial-progress__label"></div></div>
+      </section>
+
+      <div class="container tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En este tutorial</p>
+          <ol class="toc__list">
+            <li><a href="#box">Box&lt;T&gt;: alojar en el heap</a></li>
+            <li><a href="#rc">Rc&lt;T&gt;: múltiples dueños</a></li>
+            <li><a href="#arc">Arc&lt;T&gt;: Rc para threads</a></li>
+            <li><a href="#refcell">RefCell&lt;T&gt;: mutabilidad interior</a></li>
+            <li><a href="#mutex">Mutex&lt;T&gt; y RwLock&lt;T&gt;</a></li>
+            <li><a href="#cuando-usar">Árbol de decisión</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ol>
+          <button class="toc__toggle" aria-label="Índice"><span>En este tutorial</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </aside>
+
+        <article class="prose">
+          <h2 id="box">Box&lt;T&gt;: alojar en el heap</h2>
+          <p><code>Box&lt;T&gt;</code> es el puntero inteligente más simple: aloja un valor en el heap y libera la memoria cuando el Box sale de scope. Implementa <code>Deref</code>, así que puedes usarlo como si fuera el tipo interno directamente.</p>
+          <p>El caso de uso más común: tipos recursivos. Rust necesita saber el tamaño de cada tipo en compilación. Un tipo recursivo tiene tamaño infinito teórico:</p>
+          <pre><code data-lang="rust">enum ListaEnlazada {
+    Nodo(i32, Box&lt;ListaEnlazada&gt;),
+    Fin,
+}
+
+fn main() {
+    let lista = ListaEnlazada::Nodo(
+        1,
+        Box::new(ListaEnlazada::Nodo(
+            2,
+            Box::new(ListaEnlazada::Fin),
+        )),
+    );
+}</code></pre>
+          <p>Con <code>Box</code>, el nodo siguiente vive en el heap y el campo en la estructura es solo un puntero (tamaño fijo). El compilador puede calcular el tamaño del tipo.</p>
+          <p>El segundo uso frecuente: <code>Box&lt;dyn Trait&gt;</code> para colecciones heterogéneas con polimorfismo en runtime (lo vimos en el tutorial de traits).</p>
+          <div class="callout callout--info">
+            <strong>Coste de Box</strong>: una sola indirección de puntero por acceso. Para la mayoría de aplicaciones, es insignificante. El compilador puede optimizarlo en muchos casos.
+          </div>
+
+          <h2 id="rc">Rc&lt;T&gt;: múltiples dueños en un thread</h2>
+          <p><code>Rc&lt;T&gt;</code> (Reference Counted) permite que múltiples partes del código sean dueñas del mismo dato. Implementa conteo de referencias, similar a cómo PHP gestiona la memoria internamente para valores escalares.</p>
+          <pre><code data-lang="rust">use std::rc::Rc;
+
+fn main() {
+    let datos = Rc::new(vec![1, 2, 3]);
+    let referencia_a = Rc::clone(&amp;datos);
+    let referencia_b = Rc::clone(&amp;datos);
+
+    println!("Referencias activas: {}", Rc::strong_count(&amp;datos)); // 3
+
+    println!("{:?}", referencia_a);
+    println!("{:?}", referencia_b);
+} // cuando todos los Rc salen de scope, el contador llega a 0 y se destruye el Vec</code></pre>
+          <p><code>Rc::clone</code> no clona el dato: incrementa el contador de referencias. Es una operación barata. Cuando el último <code>Rc</code> sale de scope, el contador llega a 0 y el dato se destruye.</p>
+          <p>La limitación crítica: <code>Rc&lt;T&gt;</code> no implementa <code>Send</code>. No puede cruzar límites de thread. Si intentas moverlo a otro thread, el compilador lo rechaza. Para concurrencia, necesitas <code>Arc&lt;T&gt;</code>.</p>
+          <div class="callout callout--warning">
+            <strong>Ciclos de referencias</strong>: <code>Rc&lt;T&gt;</code> puede crear memory leaks si dos <code>Rc</code> se apuntan mutuamente. El contador nunca llega a 0. Para ciclos, usa <code>Weak&lt;T&gt;</code> (referencia débil que no incrementa el contador).
+          </div>
+
+          <h2 id="arc">Arc&lt;T&gt;: Rc atómico para múltiples threads</h2>
+          <p><code>Arc&lt;T&gt;</code> (Atomically Reference Counted) es la versión de <code>Rc</code> que puede compartirse entre threads. Las operaciones sobre el contador son atómicas, lo que garantiza que no hay data races en el conteo.</p>
+          <pre><code data-lang="rust">use std::sync::Arc;
+use std::thread;
+
+fn main() {
+    let datos = Arc::new(vec![1, 2, 3, 4, 5]);
+
+    let handles: Vec&lt;_&gt; = (0..3).map(|i| {
+        let datos = Arc::clone(&amp;datos);
+        thread::spawn(move || {
+            println!("Thread {}: {:?}", i, datos);
+        })
+    }).collect();
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+}</code></pre>
+          <p>El coste adicional respecto a <code>Rc</code>: las operaciones atómicas son ligeramente más caras que las no atómicas. En la práctica, la diferencia es despreciable para aplicaciones web; solo importa en código de altísimo rendimiento con miles de incrementos por segundo.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th></th><th>Rc&lt;T&gt;</th><th>Arc&lt;T&gt;</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Thread-safe</td><td>No</td><td>Sí</td></tr>
+                <tr><td>Coste contador</td><td>Bajo</td><td>Ligeramente mayor (atómico)</td></tr>
+                <tr><td>Mutabilidad del dato</td><td>No (por defecto)</td><td>No (por defecto)</td></tr>
+                <tr><td>Uso típico</td><td>Grafos en un thread</td><td>Estado compartido entre threads</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="refcell">RefCell&lt;T&gt;: mutabilidad interior</h2>
+          <p>El borrow checker verifica las reglas de préstamo en compilación. Hay situaciones donde el compilador no puede determinar en compilación que el código es correcto, pero tú sabes que lo es. <code>RefCell&lt;T&gt;</code> mueve la verificación de las reglas a runtime.</p>
+          <pre><code data-lang="rust">use std::cell::RefCell;
+
+fn main() {
+    let datos = RefCell::new(vec![1, 2, 3]);
+
+    {
+        let mut prestamo_mutable = datos.borrow_mut();
+        prestamo_mutable.push(4);
+    } // borrow_mutable se libera aquí
+
+    let prestamo_inmutable = datos.borrow();
+    println!("{:?}", *prestamo_inmutable); // [1, 2, 3, 4]
+}</code></pre>
+          <p><code>.borrow()</code> retorna un <code>Ref&lt;T&gt;</code> (préstamo inmutable). <code>.borrow_mut()</code> retorna un <code>RefMut&lt;T&gt;</code> (préstamo mutable). Si en runtime intentas violar las reglas del borrow checker (dos mutables simultáneos, o mutable e inmutable simultáneos), el programa entra en <strong>panic</strong>.</p>
+          <p>El caso de uso más típico: <code>Rc&lt;RefCell&lt;T&gt;&gt;</code> para datos compartidos mutables en un solo thread:</p>
+          <pre><code data-lang="rust">use std::rc::Rc;
+use std::cell::RefCell;
+
+fn main() {
+    let contador = Rc::new(RefCell::new(0));
+
+    let c1 = Rc::clone(&amp;contador);
+    let c2 = Rc::clone(&amp;contador);
+
+    *c1.borrow_mut() += 1;
+    *c2.borrow_mut() += 1;
+
+    println!("{}", contador.borrow()); // 2
+}</code></pre>
+
+          <h2 id="mutex">Mutex&lt;T&gt; y RwLock&lt;T&gt;</h2>
+          <p><code>Mutex&lt;T&gt;</code> es el equivalente de <code>RefCell</code> para múltiples threads: garantiza acceso exclusivo al dato protegiendo con un mutex del sistema operativo.</p>
+          <pre><code data-lang="rust">use std::sync::{Arc, Mutex};
+use std::thread;
+
+fn main() {
+    let contador = Arc::new(Mutex::new(0));
+
+    let handles: Vec&lt;_&gt; = (0..10).map(|_| {
+        let contador = Arc::clone(&amp;contador);
+        thread::spawn(move || {
+            let mut bloqueo = contador.lock().unwrap();
+            *bloqueo += 1;
+        }) // bloqueo se libera aquí (RAII)
+    }).collect();
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    println!("Resultado: {}", *contador.lock().unwrap()); // 10
+}</code></pre>
+          <p>El <code>MutexGuard</code> retornado por <code>.lock()</code> se libera automáticamente cuando sale de scope (RAII). No hay <code>unlock()</code> explícito.</p>
+          <p><code>RwLock&lt;T&gt;</code> permite múltiples lectores simultáneos o un escritor exclusivo, igual que el modelo de referencias de Rust pero en runtime entre threads. Más eficiente que Mutex cuando los lectores son frecuentes y los escritores raros.</p>
+          <div class="callout callout--warning">
+            <strong>Deadlocks</strong>: Rust previene los data races pero no los deadlocks. Si thread A tiene el lock de X y espera el lock de Y, mientras thread B tiene el de Y y espera el de X, ambos se bloquean para siempre. El compilador no puede detectar esto. Diseña el orden de adquisición de locks cuidadosamente.
+          </div>
+
+          <h2 id="cuando-usar">Árbol de decisión</h2>
+          <p>La pregunta "¿qué smart pointer necesito?" tiene una respuesta estructurada:</p>
+          <ol>
+            <li><strong>¿Necesito solo un dueño?</strong> → Ownership normal o <code>Box&lt;T&gt;</code> si el tipo es recursivo o necesitas trait object.</li>
+            <li><strong>¿Necesito múltiples dueños en un solo thread?</strong> → <code>Rc&lt;T&gt;</code>.</li>
+            <li><strong>¿Necesito múltiples dueños entre varios threads?</strong> → <code>Arc&lt;T&gt;</code>.</li>
+            <li><strong>¿Necesito mutabilidad del dato compartido en un solo thread?</strong> → <code>Rc&lt;RefCell&lt;T&gt;&gt;</code>.</li>
+            <li><strong>¿Necesito mutabilidad del dato compartido entre threads?</strong> → <code>Arc&lt;Mutex&lt;T&gt;&gt;</code> o <code>Arc&lt;RwLock&lt;T&gt;&gt;</code>.</li>
+          </ol>
+          <div class="callout callout--tip">
+            <strong>El caso más común en servidores web</strong>: estado de la aplicación compartido (pool de BD, config, caché) entre handlers async. La respuesta es <code>Arc&lt;T&gt;</code> si el estado es inmutable, o <code>Arc&lt;RwLock&lt;T&gt;&gt;</code> si necesita mutarse.
+          </div>
+
+          <h2 id="resumen">Resumen</h2>
+          <ul class="keypoints">
+            <li><code>Box&lt;T&gt;</code> aloja en el heap con un solo dueño; necesario para tipos recursivos y trait objects (<code>Box&lt;dyn Trait&gt;</code>).</li>
+            <li><code>Rc&lt;T&gt;</code> permite múltiples dueños en un solo thread con conteo de referencias; <code>Rc::clone</code> incrementa el contador, no clona el dato.</li>
+            <li><code>Arc&lt;T&gt;</code> es <code>Rc</code> con contador atómico: seguro entre threads; ligeramente más caro que Rc.</li>
+            <li><code>RefCell&lt;T&gt;</code> mueve las reglas del borrow checker a runtime; panic si las violas. Útil cuando el compilador no puede verificar correctitud en compilación.</li>
+            <li><code>Arc&lt;Mutex&lt;T&gt;&gt;</code> es el patrón para estado mutable compartido entre threads; el MutexGuard se libera automáticamente por RAII.</li>
+            <li>Rust previene data races pero no deadlocks: el orden de adquisición de locks sigue siendo responsabilidad del programador.</li>
+          </ul>
+        </article>
+      </div>
+    </main>
+
+    <footer class="footer"><div class="container footer__inner"><span><strong>MentorAI</strong> · Formación técnica iterada con IA</span><span>© <span data-year>2026</span></span></div></footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

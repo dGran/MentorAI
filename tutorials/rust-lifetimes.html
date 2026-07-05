@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem("academia-theme");
+        var d = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", t || (d ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lifetimes: duración de referencias — MentorAI</title>
+    <meta name="description" content="Qué son los lifetimes, por qué el compilador los necesita, anotaciones explícitas, elision rules y lifetimes en structs." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+  </head>
+  <body>
+    <div class="reading-progress" id="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <a href="../offline.html" class="nav__link offline-nav-link">Sin conexión</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+          <button class="nav__burger icon-btn" aria-label="Menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <div class="nav-drawer-backdrop"></div>
+    <div class="nav-drawer"><div class="nav-drawer__head"><span class="nav-drawer__title">MentorAI</span><div class="nav-drawer__head-actions"><button class="nav-drawer__close icon-btn" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div><div class="nav-drawer__links"><a href="../index.html" class="nav-drawer__link">Inicio</a><a href="../rutas.html" class="nav-drawer__link">Rutas</a><a href="../cursos.html" class="nav-drawer__link">Cursos</a><a href="../articulos.html" class="nav-drawer__link">Artículos</a><a href="../offline.html" class="nav-drawer__link">Sin conexión</a></div><div class="nav-drawer__footer"><span class="nav-drawer__theme">Tema</span><button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div>
+
+    <main>
+      <section class="tutorial-hero container">
+        <div class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <a href="../curso.html?slug=rust">Rust desde cero</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Rust</span>
+        </div>
+        <h1 class="tutorial-hero__title">Lifetimes: duración de referencias</h1>
+        <p class="tutorial-hero__lead">Qué son los lifetimes, por qué el compilador los necesita, anotaciones explícitas, elision rules y lifetimes en structs.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>13 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Avanzado</span>
+          <span>Rust</span>
+        </div>
+        <div class="tutorial-actions">
+          <button class="tutorial-action" id="btn-listen" aria-label="Escuchar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Escuchar</button>
+          <button class="tutorial-action tutorial-action--done" id="btn-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar como completado</button>
+          <button class="tutorial-action tutorial-action--reset" id="btn-reset" title="Reiniciar progreso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg><span>Reiniciar</span></button>
+        </div>
+        <div class="tutorial-progress"><div class="tutorial-progress__bar"><span></span></div><div class="tutorial-progress__label"></div></div>
+      </section>
+
+      <div class="container tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En este tutorial</p>
+          <ol class="toc__list">
+            <li><a href="#problema">El problema que resuelven</a></li>
+            <li><a href="#anotaciones">Anotaciones explícitas de lifetime</a></li>
+            <li><a href="#elision">Elision rules</a></li>
+            <li><a href="#structs-lifetime">Lifetimes en structs</a></li>
+            <li><a href="#static">'static: el lifetime eterno</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ol>
+          <button class="toc__toggle" aria-label="Índice"><span>En este tutorial</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </aside>
+
+        <article class="prose">
+          <h2 id="problema">El problema que resuelven</h2>
+          <p>El borrow checker garantiza que las referencias no sobreviven a los datos a los que apuntan. Para que pueda hacer esa verificación, necesita saber la duración de cada referencia. En la mayoría de casos, el compilador la deduce solo. Pero hay situaciones donde no puede:</p>
+          <pre><code data-lang="rust">fn la_mas_larga(x: &amp;str, y: &amp;str) -&gt; &amp;str {
+    if x.len() &gt; y.len() { x } else { y }
+}</code></pre>
+          <pre><code data-lang="bash">error[E0106]: missing lifetime specifier
+ --&gt; src/main.rs:1:36
+  |
+1 | fn la_mas_larga(x: &amp;str, y: &amp;str) -&gt; &amp;str {
+  |                    ----     ----     ^ expected named lifetime parameter</code></pre>
+          <p>El compilador no puede saber si la referencia retornada viene de <code>x</code> o de <code>y</code> (depende de la condición en runtime). Por tanto, no puede determinar cuánto debe vivir la referencia retornada: ¿debe vivir tanto como <code>x</code>? ¿tanto como <code>y</code>? La anotación de lifetime es la forma de decirle al compilador la relación entre las duraciones.</p>
+          <div class="callout callout--info">
+            <strong>Los lifetimes no cambian el tiempo de vida de ningún dato</strong>: son anotaciones descriptivas que le dan al compilador información para verificar que el código es correcto. No afectan al binario generado.
+          </div>
+
+          <h2 id="anotaciones">Anotaciones explícitas de lifetime</h2>
+          <p>La sintaxis usa el apóstrofe: <code>'a</code>, <code>'b</code>, etc. Por convención, se usan letras minúsculas cortas:</p>
+          <pre><code data-lang="rust">fn la_mas_larga&lt;'a&gt;(x: &amp;'a str, y: &amp;'a str) -&gt; &amp;'a str {
+    if x.len() &gt; y.len() { x } else { y }
+}</code></pre>
+          <p>Esta firma significa: "la referencia retornada vive al menos tanto como <code>'a</code>, donde <code>'a</code> es la intersección de los lifetimes de <code>x</code> e <code>y</code>". En la práctica: la referencia retornada vive tanto como la más corta de las dos entradas.</p>
+          <pre><code data-lang="rust">fn main() {
+    let texto1 = String::from("cadena larga");
+    let resultado;
+
+    {
+        let texto2 = String::from("xyz");
+        resultado = la_mas_larga(texto1.as_str(), texto2.as_str());
+        println!("{}", resultado); // OK: resultado se usa dentro del scope de texto2
+    }
+
+    // println!("{}", resultado); // error: texto2 ya no existe
+}</code></pre>
+          <p>El compilador verifica que <code>resultado</code> no se usa después de que <code>texto2</code> (la más corta) sale de scope. Si intentas hacerlo, error en compilación. No en runtime, no en producción: en compilación.</p>
+          <p>La anotación <code>'a</code> no define una duración concreta. Define una <em>relación</em>: "estas referencias tienen duraciones relacionadas de esta forma".</p>
+
+          <h2 id="elision">Elision rules</h2>
+          <p>En la mayoría de funciones no necesitas anotar lifetimes porque el compilador aplica las <em>elision rules</em>: reglas deterministas para inferir los lifetimes cuando la situación es no ambigua.</p>
+          <p>Las tres reglas (aplicadas en orden):</p>
+          <ol>
+            <li><strong>Cada parámetro de referencia obtiene su propio lifetime implícito</strong>: <code>fn f(x: &amp;str, y: &amp;str)</code> → <code>fn f&lt;'a, 'b&gt;(x: &amp;'a str, y: &amp;'b str)</code>.</li>
+            <li><strong>Si hay exactamente un parámetro de entrada con lifetime, ese lifetime se aplica a todas las referencias de salida</strong>: <code>fn f(x: &amp;str) -&gt; &amp;str</code> → <code>fn f&lt;'a&gt;(x: &amp;'a str) -&gt; &amp;'a str</code>.</li>
+            <li><strong>Si hay un parámetro <code>&amp;self</code> o <code>&amp;mut self</code>, su lifetime se aplica a todas las referencias de salida</strong>.</li>
+          </ol>
+          <p>Cuándo el compilador puede inferir el lifetime solo (no necesitas anotación):</p>
+          <pre><code data-lang="rust">fn primera_palabra(s: &amp;str) -&gt; &amp;str { // regla 2: un input, output same lifetime
+    &amp;s[..s.find(' ').unwrap_or(s.len())]
+}
+
+impl MiStruct {
+    fn referencia(&amp;self) -&gt; &amp;str { // regla 3: &amp;self determina el output lifetime
+        &amp;self.campo
+    }
+}</code></pre>
+          <p>Cuándo necesitas anotación explícita: cuando hay múltiples referencias de entrada y el compilador no puede determinar cuál corresponde al output sin tu ayuda.</p>
+
+          <h2 id="structs-lifetime">Lifetimes en structs</h2>
+          <p>Si un struct guarda una referencia, necesita un parámetro de lifetime que exprese la relación entre la duración del struct y la del dato referenciado:</p>
+          <pre><code data-lang="rust">struct Fragmento&lt;'a&gt; {
+    parte: &amp;'a str,
+}
+
+impl&lt;'a&gt; Fragmento&lt;'a&gt; {
+    fn mostrar(&amp;self) {
+        println!("{}", self.parte);
+    }
+}
+
+fn main() {
+    let texto = String::from("hola mundo");
+    let fragmento = Fragmento { parte: &amp;texto[0..4] };
+    fragmento.mostrar(); // hola
+} // texto y fragmento salen de scope juntos: OK</code></pre>
+          <p>La anotación <code>'a</code> en el struct dice: "una instancia de <code>Fragmento&lt;'a&gt;</code> no puede vivir más que <code>'a</code> (el dato al que <code>parte</code> apunta)". El compilador verifica esto en cada uso.</p>
+          <p>Si intentas que el struct viva más que el dato al que apunta:</p>
+          <pre><code data-lang="rust">fn main() {
+    let fragmento;
+    {
+        let texto = String::from("temporal");
+        fragmento = Fragmento { parte: &amp;texto }; // error: texto no vive suficiente
+    }
+    fragmento.mostrar(); // texto ya no existe
+}</code></pre>
+          <pre><code data-lang="bash">error[E0597]: `texto` does not live long enough</code></pre>
+
+          <h2 id="static">'static: el lifetime eterno</h2>
+          <p><code>'static</code> es el lifetime especial que dura todo el programa. Los string literals tienen tipo <code>&amp;'static str</code> porque están embebidos en el binario:</p>
+          <pre><code data-lang="rust">let saludo: &amp;'static str = "hola mundo"; // vive en el binario
+</code></pre>
+          <p>El compilador puede pedir <code>'static</code> en algunos contextos, como al enviar datos entre threads (donde no hay garantía de cuándo terminará el thread):</p>
+          <pre><code data-lang="rust">use std::thread;
+
+fn ejecutar_en_thread(f: impl Fn() + Send + 'static) {
+    thread::spawn(f);
+}
+
+fn main() {
+    ejecutar_en_thread(|| println!("hola desde otro thread"));
+}</code></pre>
+          <div class="callout callout--warning">
+            <strong>Evita <code>'static</code> como atajo</strong>: cuando el compilador pide un lifetime y no sabes qué poner, la tentación es <code>'static</code> porque "hace que compile". Esto enmascara el problema real: estás guardando una referencia que debería ser un valor poseído. Antes de usar <code>'static</code>, pregúntate si deberías usar <code>String</code> en lugar de <code>&amp;str</code>, o <code>Vec&lt;T&gt;</code> en lugar de <code>&amp;[T]</code>.
+          </div>
+
+          <h2 id="resumen">Resumen</h2>
+          <ul class="keypoints">
+            <li>Los lifetimes son anotaciones que describen relaciones de duración entre referencias. No cambian el comportamiento en runtime; son información para el compilador.</li>
+            <li>Las anotaciones explícitas (<code>'a</code>) son necesarias cuando el compilador no puede determinar la relación entre los lifetimes de entrada y salida de una función.</li>
+            <li>Las elision rules cubren la mayoría de casos: un parámetro de entrada, o el receptor <code>&amp;self</code>, determinan automáticamente el lifetime de salida.</li>
+            <li>Los structs que contienen referencias necesitan un parámetro de lifetime que garantice que el struct no vive más que el dato referenciado.</li>
+            <li><code>'static</code> dura todo el programa; los string literals son <code>&amp;'static str</code>. Usarlo como atajo para hacer compilar suele indicar que deberías poseer el dato en lugar de referenciarlo.</li>
+          </ul>
+        </article>
+      </div>
+    </main>
+
+    <footer class="footer"><div class="container footer__inner"><span><strong>MentorAI</strong> · Formación técnica iterada con IA</span><span>© <span data-year>2026</span></span></div></footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

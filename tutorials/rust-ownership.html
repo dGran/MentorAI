@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem("academia-theme");
+        var d = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", t || (d ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ownership: el corazón de Rust — MentorAI</title>
+    <meta name="description" content="El sistema de propiedad que hace a Rust único: una sola dueña por valor, move semantics, Copy vs Clone, y por qué elimina bugs de memoria sin GC." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+  </head>
+  <body>
+    <div class="reading-progress" id="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <a href="../offline.html" class="nav__link offline-nav-link">Sin conexión</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+          <button class="nav__burger icon-btn" aria-label="Menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <div class="nav-drawer-backdrop"></div>
+    <div class="nav-drawer"><div class="nav-drawer__head"><span class="nav-drawer__title">MentorAI</span><div class="nav-drawer__head-actions"><button class="nav-drawer__close icon-btn" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div><div class="nav-drawer__links"><a href="../index.html" class="nav-drawer__link">Inicio</a><a href="../rutas.html" class="nav-drawer__link">Rutas</a><a href="../cursos.html" class="nav-drawer__link">Cursos</a><a href="../articulos.html" class="nav-drawer__link">Artículos</a><a href="../offline.html" class="nav-drawer__link">Sin conexión</a></div><div class="nav-drawer__footer"><span class="nav-drawer__theme">Tema</span><button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div>
+
+    <main>
+      <section class="tutorial-hero container">
+        <div class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <a href="../curso.html?slug=rust">Rust desde cero</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Rust</span>
+        </div>
+        <h1 class="tutorial-hero__title">Ownership: el corazón de Rust</h1>
+        <p class="tutorial-hero__lead">El sistema de propiedad que hace a Rust único: una sola dueña por valor, move semantics, Copy vs Clone, y por qué elimina bugs de memoria sin GC.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>14 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Intermedio</span>
+          <span>Rust</span>
+        </div>
+        <div class="tutorial-actions">
+          <button class="tutorial-action" id="btn-listen" aria-label="Escuchar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Escuchar</button>
+          <button class="tutorial-action tutorial-action--done" id="btn-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar como completado</button>
+          <button class="tutorial-action tutorial-action--reset" id="btn-reset" title="Reiniciar progreso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg><span>Reiniciar</span></button>
+        </div>
+        <div class="tutorial-progress"><div class="tutorial-progress__bar"><span></span></div><div class="tutorial-progress__label"></div></div>
+      </section>
+
+      <div class="container tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En este tutorial</p>
+          <ol class="toc__list">
+            <li><a href="#las-tres-reglas">Las tres reglas del ownership</a></li>
+            <li><a href="#move">Move semantics</a></li>
+            <li><a href="#copy">El trait Copy</a></li>
+            <li><a href="#clone">Clone: copia explícita</a></li>
+            <li><a href="#funciones-y-ownership">Ownership y funciones</a></li>
+            <li><a href="#drop">Drop: destrucción determinista</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ol>
+          <button class="toc__toggle" aria-label="Índice"><span>En este tutorial</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </aside>
+
+        <article class="prose">
+          <h2 id="las-tres-reglas">Las tres reglas del ownership</h2>
+          <p>El sistema de ownership de Rust se rige por tres reglas verificadas en compilación. Memorizarlas no es suficiente; entender por qué existen es lo que hace que el compilador deje de ser el enemigo:</p>
+          <ol>
+            <li><strong>Cada valor tiene exactamente un propietario</strong>: una variable es la dueña de su valor.</li>
+            <li><strong>Solo puede haber un propietario a la vez</strong>: no se puede tener dos variables que sean dueñas del mismo dato.</li>
+            <li><strong>Cuando el propietario sale de scope, el valor se destruye</strong>: se llama al destructor automáticamente.</li>
+          </ol>
+          <pre><code data-lang="rust">fn main() {
+    {
+        let s = String::from("hola"); // s entra en scope, es la dueña
+        println!("{}", s);
+    } // s sale de scope → String se destruye, memoria liberada
+      // aquí s ya no existe
+}</code></pre>
+          <p>PHP libera memoria cuando el contador de referencias del valor llega a cero (GC con reference counting). Go tiene un GC tricolor que corre en background. Rust libera la memoria exactamente cuando el propietario sale de scope, sin contador de referencias, sin GC, sin pausas.</p>
+
+          <h2 id="move">Move semantics</h2>
+          <p>Cuando asignas un valor a otra variable, Rust <strong>mueve</strong> la propiedad. La variable original deja de ser válida:</p>
+          <pre><code data-lang="rust">fn main() {
+    let s1 = String::from("hola");
+    let s2 = s1; // s1 se mueve a s2
+
+    println!("{}", s2); // OK
+    println!("{}", s1); // error[E0382]: borrow of moved value: `s1`
+}</code></pre>
+          <p>¿Por qué? Porque si ambas variables fueran dueñas del mismo dato en el heap, cuando salieran de scope las dos intentarían liberar la misma memoria: double-free, un bug de seguridad grave en C y C++. Rust lo hace imposible en compilación.</p>
+          <div class="callout callout--info">
+            <strong>Comparación con PHP</strong>: en PHP, <code>$s2 = $s1</code> con un string copia el valor (copy-on-write internamente). En Rust, un <code>String</code> se mueve (la propiedad se transfiere). El resultado es el mismo en uso básico, pero el mecanismo garantiza que nunca hay dos dueños del mismo heap allocation.
+          </div>
+          <p>El move aplica también al pasar valores a funciones. Esto es un patrón que sorprende a todos al principio:</p>
+          <pre><code data-lang="rust">fn consumir(s: String) {
+    println!("{}", s);
+} // s se destruye aquí
+
+fn main() {
+    let mi_string = String::from("hola");
+    consumir(mi_string); // mi_string se mueve dentro de consumir
+    // println!("{}", mi_string); // error: valor ya fue movido
+}</code></pre>
+
+          <h2 id="copy">El trait Copy</h2>
+          <p>Algunos tipos implementan el trait <code>Copy</code>: en lugar de mover el valor, se copia automáticamente. La variable original sigue siendo válida después de la asignación.</p>
+          <pre><code data-lang="rust">fn main() {
+    let x = 5;
+    let y = x; // x se copia, no se mueve
+
+    println!("{} y {}", x, y); // ambos válidos
+}</code></pre>
+          <p>Los tipos que implementan <code>Copy</code> son aquellos que viven completamente en el stack y cuya copia es trivial:</p>
+          <ul>
+            <li>Todos los tipos numéricos: <code>i32</code>, <code>u64</code>, <code>f64</code>, etc.</li>
+            <li><code>bool</code> y <code>char</code>.</li>
+            <li>Referencias inmutables <code>&amp;T</code> (copiar la referencia, no el dato apuntado).</li>
+            <li>Tuplas y arrays de tipos Copy: <code>(i32, bool)</code>, <code>[f64; 4]</code>.</li>
+          </ul>
+          <p>Los tipos que no pueden ser Copy:</p>
+          <ul>
+            <li><code>String</code>: tiene datos en el heap, copiar requiere alocar nueva memoria.</li>
+            <li><code>Vec&lt;T&gt;</code>: mismo motivo.</li>
+            <li>Cualquier tipo que implemente <code>Drop</code>: si necesita un destructor personalizado, no puede ser Copy.</li>
+          </ul>
+          <div class="callout callout--tip">
+            <strong>Regla práctica</strong>: si un tipo tiene datos en el heap, no es Copy. Si todo vive en el stack con tamaño fijo, probablemente sí. <code>#[derive(Copy, Clone)]</code> funciona si todos los campos son Copy.
+          </div>
+
+          <h2 id="clone">Clone: copia explícita</h2>
+          <p>Cuando necesitas una copia real de un valor que no es Copy, usas <code>.clone()</code>. El clone es explícito: Rust no lo hace nunca automáticamente, porque puede ser costoso (implica alocar nueva memoria en el heap).</p>
+          <pre><code data-lang="rust">fn main() {
+    let s1 = String::from("hola");
+    let s2 = s1.clone(); // copia profunda: nuevo String en el heap
+
+    println!("{} y {}", s1, s2); // ambos válidos
+}</code></pre>
+          <p>Clone puede ser arbitrariamente costoso. Un <code>Vec&lt;String&gt;</code> con miles de elementos clona todos los Strings y todos los datos que contienen. Rust te hace escribir <code>.clone()</code> para que seas consciente de eso.</p>
+          <p>En PHP, <code>$s2 = $s1</code> hace una copia con copy-on-write: barata hasta que alguien modifica. En Rust, si quieres una copia, la declaras explícita con <code>.clone()</code>; si solo necesitas leer el dato, usas una referencia prestada (lo veremos en el siguiente tutorial).</p>
+
+          <h2 id="funciones-y-ownership">Ownership y funciones</h2>
+          <p>Pasar un valor a una función mueve el ownership (igual que la asignación). La función se convierte en la nueva dueña. Esto obliga a pensar en el ciclo de vida de cada dato:</p>
+          <pre><code data-lang="rust">fn dar_longitud(s: String) -&gt; (String, usize) {
+    let longitud = s.len();
+    (s, longitud) // retornamos s para devolver el ownership al caller
+}
+
+fn main() {
+    let nombre = String::from("Rust");
+    let (nombre, longitud) = dar_longitud(nombre);
+    println!("{} tiene {} caracteres", nombre, longitud);
+}</code></pre>
+          <p>Retornar el valor para recuperar el ownership es tedioso. Por eso existen las referencias (borrowing): puedes prestar un valor a una función sin moverlo. Pero ese es el tema del siguiente tutorial.</p>
+          <p>Lo que Rust evita con todo esto:</p>
+          <ul>
+            <li><strong>Use-after-free</strong>: usar un puntero a memoria ya liberada. Imposible: el compilador sabe cuándo un valor se destruye.</li>
+            <li><strong>Double-free</strong>: liberar la misma memoria dos veces. Imposible: solo hay un dueño.</li>
+            <li><strong>Dangling pointers</strong>: punteros a memoria que ya no pertenece al programa. Imposible: la memoria se libera cuando el dueño sale de scope.</li>
+          </ul>
+
+          <h2 id="drop">Drop: destrucción determinista</h2>
+          <p>Cuando un valor sale de scope, Rust llama automáticamente al método <code>drop</code> si el tipo implementa el trait <code>Drop</code>. Esto es RAII (Resource Acquisition Is Initialization): el recurso se libera cuando el objeto que lo posee se destruye.</p>
+          <pre><code data-lang="rust">struct ConexionBD {
+    url: String,
+}
+
+impl Drop for ConexionBD {
+    fn drop(&amp;mut self) {
+        println!("Cerrando conexión a {}", self.url);
+    }
+}
+
+fn main() {
+    let conexion = ConexionBD { url: "postgres://localhost/db".to_string() };
+    println!("Usando la conexión");
+} // aquí se llama drop automáticamente
+// Output: Usando la conexión
+//         Cerrando conexión a postgres://localhost/db</code></pre>
+          <p>En PHP, los recursos se liberan cuando el objeto es recogido por el GC o cuando se llama al destructor (<code>__destruct</code>), pero el momento no es determinista. En Rust, el drop ocurre exactamente cuando el dueño sale de scope: determinista, predecible, sin pausas de GC.</p>
+          <div class="callout callout--info">
+            <strong>Por qué importa en servidores</strong>: una conexión de base de datos se devuelve al pool exactamente cuando el scope termina, no cuando el GC decida pasar. Esto hace que el comportamiento bajo carga sea más predecible y los recursos se reutilicen antes.
+          </div>
+
+          <h2 id="resumen">Resumen</h2>
+          <ul class="keypoints">
+            <li>Las tres reglas del ownership garantizan que no hay use-after-free, double-free ni dangling pointers: todo verificado por el compilador sin coste en runtime.</li>
+            <li>La asignación mueve el ownership: la variable original deja de ser válida. Esto evita que dos variables sean dueñas del mismo dato en el heap.</li>
+            <li>Los tipos Copy (enteros, bool, char, referencias inmutables) se copian automáticamente en lugar de moverse.</li>
+            <li><code>.clone()</code> hace una copia profunda explícita de tipos no-Copy. El compilador no lo hace automáticamente para que el coste sea visible.</li>
+            <li>La destrucción es determinista: el drop ocurre exactamente cuando el dueño sale de scope, sin GC. RAII garantiza que los recursos se liberan a tiempo.</li>
+          </ul>
+        </article>
+      </div>
+    </main>
+
+    <footer class="footer"><div class="container footer__inner"><span><strong>MentorAI</strong> · Formación técnica iterada con IA</span><span>© <span data-year>2026</span></span></div></footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

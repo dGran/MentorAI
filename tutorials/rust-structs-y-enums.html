@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem("academia-theme");
+        var d = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", t || (d ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Structs, enums y métodos — MentorAI</title>
+    <meta name="description" content="Cómo Rust modela datos con structs e impl, enums con datos (algebraic data types), Option como alternativa a null y Result para errores." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+  </head>
+  <body>
+    <div class="reading-progress" id="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <a href="../offline.html" class="nav__link offline-nav-link">Sin conexión</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+          <button class="nav__burger icon-btn" aria-label="Menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <div class="nav-drawer-backdrop"></div>
+    <div class="nav-drawer"><div class="nav-drawer__head"><span class="nav-drawer__title">MentorAI</span><div class="nav-drawer__head-actions"><button class="nav-drawer__close icon-btn" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div><div class="nav-drawer__links"><a href="../index.html" class="nav-drawer__link">Inicio</a><a href="../rutas.html" class="nav-drawer__link">Rutas</a><a href="../cursos.html" class="nav-drawer__link">Cursos</a><a href="../articulos.html" class="nav-drawer__link">Artículos</a><a href="../offline.html" class="nav-drawer__link">Sin conexión</a></div><div class="nav-drawer__footer"><span class="nav-drawer__theme">Tema</span><button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div>
+
+    <main>
+      <section class="tutorial-hero container">
+        <div class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <a href="../curso.html?slug=rust">Rust desde cero</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Rust</span>
+        </div>
+        <h1 class="tutorial-hero__title">Structs, enums y métodos</h1>
+        <p class="tutorial-hero__lead">Cómo Rust modela datos con structs e impl, enums con datos (algebraic data types), Option como alternativa a null y Result para errores.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>12 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Principiante</span>
+          <span>Rust</span>
+        </div>
+        <div class="tutorial-actions">
+          <button class="tutorial-action" id="btn-listen" aria-label="Escuchar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Escuchar</button>
+          <button class="tutorial-action tutorial-action--done" id="btn-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar como completado</button>
+          <button class="tutorial-action tutorial-action--reset" id="btn-reset" title="Reiniciar progreso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg><span>Reiniciar</span></button>
+        </div>
+        <div class="tutorial-progress"><div class="tutorial-progress__bar"><span></span></div><div class="tutorial-progress__label"></div></div>
+      </section>
+
+      <div class="container tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En este tutorial</p>
+          <ol class="toc__list">
+            <li><a href="#structs">Structs</a></li>
+            <li><a href="#impl">Métodos con impl</a></li>
+            <li><a href="#enums">Enums con datos</a></li>
+            <li><a href="#option">Option&lt;T&gt;: sin null</a></li>
+            <li><a href="#result">Result&lt;T, E&gt;: errores como valores</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ol>
+          <button class="toc__toggle" aria-label="Índice"><span>En este tutorial</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </aside>
+
+        <article class="prose">
+          <h2 id="structs">Structs</h2>
+          <p>Los structs en Rust son la forma principal de agrupar datos relacionados, equivalente a las clases de PHP pero sin herencia. Un struct solo define datos; el comportamiento se añade con <code>impl</code>.</p>
+          <pre><code data-lang="rust">struct Producto {
+    nombre: String,
+    precio: f64,
+    stock: u32,
+}
+
+fn main() {
+    let producto = Producto {
+        nombre: String::from("Teclado mecánico"),
+        precio: 89.99,
+        stock: 15,
+    };
+
+    println!("{} — {:.2}€", producto.nombre, producto.precio);
+}</code></pre>
+          <p>La <strong>struct update syntax</strong> crea una nueva instancia copiando los campos no especificados de otra:</p>
+          <pre><code data-lang="rust">let producto_sin_stock = Producto {
+    stock: 0,
+    ..producto // copia nombre y precio de producto
+};</code></pre>
+          <p>Los <strong>tuple structs</strong> son structs con campos posicionales en lugar de nombrados, útiles para crear tipos distintos de tipos primitivos:</p>
+          <pre><code data-lang="rust">struct Metros(f64);
+struct Kilogramos(f64);
+
+fn calcular_imc(peso: Kilogramos, altura: Metros) -&gt; f64 {
+    peso.0 / (altura.0 * altura.0)
+}
+
+// El compilador rechaza pasar Metros donde se espera Kilogramos
+let imc = calcular_imc(Kilogramos(75.0), Metros(1.78));</code></pre>
+          <p>Los <strong>unit structs</strong> no tienen campos. Se usan para implementar traits sobre un tipo vacío:</p>
+          <pre><code data-lang="rust">struct Marcador;
+</code></pre>
+
+          <h2 id="impl">Métodos con impl</h2>
+          <p>El comportamiento de un struct se define en un bloque <code>impl</code>. Hay tres formas de declarar el primer parámetro según el acceso al dato:</p>
+          <pre><code data-lang="rust">impl Producto {
+    pub fn new(nombre: &amp;str, precio: f64) -&gt; Self {
+        Producto {
+            nombre: nombre.to_string(),
+            precio,
+            stock: 0,
+        }
+    }
+
+    pub fn precio_con_iva(&amp;self) -&gt; f64 {
+        self.precio * 1.21
+    }
+
+    pub fn aplicar_descuento(&amp;mut self, porcentaje: f64) {
+        self.precio *= 1.0 - porcentaje / 100.0;
+    }
+
+    pub fn consumir(self) -&gt; String {
+        self.nombre
+    }
+}
+
+fn main() {
+    let mut prod = Producto::new("Ratón", 29.99);
+    println!("{:.2}€ con IVA", prod.precio_con_iva());
+    prod.aplicar_descuento(10.0);
+    println!("{:.2}€ con descuento", prod.precio);
+}</code></pre>
+          <ul>
+            <li><strong><code>&amp;self</code></strong>: préstamo inmutable. El más común. Solo lee el dato.</li>
+            <li><strong><code>&amp;mut self</code></strong>: préstamo mutable. Modifica el struct en su lugar.</li>
+            <li><strong><code>self</code></strong>: toma ownership. El struct se consume y ya no es válido después de la llamada.</li>
+            <li><strong>Métodos asociados</strong> (sin <code>self</code>): funcionan como métodos estáticos o constructores. <code>Producto::new()</code> es el patrón de constructor en Rust.</li>
+          </ul>
+
+          <h2 id="enums">Enums con datos</h2>
+          <p>Los enums de Rust van mucho más allá de los enums de PHP: cada variante puede llevar datos distintos. Esto se llama <em>algebraic data type</em> y es la forma de modelar valores que pueden ser de varios tipos posibles.</p>
+          <pre><code data-lang="rust">enum Forma {
+    Circulo(f64),
+    Rectangulo(f64, f64),
+    Triangulo { base: f64, altura: f64 },
+}
+
+fn area(forma: &amp;Forma) -&gt; f64 {
+    match forma {
+        Forma::Circulo(radio) =&gt; std::f64::consts::PI * radio * radio,
+        Forma::Rectangulo(ancho, alto) =&gt; ancho * alto,
+        Forma::Triangulo { base, altura } =&gt; base * altura / 2.0,
+    }
+}
+
+fn main() {
+    let formas = vec![
+        Forma::Circulo(5.0),
+        Forma::Rectangulo(4.0, 6.0),
+        Forma::Triangulo { base: 3.0, altura: 8.0 },
+    ];
+
+    for forma in &amp;formas {
+        println!("Área: {:.2}", area(forma));
+    }
+}</code></pre>
+          <p>La potencia está en que el compilador sabe en cada <code>match</code> qué datos lleva cada variante, y los extrae con tipo correcto. No hay casting ni <code>instanceof</code>.</p>
+          <p>También puedes añadir métodos a los enums con <code>impl</code>, igual que con los structs.</p>
+
+          <h2 id="option">Option&lt;T&gt;: sin null</h2>
+          <p>Rust no tiene <code>null</code>. Un valor que puede estar presente o ausente se modela con <code>Option&lt;T&gt;</code>, que es un enum de la stdlib:</p>
+          <pre><code data-lang="rust">enum Option&lt;T&gt; {
+    Some(T),
+    None,
+}
+</code></pre>
+          <p>Cuando una función puede no encontrar un valor, retorna <code>Option</code>:</p>
+          <pre><code data-lang="rust">fn buscar_usuario(id: u32) -&gt; Option&lt;String&gt; {
+    if id == 1 {
+        Some(String::from("Ana"))
+    } else {
+        None
+    }
+}
+
+fn main() {
+    match buscar_usuario(1) {
+        Some(nombre) =&gt; println!("Usuario: {}", nombre),
+        None =&gt; println!("No encontrado"),
+    }
+
+    if let Some(nombre) = buscar_usuario(2) {
+        println!("Usuario: {}", nombre);
+    } else {
+        println!("No encontrado");
+    }
+}</code></pre>
+          <p>Métodos útiles de Option:</p>
+          <ul>
+            <li><code>.unwrap()</code>: extrae el valor o entra en panic si es None. Solo en tests o cuando es imposible que sea None.</li>
+            <li><code>.expect("mensaje")</code>: como unwrap pero con mensaje de error descriptivo.</li>
+            <li><code>.unwrap_or(valor_por_defecto)</code>: extrae el valor o usa el default.</li>
+            <li><code>.map(|x| ...)</code>: transforma el valor dentro del Some sin tocar el None.</li>
+            <li><code>.and_then(|x| ...)</code>: encadena operaciones que retornan Option (flatMap).</li>
+          </ul>
+          <div class="callout callout--info">
+            <strong>Comparación con PHP</strong>: en PHP, cualquier función puede retornar null sin que el tipo lo declare. En Rust, si el tipo de retorno es <code>String</code>, es imposible que sea null. Si puede ser null, el tipo debe ser <code>Option&lt;String&gt;</code> y el compilador exige que lo trates.
+          </div>
+
+          <h2 id="result">Result&lt;T, E&gt;: errores como valores</h2>
+          <p><code>Result&lt;T, E&gt;</code> es el equivalente de Option para operaciones que pueden fallar con información de error:</p>
+          <pre><code data-lang="rust">enum Result&lt;T, E&gt; {
+    Ok(T),
+    Err(E),
+}
+</code></pre>
+          <pre><code data-lang="rust">use std::fs;
+use std::io;
+
+fn leer_config(ruta: &amp;str) -&gt; Result&lt;String, io::Error&gt; {
+    fs::read_to_string(ruta)
+}
+
+fn main() {
+    match leer_config("config.toml") {
+        Ok(contenido) =&gt; println!("Config: {}", contenido),
+        Err(error) =&gt; eprintln!("Error al leer config: {}", error),
+    }
+}</code></pre>
+          <p>El operador <code>?</code> propaga el error automáticamente: si el Result es <code>Err</code>, retorna ese error de la función actual. Si es <code>Ok</code>, extrae el valor:</p>
+          <pre><code data-lang="rust">fn procesar_config(ruta: &amp;str) -&gt; Result&lt;(), io::Error&gt; {
+    let contenido = fs::read_to_string(ruta)?; // propaga si Err
+    println!("Procesando {} bytes", contenido.len());
+    Ok(())
+}</code></pre>
+          <div class="callout callout--warning">
+            <strong><code>unwrap()</code> en producción</strong>: llamar a <code>.unwrap()</code> en un Result en código de producción es como dejar una excepción sin capturar en PHP. Si el Result es Err, el programa entra en panic y se detiene. Usa <code>?</code> para propagar o <code>match</code> para manejar.
+          </div>
+
+          <h2 id="resumen">Resumen</h2>
+          <ul class="keypoints">
+            <li>Los structs agrupan datos con campos nombrados; los tuple structs crean tipos distintos de primitivos; los unit structs son marcadores sin datos.</li>
+            <li>El bloque <code>impl</code> añade comportamiento al struct: <code>&amp;self</code> para leer, <code>&amp;mut self</code> para mutar, <code>self</code> para consumir, y métodos asociados sin <code>self</code> para constructores.</li>
+            <li>Los enums pueden llevar datos distintos en cada variante (algebraic data types); el match los desestructura con tipo correcto sin casting.</li>
+            <li><code>Option&lt;T&gt;</code> reemplaza a null: el compilador exige tratar explícitamente los casos Some y None, eliminando los null pointer errors.</li>
+            <li><code>Result&lt;T, E&gt;</code> modela operaciones fallibles; el operador <code>?</code> propaga el error de forma concisa; <code>unwrap()</code> solo se usa en tests.</li>
+          </ul>
+        </article>
+      </div>
+    </main>
+
+    <footer class="footer"><div class="container footer__inner"><span><strong>MentorAI</strong> · Formación técnica iterada con IA</span><span>© <span data-year>2026</span></span></div></footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

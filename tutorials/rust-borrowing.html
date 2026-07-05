@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem("academia-theme");
+        var d = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", t || (d ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Borrowing y referencias — MentorAI</title>
+    <meta name="description" content="Las reglas del borrow checker: referencias compartidas (&amp;T) y exclusivas (&amp;mut T), slices, y cómo Rust previene errores de memoria en compilación." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+  </head>
+  <body>
+    <div class="reading-progress" id="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <a href="../offline.html" class="nav__link offline-nav-link">Sin conexión</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+          <button class="nav__burger icon-btn" aria-label="Menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <div class="nav-drawer-backdrop"></div>
+    <div class="nav-drawer"><div class="nav-drawer__head"><span class="nav-drawer__title">MentorAI</span><div class="nav-drawer__head-actions"><button class="nav-drawer__close icon-btn" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div><div class="nav-drawer__links"><a href="../index.html" class="nav-drawer__link">Inicio</a><a href="../rutas.html" class="nav-drawer__link">Rutas</a><a href="../cursos.html" class="nav-drawer__link">Cursos</a><a href="../articulos.html" class="nav-drawer__link">Artículos</a><a href="../offline.html" class="nav-drawer__link">Sin conexión</a></div><div class="nav-drawer__footer"><span class="nav-drawer__theme">Tema</span><button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div>
+
+    <main>
+      <section class="tutorial-hero container">
+        <div class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <a href="../curso.html?slug=rust">Rust desde cero</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Rust</span>
+        </div>
+        <h1 class="tutorial-hero__title">Borrowing y referencias</h1>
+        <p class="tutorial-hero__lead">Las reglas del borrow checker: referencias compartidas (&amp;T) y exclusivas (&amp;mut T), slices, y cómo Rust previene errores de memoria en compilación.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>13 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Intermedio</span>
+          <span>Rust</span>
+        </div>
+        <div class="tutorial-actions">
+          <button class="tutorial-action" id="btn-listen" aria-label="Escuchar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Escuchar</button>
+          <button class="tutorial-action tutorial-action--done" id="btn-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar como completado</button>
+          <button class="tutorial-action tutorial-action--reset" id="btn-reset" title="Reiniciar progreso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg><span>Reiniciar</span></button>
+        </div>
+        <div class="tutorial-progress"><div class="tutorial-progress__bar"><span></span></div><div class="tutorial-progress__label"></div></div>
+      </section>
+
+      <div class="container tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En este tutorial</p>
+          <ol class="toc__list">
+            <li><a href="#referencias">&amp;T: referencias compartidas</a></li>
+            <li><a href="#mut-referencias">&amp;mut T: referencias exclusivas</a></li>
+            <li><a href="#reglas">Las reglas del borrow checker</a></li>
+            <li><a href="#slices">Slices: referencias a partes</a></li>
+            <li><a href="#dangling">Dangling references: imposibles en Rust</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ol>
+          <button class="toc__toggle" aria-label="Índice"><span>En este tutorial</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </aside>
+
+        <article class="prose">
+          <h2 id="referencias">&amp;T: referencias compartidas</h2>
+          <p>El problema con el ownership puro es que mover un valor cada vez que quieres usarlo es tedioso. Las referencias son la solución: permiten que otra parte del código acceda al dato sin tomar su propiedad.</p>
+          <pre><code data-lang="rust">fn calcular_longitud(s: &amp;String) -&gt; usize {
+    s.len()
+} // s es un préstamo: el caller sigue siendo el dueño
+
+fn main() {
+    let nombre = String::from("Rust");
+    let longitud = calcular_longitud(&amp;nombre); // prestamos &nombre
+    println!("{} tiene {} caracteres", nombre, longitud); // nombre sigue siendo válido
+}</code></pre>
+          <p>El <code>&amp;</code> en <code>&amp;nombre</code> crea una referencia: un puntero al dato de <code>nombre</code>. <code>calcular_longitud</code> puede leer el String pero no poseerlo ni destruirlo. Cuando la función termina, solo se destruye la referencia, no el String.</p>
+          <p>Puedes tener <strong>múltiples referencias compartidas simultáneas</strong>. Esto es seguro porque solo leen, no modifican:</p>
+          <pre><code data-lang="rust">fn main() {
+    let datos = vec![1, 2, 3, 4, 5];
+    let referencia_a = &amp;datos;
+    let referencia_b = &amp;datos;
+    let referencia_c = &amp;datos;
+
+    println!("{:?} {:?} {:?}", referencia_a, referencia_b, referencia_c);
+}</code></pre>
+
+          <h2 id="mut-referencias">&amp;mut T: referencias exclusivas</h2>
+          <p>Para modificar un dato a través de una referencia, necesitas una referencia mutable <code>&amp;mut T</code>. La restricción fundamental: <strong>solo puede existir una <code>&amp;mut T</code> a la vez, y mientras existe ninguna <code>&amp;T</code></strong>.</p>
+          <pre><code data-lang="rust">fn agregar_sufijo(s: &amp;mut String) {
+    s.push_str(" - editado");
+}
+
+fn main() {
+    let mut mensaje = String::from("hola");
+    agregar_sufijo(&amp;mut mensaje);
+    println!("{}", mensaje); // hola - editado
+}</code></pre>
+          <p>¿Por qué esta restricción? El ejemplo que lo ilustra: si tienes una referencia compartida a un Vec y alguien inserta un elemento a través de una referencia mutable, el Vec puede reubicar su buffer en el heap. Tu referencia compartida ahora apunta a memoria liberada. Esto es exactamente el tipo de bug que explota en C++ y que Rust hace imposible.</p>
+          <pre><code data-lang="rust">fn main() {
+    let mut v = vec![1, 2, 3];
+    let primera = &amp;v[0];         // referencia compartida
+    v.push(4);                    // error: no puede haber &amp;mut mientras existe &amp;
+    println!("{}", primera);      // si esto compilara, primera podría ser inválida
+}</code></pre>
+          <pre><code data-lang="bash">error[E0502]: cannot borrow `v` as mutable because it is also borrowed as immutable</code></pre>
+
+          <h2 id="reglas">Las reglas del borrow checker</h2>
+          <p>El borrow checker impone estas reglas en cada punto del código:</p>
+          <ul>
+            <li>Puedes tener <strong>cualquier número de referencias compartidas</strong> (<code>&amp;T</code>) simultáneas.</li>
+            <li>O puedes tener <strong>exactamente una referencia mutable</strong> (<code>&amp;mut T</code>).</li>
+            <li>Nunca puedes tener ambas al mismo tiempo.</li>
+            <li>Las referencias siempre deben ser válidas (el dato al que apuntan debe vivir al menos tanto como la referencia).</li>
+          </ul>
+          <div class="callout callout--info">
+            <strong>El modelo de lectores-escritores</strong>: las reglas del borrow checker son exactamente las de un RwLock: múltiples lectores O un escritor exclusivo, nunca los dos a la vez. Rust garantiza esto en compilación incluso en código single-thread, lo que elimina bugs de lógica que en otros lenguajes solo aparecen bajo concurrencia.
+          </div>
+          <p>El borrow checker es sofisticado: analiza el <em>tiempo de uso real</em> de la referencia, no solo el scope léxico. En Rust moderno (NLL, Non-Lexical Lifetimes), una referencia termina cuando se usa por última vez, no cuando sale del bloque:</p>
+          <pre><code data-lang="rust">fn main() {
+    let mut v = vec![1, 2, 3];
+    let primera = &amp;v[0];
+    println!("{}", primera); // última vez que se usa primera
+    // aquí primera ya no está activa
+    v.push(4); // OK: no hay referencias activas
+    println!("{:?}", v);
+}</code></pre>
+
+          <h2 id="slices">Slices: referencias a partes</h2>
+          <p>Un slice es una referencia a una porción contigua de una colección. No copia los datos; apunta a un rango dentro de la colección original.</p>
+          <pre><code data-lang="rust">fn main() {
+    let texto = String::from("hola mundo");
+    let hola = &amp;texto[0..4];   // &amp;str apuntando a los primeros 4 bytes
+    let mundo = &amp;texto[5..10]; // &amp;str apuntando a los siguientes 5 bytes
+
+    println!("{} {}", hola, mundo);
+}
+
+fn primera_palabra(s: &amp;str) -&gt; &amp;str {
+    let bytes = s.as_bytes();
+
+    for (i, &amp;byte) in bytes.iter().enumerate() {
+        if byte == b' ' {
+            return &amp;s[0..i];
+        }
+    }
+
+    &amp;s[..]
+}</code></pre>
+          <p>El tipo <code>&amp;str</code> es un slice de String. El tipo <code>&amp;[T]</code> es un slice de array o Vec:</p>
+          <pre><code data-lang="rust">fn suma(numeros: &amp;[i32]) -&gt; i32 {
+    numeros.iter().sum()
+}
+
+fn main() {
+    let arr = [1, 2, 3, 4, 5];
+    let v = vec![10, 20, 30];
+
+    println!("{}", suma(&amp;arr));       // funciona con arrays
+    println!("{}", suma(&amp;v));         // funciona con Vec
+    println!("{}", suma(&amp;v[1..3]));   // funciona con slices parciales
+}</code></pre>
+          <p>Usar <code>&amp;[T]</code> en lugar de <code>&amp;Vec&lt;T&gt;</code> como parámetro es más flexible: acepta arrays, Vecs y cualquier slice.</p>
+
+          <h2 id="dangling">Dangling references: imposibles en Rust</h2>
+          <p>En C, puedes retornar un puntero a una variable local. Cuando la función termina, la variable se destruye pero el puntero sigue existiendo apuntando a memoria inválida. Este bug (dangling pointer) es la fuente de innumerables CVEs.</p>
+          <p>En Rust, el compilador lo hace imposible:</p>
+          <pre><code data-lang="rust">fn retornar_referencia() -&gt; &amp;String { // el compilador pide lifetime annotation
+    let s = String::from("hola");
+    &amp;s
+} // s se destruye aquí, la referencia quedaría colgando</code></pre>
+          <pre><code data-lang="bash">error[E0106]: missing lifetime specifier
+ --&gt; src/main.rs:1:30
+  |
+1 | fn retornar_referencia() -&gt; &amp;String {
+  |                              ^ expected named lifetime parameter</code></pre>
+          <p>El compilador detecta que la referencia retornada apuntaría a datos que ya no existen. La solución es retornar el <code>String</code> (mover el ownership al caller) en lugar de una referencia:</p>
+          <pre><code data-lang="rust">fn crear_string() -&gt; String {
+    String::from("hola") // movemos el String, no retornamos una referencia
+}</code></pre>
+
+          <h2 id="resumen">Resumen</h2>
+          <ul class="keypoints">
+            <li><code>&amp;T</code> presta el dato sin moverlo: el dueño sigue siéndolo. Múltiples <code>&amp;T</code> simultáneas están permitidas (solo lectura).</li>
+            <li><code>&amp;mut T</code> presta el dato para modificarlo: solo puede existir una a la vez, y excluye cualquier <code>&amp;T</code> simultánea.</li>
+            <li>Las reglas del borrow checker son el modelo lectores-escritores aplicado en compilación, incluso en código single-thread.</li>
+            <li>Los slices (<code>&amp;str</code>, <code>&amp;[T]</code>) son referencias a porciones de colecciones: no copian datos, apuntan a rangos dentro del original.</li>
+            <li>Las dangling references son imposibles: el compilador verifica que la referencia no sobreviva al dato al que apunta.</li>
+          </ul>
+        </article>
+      </div>
+    </main>
+
+    <footer class="footer"><div class="container footer__inner"><span><strong>MentorAI</strong> · Formación técnica iterada con IA</span><span>© <span data-year>2026</span></span></div></footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

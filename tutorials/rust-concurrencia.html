@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem("academia-theme");
+        var d = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", t || (d ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Concurrencia con threads y canales — MentorAI</title>
+    <meta name="description" content="Threads seguros en Rust gracias al sistema de tipos, paso de mensajes con canales, Mutex y RwLock, y cómo Rust garantiza ausencia de data races en compilación." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+  </head>
+  <body>
+    <div class="reading-progress" id="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <a href="../offline.html" class="nav__link offline-nav-link">Sin conexión</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+          <button class="nav__burger icon-btn" aria-label="Menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <div class="nav-drawer-backdrop"></div>
+    <div class="nav-drawer"><div class="nav-drawer__head"><span class="nav-drawer__title">MentorAI</span><div class="nav-drawer__head-actions"><button class="nav-drawer__close icon-btn" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div><div class="nav-drawer__links"><a href="../index.html" class="nav-drawer__link">Inicio</a><a href="../rutas.html" class="nav-drawer__link">Rutas</a><a href="../cursos.html" class="nav-drawer__link">Cursos</a><a href="../articulos.html" class="nav-drawer__link">Artículos</a><a href="../offline.html" class="nav-drawer__link">Sin conexión</a></div><div class="nav-drawer__footer"><span class="nav-drawer__theme">Tema</span><button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div>
+
+    <main>
+      <section class="tutorial-hero container">
+        <div class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <a href="../curso.html?slug=rust">Rust desde cero</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Rust</span>
+        </div>
+        <h1 class="tutorial-hero__title">Concurrencia con threads y canales</h1>
+        <p class="tutorial-hero__lead">Threads seguros en Rust gracias al sistema de tipos, paso de mensajes con canales, Mutex y RwLock, y cómo Rust garantiza ausencia de data races en compilación.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>13 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Intermedio</span>
+          <span>Rust</span>
+        </div>
+        <div class="tutorial-actions">
+          <button class="tutorial-action" id="btn-listen" aria-label="Escuchar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Escuchar</button>
+          <button class="tutorial-action tutorial-action--done" id="btn-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar como completado</button>
+          <button class="tutorial-action tutorial-action--reset" id="btn-reset" title="Reiniciar progreso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg><span>Reiniciar</span></button>
+        </div>
+        <div class="tutorial-progress"><div class="tutorial-progress__bar"><span></span></div><div class="tutorial-progress__label"></div></div>
+      </section>
+
+      <div class="container tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En este tutorial</p>
+          <ol class="toc__list">
+            <li><a href="#threads">std::thread::spawn</a></li>
+            <li><a href="#send-sync">Los traits Send y Sync</a></li>
+            <li><a href="#canales">Canales mpsc</a></li>
+            <li><a href="#mutex-threads">Arc&lt;Mutex&lt;T&gt;&gt;: estado compartido</a></li>
+            <li><a href="#rayon">Rayon: paralelismo de datos</a></li>
+            <li><a href="#vs-go">Rust vs Go en concurrencia</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ol>
+          <button class="toc__toggle" aria-label="Índice"><span>En este tutorial</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </aside>
+
+        <article class="prose">
+          <h2 id="threads">std::thread::spawn</h2>
+          <p>Rust usa threads del sistema operativo (1:1 mapping). No hay un runtime de hilos ligeros como las goroutines de Go: cada thread de Rust es un thread real del OS.</p>
+          <pre><code data-lang="rust">use std::thread;
+use std::time::Duration;
+
+fn main() {
+    let handle = thread::spawn(|| {
+        for i in 1..=5 {
+            println!("thread: {}", i);
+            thread::sleep(Duration::from_millis(100));
+        }
+    });
+
+    for i in 1..=3 {
+        println!("main: {}", i);
+        thread::sleep(Duration::from_millis(150));
+    }
+
+    handle.join().unwrap(); // espera a que el thread termine
+}</code></pre>
+          <p><code>thread::spawn</code> recibe una closure y retorna un <code>JoinHandle</code>. Llamar a <code>.join()</code> bloquea el thread actual hasta que el spawneado termine.</p>
+          <p>La closure que pasa a <code>spawn</code> debe ser <code>'static</code> y <code>Send</code>. Esto significa que no puede capturar referencias a variables locales del thread llamador (que podrían destruirse antes de que el thread termine). Si necesitas datos del entorno, muévelos con <code>move</code>:</p>
+          <pre><code data-lang="rust">fn main() {
+    let mensaje = String::from("hola desde el thread");
+
+    let handle = thread::spawn(move || {
+        println!("{}", mensaje); // mensaje se movió al thread
+    });
+
+    // mensaje ya no está disponible aquí
+    handle.join().unwrap();
+}</code></pre>
+
+          <h2 id="send-sync">Los traits Send y Sync</h2>
+          <p>Los traits <code>Send</code> y <code>Sync</code> son los que hacen que la concurrencia de Rust sea segura en el tipo:</p>
+          <ul>
+            <li><strong><code>Send</code></strong>: el tipo puede moverse a otro thread. La mayoría de tipos implementan Send. Los que no: <code>Rc&lt;T&gt;</code> (el conteo de referencias no es atómico), punteros raw, algunos tipos de la GUI.</li>
+            <li><strong><code>Sync</code></strong>: el tipo puede referenciarse desde múltiples threads simultáneamente. Si <code>T: Sync</code>, entonces <code>&amp;T: Send</code>.</li>
+          </ul>
+          <pre><code data-lang="rust">use std::rc::Rc;
+use std::thread;
+
+fn main() {
+    let rc = Rc::new(5);
+
+    thread::spawn(move || {
+        println!("{}", rc); // error[E0277]: `Rc&lt;i32&gt;` cannot be sent between threads safely
+    });
+}</code></pre>
+          <p>El compilador rechaza este código porque <code>Rc&lt;i32&gt;</code> no implementa <code>Send</code>. El error aparece en compilación, no en producción bajo carga. Este es el valor fundamental de Rust en concurrencia: las garantías son estáticas.</p>
+          <p>La implementación de <code>Send</code> y <code>Sync</code> es automática para los tipos que solo contienen tipos <code>Send</code>/<code>Sync</code>. Si defines un struct con todos los campos Send, el struct también es Send automáticamente.</p>
+
+          <h2 id="canales">Canales mpsc</h2>
+          <p><code>std::sync::mpsc</code> proporciona canales de paso de mensajes: Multiple Producer, Single Consumer. Un canal tiene un transmisor (<code>tx</code>) y un receptor (<code>rx</code>). Puedes clonar el transmisor para tener múltiples productores.</p>
+          <pre><code data-lang="rust">use std::sync::mpsc;
+use std::thread;
+
+fn main() {
+    let (tx, rx) = mpsc::channel();
+
+    let tx1 = tx.clone();
+    let tx2 = tx.clone();
+
+    thread::spawn(move || {
+        for i in 0..5 {
+            tx1.send(format!("thread 1: {}", i)).unwrap();
+        }
+    });
+
+    thread::spawn(move || {
+        for i in 0..5 {
+            tx2.send(format!("thread 2: {}", i)).unwrap();
+        }
+    });
+
+    drop(tx); // cerramos el tx original para que rx.iter() sepa cuándo parar
+
+    for mensaje in rx.iter() {
+        println!("{}", mensaje);
+    }
+}</code></pre>
+          <p>El canal de Rust tiene semántica de ownership: enviar un mensaje mueve el valor. El receptor es el nuevo dueño. Esto garantiza que no hay acceso concurrente al mismo dato: el sender ya no tiene el dato cuando el receiver lo recibe.</p>
+          <div class="callout callout--tip">
+            <strong>Patrón worker pool</strong>: crea N threads con un transmisor cada uno y un receptor compartido (con <code>Arc&lt;Mutex&lt;Receiver&gt;&gt;</code>). Distribuye trabajo enviando tareas al canal. Los threads compiten por las tareas del receptor.
+          </div>
+
+          <h2 id="mutex-threads">Arc&lt;Mutex&lt;T&gt;&gt;: estado compartido</h2>
+          <p>Cuando múltiples threads necesitan acceder y modificar el mismo dato, el patrón es <code>Arc&lt;Mutex&lt;T&gt;&gt;</code>:</p>
+          <pre><code data-lang="rust">use std::sync::{Arc, Mutex};
+use std::thread;
+
+fn main() {
+    let resultados: Arc&lt;Mutex&lt;Vec&lt;u64&gt;&gt;&gt; = Arc::new(Mutex::new(Vec::new()));
+
+    let handles: Vec&lt;_&gt; = (0..8u64).map(|i| {
+        let resultados = Arc::clone(&amp;resultados);
+        thread::spawn(move || {
+            let calculo = (0..=i).sum::<u64>();
+            resultados.lock().unwrap().push(calculo);
+        })
+    }).collect();
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    let mut datos = resultados.lock().unwrap();
+    datos.sort();
+    println!("{:?}", *datos);
+}</code></pre>
+          <p>El <code>MutexGuard</code> retornado por <code>.lock()</code> implementa <code>Deref</code> y <code>DerefMut</code>, así que puedes usarlo como el tipo interior. Se libera automáticamente al salir de scope.</p>
+
+          <h2 id="rayon">Rayon: paralelismo de datos</h2>
+          <p>Para paralelismo de datos (aplicar la misma operación sobre una colección usando todos los cores), Rayon es la solución más ergonómica. Convierte cualquier iterador secuencial en paralelo con un cambio mínimo:</p>
+          <pre><code data-lang="rust">use rayon::prelude::*;
+
+fn main() {
+    let datos: Vec&lt;u64&gt; = (1..=1_000_000).collect();
+
+    let suma_secuencial: u64 = datos.iter().sum();
+    let suma_paralela: u64 = datos.par_iter().sum(); // mismo resultado, más rápido
+
+    println!("Secuencial: {}", suma_secuencial);
+    println!("Paralela: {}", suma_paralela);
+
+    let cuadrados: Vec&lt;u64&gt; = datos.par_iter().map(|&amp;x| x * x).collect();
+    println!("{} cuadrados calculados", cuadrados.len());
+}</code></pre>
+          <p>Rayon gestiona un pool de threads internamente y distribuye el trabajo automáticamente. No necesitas preocuparte por el número de threads, la división del trabajo ni la sincronización.</p>
+          <div class="callout callout--info">
+            <strong>Rayon en Cargo.toml</strong>: <code>rayon = "1"</code>. No es parte de la stdlib pero es la librería de facto para paralelismo de datos en Rust.
+          </div>
+
+          <h2 id="vs-go">Rust vs Go en concurrencia</h2>
+          <p>Rust y Go tienen modelos de concurrencia muy distintos con filosofías diferentes:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Aspecto</th><th>Go</th><th>Rust</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Unidad de concurrencia</td><td>Goroutines (ligeras, M:N scheduling)</td><td>Threads del OS (1:1) o tasks async (con runtime)</td></tr>
+                <tr><td>Coste de crear 1000 unidades</td><td>Bajo (goroutines son muy baratas)</td><td>Alto para threads; bajo con async tasks</td></tr>
+                <tr><td>Comunicación preferida</td><td>Canales ("Don't communicate by sharing memory")</td><td>Canales o estado compartido (ambos idiomáticos)</td></tr>
+                <tr><td>Garantías de data races</td><td>Por convención y el race detector en tests</td><td>Garantizado por el compilador en tiempo de compilación</td></tr>
+                <tr><td>GC</td><td>Sí (con pausas)</td><td>No (destrucción determinista)</td></tr>
+                <tr><td>Uso típico</td><td>Servicios web, concurrencia I/O intensiva</td><td>Servicios con latencia crítica, CPU intensivo</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>La diferencia clave: Go garantiza la ausencia de data races con el <em>race detector</em> (una herramienta que ejecutas en tests). Rust la garantiza en compilación, sin necesidad de ejecutar nada. Un bug que Go detecta en tests o producción, Rust lo detecta antes de que exista el binario.</p>
+
+          <h2 id="resumen">Resumen</h2>
+          <ul class="keypoints">
+            <li>Rust usa threads del OS (1:1). Las closures pasadas a <code>thread::spawn</code> deben ser <code>'static + Send</code>; el compilador lo verifica.</li>
+            <li>Los traits <code>Send</code> y <code>Sync</code> codifican la seguridad entre threads en el sistema de tipos. El compilador rechaza código que comparte tipos no-Send entre threads.</li>
+            <li>Los canales <code>mpsc</code> transfieren ownership del dato: el sender ya no tiene acceso después de enviar, garantizando ausencia de acceso concurrente.</li>
+            <li><code>Arc&lt;Mutex&lt;T&gt;&gt;</code> es el patrón estándar para estado mutable compartido entre threads. El MutexGuard usa RAII para garantizar que el lock se libere.</li>
+            <li>Rayon convierte iteradores secuenciales en paralelos con <code>.par_iter()</code>; gestiona el pool de threads automáticamente.</li>
+            <li>Rust garantiza ausencia de data races en compilación; Go lo hace con el race detector en runtime. La garantía de Rust es más fuerte.</li>
+          </ul>
+        </article>
+      </div>
+    </main>
+
+    <footer class="footer"><div class="container footer__inner"><span><strong>MentorAI</strong> · Formación técnica iterada con IA</span><span>© <span data-year>2026</span></span></div></footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

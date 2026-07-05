@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem("academia-theme");
+        var d = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", t || (d ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pattern matching en Rust — MentorAI</title>
+    <meta name="description" content="El match exhaustivo de Rust: desestructuración, guards, if let, while let, y cómo reemplaza toda una familia de if/else." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+  </head>
+  <body>
+    <div class="reading-progress" id="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <a href="../offline.html" class="nav__link offline-nav-link">Sin conexión</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+          <button class="nav__burger icon-btn" aria-label="Menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <div class="nav-drawer-backdrop"></div>
+    <div class="nav-drawer"><div class="nav-drawer__head"><span class="nav-drawer__title">MentorAI</span><div class="nav-drawer__head-actions"><button class="nav-drawer__close icon-btn" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div><div class="nav-drawer__links"><a href="../index.html" class="nav-drawer__link">Inicio</a><a href="../rutas.html" class="nav-drawer__link">Rutas</a><a href="../cursos.html" class="nav-drawer__link">Cursos</a><a href="../articulos.html" class="nav-drawer__link">Artículos</a><a href="../offline.html" class="nav-drawer__link">Sin conexión</a></div><div class="nav-drawer__footer"><span class="nav-drawer__theme">Tema</span><button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div>
+
+    <main>
+      <section class="tutorial-hero container">
+        <div class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <a href="../curso.html?slug=rust">Rust desde cero</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Rust</span>
+        </div>
+        <h1 class="tutorial-hero__title">Pattern matching en Rust</h1>
+        <p class="tutorial-hero__lead">El match exhaustivo de Rust: desestructuración, guards, if let, while let, y cómo reemplaza toda una familia de if/else.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>11 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Intermedio</span>
+          <span>Rust</span>
+        </div>
+        <div class="tutorial-actions">
+          <button class="tutorial-action" id="btn-listen" aria-label="Escuchar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Escuchar</button>
+          <button class="tutorial-action tutorial-action--done" id="btn-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar como completado</button>
+          <button class="tutorial-action tutorial-action--reset" id="btn-reset" title="Reiniciar progreso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg><span>Reiniciar</span></button>
+        </div>
+        <div class="tutorial-progress"><div class="tutorial-progress__bar"><span></span></div><div class="tutorial-progress__label"></div></div>
+      </section>
+
+      <div class="container tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En este tutorial</p>
+          <ol class="toc__list">
+            <li><a href="#match">match exhaustivo</a></li>
+            <li><a href="#desestructuracion">Desestructuración de structs y enums</a></li>
+            <li><a href="#guards">Guards: condiciones adicionales</a></li>
+            <li><a href="#if-let">if let</a></li>
+            <li><a href="#while-let">while let</a></li>
+            <li><a href="#patrones-en-params">Patrones en let y parámetros</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ol>
+          <button class="toc__toggle" aria-label="Índice"><span>En este tutorial</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </aside>
+
+        <article class="prose">
+          <h2 id="match">match exhaustivo</h2>
+          <p>El <code>match</code> de Rust es la construcción de control de flujo más potente del lenguaje. A diferencia del <code>switch</code> de PHP, es exhaustivo: el compilador exige que se cubran todos los casos posibles o el código no compila.</p>
+          <pre><code data-lang="rust">enum EstadoPedido {
+    Pendiente,
+    Procesando,
+    Enviado { numero_tracking: String },
+    Entregado,
+    Cancelado(String),
+}
+
+fn describir_estado(estado: &amp;EstadoPedido) -&gt; String {
+    match estado {
+        EstadoPedido::Pendiente =&gt; String::from("Esperando procesamiento"),
+        EstadoPedido::Procesando =&gt; String::from("En preparación"),
+        EstadoPedido::Enviado { numero_tracking } =&gt; {
+            format!("En camino — tracking: {}", numero_tracking)
+        }
+        EstadoPedido::Entregado =&gt; String::from("Entregado con éxito"),
+        EstadoPedido::Cancelado(motivo) =&gt; format!("Cancelado: {}", motivo),
+    }
+}</code></pre>
+          <p>Si añades una nueva variante al enum (<code>Devuelto</code>, por ejemplo), el compilador marcará cada <code>match</code> sobre ese enum que no la cubra. Esto es invaluable en proyectos grandes: añadir un estado nuevo no puede pasar desapercibido.</p>
+          <p>El <code>_</code> actúa como catch-all para los casos que no quieres manejar individualmente:</p>
+          <pre><code data-lang="rust">match codigo_http {
+    200 =&gt; manejar_ok(),
+    404 =&gt; manejar_no_encontrado(),
+    _ =&gt; manejar_otro(),
+}</code></pre>
+          <p>El <code>|</code> combina varios patrones en un solo brazo:</p>
+          <pre><code data-lang="rust">match c {
+    'a' | 'e' | 'i' | 'o' | 'u' =&gt; println!("vocal"),
+    'a'..='z' =&gt; println!("consonante"),
+    _ =&gt; println!("otro"),
+}</code></pre>
+
+          <h2 id="desestructuracion">Desestructuración de structs y enums</h2>
+          <p>El match puede desestructurar structs directamente:</p>
+          <pre><code data-lang="rust">struct Punto {
+    x: i32,
+    y: i32,
+}
+
+fn clasificar_punto(punto: &amp;Punto) {
+    match punto {
+        Punto { x: 0, y: 0 } =&gt; println!("origen"),
+        Punto { x: 0, y } =&gt; println!("sobre el eje Y: {}", y),
+        Punto { x, y: 0 } =&gt; println!("sobre el eje X: {}", x),
+        Punto { x, y } =&gt; println!("en ({}, {})", x, y),
+    }
+}</code></pre>
+          <p>El operador <code>..</code> ignora los campos que no te interesan:</p>
+          <pre><code data-lang="rust">struct Usuario {
+    id: u32,
+    nombre: String,
+    email: String,
+    activo: bool,
+}
+
+fn main() {
+    let usuario = Usuario {
+        id: 1,
+        nombre: String::from("Ana"),
+        email: String::from("ana@ejemplo.com"),
+        activo: true,
+    };
+
+    let Usuario { nombre, activo, .. } = usuario;
+    println!("{} — activo: {}", nombre, activo);
+}</code></pre>
+
+          <h2 id="guards">Guards: condiciones adicionales</h2>
+          <p>Los guards añaden condiciones extra a un patrón con la palabra clave <code>if</code> después del patrón:</p>
+          <pre><code data-lang="rust">fn clasificar_numero(n: i32) -&gt; &amp;'static str {
+    match n {
+        x if x &lt; 0 =&gt; "negativo",
+        0 =&gt; "cero",
+        x if x % 2 == 0 =&gt; "par positivo",
+        _ =&gt; "impar positivo",
+    }
+}</code></pre>
+          <p>Los guards son útiles cuando el patrón por sí solo no puede expresar la condición. El compilador sigue verificando exhaustividad: si los guards no cubren todos los casos de una variante, el <code>_</code> final debe existir.</p>
+          <pre><code data-lang="rust">enum Mensaje {
+    Mover { x: i32, y: i32 },
+    Escribir(String),
+    Activar,
+}
+
+fn procesar(msg: Mensaje) {
+    match msg {
+        Mensaje::Mover { x, y } if x == y =&gt; println!("movimiento diagonal a {}", x),
+        Mensaje::Mover { x, y } =&gt; println!("mover a ({}, {})", x, y),
+        Mensaje::Escribir(texto) if texto.is_empty() =&gt; println!("texto vacío"),
+        Mensaje::Escribir(texto) =&gt; println!("escribir: {}", texto),
+        Mensaje::Activar =&gt; println!("activado"),
+    }
+}</code></pre>
+
+          <h2 id="if-let">if let</h2>
+          <p><code>if let</code> es azúcar sintáctico para un <code>match</code> cuando solo te importa un patrón y quieres ignorar el resto. Es más legible que un <code>match</code> de un solo caso con <code>_ =&gt; {}</code>:</p>
+          <pre><code data-lang="rust">let config = Some(("localhost", 5432));
+
+if let Some((host, puerto)) = config {
+    println!("Conectando a {}:{}", host, puerto);
+}
+
+let resultado: Result&lt;i32, &amp;str&gt; = Ok(42);
+
+if let Ok(valor) = resultado {
+    println!("Éxito: {}", valor);
+} else {
+    println!("Error");
+}</code></pre>
+          <p>Puedes encadenar <code>if let</code> con <code>else if let</code> para manejar varios casos distintos sin la estructura completa de un <code>match</code>:</p>
+          <pre><code data-lang="rust">fn main() {
+    let valor: Option&lt;i32&gt; = Some(7);
+
+    if let Some(n) = valor {
+        println!("Tenemos: {}", n);
+    } else {
+        println!("No hay valor");
+    }
+}</code></pre>
+
+          <h2 id="while-let">while let</h2>
+          <p><code>while let</code> itera mientras el patrón encaja. El caso más típico es consumir elementos de una estructura hasta que se agote:</p>
+          <pre><code data-lang="rust">fn main() {
+    let mut pila: Vec&lt;i32&gt; = vec![1, 2, 3, 4, 5];
+
+    while let Some(tope) = pila.pop() {
+        println!("Procesando: {}", tope);
+    }
+
+    println!("Pila vacía");
+}</code></pre>
+          <p>También es útil con canales de mensajes: iterar mientras llegan mensajes y parar cuando el canal se cierra:</p>
+          <pre><code data-lang="rust">use std::sync::mpsc;
+
+fn main() {
+    let (tx, rx) = mpsc::channel();
+    tx.send(1).unwrap();
+    tx.send(2).unwrap();
+    drop(tx); // cierra el canal
+
+    while let Ok(mensaje) = rx.recv() {
+        println!("Recibido: {}", mensaje);
+    }
+}</code></pre>
+
+          <h2 id="patrones-en-params">Patrones en let y parámetros</h2>
+          <p>Los patrones no son exclusivos del <code>match</code>: cualquier <code>let</code> es un patrón, y los parámetros de funciones también lo son.</p>
+          <pre><code data-lang="rust">fn main() {
+    let (x, y, z) = (1, 2, 3);
+    println!("{} {} {}", x, y, z);
+
+    let (primero, .., ultimo) = (1, 2, 3, 4, 5);
+    println!("{} y {}", primero, ultimo);
+}
+
+struct Punto { x: f64, y: f64 }
+
+fn distancia_al_origen(&amp;Punto { x, y }: &amp;Punto) -&gt; f64 {
+    (x * x + y * y).sqrt()
+}
+
+fn main() {
+    let punto = Punto { x: 3.0, y: 4.0 };
+    println!("Distancia: {}", distancia_al_origen(&amp;punto)); // 5.0
+}</code></pre>
+          <p>Desestructurar en el parámetro de función es útil cuando el caller siempre tiene la estructura entera pero la función solo necesita algunos campos.</p>
+
+          <h2 id="resumen">Resumen</h2>
+          <ul class="keypoints">
+            <li>El <code>match</code> es exhaustivo: el compilador exige cubrir todos los casos posibles. Añadir una variante a un enum marca todos los match incompletos.</li>
+            <li>La desestructuración en match extrae campos de structs y enums con tipo verificado, sin casting ni instanceof.</li>
+            <li>Los guards (<code>if condicion</code> después del patrón) añaden condiciones que no pueden expresarse solo con el patrón.</li>
+            <li><code>if let</code> es la forma concisa de manejar un solo caso de un match; más legible que match con un brazo activo y <code>_ =&gt; {}</code>.</li>
+            <li><code>while let</code> itera mientras el patrón encaja; natural para consumir Option, Result o canales de mensajes.</li>
+            <li>Los patrones funcionan en <code>let</code>, en parámetros de función y en cualquier lugar que enlace variables.</li>
+          </ul>
+        </article>
+      </div>
+    </main>
+
+    <footer class="footer"><div class="container footer__inner"><span><strong>MentorAI</strong> · Formación técnica iterada con IA</span><span>© <span data-year>2026</span></span></div></footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

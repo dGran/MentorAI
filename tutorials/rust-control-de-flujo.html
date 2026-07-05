@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem("academia-theme");
+        var d = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", t || (d ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Control de flujo en Rust — MentorAI</title>
+    <meta name="description" content="if/else como expresión, loop con valor de retorno, while, for con iteradores y ranges, y el match básico." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+  </head>
+  <body>
+    <div class="reading-progress" id="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <a href="../offline.html" class="nav__link offline-nav-link">Sin conexión</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+          <button class="nav__burger icon-btn" aria-label="Menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <div class="nav-drawer-backdrop"></div>
+    <div class="nav-drawer"><div class="nav-drawer__head"><span class="nav-drawer__title">MentorAI</span><div class="nav-drawer__head-actions"><button class="nav-drawer__close icon-btn" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div><div class="nav-drawer__links"><a href="../index.html" class="nav-drawer__link">Inicio</a><a href="../rutas.html" class="nav-drawer__link">Rutas</a><a href="../cursos.html" class="nav-drawer__link">Cursos</a><a href="../articulos.html" class="nav-drawer__link">Artículos</a><a href="../offline.html" class="nav-drawer__link">Sin conexión</a></div><div class="nav-drawer__footer"><span class="nav-drawer__theme">Tema</span><button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div>
+
+    <main>
+      <section class="tutorial-hero container">
+        <div class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <a href="../curso.html?slug=rust">Rust desde cero</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Rust</span>
+        </div>
+        <h1 class="tutorial-hero__title">Control de flujo en Rust</h1>
+        <p class="tutorial-hero__lead">if/else como expresión, loop con valor de retorno, while, for con iteradores y ranges, y el match básico.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>9 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Principiante</span>
+          <span>Rust</span>
+        </div>
+        <div class="tutorial-actions">
+          <button class="tutorial-action" id="btn-listen" aria-label="Escuchar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Escuchar</button>
+          <button class="tutorial-action tutorial-action--done" id="btn-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar como completado</button>
+          <button class="tutorial-action tutorial-action--reset" id="btn-reset" title="Reiniciar progreso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg><span>Reiniciar</span></button>
+        </div>
+        <div class="tutorial-progress"><div class="tutorial-progress__bar"><span></span></div><div class="tutorial-progress__label"></div></div>
+      </section>
+
+      <div class="container tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En este tutorial</p>
+          <ol class="toc__list">
+            <li><a href="#if-expresion">if como expresión</a></li>
+            <li><a href="#loop">loop con valor de retorno</a></li>
+            <li><a href="#while">while y while let</a></li>
+            <li><a href="#for">for con iteradores y ranges</a></li>
+            <li><a href="#match-basico">match básico</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ol>
+          <button class="toc__toggle" aria-label="Índice"><span>En este tutorial</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </aside>
+
+        <article class="prose">
+          <h2 id="if-expresion">if como expresión</h2>
+          <p>En PHP, <code>if</code> es una sentencia: controla el flujo pero no produce un valor. En Rust, <code>if</code> es una <strong>expresión</strong>: produce un valor que puedes asignar directamente a una variable.</p>
+          <pre><code data-lang="rust">fn main() {
+    let temperatura = 22;
+
+    let descripcion = if temperatura &gt; 30 {
+        "calor"
+    } else if temperatura &gt; 15 {
+        "agradable"
+    } else {
+        "frío"
+    };
+
+    println!("Hace {}", descripcion);
+}</code></pre>
+          <p>Rust no tiene operador ternario (<code>? :</code>). El <code>if</code> como expresión es el sustituto directo, pero más legible: cada rama puede ser un bloque de varias líneas.</p>
+          <div class="callout callout--warning">
+            <strong>Los tipos deben coincidir</strong>: todas las ramas del <code>if</code> deben producir el mismo tipo. Si una rama retorna <code>"calor"</code> (&amp;str) y otra retorna <code>42</code> (i32), el compilador lo rechaza. Esto es consistente: la variable no puede tener tipos distintos según la condición.
+          </div>
+          <p>El <code>if</code> clásico sin asignación también funciona igual que en PHP:</p>
+          <pre><code data-lang="rust">if condicion {
+    hacer_algo();
+}</code></pre>
+
+          <h2 id="loop">loop con valor de retorno</h2>
+          <p>Rust tiene <code>loop</code> para bucles infinitos. La diferencia con <code>while true</code> de PHP es que <code>loop</code> puede retornar un valor con <code>break</code>:</p>
+          <pre><code data-lang="rust">fn main() {
+    let mut intentos = 0;
+
+    let resultado = loop {
+        intentos += 1;
+
+        if intentos == 3 {
+            break intentos * 10; // retorna 30
+        }
+    };
+
+    println!("Resultado tras {} intentos: {}", intentos, resultado);
+}</code></pre>
+          <p>La expresión después de <code>break</code> es el valor que produce el bucle. Esto permite patrones como "reintentar hasta éxito y capturar el resultado" sin variables intermedias.</p>
+          <p>Para bucles anidados, puedes etiquetar el bucle externo y hacer <code>break</code> desde el interno con la etiqueta:</p>
+          <pre><code data-lang="rust">'externo: loop {
+    loop {
+        break 'externo; // sale del bucle etiquetado 'externo
+    }
+}</code></pre>
+
+          <h2 id="while">while y while let</h2>
+          <p>El <code>while</code> clásico funciona como en cualquier otro lenguaje:</p>
+          <pre><code data-lang="rust">fn main() {
+    let mut n = 1;
+
+    while n &lt; 100 {
+        n *= 2;
+    }
+
+    println!("Primera potencia de 2 &gt;= 100: {}", n);
+}</code></pre>
+          <p><code>while let</code> combina <code>while</code> con pattern matching: itera mientras el patrón encaja. Es especialmente útil para consumir valores de una pila o cola:</p>
+          <pre><code data-lang="rust">fn main() {
+    let mut pila = vec![1, 2, 3, 4, 5];
+
+    while let Some(tope) = pila.pop() {
+        println!("{}", tope);
+    }
+    // Imprime: 5, 4, 3, 2, 1
+    // Termina cuando pop() retorna None (pila vacía)
+}</code></pre>
+          <p><code>Vec::pop()</code> retorna <code>Option&lt;T&gt;</code>: <code>Some(valor)</code> si hay elementos, <code>None</code> si está vacía. <code>while let Some(tope)</code> continúa el bucle mientras hay elementos y los desestructura directamente en <code>tope</code>.</p>
+
+          <h2 id="for">for con iteradores y ranges</h2>
+          <p>Rust no tiene el <code>for</code> clásico de C (<code>for (int i = 0; i &lt; n; i++)</code>). Todo <code>for</code> en Rust itera sobre un iterador:</p>
+          <pre><code data-lang="rust">for i in 0..5 {
+    println!("{}", i); // 0, 1, 2, 3, 4
+}
+
+for i in 0..=5 {
+    println!("{}", i); // 0, 1, 2, 3, 4, 5
+}</code></pre>
+          <p><code>0..5</code> es un range excluyente (no incluye el 5). <code>0..=5</code> es un range incluyente (incluye el 5). Para iterar colecciones:</p>
+          <pre><code data-lang="rust">let frutas = vec!["manzana", "pera", "naranja"];
+
+for fruta in &amp;frutas {
+    println!("{}", fruta);
+}
+
+for (indice, fruta) in frutas.iter().enumerate() {
+    println!("{}: {}", indice, fruta);
+}</code></pre>
+          <p>El <code>&amp;</code> en <code>&amp;frutas</code> presta la colección al bucle sin moverla: el <code>Vec</code> sigue siendo válido después del <code>for</code>. Sin <code>&amp;</code>, el <code>for</code> consumiría la colección y no podrías usarla después.</p>
+          <p><code>.enumerate()</code> envuelve cada elemento en una tupla <code>(índice, valor)</code>. La desestructuración directa en <code>(indice, fruta)</code> es parte del patrón <code>for</code>.</p>
+          <div class="callout callout--tip">
+            <strong>Iterar en reversa</strong>: usa <code>(0..5).rev()</code> o <code>coleccion.iter().rev()</code>. No hay índice decreciente en Rust; la reversa es un adaptador del iterador.
+          </div>
+
+          <h2 id="match-basico">match básico</h2>
+          <p><code>match</code> en Rust es como <code>switch</code> en PHP pero con dos diferencias fundamentales: es exhaustivo (el compilador exige cubrir todos los casos posibles) y es una expresión (produce un valor).</p>
+          <pre><code data-lang="rust">fn clasificar(numero: i32) -&gt; &amp;'static str {
+    match numero {
+        1 =&gt; "uno",
+        2 | 3 =&gt; "dos o tres",
+        4..=9 =&gt; "entre cuatro y nueve",
+        _ =&gt; "otro",
+    }
+}</code></pre>
+          <p>El <code>_</code> es el patrón catch-all, equivalente al <code>default</code> del switch de PHP. Si eliminas el <code>_</code> y no cubres todos los <code>i32</code> posibles, el compilador rechaza el código con <code>error[E0004]: non-exhaustive patterns</code>.</p>
+          <p>El <code>|</code> en <code>2 | 3</code> significa "o": el patrón encaja si el valor es 2 o 3. Los rangos también funcionan como patrones.</p>
+          <pre><code data-lang="rust">fn main() {
+    let codigo_http = 404;
+
+    let mensaje = match codigo_http {
+        200 =&gt; "OK",
+        301 | 302 =&gt; "Redirección",
+        400 =&gt; "Bad Request",
+        401 =&gt; "Unauthorized",
+        404 =&gt; "Not Found",
+        500..=599 =&gt; "Error del servidor",
+        _ =&gt; "Código desconocido",
+    };
+
+    println!("{}: {}", codigo_http, mensaje);
+}</code></pre>
+          <div class="callout callout--info">
+            <strong>match vs switch</strong>: PHP no exige que el switch cubra todos los casos, y el fall-through entre cases es implícito (requiere <code>break</code>). En Rust, el match exige exhaustividad y no hay fall-through: cada brazo termina en su punto.
+          </div>
+
+          <h2 id="resumen">Resumen</h2>
+          <ul class="keypoints">
+            <li><code>if</code> en Rust es una expresión: puede asignarse a una variable. No existe operador ternario; el <code>if</code> lo reemplaza.</li>
+            <li><code>loop</code> crea un bucle infinito que puede retornar un valor con <code>break expresion</code>; las etiquetas de bucle permiten salir de bucles anidados.</li>
+            <li><code>while let</code> combina iteración con pattern matching: itera mientras el patrón encaja, muy útil para consumir <code>Option</code>.</li>
+            <li>Todo <code>for</code> en Rust itera sobre un iterador; los ranges <code>0..n</code> y <code>0..=n</code> son el sustituto del for clásico de C.</li>
+            <li><code>match</code> es exhaustivo: el compilador exige cubrir todos los casos posibles. El <code>_</code> actúa como catch-all.</li>
+          </ul>
+        </article>
+      </div>
+    </main>
+
+    <footer class="footer"><div class="container footer__inner"><span><strong>MentorAI</strong> · Formación técnica iterada con IA</span><span>© <span data-year>2026</span></span></div></footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

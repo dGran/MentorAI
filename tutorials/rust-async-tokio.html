@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem("academia-theme");
+        var d = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", t || (d ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Async/await y Tokio — MentorAI</title>
+    <meta name="description" content="Cómo funciona la asincronía en Rust: el trait Future, el runtime Tokio, tareas con tokio::spawn, select! y por qué async en Rust es diferente a otros lenguajes." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+  </head>
+  <body>
+    <div class="reading-progress" id="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <a href="../offline.html" class="nav__link offline-nav-link">Sin conexión</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+          <button class="nav__burger icon-btn" aria-label="Menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <div class="nav-drawer-backdrop"></div>
+    <div class="nav-drawer"><div class="nav-drawer__head"><span class="nav-drawer__title">MentorAI</span><div class="nav-drawer__head-actions"><button class="nav-drawer__close icon-btn" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div><div class="nav-drawer__links"><a href="../index.html" class="nav-drawer__link">Inicio</a><a href="../rutas.html" class="nav-drawer__link">Rutas</a><a href="../cursos.html" class="nav-drawer__link">Cursos</a><a href="../articulos.html" class="nav-drawer__link">Artículos</a><a href="../offline.html" class="nav-drawer__link">Sin conexión</a></div><div class="nav-drawer__footer"><span class="nav-drawer__theme">Tema</span><button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div>
+
+    <main>
+      <section class="tutorial-hero container">
+        <div class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <a href="../curso.html?slug=rust">Rust desde cero</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Rust</span>
+        </div>
+        <h1 class="tutorial-hero__title">Async/await y Tokio</h1>
+        <p class="tutorial-hero__lead">Cómo funciona la asincronía en Rust: el trait Future, el runtime Tokio, tareas con tokio::spawn, select! y por qué async en Rust es diferente a otros lenguajes.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>14 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Intermedio</span>
+          <span>Rust</span>
+        </div>
+        <div class="tutorial-actions">
+          <button class="tutorial-action" id="btn-listen" aria-label="Escuchar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Escuchar</button>
+          <button class="tutorial-action tutorial-action--done" id="btn-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar como completado</button>
+          <button class="tutorial-action tutorial-action--reset" id="btn-reset" title="Reiniciar progreso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg><span>Reiniciar</span></button>
+        </div>
+        <div class="tutorial-progress"><div class="tutorial-progress__bar"><span></span></div><div class="tutorial-progress__label"></div></div>
+      </section>
+
+      <div class="container tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En este tutorial</p>
+          <ol class="toc__list">
+            <li><a href="#future">El trait Future</a></li>
+            <li><a href="#async-await">async fn y .await</a></li>
+            <li><a href="#tokio">Tokio: el runtime</a></li>
+            <li><a href="#spawn">tokio::spawn: tareas concurrentes</a></li>
+            <li><a href="#select">tokio::select!</a></li>
+            <li><a href="#cuando-async">Cuándo usar async vs threads</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ol>
+          <button class="toc__toggle" aria-label="Índice"><span>En este tutorial</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </aside>
+
+        <article class="prose">
+          <h2 id="future">El trait Future</h2>
+          <p>La diferencia más importante entre async en Rust y async en otros lenguajes: <strong>Rust no tiene runtime async integrado</strong>. En Go, las goroutines tienen el scheduler del runtime de Go. En Node.js, el event loop de libuv siempre está corriendo. En Rust, nada corre automáticamente.</p>
+          <p>Un <code>Future</code> en Rust es un valor que representa un cálculo que puede completarse en el futuro:</p>
+          <pre><code data-lang="rust">pub trait Future {
+    type Output;
+    fn poll(self: Pin&lt;&amp;mut Self&gt;, cx: &amp;mut Context&lt;'_&gt;) -&gt; Poll&lt;Self::Output&gt;;
+}</code></pre>
+          <p>Un Future es <strong>perezoso</strong>: no hace nada hasta que algo lo <em>pollea</em> (lo ejecuta paso a paso). Si creas un Future y no lo awaitas, no corre. Este diseño es distinto a JavaScript donde una Promise empieza a ejecutarse en el momento de crearse.</p>
+          <div class="callout callout--info">
+            <strong>Futures perezosos vs Promises eager</strong>: en JS, <code>fetch(url)</code> inicia la petición inmediatamente. En Rust, <code>reqwest::get(url)</code> retorna un Future que no inicia la petición hasta que lo awaitas. Esto permite componer Futures sin efectos secundarios no deseados.
+          </div>
+
+          <h2 id="async-await">async fn y .await</h2>
+          <p><code>async fn</code> es azúcar sintáctico: transforma la función en una que retorna <code>impl Future</code>. El cuerpo de la función se convierte en una máquina de estados que el runtime puede pausar y reanudar.</p>
+          <pre><code data-lang="rust">async fn obtener_usuario(id: u32) -&gt; Result&lt;String, reqwest::Error&gt; {
+    let url = format!("https://api.ejemplo.com/usuarios/{}", id);
+    let respuesta = reqwest::get(&amp;url).await?;
+    let texto = respuesta.text().await?;
+    Ok(texto)
+}</code></pre>
+          <p><code>.await</code> suspende la función actual en ese punto hasta que el Future se completa. Durante la suspensión, el thread puede hacer otro trabajo (procesar otra tarea async). Esto es la concurrencia cooperativa: las tareas ceden el control en los puntos de <code>.await</code>.</p>
+          <p>La diferencia crucial con bloques síncronos: <code>.await</code> no bloquea el thread. <code>thread::sleep(Duration::from_secs(1))</code> bloquea el thread un segundo. <code>tokio::time::sleep(Duration::from_secs(1)).await</code> suspende la tarea un segundo pero el thread puede procesar otras tareas durante ese tiempo.</p>
+
+          <h2 id="tokio">Tokio: el runtime</h2>
+          <p>Tokio es el runtime async más usado en Rust. Proporciona el scheduler que pollea los Futures y un conjunto de primitivas async (sockets, timers, canales, etc.).</p>
+          <pre><code data-lang="rust">use tokio;
+
+#[tokio::main]
+async fn main() {
+    println!("Iniciando servidor");
+    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+    println!("Listo");
+}
+</code></pre>
+          <p>La macro <code>#[tokio::main]</code> crea el runtime de Tokio y ejecuta la función <code>main</code> async dentro de él. Sin esta macro (o sin crear un runtime manualmente), no hay nadie para pollear los Futures.</p>
+          <p>Cargo.toml:</p>
+          <pre><code data-lang="rust">[dependencies]
+tokio = { version = "1", features = ["full"] }</code></pre>
+          <p>Tokio ofrece dos configuraciones de runtime:</p>
+          <ul>
+            <li><strong>Multi-thread scheduler</strong> (por defecto): crea un pool de threads, uno por CPU. Las tareas se distribuyen entre threads. Necesario para aplicaciones que usan todos los cores.</li>
+            <li><strong>Current-thread scheduler</strong>: todo en un único thread. Para código que no necesita multi-threading o que tiene restricciones de thread-local.</li>
+          </ul>
+          <pre><code data-lang="rust">#[tokio::main(flavor = "current_thread")]
+async fn main() {
+    // todo en un thread
+}</code></pre>
+
+          <h2 id="spawn">tokio::spawn: tareas concurrentes</h2>
+          <p><code>tokio::spawn</code> lanza una tarea async en el scheduler de Tokio. A diferencia de <code>thread::spawn</code>, es muy barato: las tareas Tokio son tasks ligeras multiplexadas sobre el pool de threads del runtime.</p>
+          <pre><code data-lang="rust">use tokio;
+
+async fn procesar_usuario(id: u32) -&gt; String {
+    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+    format!("usuario_{}", id)
+}
+
+#[tokio::main]
+async fn main() {
+    let handles: Vec&lt;_&gt; = (1..=5).map(|id| {
+        tokio::spawn(async move {
+            procesar_usuario(id).await
+        })
+    }).collect();
+
+    for handle in handles {
+        let resultado = handle.await.unwrap();
+        println!("{}", resultado);
+    }
+}</code></pre>
+          <p>Los 5 <code>procesar_usuario</code> corren concurrentemente: el tiempo total es ~100ms, no 500ms. El Future pasado a <code>tokio::spawn</code> debe ser <code>Send</code> (porque Tokio puede moverlo entre threads del pool).</p>
+          <p>Para esperar múltiples handles a la vez (en lugar de secuencialmente):</p>
+          <pre><code data-lang="rust">let (r1, r2, r3) = tokio::join!(
+    procesar_usuario(1),
+    procesar_usuario(2),
+    procesar_usuario(3)
+);
+</code></pre>
+
+          <h2 id="select">tokio::select!</h2>
+          <p><code>tokio::select!</code> espera al primero de varios Futures que se complete y cancela los demás. Es el mecanismo principal para timeouts y cancelación:</p>
+          <pre><code data-lang="rust">use tokio::time::{timeout, Duration};
+
+async fn operacion_lenta() -&gt; &amp;'static str {
+    tokio::time::sleep(Duration::from_secs(5)).await;
+    "completado"
+}
+
+#[tokio::main]
+async fn main() {
+    tokio::select! {
+        resultado = operacion_lenta() =&gt; {
+            println!("Terminó: {}", resultado);
+        }
+        _ = tokio::time::sleep(Duration::from_secs(2)) =&gt; {
+            println!("Timeout: la operación tardó demasiado");
+        }
+    }
+}</code></pre>
+          <p>Cuando el sleep de 2 segundos completa primero, el brazo del timeout gana y <code>operacion_lenta</code> se cancela. La cancelación en Rust async es drop-based: soltar el Future es cancelarlo.</p>
+          <p><code>join!</code> vs <code>select!</code>:</p>
+          <ul>
+            <li><code>join!(a, b, c)</code>: espera a que todos terminen. El resultado contiene los valores de todos.</li>
+            <li><code>select!(a, b, c)</code>: espera al primero. Los demás se cancelan.</li>
+          </ul>
+
+          <h2 id="cuando-async">Cuándo usar async vs threads</h2>
+          <p>La elección entre async y threads depende de la naturaleza del trabajo:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Tipo de trabajo</th><th>Elección correcta</th><th>Por qué</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>I/O bound (HTTP, BD, archivos)</td><td>Async + Tokio</td><td>Muchas operaciones I/O concurrentes con pocos threads</td></tr>
+                <tr><td>CPU bound (cálculos intensivos)</td><td>Threads + Rayon</td><td>Async bloquearía el scheduler; usa todos los cores</td></tr>
+                <tr><td>I/O + CPU</td><td>Async + spawn_blocking</td><td>Combinar: async para I/O, offload CPU a thread pool</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>El antipatrón más común: hacer trabajo CPU-intensivo dentro de una tarea async. Bloquea el thread del scheduler y degrada el rendimiento de todas las demás tareas. La solución:</p>
+          <pre><code data-lang="rust">async fn handler() -&gt; String {
+    let resultado = tokio::task::spawn_blocking(|| {
+        calcular_hash_intensivo() // corre en un thread del blocking pool
+    }).await.unwrap();
+
+    formato_del_resultado(resultado).await
+}</code></pre>
+          <p><code>tokio::task::spawn_blocking</code> envía la tarea a un pool de threads dedicado a operaciones bloqueantes, liberando el runtime async para continuar con otras tareas.</p>
+
+          <h2 id="resumen">Resumen</h2>
+          <ul class="keypoints">
+            <li>Rust no tiene runtime async integrado: los Futures son perezosos y no hacen nada hasta que un runtime los pollea. Tokio proporciona ese runtime.</li>
+            <li><code>async fn</code> transforma la función en una que retorna <code>impl Future</code>. <code>.await</code> suspende la tarea actual sin bloquear el thread.</li>
+            <li><code>#[tokio::main]</code> crea el runtime de Tokio y ejecuta la función main async. El runtime multi-thread usa un pool de threads, uno por CPU.</li>
+            <li><code>tokio::spawn</code> lanza tareas async ligeras; <code>tokio::join!</code> espera a todas; <code>tokio::select!</code> espera a la primera y cancela las demás.</li>
+            <li>Async es para I/O bound; threads/rayon para CPU bound. Mezcla con <code>tokio::task::spawn_blocking</code> para código bloqueante dentro de contexto async.</li>
+          </ul>
+        </article>
+      </div>
+    </main>
+
+    <footer class="footer"><div class="container footer__inner"><span><strong>MentorAI</strong> · Formación técnica iterada con IA</span><span>© <span data-year>2026</span></span></div></footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

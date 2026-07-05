@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem("academia-theme");
+        var d = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", t || (d ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Servidores web con Axum — MentorAI</title>
+    <meta name="description" content="Axum sobre Tokio: rutas, extractores, middleware, manejo de errores tipado y cómo estructurar una aplicación web real en Rust." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+  </head>
+  <body>
+    <div class="reading-progress" id="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <a href="../offline.html" class="nav__link offline-nav-link">Sin conexión</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+          <button class="nav__burger icon-btn" aria-label="Menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <div class="nav-drawer-backdrop"></div>
+    <div class="nav-drawer"><div class="nav-drawer__head"><span class="nav-drawer__title">MentorAI</span><div class="nav-drawer__head-actions"><button class="nav-drawer__close icon-btn" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div><div class="nav-drawer__links"><a href="../index.html" class="nav-drawer__link">Inicio</a><a href="../rutas.html" class="nav-drawer__link">Rutas</a><a href="../cursos.html" class="nav-drawer__link">Cursos</a><a href="../articulos.html" class="nav-drawer__link">Artículos</a><a href="../offline.html" class="nav-drawer__link">Sin conexión</a></div><div class="nav-drawer__footer"><span class="nav-drawer__theme">Tema</span><button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div>
+
+    <main>
+      <section class="tutorial-hero container">
+        <div class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <a href="../curso.html?slug=rust">Rust desde cero</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Rust</span>
+        </div>
+        <h1 class="tutorial-hero__title">Servidores web con Axum</h1>
+        <p class="tutorial-hero__lead">Axum sobre Tokio: rutas, extractores, middleware, manejo de errores tipado y cómo estructurar una aplicación web real en Rust.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>16 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Intermedio</span>
+          <span>Rust · APIs · Backend</span>
+        </div>
+        <div class="tutorial-actions">
+          <button class="tutorial-action" id="btn-listen" aria-label="Escuchar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Escuchar</button>
+          <button class="tutorial-action tutorial-action--done" id="btn-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar como completado</button>
+          <button class="tutorial-action tutorial-action--reset" id="btn-reset" title="Reiniciar progreso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg><span>Reiniciar</span></button>
+        </div>
+        <div class="tutorial-progress"><div class="tutorial-progress__bar"><span></span></div><div class="tutorial-progress__label"></div></div>
+      </section>
+
+      <div class="container tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En este tutorial</p>
+          <ol class="toc__list">
+            <li><a href="#que-es-axum">¿Qué es Axum?</a></li>
+            <li><a href="#hello-world">Hello world con Axum</a></li>
+            <li><a href="#extractores">Extractores</a></li>
+            <li><a href="#json">JSON request/response</a></li>
+            <li><a href="#state">Estado de la aplicación</a></li>
+            <li><a href="#middleware">Middleware con tower</a></li>
+            <li><a href="#errores-axum">Manejo de errores</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ol>
+          <button class="toc__toggle" aria-label="Índice"><span>En este tutorial</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </aside>
+
+        <article class="prose">
+          <h2 id="que-es-axum">¿Qué es Axum?</h2>
+          <p>Axum es el framework web oficial del ecosistema Tokio. A diferencia de frameworks más mágicos como Laravel, Axum es deliberadamente explícito: los handlers son funciones async normales, el enrutamiento se configura con código en lugar de anotaciones, y la inyección de dependencias ocurre a través del sistema de tipos.</p>
+          <p>Comparación con Symfony desde la perspectiva de un PHP developer:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Concepto</th><th>Symfony</th><th>Axum</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Rutas</td><td>Atributos <code>#[Route]</code> o YAML</td><td>Código Rust con <code>Router::new().route()</code></td></tr>
+                <tr><td>Controllers</td><td>Clases con métodos anotados</td><td>Funciones async normales</td></tr>
+                <tr><td>Inyección de dependencias</td><td>Container de Symfony</td><td>Extractores tipados en parámetros</td></tr>
+                <tr><td>Middleware</td><td>Event listeners, Kernel</td><td>Tower layers</td></tr>
+                <tr><td>Validación del request</td><td>Symfony Validator</td><td>Serde + validator crate</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="hello-world">Hello world con Axum</h2>
+          <pre><code data-lang="rust">use axum::{routing::get, Router};
+use tokio::net::TcpListener;
+
+async fn raiz() -&gt; &amp;'static str {
+    "Hola desde Axum"
+}
+
+#[tokio::main]
+async fn main() {
+    let app = Router::new().route("/", get(raiz));
+
+    let listener = TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    println!("Escuchando en http://localhost:3000");
+
+    axum::serve(listener, app).await.unwrap();
+}</code></pre>
+          <p>Cargo.toml para este ejemplo:</p>
+          <pre><code data-lang="rust">[dependencies]
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }</code></pre>
+          <p>El handler <code>raiz</code> es una función async normal que retorna algo que implementa <code>IntoResponse</code>. Los <code>&amp;str</code>, <code>String</code>, <code>Json&lt;T&gt;</code>, tuplas <code>(StatusCode, body)</code>, etc., implementan <code>IntoResponse</code>. No hay una clase especial de "Response".</p>
+
+          <h2 id="extractores">Extractores</h2>
+          <p>Los extractores son el mecanismo central de Axum para obtener datos del request en el handler. Cada extractor es un tipo que implementa el trait <code>FromRequest</code> o <code>FromRequestParts</code>. El framework los evalúa automáticamente basándose en los tipos de los parámetros de la función.</p>
+          <pre><code data-lang="rust">use axum::{
+    extract::{Path, Query},
+    routing::get,
+    Router,
+};
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+struct FiltrosUsuario {
+    pagina: Option&lt;u32&gt;,
+    limite: Option&lt;u32&gt;,
+    activo: Option&lt;bool&gt;,
+}
+
+async fn listar_usuarios(
+    Query(filtros): Query&lt;FiltrosUsuario&gt;,
+) -&gt; String {
+    format!(
+        "Página: {}, límite: {}",
+        filtros.pagina.unwrap_or(1),
+        filtros.limite.unwrap_or(20)
+    )
+}
+
+async fn obtener_usuario(Path(id): Path&lt;u32&gt;) -&gt; String {
+    format!("Usuario {}", id)
+}
+
+#[tokio::main]
+async fn main() {
+    let app = Router::new()
+        .route("/usuarios", get(listar_usuarios))
+        .route("/usuarios/:id", get(obtener_usuario));
+
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    axum::serve(listener, app).await.unwrap();
+}</code></pre>
+          <p>Axum verifica en compilación que el tipo del extractor es correcto para la ruta (por ejemplo, que <code>Path&lt;u32&gt;</code> corresponde a un parámetro <code>:id</code> en la ruta). Si los tipos no coinciden, error en tiempo de compilación, no en runtime.</p>
+
+          <h2 id="json">JSON request/response</h2>
+          <pre><code data-lang="rust">use axum::{extract::Json, http::StatusCode, routing::post, Router};
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize)]
+struct CrearUsuarioRequest {
+    nombre: String,
+    email: String,
+}
+
+#[derive(Serialize)]
+struct UsuarioResponse {
+    id: u32,
+    nombre: String,
+    email: String,
+}
+
+async fn crear_usuario(
+    Json(request): Json&lt;CrearUsuarioRequest&gt;,
+) -&gt; (StatusCode, Json&lt;UsuarioResponse&gt;) {
+    let usuario = UsuarioResponse {
+        id: 1,
+        nombre: request.nombre,
+        email: request.email,
+    };
+
+    (StatusCode::CREATED, Json(usuario))
+}</code></pre>
+          <p>El extractor <code>Json&lt;T&gt;</code> deserializa el cuerpo del request como JSON al tipo <code>T</code> (usando Serde). Si la deserialización falla, Axum retorna automáticamente un 422 con el mensaje de error.</p>
+          <p>Para retornar JSON, envuelve el valor en <code>Json(valor)</code>. Axum serializa el valor con Serde y añade el header <code>Content-Type: application/json</code>.</p>
+
+          <h2 id="state">Estado de la aplicación</h2>
+          <p>El estado compartido (pool de BD, config, clientes HTTP) se inyecta con el extractor <code>State</code>. El estado debe ser <code>Clone</code>, porque Axum lo clona para cada request. Usa <code>Arc&lt;T&gt;</code> para hacer el clone barato.</p>
+          <pre><code data-lang="rust">use axum::{extract::State, routing::get, Router};
+use std::sync::Arc;
+
+struct AppState {
+    nombre_servicio: String,
+    version: String,
+}
+
+async fn estado_handler(State(state): State&lt;Arc&lt;AppState&gt;&gt;) -&gt; String {
+    format!("{} v{}", state.nombre_servicio, state.version)
+}
+
+#[tokio::main]
+async fn main() {
+    let estado = Arc::new(AppState {
+        nombre_servicio: "mi-api".to_string(),
+        version: "1.0.0".to_string(),
+    });
+
+    let app = Router::new()
+        .route("/estado", get(estado_handler))
+        .with_state(estado);
+
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    axum::serve(listener, app).await.unwrap();
+}</code></pre>
+          <p>En un servicio real, el <code>AppState</code> contiene el pool de conexiones a la base de datos, el cliente HTTP reutilizable y la configuración de la aplicación.</p>
+
+          <h2 id="middleware">Middleware con tower</h2>
+          <p>Axum está construido sobre <code>tower</code>, una librería de middleware componible. El middleware se aplica con <code>ServiceBuilder::new().layer(...)</code> o con los métodos <code>.layer()</code> del Router.</p>
+          <pre><code data-lang="rust">use axum::{routing::get, Router};
+use tower_http::{cors::CorsLayer, trace::TraceLayer};
+
+#[tokio::main]
+async fn main() {
+    let app = Router::new()
+        .route("/", get(|| async { "hola" }))
+        .layer(TraceLayer::new_for_http())
+        .layer(CorsLayer::permissive());
+
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
+    axum::serve(listener, app).await.unwrap();
+}</code></pre>
+          <p>La crate <code>tower-http</code> proporciona middleware HTTP comunes:</p>
+          <ul>
+            <li><code>TraceLayer</code>: logging estructurado de requests con tracing.</li>
+            <li><code>CorsLayer</code>: cabeceras CORS configurables.</li>
+            <li><code>CompressionLayer</code>: compresión gzip/brotli del response.</li>
+            <li><code>TimeoutLayer</code>: timeout global por request.</li>
+            <li><code>RequestIdLayer</code>: añade un ID único a cada request.</li>
+          </ul>
+          <p>Para middleware de autenticación propio, implementas el trait <code>tower::Layer</code> o usas <code>axum::middleware::from_fn</code>:</p>
+          <pre><code data-lang="rust">use axum::{middleware, response::Response, extract::Request};
+
+async fn autenticar(
+    request: Request,
+    next: middleware::Next,
+) -&gt; Response {
+    let token = request.headers().get("Authorization");
+
+    if token.is_none() {
+        return (axum::http::StatusCode::UNAUTHORIZED, "Sin token").into_response();
+    }
+
+    next.run(request).await
+}
+
+let app = Router::new()
+    .route("/privado", get(handler_privado))
+    .layer(middleware::from_fn(autenticar));</code></pre>
+
+          <h2 id="errores-axum">Manejo de errores</h2>
+          <p>En Axum, los handlers retornan tipos que implementan <code>IntoResponse</code>. Para errores tipados, defines tu propio tipo de error que implemente <code>IntoResponse</code>:</p>
+          <pre><code data-lang="rust">use axum::{http::StatusCode, response::{IntoResponse, Response}, Json};
+use serde_json::json;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum ApiError {
+    #[error("recurso no encontrado")]
+    NoEncontrado,
+
+    #[error("acceso denegado")]
+    Unauthorized,
+
+    #[error("error interno: {0}")]
+    Interno(#[from] anyhow::Error),
+}
+
+impl IntoResponse for ApiError {
+    fn into_response(self) -&gt; Response {
+        let (status, mensaje) = match &amp;self {
+            ApiError::NoEncontrado =&gt; (StatusCode::NOT_FOUND, self.to_string()),
+            ApiError::Unauthorized =&gt; (StatusCode::UNAUTHORIZED, self.to_string()),
+            ApiError::Interno(_) =&gt; (StatusCode::INTERNAL_SERVER_ERROR, "Error interno".to_string()),
+        };
+
+        (status, Json(json!({ "error": mensaje }))).into_response()
+    }
+}
+
+async fn handler_con_error(Path(id): Path&lt;u32&gt;) -&gt; Result&lt;Json&lt;String&gt;&gt;, ApiError&gt; {
+    if id == 0 {
+        return Err(ApiError::NoEncontrado);
+    }
+
+    Ok(Json(format!("usuario_{}", id)))
+}</code></pre>
+          <p>Este patrón hace el manejo de errores completamente tipado: el compilador garantiza que todos los errores posibles se conviertan a una respuesta HTTP correcta. No hay una ruta de error implícita que puedas olvidar.</p>
+
+          <h2 id="resumen">Resumen</h2>
+          <ul class="keypoints">
+            <li>Axum usa funciones async normales como handlers: no hay clases controller, el enrutamiento es código Rust explícito.</li>
+            <li>Los extractores inyectan datos del request en los parámetros del handler con verificación de tipos en compilación: Path, Query, Json, State, Headers.</li>
+            <li><code>Json&lt;T&gt;</code> como parámetro deserializa el body; <code>Json(valor)</code> como retorno serializa la respuesta. Serde hace el trabajo.</li>
+            <li>El estado compartido (BD, config) se pasa con <code>Arc&lt;AppState&gt;</code> y se extrae con el extractor <code>State</code>.</li>
+            <li>tower-http proporciona middleware HTTP comunes (logging, CORS, compresión); <code>middleware::from_fn</code> permite middleware custom conciso.</li>
+            <li>Los errores tipados que implementan <code>IntoResponse</code> garantizan que todos los casos de error producen una respuesta HTTP correcta verificada por el compilador.</li>
+          </ul>
+        </article>
+      </div>
+    </main>
+
+    <footer class="footer"><div class="container footer__inner"><span><strong>MentorAI</strong> · Formación técnica iterada con IA</span><span>© <span data-year>2026</span></span></div></footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

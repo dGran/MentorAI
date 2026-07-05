@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem("academia-theme");
+        var d = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", t || (d ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cargo y el ecosistema de crates — MentorAI</title>
+    <meta name="description" content="Cargo como gestor de dependencias y build tool, Crates.io, workspaces, features y las crates más usadas en backend Rust." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+  </head>
+  <body>
+    <div class="reading-progress" id="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <a href="../offline.html" class="nav__link offline-nav-link">Sin conexión</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+          <button class="nav__burger icon-btn" aria-label="Menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <div class="nav-drawer-backdrop"></div>
+    <div class="nav-drawer"><div class="nav-drawer__head"><span class="nav-drawer__title">MentorAI</span><div class="nav-drawer__head-actions"><button class="nav-drawer__close icon-btn" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div><div class="nav-drawer__links"><a href="../index.html" class="nav-drawer__link">Inicio</a><a href="../rutas.html" class="nav-drawer__link">Rutas</a><a href="../cursos.html" class="nav-drawer__link">Cursos</a><a href="../articulos.html" class="nav-drawer__link">Artículos</a><a href="../offline.html" class="nav-drawer__link">Sin conexión</a></div><div class="nav-drawer__footer"><span class="nav-drawer__theme">Tema</span><button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div>
+
+    <main>
+      <section class="tutorial-hero container">
+        <div class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <a href="../curso.html?slug=rust">Rust desde cero</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Rust</span>
+        </div>
+        <h1 class="tutorial-hero__title">Cargo y el ecosistema de crates</h1>
+        <p class="tutorial-hero__lead">Cargo como gestor de dependencias y build tool, Crates.io, workspaces, features y las crates más usadas en backend Rust.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>10 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Principiante</span>
+          <span>Rust · Herramientas</span>
+        </div>
+        <div class="tutorial-actions">
+          <button class="tutorial-action" id="btn-listen" aria-label="Escuchar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Escuchar</button>
+          <button class="tutorial-action tutorial-action--done" id="btn-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar como completado</button>
+          <button class="tutorial-action tutorial-action--reset" id="btn-reset" title="Reiniciar progreso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg><span>Reiniciar</span></button>
+        </div>
+        <div class="tutorial-progress"><div class="tutorial-progress__bar"><span></span></div><div class="tutorial-progress__label"></div></div>
+      </section>
+
+      <div class="container tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En este tutorial</p>
+          <ol class="toc__list">
+            <li><a href="#cargo">Cargo: build, test, doc, publish</a></li>
+            <li><a href="#crates-io">Crates.io: el registro de paquetes</a></li>
+            <li><a href="#features">Features: compilación condicional</a></li>
+            <li><a href="#workspace">Workspaces: monorepo Rust</a></li>
+            <li><a href="#crates-esenciales">Crates esenciales para backend</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ol>
+          <button class="toc__toggle" aria-label="Índice"><span>En este tutorial</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </aside>
+
+        <article class="prose">
+          <h2 id="cargo">Cargo: build, test, doc, publish</h2>
+          <p>Cargo integra en una sola herramienta lo que en PHP requiere Composer + make + phpunit + phpDocumentor separados. Es el build system, gestor de dependencias, runner de tests, generador de documentación y herramienta de publicación de Rust.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Equivalente PHP</th><th>Qué hace</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>cargo build</code></td><td><code>php artisan build</code></td><td>Compila el proyecto</td></tr>
+                <tr><td><code>cargo run</code></td><td><code>php artisan serve</code></td><td>Compila y ejecuta</td></tr>
+                <tr><td><code>cargo test</code></td><td><code>./vendor/bin/phpunit</code></td><td>Ejecuta todos los tests</td></tr>
+                <tr><td><code>cargo add serde</code></td><td><code>composer require serde</code></td><td>Añade una dependencia</td></tr>
+                <tr><td><code>cargo update</code></td><td><code>composer update</code></td><td>Actualiza dependencias respetando semver</td></tr>
+                <tr><td><code>cargo doc --open</code></td><td>PHPDoc</td><td>Genera y abre documentación HTML</td></tr>
+                <tr><td><code>cargo publish</code></td><td><code>composer publish</code></td><td>Publica el crate en Crates.io</td></tr>
+                <tr><td><code>cargo fmt</code></td><td><code>php-cs-fixer fix</code></td><td>Formatea el código</td></tr>
+                <tr><td><code>cargo clippy</code></td><td>PHPStan/Psalm</td><td>Análisis estático y linting</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>El <code>Cargo.lock</code> funciona igual que el <code>composer.lock</code>: fija las versiones exactas de todas las dependencias transitivas. Debe commitearse en proyectos de aplicación (para reproducibilidad) y excluirse en librerías (para que los usuarios tengan flexibilidad en las versiones).</p>
+
+          <h2 id="crates-io">Crates.io: el registro de paquetes</h2>
+          <p>Crates.io es el registro público de crates de Rust, equivalente a Packagist para PHP. Tiene más de 140.000 crates publicados.</p>
+          <pre><code data-lang="bash">cargo add serde
+cargo add serde --features derive
+cargo add tokio --features full
+cargo add sqlx --features postgres,runtime-tokio-rustls</code></pre>
+          <p><code>cargo add</code> (disponible desde Rust 1.62) actualiza el <code>Cargo.toml</code> automáticamente. Antes había que editar el fichero a mano.</p>
+          <p>Las versiones siguen semver estricto. La notación de versiones en <code>Cargo.toml</code>:</p>
+          <pre><code data-lang="rust">[dependencies]
+serde = "1.0"         # ^1.0: >=1.0.0, <2.0.0 (compatible)
+tokio = "~1.28"       # ~1.28: >=1.28.0, <1.29.0 (patch solo)
+uuid = "=1.3.0"       # versión exacta
+rand = "*"            # cualquier versión (no recomendado)</code></pre>
+          <p>Para dependencias de desarrollo (tests, benchmarks) que no se incluyen en el binario de producción:</p>
+          <pre><code data-lang="rust">[dev-dependencies]
+criterion = "0.5"
+mockall = "0.12"</code></pre>
+
+          <h2 id="features">Features: compilación condicional</h2>
+          <p>Las features permiten habilitar funcionalidades opcionales de una crate. Reducen el tiempo de compilación y el tamaño del binario al incluir solo lo necesario.</p>
+          <pre><code data-lang="rust">[dependencies]
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+sqlx = { version = "0.7", features = ["postgres", "runtime-tokio-rustls", "macros"] }
+reqwest = { version = "0.11", features = ["json"] }</code></pre>
+          <p>Sin <code>features = ["full"]</code>, Tokio solo incluye el código base sin el I/O async, timers, canales, etc. Con <code>"full"</code>, incluye todo. Para producción, es mejor especificar solo las features que usas para reducir la compilación.</p>
+          <p>Puedes definir features propias en tu crate para exponer funcionalidades opcionales:</p>
+          <pre><code data-lang="rust">[features]
+default = []
+postgres = ["dep:sqlx"]
+redis = ["dep:fred"]
+metricas = ["dep:prometheus"]
+
+[dependencies]
+sqlx = { version = "0.7", optional = true }
+fred = { version = "7", optional = true }
+prometheus = { version = "0.13", optional = true }</code></pre>
+          <p>El usuario de la librería activa solo las features que necesita: <code>mi-crate = { version = "1", features = ["postgres", "metricas"] }</code>.</p>
+
+          <h2 id="workspace">Workspaces: monorepo Rust</h2>
+          <p>Un workspace agrupa varios crates en el mismo repositorio compartiendo un único <code>Cargo.lock</code> y directorio <code>target/</code>. Equivalente a un monorepo con workspaces de npm o a múltiples paquetes de Composer en el mismo repositorio.</p>
+          <pre><code data-lang="bash">mi-servicio/
+├── Cargo.toml          # workspace root
+├── Cargo.lock
+├── crates/
+│   ├── api/            # crate del servidor HTTP
+│   │   └── Cargo.toml
+│   ├── dominio/        # crate de lógica de negocio
+│   │   └── Cargo.toml
+│   └── infraestructura/ # crate de acceso a datos
+│       └── Cargo.toml
+└── target/</code></pre>
+          <p>El <code>Cargo.toml</code> del workspace root:</p>
+          <pre><code data-lang="rust">[workspace]
+members = [
+    "crates/api",
+    "crates/dominio",
+    "crates/infraestructura",
+]
+
+[workspace.dependencies]
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }</code></pre>
+          <p>La sección <code>[workspace.dependencies]</code> centraliza las versiones de dependencias compartidas. Los crates individuales las referencian sin repetir la versión:</p>
+          <pre><code data-lang="rust">[dependencies]
+tokio.workspace = true
+serde.workspace = true</code></pre>
+          <p>Todos los crates del workspace comparten el mismo <code>Cargo.lock</code>: las versiones son consistentes en todo el monorepo.</p>
+
+          <h2 id="crates-esenciales">Crates esenciales para backend</h2>
+          <p>El ecosistema de backend Rust está consolidado alrededor de un conjunto de crates bien mantenidas:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Crate</th><th>Propósito</th><th>Equivalente PHP</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>tokio</code></td><td>Runtime async, I/O asíncrono</td><td>ReactPHP, Swoole</td></tr>
+                <tr><td><code>axum</code></td><td>Framework web sobre Tokio</td><td>Symfony, Laravel</td></tr>
+                <tr><td><code>serde</code> + <code>serde_json</code></td><td>Serialización/deserialización</td><td>Symfony Serializer</td></tr>
+                <tr><td><code>sqlx</code></td><td>Queries async a BD (postgres, mysql)</td><td>Doctrine DBAL</td></tr>
+                <tr><td><code>reqwest</code></td><td>Cliente HTTP async</td><td>Guzzle</td></tr>
+                <tr><td><code>tracing</code></td><td>Logging estructurado y spans</td><td>Monolog</td></tr>
+                <tr><td><code>anyhow</code></td><td>Errores en aplicaciones</td><td>—</td></tr>
+                <tr><td><code>thiserror</code></td><td>Errores en librerías</td><td>—</td></tr>
+                <tr><td><code>uuid</code></td><td>Generación y parsing de UUIDs</td><td>ramsey/uuid</td></tr>
+                <tr><td><code>chrono</code></td><td>Fechas y tiempos</td><td>Carbon</td></tr>
+                <tr><td><code>validator</code></td><td>Validación de structs con atributos</td><td>Symfony Validator</td></tr>
+                <tr><td><code>config</code></td><td>Configuración desde archivos y env</td><td>Symfony Config</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout callout--tip">
+            <strong>Para empezar un servidor REST</strong>: <code>tokio + axum + serde + sqlx + tracing + anyhow + thiserror</code>. Este stack cubre el 90% de un servicio backend típico.
+          </div>
+
+          <h2 id="resumen">Resumen</h2>
+          <ul class="keypoints">
+            <li>Cargo integra build, test, doc y gestión de dependencias en una herramienta. Es el equivalente completo de Composer + phpunit + php-cs-fixer + PHPStan juntos.</li>
+            <li>Crates.io es el registro de paquetes; <code>cargo add</code> añade dependencias y actualiza Cargo.toml automáticamente.</li>
+            <li>Las features habilitan funcionalidades opcionales: <code>tokio = { features = ["full"] }</code>. Usar solo las features necesarias reduce tiempo de compilación y tamaño del binario.</li>
+            <li>Los workspaces agrupan múltiples crates en un monorepo con Cargo.lock compartido y versiones centralizadas en <code>[workspace.dependencies]</code>.</li>
+            <li>El stack de backend Rust está consolidado: tokio + axum + serde + sqlx + tracing cubre la mayoría de servicios web.</li>
+          </ul>
+        </article>
+      </div>
+    </main>
+
+    <footer class="footer"><div class="container footer__inner"><span><strong>MentorAI</strong> · Formación técnica iterada con IA</span><span>© <span data-year>2026</span></span></div></footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

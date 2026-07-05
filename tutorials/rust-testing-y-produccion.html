@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem("academia-theme");
+        var d = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", t || (d ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Testing y despliegue a producción en Rust — MentorAI</title>
+    <meta name="description" content="Tests unitarios e integración con cargo test, benchmarks, y cómo construir una imagen Docker mínima con un binario Rust estático." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+  </head>
+  <body>
+    <div class="reading-progress" id="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <a href="../offline.html" class="nav__link offline-nav-link">Sin conexión</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+          <button class="nav__burger icon-btn" aria-label="Menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <div class="nav-drawer-backdrop"></div>
+    <div class="nav-drawer"><div class="nav-drawer__head"><span class="nav-drawer__title">MentorAI</span><div class="nav-drawer__head-actions"><button class="nav-drawer__close icon-btn" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div><div class="nav-drawer__links"><a href="../index.html" class="nav-drawer__link">Inicio</a><a href="../rutas.html" class="nav-drawer__link">Rutas</a><a href="../cursos.html" class="nav-drawer__link">Cursos</a><a href="../articulos.html" class="nav-drawer__link">Artículos</a><a href="../offline.html" class="nav-drawer__link">Sin conexión</a></div><div class="nav-drawer__footer"><span class="nav-drawer__theme">Tema</span><button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div>
+
+    <main>
+      <section class="tutorial-hero container">
+        <div class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <a href="../curso.html?slug=rust">Rust desde cero</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Rust</span>
+        </div>
+        <h1 class="tutorial-hero__title">Testing y despliegue a producción en Rust</h1>
+        <p class="tutorial-hero__lead">Tests unitarios e integración con cargo test, benchmarks, y cómo construir una imagen Docker mínima con un binario Rust estático.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>14 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Intermedio</span>
+          <span>Rust · Testing · DevOps</span>
+        </div>
+        <div class="tutorial-actions">
+          <button class="tutorial-action" id="btn-listen" aria-label="Escuchar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Escuchar</button>
+          <button class="tutorial-action tutorial-action--done" id="btn-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar como completado</button>
+          <button class="tutorial-action tutorial-action--reset" id="btn-reset" title="Reiniciar progreso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg><span>Reiniciar</span></button>
+        </div>
+        <div class="tutorial-progress"><div class="tutorial-progress__bar"><span></span></div><div class="tutorial-progress__label"></div></div>
+      </section>
+
+      <div class="container tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En este tutorial</p>
+          <ol class="toc__list">
+            <li><a href="#tests-unitarios">Tests unitarios</a></li>
+            <li><a href="#tests-integracion">Tests de integración</a></li>
+            <li><a href="#mocking">Mocking y dobles de test</a></li>
+            <li><a href="#benchmarks">Benchmarks con Criterion</a></li>
+            <li><a href="#compilacion-produccion">Compilación para producción</a></li>
+            <li><a href="#docker-produccion">Docker multistage</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ol>
+          <button class="toc__toggle" aria-label="Índice"><span>En este tutorial</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </aside>
+
+        <article class="prose">
+          <h2 id="tests-unitarios">Tests unitarios</h2>
+          <p>Rust integra el sistema de tests en el propio lenguaje, sin crates externas. Los tests unitarios viven en el mismo fichero que el código que testean, dentro de un módulo con <code>#[cfg(test)]</code>:</p>
+          <pre><code data-lang="rust">pub struct Carrito {
+    items: Vec&lt;(String, f64)&gt;,
+}
+
+impl Carrito {
+    pub fn new() -&gt; Self {
+        Self { items: Vec::new() }
+    }
+
+    pub fn añadir(&amp;mut self, nombre: &amp;str, precio: f64) {
+        self.items.push((nombre.to_string(), precio));
+    }
+
+    pub fn total(&amp;self) -&gt; f64 {
+        self.items.iter().map(|(_, precio)| precio).sum()
+    }
+
+    pub fn esta_vacio(&amp;self) -&gt; bool {
+        self.items.is_empty()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn carrito_vacio_tiene_total_cero() {
+        let carrito = Carrito::new();
+        assert_eq!(carrito.total(), 0.0);
+    }
+
+    #[test]
+    fn añadir_item_actualiza_total() {
+        let mut carrito = Carrito::new();
+        carrito.añadir("Teclado", 89.99);
+        carrito.añadir("Ratón", 29.99);
+        assert_eq!(carrito.total(), 119.98);
+    }
+
+    #[test]
+    fn carrito_nuevo_esta_vacio() {
+        let carrito = Carrito::new();
+        assert!(carrito.esta_vacio());
+    }
+
+    #[test]
+    #[should_panic(expected = "precio negativo")]
+    fn precio_negativo_produce_panic() {
+        let mut carrito = Carrito::new();
+        carrito.añadir("Producto", -10.0);
+    }
+}</code></pre>
+          <p>Los atributos de test más usados:</p>
+          <ul>
+            <li><code>#[test]</code>: marca una función como test.</li>
+            <li><code>#[should_panic]</code>: el test pasa si la función entra en panic. Con <code>expected = "..."</code> verifica además el mensaje.</li>
+            <li><code>#[ignore]</code>: excluye el test del run normal; se ejecuta con <code>cargo test -- --ignored</code>.</li>
+          </ul>
+          <pre><code data-lang="bash">cargo test                         # ejecuta todos los tests
+cargo test carrito                 # filtra por nombre
+cargo test -- --nocapture          # muestra los println! de los tests
+cargo test -- --test-threads=1     # secuencial (útil si comparten estado)</code></pre>
+          <p>Para tests async con Tokio:</p>
+          <pre><code data-lang="rust">#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn obtener_usuario_existente() {
+        let pool = crear_pool_test().await;
+        let repo = SqlxUsuarioRepository::new(pool);
+
+        let resultado = repo.buscar_por_id(1).await.unwrap();
+        assert!(resultado.is_some());
+    }
+}</code></pre>
+
+          <h2 id="tests-integracion">Tests de integración</h2>
+          <p>Los tests de integración viven en el directorio <code>tests/</code> en la raíz del proyecto, separados del código fuente. Cada fichero en ese directorio es un crate independiente que importa tu librería:</p>
+          <pre><code data-lang="bash">mi-proyecto/
+├── src/
+│   ├── lib.rs
+│   └── carrito.rs
+└── tests/
+    ├── carrito_integracion.rs
+    └── api_integracion.rs</code></pre>
+          <pre><code data-lang="rust">use mi_proyecto::Carrito;
+
+#[test]
+fn flujo_completo_de_compra() {
+    let mut carrito = Carrito::new();
+    assert!(carrito.esta_vacio());
+
+    carrito.añadir("Teclado", 89.99);
+    carrito.añadir("Ratón", 29.99);
+    assert!(!carrito.esta_vacio());
+    assert_eq!(carrito.total(), 119.98);
+}</code></pre>
+          <p>Para tests de integración de una API HTTP con Axum, se levanta el router directamente con <code>axum_test</code> o <code>tower::ServiceExt</code>:</p>
+          <pre><code data-lang="rust">use axum::body::Body;
+use axum::http::{Request, StatusCode};
+use tower::ServiceExt;
+
+#[tokio::test]
+async fn health_check_devuelve_ok() {
+    let app = crear_app(estado_test().await);
+
+    let respuesta = app
+        .oneshot(
+            Request::builder()
+                .uri("/health")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(respuesta.status(), StatusCode::OK);
+}</code></pre>
+
+          <h2 id="mocking">Mocking y dobles de test</h2>
+          <p>Rust no tiene mocking automático por reflexión como PHPUnit. La estrategia es diseñar para la testeabilidad: inyectar dependencias vía traits y crear implementaciones fake para los tests.</p>
+          <pre><code data-lang="rust">use async_trait::async_trait;
+
+#[async_trait]
+pub trait EmailService: Send + Sync {
+    async fn enviar(&amp;self, destinatario: &amp;str, asunto: &amp;str) -&gt; Result&lt;(), String&gt;;
+}
+
+pub struct ServicioRegistro&lt;E: EmailService&gt; {
+    email_service: E,
+}
+
+impl&lt;E: EmailService&gt; ServicioRegistro&lt;E&gt; {
+    pub fn new(email_service: E) -&gt; Self {
+        Self { email_service }
+    }
+
+    pub async fn registrar(&amp;self, email: &amp;str) -&gt; Result&lt;(), String&gt; {
+        self.email_service
+            .enviar(email, "Bienvenido")
+            .await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Mutex;
+
+    struct EmailFake {
+        enviados: Mutex&lt;Vec&lt;String&gt;&gt;,
+    }
+
+    impl EmailFake {
+        fn new() -&gt; Self {
+            Self { enviados: Mutex::new(Vec::new()) }
+        }
+
+        fn emails_enviados(&amp;self) -&gt; Vec&lt;String&gt; {
+            self.enviados.lock().unwrap().clone()
+        }
+    }
+
+    #[async_trait]
+    impl EmailService for EmailFake {
+        async fn enviar(&amp;self, destinatario: &amp;str, _asunto: &amp;str) -&gt; Result&lt;(), String&gt; {
+            self.enviados.lock().unwrap().push(destinatario.to_string());
+            Ok(())
+        }
+    }
+
+    #[tokio::test]
+    async fn registrar_envía_email_de_bienvenida() {
+        let fake = EmailFake::new();
+        let servicio = ServicioRegistro::new(fake);
+
+        servicio.registrar("usuario@ejemplo.com").await.unwrap();
+
+        // No hay acceso al fake después de moverlo al servicio.
+        // La alternativa es usar Arc si necesitas inspeccionar el fake.
+    }
+}</code></pre>
+          <p>La crate <code>mockall</code> ofrece generación automática de mocks con macros si prefieres no escribir los fakes a mano.</p>
+
+          <h2 id="benchmarks">Benchmarks con Criterion</h2>
+          <p>Criterion es la herramienta estándar para benchmarks estadísticos en Rust. Los benchmarks viven en el directorio <code>benches/</code>:</p>
+          <pre><code data-lang="rust">use criterion::{black_box, criterion_group, criterion_main, Criterion};
+
+fn benchmark_total_carrito(c: &amp;mut Criterion) {
+    let mut carrito = Carrito::new();
+    for i in 0..1000 {
+        carrito.añadir(&amp;format!("Item {}", i), i as f64);
+    }
+
+    c.bench_function("total de 1000 items", |b| {
+        b.iter(|| black_box(carrito.total()))
+    });
+}
+
+criterion_group!(benches, benchmark_total_carrito);
+criterion_main!(benches);</code></pre>
+          <p>En Cargo.toml:</p>
+          <pre><code data-lang="rust">[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "carrito"
+harness = false</code></pre>
+          <pre><code data-lang="bash">cargo bench                        # ejecuta todos los benchmarks
+cargo bench -- "total de 1000"    # filtra por nombre</code></pre>
+          <p>Criterion ejecuta cada benchmark múltiples veces, calcula la media y la desviación estándar, y detecta regresiones comparando con una ejecución anterior. Genera un informe HTML en <code>target/criterion/</code>.</p>
+          <p><code>black_box</code> previene que el compilador optimice el código bajo test y lo elimine, lo que daría mediciones falsas.</p>
+
+          <h2 id="compilacion-produccion">Compilación para producción</h2>
+          <p>El binario de debug (<code>cargo build</code>) incluye símbolos de depuración y no está optimizado. Para producción:</p>
+          <pre><code data-lang="bash">cargo build --release</code></pre>
+          <p>El binario resultante está en <code>target/release/</code>. Con <code>--release</code>, el compilador aplica todas las optimizaciones de LLVM. La diferencia de rendimiento es sustancial.</p>
+          <p>Para reducir el tamaño del binario, en Cargo.toml:</p>
+          <pre><code data-lang="rust">[profile.release]
+opt-level = 3        # máxima optimización (por defecto en release)
+lto = true           # link-time optimization: más lento de compilar, binario más pequeño y rápido
+codegen-units = 1    # una sola unidad: permite más optimizaciones cross-módulo
+strip = true         # elimina símbolos de debug del binario final</code></pre>
+          <p>Para compilar un binario estático (sin dependencias de libc del sistema), compilar para la target <code>x86_64-unknown-linux-musl</code>:</p>
+          <pre><code data-lang="bash">rustup target add x86_64-unknown-linux-musl
+cargo build --release --target x86_64-unknown-linux-musl</code></pre>
+          <p>El binario resultante no depende de ninguna librería del sistema operativo. Se puede copiar a cualquier máquina Linux x86-64 y ejecutar directamente.</p>
+          <div class="callout callout--tip">
+            <strong>Diferencia con Go</strong>: en Go los binarios son estáticos por defecto. En Rust el binario dinámico vincula a la glibc del sistema. El target musl produce el equivalente al binario estático de Go.
+          </div>
+
+          <h2 id="docker-produccion">Docker multistage</h2>
+          <p>La imagen Docker de producción no necesita las herramientas de compilación. Con multistage build se compila en una imagen con Rust y se copia solo el binario a una imagen mínima:</p>
+          <pre><code data-lang="bash">FROM rust:1.78-slim AS builder
+
+WORKDIR /app
+
+COPY Cargo.toml Cargo.lock ./
+
+RUN mkdir src &amp;&amp; echo "fn main() {}" > src/main.rs
+RUN cargo build --release --locked
+
+COPY src ./src
+RUN touch src/main.rs &amp;&amp; cargo build --release --locked
+
+FROM debian:bookworm-slim AS runtime
+
+RUN apt-get update &amp;&amp; apt-get install -y \
+    ca-certificates \
+    &amp;&amp; rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app/target/release/mi-servicio /usr/local/bin/mi-servicio
+
+EXPOSE 8080
+CMD ["mi-servicio"]</code></pre>
+          <p>El truco de compilar primero con un <code>main.rs</code> vacío permite que Docker cachee la compilación de dependencias. Las dependencias solo se recompilan cuando cambia <code>Cargo.lock</code>, no cuando cambia el código fuente.</p>
+          <p>Si usas el target musl para un binario estático, la imagen final puede ser <code>scratch</code> (imagen vacía), que es la imagen Docker más pequeña posible:</p>
+          <pre><code data-lang="bash">FROM rust:1.78-slim AS builder
+
+RUN rustup target add x86_64-unknown-linux-musl
+RUN apt-get update &amp;&amp; apt-get install -y musl-tools
+
+WORKDIR /app
+COPY Cargo.toml Cargo.lock ./
+RUN mkdir src &amp;&amp; echo "fn main() {}" > src/main.rs
+RUN cargo build --release --locked --target x86_64-unknown-linux-musl
+
+COPY src ./src
+RUN touch src/main.rs &amp;&amp; cargo build --release --locked --target x86_64-unknown-linux-musl
+
+FROM scratch
+
+COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/mi-servicio /mi-servicio
+
+EXPOSE 8080
+ENTRYPOINT ["/mi-servicio"]</code></pre>
+          <p>La imagen final con scratch puede pesar menos de 10 MB para un servicio típico. La imagen equivalente en PHP con FPM raramente baja de 100 MB.</p>
+
+          <h2 id="resumen">Resumen</h2>
+          <ul class="keypoints">
+            <li>Los tests unitarios viven en el mismo fichero bajo <code>#[cfg(test)]</code>. Los tests de integración en el directorio <code>tests/</code>. No se necesita ninguna crate externa para el sistema básico de tests.</li>
+            <li>Los dobles de test se implementan manualmente creando structs que implementan el trait de la dependencia. La crate mockall automatiza esto si hay muchos mocks.</li>
+            <li>Criterion proporciona benchmarks estadísticos con detección de regresiones y reportes HTML. Los benchmarks viven en el directorio <code>benches/</code>.</li>
+            <li><code>cargo build --release</code> habilita todas las optimizaciones de LLVM. Las opciones <code>lto</code>, <code>codegen-units=1</code> y <code>strip</code> en el perfil release reducen el tamaño y mejoran el rendimiento.</li>
+            <li>El target musl genera binarios estáticos sin dependencias del sistema operativo, equivalentes a los binarios de Go. Permiten imágenes Docker basadas en <code>scratch</code>.</li>
+            <li>El multistage build de Docker con caché de dependencias separa la etapa de compilación de la imagen de runtime, produciendo imágenes mínimas y builds incrementales rápidos.</li>
+          </ul>
+        </article>
+      </div>
+    </main>
+
+    <footer class="footer"><div class="container footer__inner"><span><strong>MentorAI</strong> · Formación técnica iterada con IA</span><span>© <span data-year>2026</span></span></div></footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
