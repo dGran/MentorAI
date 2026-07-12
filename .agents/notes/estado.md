@@ -1104,6 +1104,72 @@ El usuario señaló con alarma "main.js +2000 loc" y eligió "un fichero por mó
 y/o `el-grado-que-no-hiciste`; SQL en `construir-un-servicio`. Valorar añadirlos al
 retomar si tiene sentido ampliar esas rutas.
 
+## Sesión 2026-07-05/06 — Python completo + "Cuándo aplicarlo" en todo el catálogo
+
+### Python desde cero — COMPLETO
+21 tutoriales escritos por subagentes, todos en `tutorials/`. Curso en courses.js y
+manifest.js ya publicados. Módulos:
+- M1 Primeros pasos (5): python-que-es, python-entorno-docker, python-editores,
+  python-primer-programa, python-tipos-y-variables
+- M2 El lenguaje (5): python-control-de-flujo, python-funciones, python-clases-y-oop,
+  python-modulos-y-paquetes, python-comprehensions-y-generadores
+- M3 Python moderno (3): python-decoradores, python-context-managers, python-tipado-con-mypy
+- M4 Backend con Python (5): python-fastapi-intro, python-pydantic, python-sqlalchemy-async,
+  python-testing-pytest, python-async-await
+- M5 Python en producción (3): python-docker, python-configuracion, python-a-produccion
+Ruta "Más allá de PHP" ampliada: Go + Rust + Python.
+Lexer Python ya en syntax.js. Categorías rust y python en catalog.js.
+
+### "Cuándo aplicarlo" — rollout en todo el catálogo
+Decisión del usuario: añadir sección "Cuándo aplicarlo" a TODOS los tutoriales
+existentes donde tenga sentido (hay decisión real o alternativas). Formato: `<h2
+id="cuando">` + `.compare` con columnas --good/--bad, insertado antes del `<h2
+id="resumen">`. TOC también actualizado.
+
+10 agentes en paralelo. Estado al cerrar sesión:
+- ✅ Fundamentos CS: 13 tutoriales (async-event-loop ya lo tenía)
+- ✅ OOP: 8 tutoriales — EN PROCESO (agente running al cerrar)
+- ✅ SOLID + Clean Code: 14 tutoriales — EN PROCESO
+- ✅ Arquitectura + Patrones: 16 tutoriales
+- ✅ Testing + Git + CI/CD: 17 tutoriales — EN PROCESO
+- ✅ APIs + Acceso a datos + SQL: 14 (orm-vs-sql y active-record ya lo tenían)
+- ✅ Docker + PHP internals: 11 tutoriales
+- ✅ Observabilidad: 8 (observabilidad-pilares ya lo tenía)
+- ✅ Seguridad + Mensajería + Redis: 8 tutoriales
+- ✅ Linux + IA + Artículos: 14 (linux-filesystem, linux-navegacion, jerga omitidos)
+
+**PENDIENTE al abrir sesión nueva:**
+1. Verificar que los 3 agentes en proceso (OOP, SOLID/Clean Code, Testing/Git/CI-CD)
+   terminaron. Comprobar: `grep -l 'id="cuando"' tutorials/*.html | wc -l`
+   Debe ser ~100+ (5 preexistentes + ~95 nuevos).
+2. Hacer commit global de todo lo pendiente:
+   - Curso Python completo (21 tutoriales + manifest + courses.js)
+   - "Cuándo aplicarlo" en ~95 tutoriales existentes
+   - Usar mensaje de commit claro separando las dos cosas o en dos commits.
+3. Push a GitHub.
+4. Arrancar cursos nuevos (ver plan abajo).
+
+### Análisis de huecos — decisión de contenido nuevo
+Análisis completo realizado. Huecos identificados y plan aprobado por el usuario:
+
+**4 cursos nuevos:**
+- `sistemas-distribuidos` (~20 lecciones): fundamentos, Kafka vs RabbitMQ, resiliencia
+  (circuit breaker, retry), consistencia (Outbox, Saga), microservicios (cuándo/cómo)
+- `cache-y-rendimiento` (~16 lecciones): estrategias de caché, invalidación, HTTP/CDN,
+  profiling (Blackfire/flamegraphs), connection pooling
+- `infraestructura` (~18 lecciones): Kubernetes básico, redes/DNS/nginx/SSL,
+  cloud providers, SRE (SLI/SLO/SLA/error budgets), Terraform básico
+- `protocolos-y-tiempo-real` (~16 lecciones): gRPC/Protobuf, WebSockets/SSE/long-polling,
+  auth avanzado (OIDC/refresh tokens/API keys/rate limiting), GraphQL
+
+**Ampliaciones de cursos existentes:**
+- `observabilidad` → + OpenTelemetry, OTLP, traces distribuidas, Jaeger
+- `seguridad` → + OIDC, SSRF, CSP headers, rate limiting
+
+**Filosofía cross-cutting aprobada:** cada lección nueva incluye "cuándo sí / cuándo no"
+integrado en el contenido, con tabla de decisión donde hay alternativas reales. Esta es
+la característica que distingue senior de junior: no solo conocer, sino saber cuándo aplicar.
+
 ## Siguiente paso sugerido (actualizado 2026-07-06)
 
 Estado del sitio: **151 tutoriales publicados, 20 cursos** (+ curso Go). Commits
@@ -1142,19 +1208,33 @@ Repo: `github.com/dGran/MentorAI`, Pages en `dgran.github.io/MentorAI/`.
 - Curso Python — **ESQUELETO en courses.js** (21 lecciones planificadas, 5 módulos).
   Lecciones con estado "Planificado" hasta que se escriban.
 
-**SIGUIENTE INMEDIATO al retomar:**
-- `plan-curso-python.md` — Python desde cero (21 lecciones, 5 módulos, FastAPI en M4).
-  Estructura ya en courses.js, pendiente de escribir los tutoriales.
-- "Ponlo en práctica" mini-retos (plan-huecos-versatilidad): requiere decisión de diseño.
+**SIGUIENTE INMEDIATO al retomar (2026-07-06):**
+1. Verificar "cuándo" rollout completado: `grep -l 'id="cuando"' tutorials/*.html | wc -l`
+2. Commit + push de todo lo pendiente de esta sesión.
+3. Arrancar 4 cursos nuevos aprobados: sistemas-distribuidos, cache-y-rendimiento,
+   infraestructura, protocolos-y-tiempo-real. Empezar por uno (proponer al usuario).
+4. Añadir a `el-grado-que-no-hiciste` los cursos de lenguajes (Go, Rust, Python)
+   y los nuevos 4 cursos cuando estén publicados.
 
 **PENDIENTES MENORES:**
-- Quizzes para el curso `rust` en `tutorials/quizzes.js`.
-- Script opcional `server/recalcular-minutos.js` (los `minutes` del manifest son manuales).
-- Ampliar ruta `el-grado-que-no-hiciste` con cursos de lenguajes si tiene sentido.
+- Quizzes para cursos `rust` y `python` en `tutorials/quizzes.js`.
+- "Ponlo en práctica" mini-retos: requiere decisión de diseño (details/summary HTML puro).
+- Script opcional `server/recalcular-minutos.js`.
 - **Al añadir tutorial/curso nuevo: revisar `tutorials/paths.js` para encajarlo.**
 
 **PLANES DE FASE 2 (sin tocar):** `plan-buscador-fulltext.md`,
 `plan-resaltado-texto.md`, `plan-autocategorizacion.md`.
+
+## Plan multiusuario documentado (2026-07-13)
+El usuario definió el propósito (colección portable/offline generada por IA,
+compartible con colegas a escala grupo de trabajo) y pidió plan para
+multiusuario + multi-dispositivo. **Creado `plan-multiusuario.md`** (añadido a
+"Planes abiertos" de las rules). Decisiones: git como capa de colaboración
+(sin cuentas ni backend), progreso por persona en localStorage con
+export/import + sync opcional vía puente. Hallazgo: **el SW usa rutas
+absolutas** (`offline.js:313` registra `/sw.js`; `SHELL_URLS` con `/...`) →
+"Guardar para viajar" roto en Pages bajo `/MentorAI/` (verificar). Nada
+implementado; orden de fases en la note.
 
 ## Notas técnicas
 - Para añadir un lenguaje al resaltado: ampliar `LANGUAGES` en

@@ -126,6 +126,11 @@ frentes de abajo.
 - `plan-huecos-versatilidad.md` — versatilidad transversal aprobada 2026-07-04:
   SQL aplicado avanzado, patrones GoF, framework por dentro, terminal/Linux, y
   la idea "Ponlo en práctica" (mini-retos al cierre de cada curso).
+- `plan-multiusuario.md` — uso en grupo de trabajo y multi-dispositivo
+  (2026-07-13): git como capa de colaboración (validador de catálogo, manifest
+  ordenado por slug, `author`, estado `draft`), progreso export/import + sync
+  por el puente, fix del SW en Pages, y features de grupo (novedades, offline
+  por curso, quiz en generación, wishlist, feedback). Sin cuentas ni backend.
 
 Fase 2 (infraestructura, sin tocar):
 - `plan-buscador-fulltext.md` — búsqueda dentro del contenido (índice por el puente).
