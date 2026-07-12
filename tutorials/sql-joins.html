@@ -93,6 +93,7 @@
             <li><a href="#otros-joins">RIGHT, FULL OUTER y self-join</a></li>
             <li><a href="#error-clasico">El error clásico con COUNT</a></li>
             <li><a href="#join-vs-subquery">JOIN vs subconsulta</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
@@ -322,6 +323,26 @@ WHERE EXISTS (
             <div class="callout__body">
               <p class="callout__title">Los optimizadores son listos, pero tú más</p>
               <p>Los optimizadores modernos (MySQL 8+, PostgreSQL) frecuentemente convierten un <code>IN (subconsulta)</code> en un semi-join internamente, igualando el rendimiento. Aun así, escribe <code>EXISTS</code> cuando la intención sea "¿existe?": el código comunica mejor y no dependes del optimizador para evitar duplicados.</p>
+            </div>
+          </div>
+
+          <h2 id="cuando">Cuándo aplicarlo</h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Úsalo cuando…</h4>
+              <ul>
+                <li>INNER JOIN cuando solo necesitas registros con coincidencia en ambas tablas.</li>
+                <li>LEFT JOIN cuando necesitas todos los registros de la tabla izquierda aunque no haya coincidencia.</li>
+                <li>JOIN en lugar de subconsulta cuando el planner puede optimizarlo mejor y necesitas columnas de ambas tablas.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No lo uses cuando…</h4>
+              <ul>
+                <li>LEFT JOIN cuando en realidad quieres solo los que coinciden: usa INNER JOIN para dejar clara la intención.</li>
+                <li>JOIN cuando una subconsulta escalar es más legible y el uso es único.</li>
+                <li>Mezclas JOINs con COUNT sin aplicar DISTINCT o GROUP BY correctamente: produces conteos inflados.</li>
+              </ul>
             </div>
           </div>
 

@@ -89,6 +89,7 @@
             <li><a href="#flush">flush no es commit</a></li>
             <li><a href="#explicitas">Transacciones explícitas</a></li>
             <li><a href="#errores">Errores comunes</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
@@ -222,6 +223,26 @@ $entityManager-&gt;wrapInTransaction(function ($entityManager) use ($pedido) {
             <div class="callout__body">
               <p class="callout__title">Una transacción es para BD, no para la red</p>
               <p>Nunca metas una llamada a un servicio externo (cobrar en una pasarela, mandar un email) <em>dentro</em> de una transacción de base de datos. Si la red tarda, mantienes locks abiertos todo ese tiempo; si la transacción luego falla, ya cobraste pero hiciste rollback. Las operaciones externas, fuera y con su propia <a href="idempotencia.html">idempotencia</a>.</p>
+            </div>
+          </div>
+
+          <h2 id="cuando">Cuándo aplicarlo</h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Úsalo cuando…</h4>
+              <ul>
+                <li>Transacciones explícitas cuando varias operaciones deben ser atómicas (crear pedido + descontar stock + registrar pago).</li>
+                <li>Transacción implícita del ORM para operaciones de un solo agregado que el ORM ya gestiona.</li>
+                <li>Flush manual cuando necesitas controlar exactamente cuándo se sincronizan los cambios con la BD.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No lo uses cuando…</h4>
+              <ul>
+                <li>Metes llamadas a servicios externos (cobros, emails) dentro de una transacción de BD: los locks abiertos y los efectos parciales son difíciles de revertir.</li>
+                <li>Anidas transacciones sin entender el comportamiento del ORM: puede ignorar la interior o hacer rollback de la exterior.</li>
+                <li>Confías en el flush automático en operaciones críticas sin saber cuándo dispara de verdad.</li>
+              </ul>
             </div>
           </div>
 
