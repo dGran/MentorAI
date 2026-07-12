@@ -1236,6 +1236,44 @@ absolutas** (`offline.js:313` registra `/sw.js`; `SHELL_URLS` con `/...`) →
 "Guardar para viajar" roto en Pages bajo `/MentorAI/` (verificar). Nada
 implementado; orden de fases en la note.
 
+## Cierre de sesión 2026-07-13 (ESTA es la entrada más reciente; manda sobre el "SIGUIENTE INMEDIATO 2026-07-06" de arriba)
+
+Todo pusheado a `main` (sincronizado con origin). 5 commits esta sesión:
+`4bd7a26` (ignora .claude/worktrees/), `144d1db` (21 HTML del curso Python,
+completan el andamiaje de d0a83df), `7aa4788` («Cuándo aplicarlo» en 84
+tutoriales), `e87db6b` (plan multiusuario), `08289da` («Cuándo aplicarlo» en
+las 8 lecciones OOP/DI que faltaban).
+
+- **Rollout «Cuándo aplicarlo» AHORA COMPLETO.** Al ir a commitear se detectó
+  que 8 lecciones de OOP/DI (`herencia`, `interfaces`, `polimorfismo`,
+  `clases-abstractas`, `oop-clases-y-objetos`, `tipos-de-clases-php`,
+  `inyeccion-dependencias`, `contenedor-di`) tenían la entrada del TOC
+  `#cuando` pero NO la sección `<h2 id="cuando">` (rollout a medias = ancla
+  rota). Se completaron con su bloque `compare`. Ya no quedan anclas
+  `#cuando` colgando en el catálogo. (El punto 1 del "SIGUIENTE INMEDIATO
+  2026-07-06" — verificar el rollout — queda así cerrado.)
+- **Carpeta del proyecto renombrada `elearning` → `mentorai`** (alinea con el
+  repo `dGran/MentorAI` y el nombre de la app). No rompió nada: los symlinks
+  del repo son relativos, el remoto es una URL, la web es 100% rutas
+  relativas. Se migró también el dir de datos de Claude Code
+  (`~/.claude/projects/-home-davidgran-projects-elearning` → `-mentorai`,
+  conserva memoria e historial); `settings.local.json` (local, ignorado por el
+  gitignore global) con rutas actualizadas; worktrees de agentes viejos
+  limpiados.
+
+**SIGUIENTE al retomar (elige el usuario):**
+1. **Fase 1 de `plan-multiusuario.md`** — el validador de catálogo
+   (`server/validate.js`): formaliza los chequeos que hoy se hacen a mano cada
+   sesión (node --check, TOC↔h2, escapado, cruces, 1 featured, slugs únicos).
+   Es lo acordado como primer paso; protege todo lo demás y detecta
+   automáticamente anclas rotas como las de esta sesión.
+2. **Los 4 cursos nuevos aprobados** (sistemas-distribuidos, cache-y-rendimiento,
+   infraestructura, protocolos-y-tiempo-real — ver bloque "Análisis de huecos"
+   arriba). Empezar por uno, proponer al usuario.
+Pendientes menores intactos: quizzes `rust`/`python`, "Ponlo en práctica"
+(mini-retos), añadir Go/Rust/Python y los 4 cursos nuevos a la ruta
+`el-grado-que-no-hiciste` cuando se publiquen.
+
 ## Notas técnicas
 - Para añadir un lenguaje al resaltado: ampliar `LANGUAGES` en
   `assets/js/modules/syntax.js`.
