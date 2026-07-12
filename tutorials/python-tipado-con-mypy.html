@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem("academia-theme");
+        var d = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", t || (d ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tipado estático con mypy — MentorAI</title>
+    <meta name="description" content="Por qué tipar Python, anotaciones básicas, tipos genéricos, Optional, Union, Literal, Protocols y cómo integrar mypy en CI." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+  </head>
+  <body>
+    <div class="reading-progress" id="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <a href="../offline.html" class="nav__link offline-nav-link">Sin conexión</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+          <button class="nav__burger icon-btn" aria-label="Menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <div class="nav-drawer-backdrop"></div>
+    <div class="nav-drawer"><div class="nav-drawer__head"><span class="nav-drawer__title">MentorAI</span><div class="nav-drawer__head-actions"><button class="nav-drawer__close icon-btn" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div><div class="nav-drawer__links"><a href="../index.html" class="nav-drawer__link">Inicio</a><a href="../rutas.html" class="nav-drawer__link">Rutas</a><a href="../cursos.html" class="nav-drawer__link">Cursos</a><a href="../articulos.html" class="nav-drawer__link">Artículos</a><a href="../offline.html" class="nav-drawer__link">Sin conexión</a></div><div class="nav-drawer__footer"><span class="nav-drawer__theme">Tema</span><button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div>
+
+    <main>
+      <section class="tutorial-hero container">
+        <div class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <a href="../curso.html?slug=python">Python desde cero</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Tipado con mypy</span>
+        </div>
+        <h1 class="tutorial-hero__title">Tipado estático con mypy</h1>
+        <p class="tutorial-hero__lead">Por qué tipar Python, anotaciones básicas de variables y funciones, tipos genéricos, <code>Optional</code>, <code>Union</code>, <code>Literal</code>, Protocols para tipado estructural y cómo integrar mypy en CI.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>14 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Intermedio</span>
+          <span>Python</span>
+        </div>
+        <div class="tutorial-actions">
+          <button class="tutorial-action" id="btn-listen" aria-label="Escuchar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Escuchar</button>
+          <button class="tutorial-action tutorial-action--done" id="btn-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar como completado</button>
+          <button class="tutorial-action tutorial-action--reset" id="btn-reset" title="Reiniciar progreso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg><span>Reiniciar</span></button>
+        </div>
+        <div class="tutorial-progress"><div class="tutorial-progress__bar"><span></span></div><div class="tutorial-progress__label"></div></div>
+      </section>
+
+      <div class="container tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En este tutorial</p>
+          <ol class="toc__list">
+            <li><a href="#por-que-tipar">Por qué tipar Python</a></li>
+            <li><a href="#anotaciones">Anotaciones básicas</a></li>
+            <li><a href="#genericos">Tipos genéricos, Optional, Union, Literal</a></li>
+            <li><a href="#protocols">Protocols: tipado estructural</a></li>
+            <li><a href="#mypy-en-ci">mypy en CI y configuración</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ol>
+          <button class="toc__toggle" aria-label="Índice"><span>En este tutorial</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </aside>
+
+        <article class="prose">
+          <h2 id="por-que-tipar">Por qué tipar Python</h2>
+          <p>Python es dinámicamente tipado en runtime: una variable puede contener cualquier tipo sin que el intérprete se queje. Las anotaciones de tipo son solo metadatos que Python ignora durante la ejecución. La diferencia la pone una herramienta externa como mypy, que analiza el código estáticamente y detecta inconsistencias antes de que lleguen a producción.</p>
+          <p>El valor es concreto. mypy encuentra errores que los tests no cubren: pasar un <code>None</code> donde se espera un <code>str</code>, llamar a un método que no existe en un tipo, o devolver el tipo incorrecto desde una función. Además, las anotaciones son documentación ejecutable: un IDE con soporte de tipos autocompletará basándose en ellas y te avisará al instante si algo no cuadra.</p>
+          <div class="callout callout--info">
+            <strong>Las anotaciones no cambian el comportamiento en runtime.</strong> <code>def suma(a: int, b: int) -&gt; int</code> acepta strings en runtime si se los pasas; Python no valida. La validación la hace mypy en tiempo de análisis, no Python al ejecutar. Para validación en runtime usa Pydantic o <code>beartype</code>.
+          </div>
+
+          <h2 id="anotaciones">Anotaciones básicas</h2>
+          <p>Las anotaciones se aplican a variables, parámetros y valores de retorno. La sintaxis es la misma en los tres casos:</p>
+          <pre><code data-lang="python">nombre: str = "Ana"
+edad: int = 30
+es_activo: bool = True
+precio: float = 9.99
+
+usuarios: list[str] = ["Ana", "Luis"]
+config: dict[str, int] = {"timeout": 30, "reintentos": 3}
+coordenadas: tuple[float, float] = (40.416, -3.703)</code></pre>
+          <p>Para funciones, las anotaciones van en los parámetros y el retorno:</p>
+          <pre><code data-lang="python">def saludar(nombre: str, veces: int = 1) -&gt; str:
+    return (nombre + "\n") * veces
+
+
+def registrar_evento(
+    tipo: str,
+    payload: dict[str, object],
+    es_critico: bool = False,
+) -&gt; None:
+    pass
+
+
+def cargar_ids(ruta: str) -&gt; list[int]:
+    with open(ruta) as fichero:
+        return [int(linea.strip()) for linea in fichero]</code></pre>
+          <p>El tipo <code>None</code> en el retorno indica que la función no devuelve valor útil (equivalente a <code>void</code> en otros lenguajes). Si una función puede retornar sin un <code>return</code> explícito, mypy infiere <code>None</code> como tipo de retorno implícito cuando usas <code>--strict</code>.</p>
+          <p>mypy infiere los tipos de las expresiones locales, así que no necesitas anotar cada variable dentro de una función. Anota los límites del módulo: los parámetros de las funciones públicas y sus retornos. Es donde los contratos importan.</p>
+
+          <h2 id="genericos">Tipos genéricos, Optional, Union, Literal</h2>
+          <p><strong>Opcional y unión.</strong> Cuando una función puede devolver <code>None</code>, el tipo de retorno es <code>str | None</code> (Python 3.10+) o <code>Optional[str]</code>. mypy fuerza a comprobar el <code>None</code> antes de usar el valor:</p>
+          <pre><code data-lang="python">from typing import Optional
+
+
+def buscar_usuario(identificador: int) -&gt; str | None:
+    if identificador == 1:
+        return "Ana"
+    return None
+
+
+resultado = buscar_usuario(42)
+print(resultado.upper())        # Error: Item "None" of "str | None" has no attribute "upper"
+
+if resultado is not None:
+    print(resultado.upper())    # OK: mypy sabe que aquí es str</code></pre>
+          <p><code>Union[str, int]</code> (o <code>str | int</code> en Python 3.10+) indica que el valor puede ser de varios tipos. mypy te obliga a discriminar antes de usar operaciones específicas de cada tipo:</p>
+          <pre><code data-lang="python">def convertir_a_euros(valor: str | int | float) -&gt; float:
+    if isinstance(valor, str):
+        return float(valor.replace(",", "."))
+    return float(valor)</code></pre>
+          <p><strong>Literal.</strong> Restringe un parámetro a un conjunto fijo de valores conocidos en tiempo de análisis. mypy detecta llamadas con valores fuera del conjunto:</p>
+          <pre><code data-lang="python">from typing import Literal
+
+Direccion = Literal["norte", "sur", "este", "oeste"]
+Nivel = Literal["debug", "info", "warning", "error", "critical"]
+
+
+def mover(pasos: int, direccion: Direccion) -&gt; None:
+    pass
+
+
+def registrar(mensaje: str, nivel: Nivel = "info") -&gt; None:
+    pass
+
+
+mover(3, "norte")       # OK
+mover(3, "arriba")      # Error: Argument 2 has incompatible type "str"; expected Literal[...]</code></pre>
+          <p><strong>TypeVar.</strong> Para funciones que reciben un tipo y devuelven el mismo tipo sin conocerlo de antemano:</p>
+          <pre><code data-lang="python">from typing import TypeVar
+
+T = TypeVar("T")
+
+
+def primero(elementos: list[T]) -&gt; T:
+    return elementos[0]
+
+
+valor: int = primero([1, 2, 3])     # mypy infiere T = int
+nombre: str = primero(["a", "b"])   # mypy infiere T = str</code></pre>
+
+          <h2 id="protocols">Protocols: tipado estructural</h2>
+          <p>Python usa duck typing: si un objeto tiene los métodos necesarios, se puede usar aunque no herede de ninguna clase en particular. <code>Protocol</code> formaliza ese contrato sin exigir herencia explícita:</p>
+          <pre><code data-lang="python">from typing import Protocol
+
+
+class Serializable(Protocol):
+    def to_dict(self) -&gt; dict[str, object]: ...
+
+
+class Usuario:
+    def __init__(self, nombre: str, edad: int) -&gt; None:
+        self._nombre = nombre
+        self._edad = edad
+
+    def to_dict(self) -&gt; dict[str, object]:
+        return {"nombre": self._nombre, "edad": self._edad}
+
+
+class Producto:
+    def __init__(self, referencia: str, precio: float) -&gt; None:
+        self._referencia = referencia
+        self._precio = precio
+
+    def to_dict(self) -&gt; dict[str, object]:
+        return {"referencia": self._referencia, "precio": self._precio}
+
+
+def guardar_en_bd(entidad: Serializable) -&gt; None:
+    datos = entidad.to_dict()
+    pass
+
+
+guardar_en_bd(Usuario("Ana", 30))          # OK
+guardar_en_bd(Producto("REF-001", 9.99))   # OK: tiene to_dict compatible</code></pre>
+          <p>Ni <code>Usuario</code> ni <code>Producto</code> heredan de <code>Serializable</code>. mypy comprueba estructuralmente que ambas clases implementan el método con la firma correcta. Si una clase tuviera <code>to_dict</code> con retorno <code>str</code> en lugar de <code>dict[str, object]</code>, mypy lo rechazaría.</p>
+          <div class="callout callout--tip">
+            <strong>Protocol frente a ABC.</strong> Usa <code>Protocol</code> cuando no controlas las clases que implementan la interfaz (librerías de terceros, clases ya existentes) o cuando el contrato es de comportamiento, no de jerarquía. Usa ABC cuando quieras forzar herencia explícita y aprovechar métodos concretos de la clase base.
+          </div>
+
+          <h2 id="mypy-en-ci">mypy en CI y configuración</h2>
+          <p>La instalación es directa:</p>
+          <pre><code data-lang="bash">pip install mypy
+mypy src/</code></pre>
+          <p>La configuración va en <code>mypy.ini</code> o en la sección <code>[tool.mypy]</code> de <code>pyproject.toml</code>. El flag más importante es <code>strict</code>, que activa todas las comprobaciones relevantes de una vez:</p>
+          <pre><code data-lang="ini">[mypy]
+python_version = 3.12
+strict = true
+ignore_missing_imports = true</code></pre>
+          <p><code>ignore_missing_imports = true</code> silencia los errores de librerías de terceros que no tienen stubs de tipos. Para añadir stubs manualmente busca el paquete <code>types-&lt;nombre&gt;</code> en PyPI (por ejemplo, <code>types-requests</code> para <code>requests</code>).</p>
+          <p>En GitHub Actions, mypy se añade como paso antes del paso de tests para fallar rápido:</p>
+          <pre><code>- name: Verificar tipos
+  run: mypy src/ --config-file mypy.ini
+
+- name: Ejecutar tests
+  run: pytest</code></pre>
+          <p><strong>Errores comunes y cómo resolverlos:</strong></p>
+          <pre><code data-lang="python">def procesar(valor: str | None) -&gt; str:
+    return valor.upper()
+    # Error: Item "None" of "str | None" has no attribute "upper"
+
+def procesar(valor: str | None) -&gt; str:
+    if valor is None:
+        return ""
+    return valor.upper()   # OK: narrowing</code></pre>
+          <pre><code data-lang="python">elementos: list[int] = []
+elementos.append("texto")
+# Error: Argument 1 to "append" of "list" has incompatible type "str"; expected "int"</code></pre>
+          <p>Cuando mypy produce un falso positivo que no tiene solución limpia, usa <code># type: ignore[&lt;código&gt;]</code> en la línea concreta, nunca en el fichero completo. El código entre corchetes es el identificador del error (mypy lo muestra con <code>--show-error-codes</code>):</p>
+          <pre><code data-lang="python">resultado = libreria_sin_tipos.operacion()  # type: ignore[no-untyped-call]</code></pre>
+
+          <h2 id="resumen">Resumen</h2>
+          <ul class="keypoints">
+            <li>Las anotaciones de tipo son solo hints: Python las ignora en runtime, pero mypy las verifica en tiempo de análisis y detecta errores antes de que lleguen a producción.</li>
+            <li><code>str | None</code> (Python 3.10+) equivale a <code>Optional[str]</code>; mypy obliga a comprobar el <code>None</code> antes de usar el valor, eliminando una clase entera de NullPointerException.</li>
+            <li><code>Literal["norte", "sur"]</code> restringe un parámetro a valores conocidos y permite a mypy detectar valores inválidos en tiempo de análisis, no en runtime.</li>
+            <li><code>Protocol</code> permite tipado estructural (duck typing tipado): cualquier clase que implemente los métodos con la firma correcta satisface el contrato, sin necesidad de herencia explícita.</li>
+            <li><code>strict = true</code> en <code>mypy.ini</code> activa todas las comprobaciones relevantes de una vez; es el nivel de partida recomendado para proyectos nuevos.</li>
+            <li><code># type: ignore[código]</code> existe para silenciar falsos positivos puntuales; debe ser excepcional, específico al código de error e ir acompañado de un comentario que justifique por qué.</li>
+          </ul>
+        </article>
+      </div>
+    </main>
+
+    <footer class="footer"><div class="container footer__inner"><span><strong>MentorAI</strong> · Formación técnica iterada con IA</span><span>© <span data-year>2026</span></span></div></footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

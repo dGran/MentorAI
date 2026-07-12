@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem("academia-theme");
+        var d = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", t || (d ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SQLAlchemy 2 async con PostgreSQL — MentorAI</title>
+    <meta name="description" content="Engine async, session factory, modelos declarativos, queries con select(), relaciones, migraciones con Alembic y patrón repository con SQLAlchemy 2 y PostgreSQL." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+  </head>
+  <body>
+    <div class="reading-progress" id="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <a href="../offline.html" class="nav__link offline-nav-link">Sin conexión</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+          <button class="nav__burger icon-btn" aria-label="Menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <div class="nav-drawer-backdrop"></div>
+    <div class="nav-drawer"><div class="nav-drawer__head"><span class="nav-drawer__title">MentorAI</span><div class="nav-drawer__head-actions"><button class="nav-drawer__close icon-btn" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div><div class="nav-drawer__links"><a href="../index.html" class="nav-drawer__link">Inicio</a><a href="../rutas.html" class="nav-drawer__link">Rutas</a><a href="../cursos.html" class="nav-drawer__link">Cursos</a><a href="../articulos.html" class="nav-drawer__link">Artículos</a><a href="../offline.html" class="nav-drawer__link">Sin conexión</a></div><div class="nav-drawer__footer"><span class="nav-drawer__theme">Tema</span><button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div>
+
+    <main>
+      <section class="tutorial-hero container">
+        <div class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <a href="../curso.html?slug=python">Python desde cero</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>SQLAlchemy async</span>
+        </div>
+        <h1 class="tutorial-hero__title">SQLAlchemy 2 async con PostgreSQL</h1>
+        <p class="tutorial-hero__lead">SQLAlchemy 2 integra soporte async nativo. Aprenderás a configurar el engine y la session factory, definir modelos declarativos con la API moderna de <code>Mapped</code>, construir queries composicionales con <code>select()</code>, manejar relaciones sin romper el event loop, y gestionar el esquema con Alembic.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>16 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Intermedio</span>
+          <span>Python</span>
+        </div>
+        <div class="tutorial-actions">
+          <button class="tutorial-action" id="btn-listen" aria-label="Escuchar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Escuchar</button>
+          <button class="tutorial-action tutorial-action--done" id="btn-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar como completado</button>
+          <button class="tutorial-action tutorial-action--reset" id="btn-reset" title="Reiniciar progreso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg><span>Reiniciar</span></button>
+        </div>
+        <div class="tutorial-progress"><div class="tutorial-progress__bar"><span></span></div><div class="tutorial-progress__label"></div></div>
+      </section>
+
+      <div class="container tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En este tutorial</p>
+          <ol class="toc__list">
+            <li><a href="#engine-async">Engine async y session factory</a></li>
+            <li><a href="#modelos">Modelos declarativos con DeclarativeBase</a></li>
+            <li><a href="#queries">Queries con select(), filtros y joins</a></li>
+            <li><a href="#relaciones">Relaciones y lazy loading en async</a></li>
+            <li><a href="#alembic">Migraciones con Alembic</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ol>
+          <button class="toc__toggle" aria-label="Índice"><span>En este tutorial</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </aside>
+
+        <article class="prose">
+          <h2 id="engine-async">Engine async y session factory</h2>
+          <p>El engine es el punto de entrada a la base de datos. La variante async usa <code>asyncpg</code> como driver de PostgreSQL, que implementa el protocolo de BD sin bloquear el event loop. Primero instalamos las dependencias:</p>
+          <pre><code data-lang="bash">pip install sqlalchemy asyncpg alembic</code></pre>
+          <p>A continuación se configura el engine y la fábrica de sesiones. <code>expire_on_commit=False</code> evita que SQLAlchemy invalide los atributos de los objetos al hacer commit, lo que en async causaría accesos adicionales a BD desde fuera de la sesión:</p>
+          <pre><code data-lang="python">from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+
+DATABASE_URL = "postgresql+asyncpg://usuario:password@localhost:5432/mi_base"
+
+engine = create_async_engine(DATABASE_URL, echo=True, pool_size=10, max_overflow=20)
+
+SessionFactory = async_sessionmaker(
+    engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+)</code></pre>
+          <p>En un proyecto FastAPI, la sesión se inyecta por petición mediante un generador async. Cada petición obtiene su propia sesión y la cierra al terminar, ya sea con éxito o con error:</p>
+          <pre><code data-lang="python">from collections.abc import AsyncGenerator
+from fastapi import Depends
+
+
+async def obtener_sesion() -&gt; AsyncGenerator[AsyncSession, None]:
+    async with SessionFactory() as session:
+        yield session
+
+
+async def crear_usuario(
+    session: AsyncSession = Depends(obtener_sesion),
+) -&gt; dict:
+    ...</code></pre>
+          <p><code>async with SessionFactory() as session</code> abre la sesión y la cierra automáticamente al salir del bloque, con o sin excepción. No hace falta llamar a <code>session.close()</code> manualmente.</p>
+
+          <h2 id="modelos">Modelos declarativos con DeclarativeBase</h2>
+          <p>SQLAlchemy 2 introduce <code>DeclarativeBase</code> y la API <code>Mapped[T]</code> para declarar columnas con anotaciones de tipo estándar. Esto permite que los type checkers comprendan el esquema sin plugins adicionales:</p>
+          <pre><code data-lang="python">from datetime import datetime
+from sqlalchemy import String, DateTime, func
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class Usuario(Base):
+    __tablename__ = "usuarios"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    nombre: Mapped[str] = mapped_column(String(100))
+    activo: Mapped[bool] = mapped_column(default=True)
+    creado_en: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )</code></pre>
+          <p><code>Mapped[int]</code> es equivalente a decir "esta columna es de tipo entero y no es nullable". Para columnas opcionales, usa <code>Mapped[str | None]</code>. El argumento de <code>mapped_column()</code> añade metadatos de la columna (longitud, unicidad, restricciones) que no se pueden expresar solo con el tipo.</p>
+          <p>La clase <code>Base</code> centraliza el metadata del esquema. Se usa para crear y eliminar tablas en tests, y como fuente de verdad para Alembic. Todos los modelos deben heredar de ella.</p>
+
+          <h2 id="queries">Queries con select(), filtros y joins</h2>
+          <p><code>select()</code> construye la query de forma composicional. Cada método (<code>.where()</code>, <code>.order_by()</code>, <code>.limit()</code>) devuelve un nuevo objeto query sin modificar el original, igual que un query builder funcional:</p>
+          <pre><code data-lang="python">from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+
+async def buscar_por_email(session: AsyncSession, email: str) -&gt; Usuario | None:
+    resultado = await session.execute(
+        select(Usuario).where(Usuario.email == email)
+    )
+    return resultado.scalar_one_or_none()
+
+
+async def listar_activos(session: AsyncSession, limite: int = 100) -&gt; list[Usuario]:
+    resultado = await session.execute(
+        select(Usuario)
+        .where(Usuario.activo.is_(True))
+        .order_by(Usuario.nombre)
+        .limit(limite)
+    )
+    return list(resultado.scalars().all())</code></pre>
+          <p>Para joins, <code>select()</code> acepta múltiples entidades o usa <code>.join()</code> explícito:</p>
+          <pre><code data-lang="python">from sqlalchemy import select, and_
+
+
+async def buscar_pedidos_de_usuario(
+    session: AsyncSession,
+    usuario_id: int,
+    solo_pagados: bool = False,
+) -&gt; list[Pedido]:
+    query = (
+        select(Pedido)
+        .join(Usuario, Pedido.usuario_id == Usuario.id)
+        .where(Pedido.usuario_id == usuario_id)
+    )
+
+    if solo_pagados:
+        query = query.where(Pedido.pagado.is_(True))
+
+    resultado = await session.execute(query)
+    return list(resultado.scalars().all())</code></pre>
+          <p>El patrón repository encapsula las queries en una clase cuya única dependencia es la sesión. Esto hace que el acceso a datos sea testeable inyectando una sesión de test sin tocar los servicios:</p>
+          <pre><code data-lang="python">class UsuarioRepository:
+    def __init__(self, session: AsyncSession) -&gt; None:
+        self._session = session
+
+    async def buscar_por_id(self, usuario_id: int) -&gt; Usuario | None:
+        return await self._session.get(Usuario, usuario_id)
+
+    async def buscar_por_email(self, email: str) -&gt; Usuario | None:
+        resultado = await self._session.execute(
+            select(Usuario).where(Usuario.email == email)
+        )
+        return resultado.scalar_one_or_none()
+
+    async def guardar(self, usuario: Usuario) -&gt; Usuario:
+        self._session.add(usuario)
+        await self._session.flush()
+        return usuario
+
+    async def eliminar(self, usuario: Usuario) -&gt; None:
+        await self._session.delete(usuario)
+        await self._session.flush()</code></pre>
+          <p><code>session.flush()</code> envía los cambios pendientes a la BD dentro de la transacción actual sin hacer commit. Usar flush después de <code>add()</code> permite que SQLAlchemy rellene el campo <code>id</code> autogenerado antes de que la sesión cierre.</p>
+
+          <h2 id="relaciones">Relaciones y lazy loading en async</h2>
+          <p>Las relaciones entre modelos se declaran con <code>relationship()</code> junto a la clave foránea. En la API moderna, el tipo de la relación también usa <code>Mapped[]</code>:</p>
+          <pre><code data-lang="python">from sqlalchemy import ForeignKey, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+
+class Pedido(Base):
+    __tablename__ = "pedidos"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"))
+    total: Mapped[float]
+    pagado: Mapped[bool] = mapped_column(default=False)
+
+    usuario: Mapped["Usuario"] = relationship(
+        back_populates="pedidos",
+        lazy="selectin",
+    )
+
+
+class Usuario(Base):
+    __tablename__ = "usuarios"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String(255))
+    nombre: Mapped[str] = mapped_column(String(100))
+    activo: Mapped[bool] = mapped_column(default=True)
+
+    pedidos: Mapped[list["Pedido"]] = relationship(
+        back_populates="usuario",
+        lazy="selectin",
+    )</code></pre>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lazy loading y async no se mezclan</p>
+              <p>En SQLAlchemy con async, el lazy loading por defecto (<code>lazy="select"</code>) lanza <code>MissingGreenlet: greenlet_spawn has not been called</code> en cuanto intentas acceder a una relación fuera del contexto de ejecución sync. La solución es siempre declarar las relaciones con <code>lazy="selectin"</code> o cargarlas explícitamente en la query con <code>selectinload()</code>. El modo <code>selectin</code> emite una segunda query <code>IN</code> para cargar los objetos relacionados de forma async antes de que los necesites.</p>
+            </div>
+          </div>
+          <p>Si prefieres no poner <code>lazy="selectin"</code> en el modelo (para no cargar siempre la relación), puedes optar por la carga explícita en la query con <code>selectinload()</code> o <code>joinedload()</code>:</p>
+          <pre><code data-lang="python">from sqlalchemy.orm import selectinload
+
+
+async def listar_usuarios_con_pedidos(session: AsyncSession) -&gt; list[Usuario]:
+    resultado = await session.execute(
+        select(Usuario)
+        .where(Usuario.activo.is_(True))
+        .options(selectinload(Usuario.pedidos))
+        .order_by(Usuario.nombre)
+    )
+    return list(resultado.scalars().all())</code></pre>
+          <p><code>selectinload()</code> emite una segunda query <code>SELECT ... WHERE id IN (...)</code> para los usuarios encontrados. <code>joinedload()</code> usa un JOIN y es más eficiente cuando esperas pocos resultados, pero puede inflar el resultado si la relación tiene muchos elementos.</p>
+
+          <h2 id="alembic">Migraciones con Alembic</h2>
+          <p>Alembic gestiona el historial de cambios del esquema de la base de datos. Cada migración es un script Python versionado que describe cómo avanzar (<code>upgrade</code>) y revertir (<code>downgrade</code>) el esquema:</p>
+          <pre><code data-lang="bash">pip install alembic
+alembic init alembic</code></pre>
+          <p>El fichero <code>alembic.ini</code> generado configura la URL de conexión y la ubicación del directorio de migraciones:</p>
+          <pre><code data-lang="ini">[alembic]
+script_location = alembic
+sqlalchemy.url = postgresql+asyncpg://usuario:password@localhost/mi_base</code></pre>
+          <p>En <code>alembic/env.py</code>, apuntas el metadata de tus modelos para que Alembic pueda comparar el esquema actual con lo que hay en la BD:</p>
+          <pre><code data-lang="python">from app.models import Base
+
+target_metadata = Base.metadata</code></pre>
+          <p>Para usar async en las migraciones, <code>env.py</code> debe ejecutar las migraciones dentro de un contexto async. El comando <code>--autogenerate</code> detecta las diferencias entre los modelos y la BD y genera el script automáticamente:</p>
+          <pre><code data-lang="bash">alembic revision --autogenerate -m "crear tabla usuarios"
+alembic upgrade head
+alembic downgrade -1
+alembic history --verbose</code></pre>
+          <p>Cada revisión tiene un identificador único. <code>upgrade head</code> aplica todas las migraciones pendientes en orden. <code>downgrade -1</code> revierte la última. El historial completo se guarda en la tabla <code>alembic_version</code> de la BD.</p>
+          <div class="callout callout--info">
+            <strong>No confíes ciegamente en autogenerate</strong>: Alembic no detecta todos los cambios automáticamente. Los índices parciales, las restricciones personalizadas y algunas columnas computadas pueden requerir que escribas la migración a mano. Revisa siempre el script generado antes de aplicarlo en producción.
+          </div>
+
+          <h2 id="resumen">Resumen</h2>
+          <ul class="keypoints">
+            <li><code>create_async_engine</code> con el driver <code>asyncpg</code> y <code>async_sessionmaker</code> configuran el pool de conexiones async; <code>expire_on_commit=False</code> evita recargas inesperadas después del commit.</li>
+            <li><code>DeclarativeBase</code> + <code>Mapped[T]</code> + <code>mapped_column()</code> es la API declarativa moderna de SQLAlchemy 2: los tipos son comprensibles por los type checkers sin plugins.</li>
+            <li>Las queries se construyen con <code>select()</code> composicional y se ejecutan con <code>await session.execute()</code>; <code>.scalars().all()</code> extrae los objetos mapeados del resultado.</li>
+            <li>El lazy loading síncrono lanza <code>MissingGreenlet</code> en async: siempre usa <code>lazy="selectin"</code> en el modelo o <code>selectinload()</code> explícito en la query.</li>
+            <li>El patrón repository encapsula las queries en una clase con la sesión como única dependencia, haciendo el acceso a datos testeable de forma aislada.</li>
+            <li>Alembic gestiona el historial de migraciones con <code>--autogenerate</code>; revisa siempre el script antes de aplicarlo porque no detecta todos los cambios.</li>
+          </ul>
+        </article>
+      </div>
+    </main>
+
+    <footer class="footer"><div class="container footer__inner"><span><strong>MentorAI</strong> · Formación técnica iterada con IA</span><span>© <span data-year>2026</span></span></div></footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

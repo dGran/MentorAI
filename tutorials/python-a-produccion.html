@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem("academia-theme");
+        var d = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", t || (d ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Python a producción — MentorAI</title>
+    <meta name="description" content="Uvicorn y Gunicorn workers, logging estructurado con structlog, healthcheck endpoint, métricas con prometheus-client y Dockerfile production-ready." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+  </head>
+  <body>
+    <div class="reading-progress" id="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <a href="../offline.html" class="nav__link offline-nav-link">Sin conexión</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+          <button class="nav__burger icon-btn" aria-label="Menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <div class="nav-drawer-backdrop"></div>
+    <div class="nav-drawer"><div class="nav-drawer__head"><span class="nav-drawer__title">MentorAI</span><div class="nav-drawer__head-actions"><button class="nav-drawer__close icon-btn" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div><div class="nav-drawer__links"><a href="../index.html" class="nav-drawer__link">Inicio</a><a href="../rutas.html" class="nav-drawer__link">Rutas</a><a href="../cursos.html" class="nav-drawer__link">Cursos</a><a href="../articulos.html" class="nav-drawer__link">Artículos</a><a href="../offline.html" class="nav-drawer__link">Sin conexión</a></div><div class="nav-drawer__footer"><span class="nav-drawer__theme">Tema</span><button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div>
+
+    <main>
+      <section class="tutorial-hero container">
+        <div class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <a href="../curso.html?slug=python">Python desde cero</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>A producción</span>
+        </div>
+        <h1 class="tutorial-hero__title">Python a producción</h1>
+        <p class="tutorial-hero__lead">Uvicorn y Gunicorn con workers, logging estructurado con structlog, healthcheck endpoint, métricas con prometheus-client y Dockerfile production-ready.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>15 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Intermedio</span>
+          <span>Python</span>
+        </div>
+        <div class="tutorial-actions">
+          <button class="tutorial-action" id="btn-listen" aria-label="Escuchar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Escuchar</button>
+          <button class="tutorial-action tutorial-action--done" id="btn-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar como completado</button>
+          <button class="tutorial-action tutorial-action--reset" id="btn-reset" title="Reiniciar progreso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg><span>Reiniciar</span></button>
+        </div>
+        <div class="tutorial-progress"><div class="tutorial-progress__bar"><span></span></div><div class="tutorial-progress__label"></div></div>
+      </section>
+
+      <div class="container tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En este tutorial</p>
+          <ol class="toc__list">
+            <li><a href="#uvicorn-gunicorn">Uvicorn y Gunicorn: cuándo usar cada uno</a></li>
+            <li><a href="#logging-estructurado">Logging estructurado con structlog</a></li>
+            <li><a href="#healthcheck">Healthcheck endpoint</a></li>
+            <li><a href="#metricas">Métricas con prometheus-client</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ol>
+          <button class="toc__toggle" aria-label="Índice"><span>En este tutorial</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </aside>
+
+        <article class="prose">
+          <h2 id="uvicorn-gunicorn">Uvicorn y Gunicorn: cuándo usar cada uno</h2>
+          <p><strong>Uvicorn</strong> es un servidor ASGI de alto rendimiento: implementa el protocolo ASGI y gestiona el event loop de asyncio. Es lo que ejecuta tu aplicación FastAPI. Solo tiene un proceso, lo que limita el uso de CPU en máquinas con varios núcleos.</p>
+          <p><strong>Gunicorn</strong> es un gestor de procesos: no sabe de ASGI ni de async, pero sabe arrancar, monitorizar y reiniciar procesos hijo. La combinación Gunicorn + UvicornWorker aprovecha ambas fortalezas: Gunicorn gestiona N procesos, cada uno de los cuales es un Uvicorn con su propio event loop.</p>
+          <div class="callout callout--info">
+            <strong>Por qué la combinación funciona:</strong> Gunicorn actúa como process manager (arranca N workers, los reinicia si mueren, gestiona señales del SO para graceful shutdown). Uvicorn actúa como servidor ASGI dentro de cada worker (maneja async, HTTP/1.1 y WebSockets). Separar las dos responsabilidades hace cada pieza más simple y reemplazable: si mañana aparece un servidor ASGI mejor que Uvicorn, cambias el worker sin tocar el proceso manager.
+          </div>
+          <p>Instalar las dos piezas:</p>
+          <pre><code data-lang="bash">pip install uvicorn[standard] gunicorn</code></pre>
+          <p>Uvicorn solo (desarrollo o un único proceso):</p>
+          <pre><code data-lang="bash">uvicorn main:app --host 0.0.0.0 --port 8000 --reload</code></pre>
+          <p>Gunicorn con UvicornWorker (producción):</p>
+          <pre><code data-lang="bash">gunicorn main:app \
+  --worker-class uvicorn.workers.UvicornWorker \
+  --workers 4 \
+  --bind 0.0.0.0:8000 \
+  --timeout 30 \
+  --keepalive 2 \
+  --access-logfile -</code></pre>
+          <p>El número de workers suele seguir la fórmula <code>2 * núcleos_cpu + 1</code>. Con 2 núcleos, 5 workers. Con 4 núcleos, 9 workers. El margen extra sobre el número de núcleos compensa los momentos en que un worker está esperando I/O y otro puede usar el procesador.</p>
+          <p>Para el graceful shutdown, FastAPI usa el patrón <code>lifespan</code>: código que se ejecuta al arrancar y al parar la aplicación. Gunicorn envía <code>SIGTERM</code>, FastAPI termina las peticiones en curso y luego ejecuta el bloque de shutdown:</p>
+          <pre><code data-lang="python">from contextlib import asynccontextmanager
+from fastapi import FastAPI
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await database.connect()
+    await cache.initialize()
+    yield
+    await database.disconnect()
+    await cache.close()
+
+
+app = FastAPI(lifespan=lifespan)</code></pre>
+
+          <h2 id="logging-estructurado">Logging estructurado con structlog</h2>
+          <p>El logging tradicional de Python escribe líneas de texto libre. En producción, esas líneas las procesa un sistema de agregación (Loki, Elasticsearch, CloudWatch) que necesita extraer campos con regex frágiles. El logging estructurado escribe directamente JSON: cada campo es una clave, no texto embebido en un mensaje.</p>
+          <pre><code data-lang="bash">pip install structlog</code></pre>
+          <pre><code data-lang="python">import logging
+import structlog
+
+
+def configure_logging(is_development: bool) -&gt; None:
+    shared_processors = [
+        structlog.contextvars.merge_contextvars,
+        structlog.processors.add_log_level,
+        structlog.processors.TimeStamper(fmt="iso"),
+    ]
+
+    if is_development:
+        processors = shared_processors + [
+            structlog.dev.ConsoleRenderer(),
+        ]
+    else:
+        processors = shared_processors + [
+            structlog.processors.dict_tracebacks,
+            structlog.processors.JSONRenderer(),
+        ]
+
+    structlog.configure(
+        processors=processors,
+        wrapper_class=structlog.make_filtering_bound_logger(logging.INFO),
+        context_class=dict,
+        logger_factory=structlog.PrintLoggerFactory(),
+    )</code></pre>
+          <p>El uso en el código es el mismo independientemente de si el output es texto o JSON:</p>
+          <pre><code data-lang="python">import structlog
+
+logger = structlog.get_logger()
+
+
+async def procesar_pedido(pedido_id: int, usuario_id: int) -&gt; dict:
+    structlog.contextvars.bind_contextvars(
+        pedido_id=pedido_id,
+        usuario_id=usuario_id,
+    )
+
+    logger.info("pedido.procesando")
+
+    try:
+        resultado = await calcular_total(pedido_id)
+        logger.info("pedido.completado", total=resultado["total"])
+        return resultado
+    except ValueError as error:
+        logger.warning("pedido.datos_invalidos", error=str(error))
+        raise
+    except Exception as error:
+        logger.exception("pedido.error_inesperado", error=str(error))
+        raise</code></pre>
+          <p><code>bind_contextvars</code> añade campos al contexto del hilo o corrutina actual, de modo que todos los logs emitidos durante el procesamiento de esa petición incluyan automáticamente <code>pedido_id</code> y <code>usuario_id</code> sin tener que pasarlos manualmente.</p>
+          <p>Para que el contexto de cada petición HTTP se limpie entre peticiones, añade un middleware que llame a <code>clear_contextvars()</code> al inicio y vincule datos de la petición (request_id, ruta):</p>
+          <pre><code data-lang="python">import uuid
+import structlog
+from fastapi import FastAPI, Request
+
+app = FastAPI()
+
+
+@app.middleware("http")
+async def logging_middleware(request: Request, call_next):
+    structlog.contextvars.clear_contextvars()
+    structlog.contextvars.bind_contextvars(
+        request_id=str(uuid.uuid4()),
+        method=request.method,
+        path=request.url.path,
+    )
+    response = await call_next(request)
+    structlog.contextvars.bind_contextvars(status_code=response.status_code)
+    return response</code></pre>
+
+          <h2 id="healthcheck">Healthcheck endpoint</h2>
+          <p>Un healthcheck le dice al orquestador (Docker, Kubernetes) si el proceso está vivo y si está listo para recibir tráfico. Son dos preguntas distintas con respuestas distintas:</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Endpoint</th>
+                <th>Pregunta</th>
+                <th>Falla cuando</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>/health</code> (liveness)</td>
+                <td>¿Está el proceso vivo?</td>
+                <td>El proceso está bloqueado o en un estado irrecuperable</td>
+              </tr>
+              <tr>
+                <td><code>/ready</code> (readiness)</td>
+                <td>¿Puede recibir peticiones?</td>
+                <td>La BD no está disponible, el calentamiento no ha terminado</td>
+              </tr>
+            </tbody>
+          </table>
+          <pre><code data-lang="python">from fastapi import FastAPI, HTTPException
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends
+
+app = FastAPI()
+
+
+@app.get("/health")
+async def health() -&gt; dict:
+    return {"status": "ok"}
+
+
+@app.get("/ready")
+async def ready(session: AsyncSession = Depends(get_session)) -&gt; dict:
+    try:
+        await session.execute(text("SELECT 1"))
+    except Exception as error:
+        raise HTTPException(status_code=503, detail=f"Base de datos no disponible: {error}")
+
+    return {"status": "ready", "database": "ok"}</code></pre>
+          <p><code>/health</code> es intencionalmente trivial: si el proceso puede responder, está vivo. <code>/ready</code> verifica dependencias externas. Kubernetes usa liveness para reiniciar pods bloqueados y readiness para desviar el tráfico mientras el pod está arrancando o sus dependencias no están disponibles.</p>
+          <p>El HEALTHCHECK en el Dockerfile permite que Docker también monitorice el contenedor:</p>
+          <pre><code>HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"</code></pre>
+
+          <h2 id="metricas">Métricas con prometheus-client</h2>
+          <p>Prometheus es el estándar de facto para métricas en servicios backend. El cliente Python expone las métricas en el formato de texto que Prometheus entiende. Con un middleware en FastAPI, instrumentas automáticamente todas las rutas:</p>
+          <pre><code data-lang="bash">pip install prometheus-client</code></pre>
+          <pre><code data-lang="python">import time
+from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+from fastapi import FastAPI, Request, Response
+
+app = FastAPI()
+
+PETICIONES_TOTAL = Counter(
+    "http_requests_total",
+    "Total de peticiones HTTP recibidas",
+    ["method", "path", "status_code"],
+)
+
+DURACION_PETICION = Histogram(
+    "http_request_duration_seconds",
+    "Duración de peticiones HTTP en segundos",
+    ["method", "path"],
+    buckets=[0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0],
+)
+
+
+@app.middleware("http")
+async def metricas_middleware(request: Request, call_next):
+    inicio = time.perf_counter()
+    respuesta = await call_next(request)
+    duracion = time.perf_counter() - inicio
+
+    PETICIONES_TOTAL.labels(
+        method=request.method,
+        path=request.url.path,
+        status_code=respuesta.status_code,
+    ).inc()
+
+    DURACION_PETICION.labels(
+        method=request.method,
+        path=request.url.path,
+    ).observe(duracion)
+
+    return respuesta
+
+
+@app.get("/metrics")
+async def metricas() -&gt; Response:
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)</code></pre>
+          <p>Prometheus scrapeará <code>/metrics</code> periódicamente (normalmente cada 15 o 30 segundos). Con esos datos puedes construir alertas y dashboards en Grafana: latencia de percentil 99, tasa de errores por ruta, throughput total.</p>
+          <p>Para métricas de negocio (pedidos procesados, pagos completados, usuarios registrados), declara contadores adicionales y los incrementas en los puntos relevantes del dominio:</p>
+          <pre><code data-lang="python">from prometheus_client import Counter
+
+PEDIDOS_COMPLETADOS = Counter(
+    "pedidos_completados_total",
+    "Total de pedidos completados",
+    ["metodo_pago"],
+)
+
+PEDIDOS_FALLIDOS = Counter(
+    "pedidos_fallidos_total",
+    "Total de pedidos que fallaron",
+    ["motivo"],
+)
+
+
+async def completar_pedido(pedido_id: int, metodo_pago: str) -&gt; dict:
+    try:
+        resultado = await procesar_pago(pedido_id, metodo_pago)
+        PEDIDOS_COMPLETADOS.labels(metodo_pago=metodo_pago).inc()
+        return resultado
+    except PagoRechazadoError as error:
+        PEDIDOS_FALLIDOS.labels(motivo="pago_rechazado").inc()
+        raise</code></pre>
+
+          <h2 id="resumen">Resumen</h2>
+          <ul class="keypoints">
+            <li>Gunicorn gestiona procesos; Uvicorn ejecuta el event loop ASGI dentro de cada proceso. La combinación aprovecha múltiples núcleos de CPU con la misma aplicación async, sin código adicional.</li>
+            <li>El número de workers recomendado es <code>2 * núcleos + 1</code>; el margen sobre los núcleos físicos compensa los workers esperando I/O.</li>
+            <li>structlog escribe JSON en producción y texto coloreado en desarrollo con la misma API de logging; <code>bind_contextvars</code> propaga automáticamente el contexto de la petición a todos los logs del request.</li>
+            <li><code>/health</code> verifica que el proceso responde (liveness); <code>/ready</code> verifica que las dependencias están disponibles (readiness). Son conceptos distintos con consecuencias distintas en el orquestador.</li>
+            <li>prometheus-client con un middleware en FastAPI instrumenta todas las rutas automáticamente; las métricas de negocio se añaden con contadores adicionales en los puntos del dominio donde ocurren los eventos relevantes.</li>
+            <li>El HEALTHCHECK en el Dockerfile integra la monitorización de salud en el ciclo de vida del contenedor, independientemente de si hay un orquestador externo.</li>
+          </ul>
+        </article>
+      </div>
+    </main>
+
+    <footer class="footer"><div class="container footer__inner"><span><strong>MentorAI</strong> · Formación técnica iterada con IA</span><span>© <span data-year>2026</span></span></div></footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

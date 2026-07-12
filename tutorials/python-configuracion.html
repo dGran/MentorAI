@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem("academia-theme");
+        var d = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", t || (d ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Configuración y entornos en Python — MentorAI</title>
+    <meta name="description" content="pydantic-settings, ficheros .env por entorno, settings singleton con lru_cache, secretos y validación al arranque." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+  </head>
+  <body>
+    <div class="reading-progress" id="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <a href="../offline.html" class="nav__link offline-nav-link">Sin conexión</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+          <button class="nav__burger icon-btn" aria-label="Menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <div class="nav-drawer-backdrop"></div>
+    <div class="nav-drawer"><div class="nav-drawer__head"><span class="nav-drawer__title">MentorAI</span><div class="nav-drawer__head-actions"><button class="nav-drawer__close icon-btn" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div><div class="nav-drawer__links"><a href="../index.html" class="nav-drawer__link">Inicio</a><a href="../rutas.html" class="nav-drawer__link">Rutas</a><a href="../cursos.html" class="nav-drawer__link">Cursos</a><a href="../articulos.html" class="nav-drawer__link">Artículos</a><a href="../offline.html" class="nav-drawer__link">Sin conexión</a></div><div class="nav-drawer__footer"><span class="nav-drawer__theme">Tema</span><button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div>
+
+    <main>
+      <section class="tutorial-hero container">
+        <div class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <a href="../curso.html?slug=python">Python desde cero</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Configuración</span>
+        </div>
+        <h1 class="tutorial-hero__title">Configuración y entornos en Python</h1>
+        <p class="tutorial-hero__lead"><code>pydantic-settings</code>, ficheros <code>.env</code> por entorno, settings como singleton, secretos y validación al arranque.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>11 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Intermedio</span>
+          <span>Python</span>
+        </div>
+        <div class="tutorial-actions">
+          <button class="tutorial-action" id="btn-listen" aria-label="Escuchar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Escuchar</button>
+          <button class="tutorial-action tutorial-action--done" id="btn-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar como completado</button>
+          <button class="tutorial-action tutorial-action--reset" id="btn-reset" title="Reiniciar progreso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg><span>Reiniciar</span></button>
+        </div>
+        <div class="tutorial-progress"><div class="tutorial-progress__bar"><span></span></div><div class="tutorial-progress__label"></div></div>
+      </section>
+
+      <div class="container tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En este tutorial</p>
+          <ol class="toc__list">
+            <li><a href="#pydantic-settings">pydantic-settings: el estándar moderno</a></li>
+            <li><a href="#dotenv">Ficheros .env por entorno</a></li>
+            <li><a href="#settings-singleton">Settings como singleton con lru_cache</a></li>
+            <li><a href="#secretos">Secretos: variables de entorno vs vault</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ol>
+          <button class="toc__toggle" aria-label="Índice"><span>En este tutorial</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </aside>
+
+        <article class="prose">
+          <h2 id="pydantic-settings">pydantic-settings: el estándar moderno</h2>
+          <p>La configuración de una aplicación tiene dos fuentes: el código (valores por defecto) y el entorno (lo que varía por despliegue). El patrón anterior era leer <code>os.environ</code> directamente, con el problema de que cualquier variable ausente lanzaba un error en tiempo de ejecución difícil de diagnosticar.</p>
+          <p><code>pydantic-settings</code> resuelve esto con una clase que declara la configuración completa con tipos, valores por defecto y validación. Si falta una variable requerida o tiene un tipo incorrecto, el proceso falla al arrancar con un error claro, no en mitad de una petición:</p>
+          <pre><code data-lang="bash">pip install pydantic-settings</code></pre>
+          <pre><code data-lang="python">from pydantic import PostgresDsn, RedisDsn, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+    )
+
+    database_url: PostgresDsn
+    redis_url: RedisDsn = "redis://localhost:6379/0"
+    secret_key: str
+    debug: bool = False
+    allowed_hosts: list[str] = ["localhost", "127.0.0.1"]
+    cors_origins: list[str] = []
+    max_connections: int = 10
+
+    @field_validator("secret_key")
+    @classmethod
+    def secret_key_must_be_long(cls, value: str) -&gt; str:
+        if len(value) &lt; 32:
+            raise ValueError("secret_key debe tener al menos 32 caracteres")
+        return value</code></pre>
+          <p><code>PostgresDsn</code> y <code>RedisDsn</code> son tipos de pydantic que validan el formato de la URL. <code>field_validator</code> permite añadir validación adicional: aquí, una clave secreta demasiado corta es un error de configuración que vale la pena detectar en el arranque.</p>
+          <p>pydantic-settings sigue esta jerarquía de prioridad para leer valores: variables de entorno del sistema &gt; fichero <code>.env</code> &gt; valores por defecto de la clase. Esto significa que en producción puedes sobreescribir cualquier valor del <code>.env</code> simplemente exportando la variable en el shell.</p>
+
+          <h2 id="dotenv">Ficheros .env por entorno</h2>
+          <p>La convención más extendida es tener un <code>.env</code> por entorno. El fichero que carga la aplicación depende de una variable de entorno que indica el entorno activo:</p>
+          <pre><code data-lang="python">import os
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def env_file_for_environment() -&gt; str:
+    environment = os.getenv("APP_ENV", "development")
+    return f".env.{environment}"
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=env_file_for_environment(),
+        env_file_encoding="utf-8",
+    )
+
+    database_url: str
+    redis_url: str = "redis://localhost:6379/0"
+    secret_key: str
+    debug: bool = False</code></pre>
+          <p>Estructura de ficheros en el repositorio:</p>
+          <pre><code>.env.example          ← commitear: muestra las variables necesarias sin valores reales
+.env.development      ← no commitear: valores locales de cada desarrollador
+.env.test             ← puede commitearse si los valores son seguros (BD de test local)
+.env.production       ← nunca commitear: gestionado por el sistema de despliegue</code></pre>
+          <div class="callout callout--danger">
+            <strong>Nunca commitees un <code>.env</code> con secretos reales.</strong> Añade siempre estos patrones a tu <code>.gitignore</code>:<br><br>
+            <code>.env</code><br>
+            <code>.env.*</code><br>
+            <code>!.env.example</code><br><br>
+            La excepción explícita <code>!.env.example</code> permite commitear el fichero de ejemplo. Si un secreto llega a un commit, no basta con eliminarlo: queda en el historial de git y hay que rotarlo.
+          </div>
+          <p>El fichero <code>.env.example</code> documenta qué variables necesita la aplicación y con qué formato, sin exponer valores reales:</p>
+          <pre><code data-lang="ini">DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/myapp
+REDIS_URL=redis://localhost:6379/0
+SECRET_KEY=cambia-esto-por-una-clave-de-al-menos-32-caracteres
+DEBUG=false
+ALLOWED_HOSTS=["localhost","127.0.0.1"]</code></pre>
+
+          <h2 id="settings-singleton">Settings como singleton con lru_cache</h2>
+          <p>Instanciar <code>Settings()</code> en cada punto donde se necesita la configuración es ineficiente y dificulta los tests: cada instancia lee el fichero <code>.env</code> de nuevo. El patrón correcto es una función con <code>@lru_cache</code> que garantiza que solo se crea una instancia por proceso:</p>
+          <pre><code data-lang="python">from functools import lru_cache
+from app.config import Settings
+
+
+@lru_cache
+def get_settings() -&gt; Settings:
+    return Settings()</code></pre>
+          <p><code>@lru_cache</code> sin argumentos memoiza el resultado para cada combinación de argumentos. Como <code>get_settings()</code> no tiene argumentos, siempre devuelve la misma instancia. La primera llamada construye y valida el objeto; todas las siguientes devuelven el mismo objeto cacheado.</p>
+          <p>En FastAPI, <code>get_settings</code> funciona directamente como dependencia con <code>Depends</code>:</p>
+          <pre><code data-lang="python">from fastapi import Depends, FastAPI
+from app.config import Settings
+from app.dependencies import get_settings
+
+app = FastAPI()
+
+
+@app.get("/info")
+async def info(settings: Settings = Depends(get_settings)) -&gt; dict:
+    return {
+        "debug": settings.debug,
+        "allowed_hosts": settings.allowed_hosts,
+    }</code></pre>
+          <p>Para tests, sobreescribir la dependencia es limpio y no requiere variables de entorno reales:</p>
+          <pre><code data-lang="python">from app.config import Settings
+from app.dependencies import get_settings
+from app.main import app
+
+
+def override_settings() -&gt; Settings:
+    return Settings(
+        database_url="postgresql+asyncpg://user:pass@localhost:5432/test",
+        redis_url="redis://localhost:6379/1",
+        secret_key="clave-de-test-que-tiene-32-caracteres-exactos",
+    )
+
+
+app.dependency_overrides[get_settings] = override_settings</code></pre>
+
+          <h2 id="secretos">Secretos: variables de entorno vs vault</h2>
+          <p>Las variables de entorno son el mínimo viable para gestionar secretos, y funcionan bien en la mayoría de proyectos. Sus limitaciones aparecen a escala: no tienen control de acceso granular, no tienen historial de rotaciones, y cualquier proceso del mismo entorno puede leerlas.</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Mecanismo</th>
+                <th>Ventajas</th>
+                <th>Limitaciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Variables de entorno</td>
+                <td>Simple, universal, soportado en cualquier plataforma</td>
+                <td>Sin auditoría, sin rotación automática, visibles a todo el proceso</td>
+              </tr>
+              <tr>
+                <td>Docker secrets</td>
+                <td>Montados como ficheros, no en el entorno del proceso</td>
+                <td>Solo disponibles en Docker Swarm (no en compose estándar)</td>
+              </tr>
+              <tr>
+                <td>HashiCorp Vault / AWS Secrets Manager</td>
+                <td>Rotación automática, auditoría, control de acceso por rol</td>
+                <td>Infraestructura adicional, complejidad operacional</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>Un patrón compatible con todas las opciones es leer secretos desde ficheros en el sistema de ficheros además de desde variables de entorno. En Kubernetes, los secretos se montan como ficheros; en local, usas el <code>.env</code>:</p>
+          <pre><code data-lang="python">import os
+from pathlib import Path
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def read_secret_file(path: str) -&gt; str | None:
+    secret_path = Path(path)
+
+    if not secret_path.exists():
+        return None
+
+    return secret_path.read_text().strip()
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env")
+
+    database_url: str
+    secret_key: str = ""
+
+    def model_post_init(self, context) -&gt; None:
+        if not self.secret_key:
+            from_file = read_secret_file("/run/secrets/secret_key")
+
+            if from_file:
+                object.__setattr__(self, "secret_key", from_file)
+
+        if not self.secret_key:
+            raise ValueError("secret_key no está configurada")</code></pre>
+
+          <h2 id="resumen">Resumen</h2>
+          <ul class="keypoints">
+            <li><code>pydantic-settings</code> valida la configuración al arrancar la aplicación: un campo requerido ausente o con tipo incorrecto falla en el inicio, no en mitad de una petición.</li>
+            <li>El orden de prioridad es variables del sistema &gt; fichero <code>.env</code> &gt; valores por defecto; en producción, las variables del sistema siempre ganan sin tocar el código.</li>
+            <li><code>@lru_cache</code> convierte <code>get_settings()</code> en un singleton por proceso: un único objeto <code>Settings</code> construido una vez y compartido por toda la aplicación.</li>
+            <li>Nunca commitear ficheros <code>.env</code> con secretos reales: si llegan al historial de git, hay que rotar los secretos. El fichero <code>.env.example</code> sí se commitea como documentación.</li>
+            <li>Las variables de entorno son suficientes para la mayoría de proyectos; un gestor de secretos (Vault, AWS Secrets Manager) aporta valor cuando necesitas auditoría, rotación automática o control de acceso por rol.</li>
+          </ul>
+        </article>
+      </div>
+    </main>
+
+    <footer class="footer"><div class="container footer__inner"><span><strong>MentorAI</strong> · Formación técnica iterada con IA</span><span>© <span data-year>2026</span></span></div></footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

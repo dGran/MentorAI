@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem("academia-theme");
+        var d = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", t || (d ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Python en Docker — MentorAI</title>
+    <meta name="description" content="Imagen base slim vs alpine, Dockerfile multistage para FastAPI, docker-compose con PostgreSQL y Redis, variables de entorno y healthchecks." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+  </head>
+  <body>
+    <div class="reading-progress" id="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <a href="../offline.html" class="nav__link offline-nav-link">Sin conexión</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+          <button class="nav__burger icon-btn" aria-label="Menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <div class="nav-drawer-backdrop"></div>
+    <div class="nav-drawer"><div class="nav-drawer__head"><span class="nav-drawer__title">MentorAI</span><div class="nav-drawer__head-actions"><button class="nav-drawer__close icon-btn" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div><div class="nav-drawer__links"><a href="../index.html" class="nav-drawer__link">Inicio</a><a href="../rutas.html" class="nav-drawer__link">Rutas</a><a href="../cursos.html" class="nav-drawer__link">Cursos</a><a href="../articulos.html" class="nav-drawer__link">Artículos</a><a href="../offline.html" class="nav-drawer__link">Sin conexión</a></div><div class="nav-drawer__footer"><span class="nav-drawer__theme">Tema</span><button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div>
+
+    <main>
+      <section class="tutorial-hero container">
+        <div class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <a href="../curso.html?slug=python">Python desde cero</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Python en Docker</span>
+        </div>
+        <h1 class="tutorial-hero__title">Python en Docker</h1>
+        <p class="tutorial-hero__lead">Imagen base slim vs alpine, Dockerfile multistage para FastAPI, docker-compose con PostgreSQL y Redis, variables de entorno y healthchecks.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>12 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Intermedio</span>
+          <span>Python</span>
+        </div>
+        <div class="tutorial-actions">
+          <button class="tutorial-action" id="btn-listen" aria-label="Escuchar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Escuchar</button>
+          <button class="tutorial-action tutorial-action--done" id="btn-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar como completado</button>
+          <button class="tutorial-action tutorial-action--reset" id="btn-reset" title="Reiniciar progreso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg><span>Reiniciar</span></button>
+        </div>
+        <div class="tutorial-progress"><div class="tutorial-progress__bar"><span></span></div><div class="tutorial-progress__label"></div></div>
+      </section>
+
+      <div class="container tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En este tutorial</p>
+          <ol class="toc__list">
+            <li><a href="#imagen-base">Elegir imagen base: slim, alpine y distroless</a></li>
+            <li><a href="#dockerfile-fastapi">Dockerfile multistage para FastAPI</a></li>
+            <li><a href="#compose">docker-compose con PostgreSQL y Redis</a></li>
+            <li><a href="#variables-entorno">Variables de entorno y secretos</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ol>
+          <button class="toc__toggle" aria-label="Índice"><span>En este tutorial</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </aside>
+
+        <article class="prose">
+          <h2 id="imagen-base">Elegir imagen base: slim, alpine y distroless</h2>
+          <p>Docker Hub ofrece varias variantes de la imagen oficial de Python. La elección afecta al tamaño final, a la velocidad de build y a la compatibilidad con librerías que tienen extensiones C.</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Imagen</th>
+                <th>Tamaño aprox.</th>
+                <th>Base</th>
+                <th>Shell</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>python:3.12</code></td>
+                <td>~1 GB</td>
+                <td>Debian (completo)</td>
+                <td>Sí</td>
+              </tr>
+              <tr>
+                <td><code>python:3.12-slim</code></td>
+                <td>~130 MB</td>
+                <td>Debian (mínimo)</td>
+                <td>Sí</td>
+              </tr>
+              <tr>
+                <td><code>python:3.12-alpine</code></td>
+                <td>~50 MB</td>
+                <td>musl libc</td>
+                <td>Sí (ash)</td>
+              </tr>
+              <tr>
+                <td><code>gcr.io/distroless/python3</code></td>
+                <td>~50 MB</td>
+                <td>Debian (sin shell)</td>
+                <td>No</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="callout callout--tip">
+            <strong>slim vs alpine para Python:</strong> alpine usa <code>musl libc</code> en lugar de <code>glibc</code>. Muchos paquetes Python con extensiones C (numpy, pandas, psycopg2, cryptography) distribuyen wheels precompilados para glibc. En alpine, pip los compila desde el código fuente dentro del contenedor, lo que alarga el build y puede fallar. <strong>slim es la elección más segura para la mayoría de proyectos Python</strong>; alpine solo merece la pena si controlas que todas tus dependencias tienen wheels para musl o son pure-Python.
+          </div>
+          <p>Distroless elimina el shell y las utilidades del sistema, reduciendo la superficie de ataque. Es la opción más segura para producción cuando no necesitas hacer debug interactivo en el contenedor.</p>
+
+          <h2 id="dockerfile-fastapi">Dockerfile multistage para FastAPI</h2>
+          <p>Un build multistage separa la instalación de dependencias (que necesita compiladores y herramientas de build) de la imagen final (que solo necesita los ficheros compilados). El resultado es una imagen de producción más pequeña y sin herramientas innecesarias.</p>
+          <pre><code>FROM python:3.12-slim AS builder
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+FROM python:3.12-slim
+RUN useradd -m -u 1000 appuser
+WORKDIR /app
+
+COPY --from=builder /root/.local /root/.local
+COPY . .
+
+RUN chown -R appuser:appuser /app
+USER appuser
+
+ENV PATH=/root/.local/bin:$PATH
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+EXPOSE 8000
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]</code></pre>
+          <p>El orden de las instrucciones <code>COPY</code> importa para la caché de capas. Copiar <code>requirements.txt</code> antes que el código fuente significa que la capa de instalación de dependencias solo se invalida cuando cambia <code>requirements.txt</code>, no en cada cambio de código.</p>
+          <p>El fichero <code>.dockerignore</code> evita copiar ficheros innecesarios al contexto de build:</p>
+          <pre><code>__pycache__
+*.pyc
+*.pyo
+.env
+.env.*
+.git
+.pytest_cache
+.mypy_cache
+.ruff_cache
+tests/
+*.md</code></pre>
+          <p>Para construir y ejecutar la imagen:</p>
+          <pre><code data-lang="bash">docker build -t mi-fastapi-app:latest .
+docker run -p 8000:8000 --env-file .env mi-fastapi-app:latest</code></pre>
+
+          <h2 id="compose">docker-compose con PostgreSQL y Redis</h2>
+          <p>Un entorno de desarrollo completo necesita la API, la base de datos y la caché. <code>depends_on</code> con <code>condition: service_healthy</code> garantiza que la API no arranca hasta que PostgreSQL esté lista para aceptar conexiones:</p>
+          <pre><code>services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - .:/app
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: myapp
+      POSTGRES_USER: myapp
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myapp"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+
+volumes:
+  db_data:
+  redis_data:</code></pre>
+          <p>El volumen montado en <code>api</code> (<code>.:/app</code>) es solo para desarrollo: refleja los cambios del código en tiempo real sin reconstruir la imagen. En producción, elimina ese volumen.</p>
+          <p>Comandos habituales del ciclo de desarrollo:</p>
+          <pre><code data-lang="bash">docker compose up -d
+docker compose logs -f api
+docker compose exec api python -m pytest
+docker compose down -v</code></pre>
+
+          <h2 id="variables-entorno">Variables de entorno y secretos</h2>
+          <p>Hay tres formas de pasar configuración a un contenedor, cada una con su caso de uso:</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Mecanismo</th>
+                <th>Cuándo usarlo</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>env_file: .env</code> en compose</td>
+                <td>Desarrollo local; nunca commitear el fichero</td>
+              </tr>
+              <tr>
+                <td>Variables de entorno en el sistema</td>
+                <td>CI/CD y producción sin gestor de secretos</td>
+              </tr>
+              <tr>
+                <td>Docker secrets o vault</td>
+                <td>Producción con alta sensibilidad (tokens, claves privadas)</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>La API lee las variables con pydantic-settings, sin importar de dónde vengan:</p>
+          <pre><code data-lang="python">from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
+    database_url: str
+    redis_url: str = "redis://redis:6379/0"
+    secret_key: str
+    debug: bool = False</code></pre>
+          <p>En producción, las variables se inyectan directamente en el entorno del contenedor o desde un gestor de secretos (AWS Secrets Manager, HashiCorp Vault). El código no cambia: pydantic-settings las recoge del entorno del proceso.</p>
+          <p>Nunca uses <code>ENV SECRET_KEY=valor_real</code> en el Dockerfile: ese valor queda grabado en el historial de capas de la imagen y cualquiera con acceso al registro puede extraerlo con <code>docker history</code>.</p>
+
+          <h2 id="resumen">Resumen</h2>
+          <ul class="keypoints">
+            <li><code>python:3.12-slim</code> es la imagen base más pragmática para Python: Debian mínimo, glibc compatible con wheels precompilados, sin las complicaciones de compilación de alpine.</li>
+            <li>El build multistage instala dependencias en una etapa <em>builder</em> y copia solo los artefactos a la imagen final, reduciendo tamaño y superficie de ataque.</li>
+            <li>Copiar <code>requirements.txt</code> antes del código fuente maximiza la reutilización de la caché de capas: la capa de instalación solo se reconstruye cuando cambian las dependencias.</li>
+            <li><code>depends_on</code> con <code>condition: service_healthy</code> garantiza que la API no arranca hasta que PostgreSQL esté respondiendo; sin healthcheck, la API arrancaría antes de que la base de datos esté lista.</li>
+            <li>Nunca embeber secretos en el Dockerfile ni en la imagen: se quedan en el historial de capas. Los secretos llegan siempre por variables de entorno, <code>env_file</code> o un gestor de secretos.</li>
+          </ul>
+        </article>
+      </div>
+    </main>
+
+    <footer class="footer"><div class="container footer__inner"><span><strong>MentorAI</strong> · Formación técnica iterada con IA</span><span>© <span data-year>2026</span></span></div></footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem("academia-theme");
+        var d = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", t || (d ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>asyncio: concurrencia sin hilos — MentorAI</title>
+    <meta name="description" content="Event loop, corrutinas, asyncio.gather, TaskGroup, timeouts y cuándo elegir async frente a hilos o multiproceso." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+  </head>
+  <body>
+    <div class="reading-progress" id="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <a href="../offline.html" class="nav__link offline-nav-link">Sin conexión</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+          <button class="nav__burger icon-btn" aria-label="Menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <div class="nav-drawer-backdrop"></div>
+    <div class="nav-drawer"><div class="nav-drawer__head"><span class="nav-drawer__title">MentorAI</span><div class="nav-drawer__head-actions"><button class="nav-drawer__close icon-btn" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div><div class="nav-drawer__links"><a href="../index.html" class="nav-drawer__link">Inicio</a><a href="../rutas.html" class="nav-drawer__link">Rutas</a><a href="../cursos.html" class="nav-drawer__link">Cursos</a><a href="../articulos.html" class="nav-drawer__link">Artículos</a><a href="../offline.html" class="nav-drawer__link">Sin conexión</a></div><div class="nav-drawer__footer"><span class="nav-drawer__theme">Tema</span><button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div>
+
+    <main>
+      <section class="tutorial-hero container">
+        <div class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <a href="../curso.html?slug=python">Python desde cero</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>asyncio</span>
+        </div>
+        <h1 class="tutorial-hero__title">asyncio: concurrencia sin hilos</h1>
+        <p class="tutorial-hero__lead">Event loop, corrutinas, <code>gather</code>, <code>TaskGroup</code>, timeouts y cuándo elegir async frente a hilos o multiproceso.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>13 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Intermedio</span>
+          <span>Python</span>
+        </div>
+        <div class="tutorial-actions">
+          <button class="tutorial-action" id="btn-listen" aria-label="Escuchar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Escuchar</button>
+          <button class="tutorial-action tutorial-action--done" id="btn-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar como completado</button>
+          <button class="tutorial-action tutorial-action--reset" id="btn-reset" title="Reiniciar progreso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg><span>Reiniciar</span></button>
+        </div>
+        <div class="tutorial-progress"><div class="tutorial-progress__bar"><span></span></div><div class="tutorial-progress__label"></div></div>
+      </section>
+
+      <div class="container tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En este tutorial</p>
+          <ol class="toc__list">
+            <li><a href="#event-loop">El event loop y las corrutinas</a></li>
+            <li><a href="#corrutinas">async/await en la práctica</a></li>
+            <li><a href="#gather-taskgroup">gather y TaskGroup</a></li>
+            <li><a href="#timeouts">Timeouts y cancelación</a></li>
+            <li><a href="#cuando-async">Cuándo elegir async, hilos o multiproceso</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ol>
+          <button class="toc__toggle" aria-label="Índice"><span>En este tutorial</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </aside>
+
+        <article class="prose">
+          <h2 id="event-loop">El event loop y las corrutinas</h2>
+          <p>El <strong>event loop</strong> es un bucle que monitoriza operaciones de I/O pendientes y reanuda la corrutina que estaba esperando cuando la operación termina. Todo ocurre en un único hilo del sistema operativo.</p>
+          <p>La diferencia clave con los hilos es el tipo de multitarea. Los hilos usan multitarea <em>preemptiva</em>: el sistema operativo interrumpe un hilo cuando quiere y cede el procesador a otro. Las corrutinas usan multitarea <em>cooperativa</em>: una corrutina cede el control explícitamente con <code>await</code>, y el event loop decide qué continuar.</p>
+          <pre><code data-lang="python">import asyncio
+
+
+async def corrutina_a() -&gt; None:
+    print("A: inicio")
+    await asyncio.sleep(1)   # el loop puede ejecutar otras corrutinas aquí
+    print("A: fin")
+
+
+async def corrutina_b() -&gt; None:
+    print("B: inicio")
+    await asyncio.sleep(0.5)
+    print("B: fin")
+
+
+async def main() -&gt; None:
+    await asyncio.gather(corrutina_a(), corrutina_b())
+
+
+asyncio.run(main())
+# A: inicio
+# B: inicio
+# B: fin    (B termina primero porque duerme menos)
+# A: fin</code></pre>
+          <p>Aunque <code>corrutina_a</code> se lanza primero, <code>corrutina_b</code> termina antes porque tiene un sleep más corto. Ambas avanzan de forma concurrente dentro del mismo hilo. Sin <code>gather</code>, si hicieras <code>await corrutina_a()</code> y luego <code>await corrutina_b()</code> de forma secuencial, tardarías 1.5 s; con <code>gather</code> tardas solo 1 s.</p>
+
+          <h2 id="corrutinas">async/await en la práctica</h2>
+          <p><code>async def</code> define una <em>función corrutina</em>. Llamarla no la ejecuta: devuelve un objeto corrutina. Solo al hacer <code>await</code> sobre ella (o pasarla a <code>asyncio.run()</code>) comienza la ejecución.</p>
+          <pre><code data-lang="python">import asyncio
+import httpx
+
+
+async def obtener_repositorios(usuario: str) -&gt; list[dict]:
+    async with httpx.AsyncClient() as cliente:
+        respuesta = await cliente.get(
+            f"https://api.github.com/users/{usuario}/repos",
+            headers={"Accept": "application/vnd.github.v3+json"},
+        )
+        respuesta.raise_for_status()
+        return respuesta.json()
+
+
+async def main() -&gt; None:
+    repos = await obtener_repositorios("tiangolo")
+    print(f"Encontrados {len(repos)} repositorios")
+
+
+asyncio.run(main())</code></pre>
+          <p><code>asyncio.run()</code> crea el event loop, ejecuta la corrutina hasta que termina y luego destruye el loop. Es el punto de entrada de cualquier programa async y debe llamarse una sola vez, desde código síncrono.</p>
+          <p>Dentro de una corrutina, <code>await</code> solo puede aplicarse a objetos <em>awaitable</em>: otras corrutinas, <code>asyncio.Task</code>, <code>asyncio.Future</code> o cualquier objeto que implemente <code>__await__</code>. Usar <code>await</code> fuera de una función <code>async def</code> es un error de sintaxis.</p>
+
+          <h2 id="gather-taskgroup">gather y TaskGroup</h2>
+          <p><code>asyncio.gather()</code> lanza varias corrutinas de forma concurrente y espera a que todas terminen. Devuelve los resultados en el mismo orden en que se pasaron las corrutinas, independientemente del orden de finalización.</p>
+          <pre><code data-lang="python">import asyncio
+import httpx
+
+
+async def obtener_precio(producto_id: int, cliente: httpx.AsyncClient) -&gt; dict:
+    respuesta = await cliente.get(
+        f"https://api.tienda.com/productos/{producto_id}/precio"
+    )
+    respuesta.raise_for_status()
+    return respuesta.json()
+
+
+async def main() -&gt; None:
+    ids = [1, 2, 3, 4, 5]
+
+    async with httpx.AsyncClient() as cliente:
+        precios = await asyncio.gather(
+            *[obtener_precio(producto_id, cliente) for producto_id in ids]
+        )
+
+    print(f"Obtenidos {len(precios)} precios")
+
+
+asyncio.run(main())</code></pre>
+          <p>Por defecto, si una corrutina lanza una excepción, <code>gather</code> la propaga. Con <code>return_exceptions=True</code>, los errores se devuelven como valores en la lista en lugar de propagarse, lo que permite tratar cada resultado individualmente.</p>
+          <p><strong>TaskGroup</strong> (Python 3.11+) introduce <em>concurrencia estructurada</em>: si cualquier tarea del grupo falla, el grupo cancela automáticamente todas las demás y acumula los errores en un <code>ExceptionGroup</code>. Es más robusto para producción:</p>
+          <pre><code data-lang="python">import asyncio
+import httpx
+
+
+async def descargar(url: str, cliente: httpx.AsyncClient) -&gt; bytes:
+    respuesta = await cliente.get(url)
+    respuesta.raise_for_status()
+    return respuesta.content
+
+
+async def main() -&gt; None:
+    urls = [
+        "https://api.a.com/datos",
+        "https://api.b.com/datos",
+        "https://api.c.com/datos",
+    ]
+
+    async with httpx.AsyncClient() as cliente:
+        async with asyncio.TaskGroup() as grupo:
+            tareas = [grupo.create_task(descargar(url, cliente)) for url in urls]
+
+    resultados = [tarea.result() for tarea in tareas]
+    print(f"Descargados {len(resultados)} recursos")
+
+
+asyncio.run(main())</code></pre>
+          <p>La diferencia práctica: con <code>gather</code> y <code>return_exceptions=False</code>, el primer fallo propaga la excepción pero las otras corrutinas continúan ejecutándose en segundo plano sin supervisión. Con <code>TaskGroup</code>, el fallo de cualquier tarea cancela todas las demás inmediatamente, sin tareas huérfanas.</p>
+
+          <h2 id="timeouts">Timeouts y cancelación</h2>
+          <p>Llamar a una API externa sin timeout es un riesgo: si no responde, la corrutina queda suspendida indefinidamente. <code>asyncio.timeout()</code> (Python 3.11+) es el gestor de contexto moderno para limitar la duración de cualquier operación awaitable:</p>
+          <pre><code data-lang="python">import asyncio
+import httpx
+
+
+async def llamar_api_externa(url: str) -&gt; dict:
+    async with httpx.AsyncClient() as cliente:
+        respuesta = await cliente.get(url)
+        return respuesta.json()
+
+
+async def main() -&gt; None:
+    try:
+        async with asyncio.timeout(2.0):
+            datos = await llamar_api_externa("https://api.lenta.com/datos")
+    except asyncio.TimeoutError:
+        print("La API no respondió en 2 segundos")
+        datos = {}
+
+    print(datos)
+
+
+asyncio.run(main())</code></pre>
+          <p>Para versiones anteriores a 3.11, el equivalente es <code>asyncio.wait_for(corrutina, timeout=segundos)</code>:</p>
+          <pre><code data-lang="python">import asyncio
+
+
+async def main() -&gt; None:
+    try:
+        datos = await asyncio.wait_for(
+            llamar_api_externa("https://api.lenta.com/datos"),
+            timeout=2.0,
+        )
+    except asyncio.TimeoutError:
+        datos = {}
+
+    print(datos)</code></pre>
+          <p>Cuando un timeout expira, asyncio cancela internamente la tarea lanzando <code>CancelledError</code>. Si tienes recursos que limpiar (conexiones, ficheros), atrapa <code>CancelledError</code> dentro de la corrutina, haz la limpieza y vuelve a lanzarlo para no silenciar la cancelación:</p>
+          <pre><code data-lang="python">import asyncio
+
+
+async def tarea_con_recursos() -&gt; None:
+    conexion = await abrir_conexion()
+
+    try:
+        await procesar(conexion)
+    except asyncio.CancelledError:
+        await conexion.close()
+        raise</code></pre>
+
+          <h2 id="cuando-async">Cuándo elegir async, hilos o multiproceso</h2>
+          <p>Async no es la solución universal a todos los problemas de rendimiento. La elección depende de dónde está el cuello de botella:</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Modelo</th>
+                <th>Cuándo usarlo</th>
+                <th>Ejemplos de librerías</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>async/await</strong></td>
+                <td>I/O bound con librerías async nativas</td>
+                <td>httpx, aiofiles, asyncpg, redis-py (async)</td>
+              </tr>
+              <tr>
+                <td><strong>threading</strong></td>
+                <td>I/O bound con librerías síncronas que liberan el GIL durante I/O</td>
+                <td>requests, psycopg2, boto3</td>
+              </tr>
+              <tr>
+                <td><strong>multiprocessing</strong></td>
+                <td>CPU bound; cada proceso tiene su propio intérprete y GIL</td>
+                <td>numpy, pandas, cálculo intensivo</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="callout callout--info">
+            <strong>El GIL y los hilos:</strong> el GIL de Python impide que dos hilos ejecuten bytecode Python en paralelo, por eso threading no ayuda con código CPU-bound. Pero durante operaciones de I/O (red, disco), el GIL se libera, y ahí varios hilos sí avanzan en paralelo. Async hace lo mismo sin el coste de cambio de contexto de los hilos del SO.
+          </div>
+          <p>Si necesitas ejecutar código síncrono bloqueante desde una corrutina sin paralizar el event loop, delégalo a un pool de hilos con <code>run_in_executor()</code>:</p>
+          <pre><code data-lang="python">import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
+
+def leer_fichero_grande(ruta: str) -&gt; bytes:
+    with open(ruta, "rb") as fichero:
+        return fichero.read()
+
+
+async def main() -&gt; None:
+    loop = asyncio.get_running_loop()
+
+    with ThreadPoolExecutor() as pool:
+        contenido = await loop.run_in_executor(
+            pool,
+            leer_fichero_grande,
+            "/ruta/al/fichero.dat",
+        )
+
+    print(f"Leídos {len(contenido)} bytes")
+
+
+asyncio.run(main())</code></pre>
+          <p>Llamar directamente a una función bloqueante desde una corrutina sin <code>run_in_executor</code> paraliza todo el event loop: ninguna otra corrutina puede avanzar hasta que esa llamada síncrona termine.</p>
+
+          <h2 id="resumen">Resumen</h2>
+          <ul class="keypoints">
+            <li>El event loop ejecuta corrutinas en un solo hilo; <code>await</code> es el punto de pausa cooperativa donde el loop puede reanudar otra corrutina pendiente.</li>
+            <li><code>asyncio.run()</code> crea el event loop y lo destruye al terminar: es el único punto de entrada de cualquier aplicación async y debe llamarse una sola vez desde código síncrono.</li>
+            <li><code>asyncio.gather()</code> lanza corrutinas concurrentes y devuelve sus resultados en orden; <code>TaskGroup</code> (3.11+) añade cancelación automática de todas las tareas si alguna falla, evitando tareas huérfanas.</li>
+            <li><code>asyncio.timeout()</code> (3.11+) limita la duración de cualquier operación awaitable; <code>asyncio.wait_for()</code> cumple la misma función en versiones anteriores.</li>
+            <li>Async no acelera código CPU-bound; para eso usa <code>ProcessPoolExecutor</code>. Una librería síncrona bloqueante dentro de una corrutina congela el event loop: delégala con <code>run_in_executor</code>.</li>
+            <li>Elige threading cuando debes usar librerías síncronas con I/O; elige multiprocessing para cálculo intensivo; elige async cuando construyes servicios de alta concurrencia con librerías async nativas.</li>
+          </ul>
+        </article>
+      </div>
+    </main>
+
+    <footer class="footer"><div class="container footer__inner"><span><strong>MentorAI</strong> · Formación técnica iterada con IA</span><span>© <span data-year>2026</span></span></div></footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

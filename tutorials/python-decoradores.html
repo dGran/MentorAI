@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var t = localStorage.getItem("academia-theme");
+        var d = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", t || (d ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Decoradores en Python — MentorAI</title>
+    <meta name="description" content="Qué son los decoradores, cómo funcionan internamente, decoradores con argumentos, functools.wraps y los decoradores que ya usas en FastAPI y pytest." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>" />
+    <link rel="manifest" href="../manifest.webmanifest" />
+  </head>
+  <body>
+    <div class="reading-progress" id="reading-progress"></div>
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand"><span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>MentorAI</a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <a href="../offline.html" class="nav__link offline-nav-link">Sin conexión</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+          <button class="nav__burger icon-btn" aria-label="Menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        </nav>
+      </div>
+    </header>
+    <div class="nav-drawer-backdrop"></div>
+    <div class="nav-drawer"><div class="nav-drawer__head"><span class="nav-drawer__title">MentorAI</span><div class="nav-drawer__head-actions"><button class="nav-drawer__close icon-btn" aria-label="Cerrar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div></div><div class="nav-drawer__links"><a href="../index.html" class="nav-drawer__link">Inicio</a><a href="../rutas.html" class="nav-drawer__link">Rutas</a><a href="../cursos.html" class="nav-drawer__link">Cursos</a><a href="../articulos.html" class="nav-drawer__link">Artículos</a><a href="../offline.html" class="nav-drawer__link">Sin conexión</a></div><div class="nav-drawer__footer"><span class="nav-drawer__theme">Tema</span><button class="icon-btn theme-toggle" aria-label="Cambiar tema"><svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button></div></div>
+
+    <main>
+      <section class="tutorial-hero container">
+        <div class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <a href="../curso.html?slug=python">Python desde cero</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Python</span>
+        </div>
+        <h1 class="tutorial-hero__title">Decoradores en Python</h1>
+        <p class="tutorial-hero__lead">Qué son los decoradores, cómo funcionan internamente, decoradores con argumentos, functools.wraps y los decoradores que ya usas en FastAPI y pytest.</p>
+        <div class="tutorial-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>11 min</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Intermedio</span>
+          <span>Python</span>
+        </div>
+        <div class="tutorial-actions">
+          <button class="tutorial-action" id="btn-listen" aria-label="Escuchar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Escuchar</button>
+          <button class="tutorial-action tutorial-action--done" id="btn-done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Marcar como completado</button>
+          <button class="tutorial-action tutorial-action--reset" id="btn-reset" title="Reiniciar progreso"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg><span>Reiniciar</span></button>
+        </div>
+        <div class="tutorial-progress"><div class="tutorial-progress__bar"><span></span></div><div class="tutorial-progress__label"></div></div>
+      </section>
+
+      <div class="container tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En este tutorial</p>
+          <ol class="toc__list">
+            <li><a href="#que-son">Qué son los decoradores</a></li>
+            <li><a href="#basico">Decorador básico y functools.wraps</a></li>
+            <li><a href="#con-argumentos">Decoradores con argumentos</a></li>
+            <li><a href="#clases-como-decoradores">Clases como decoradores</a></li>
+            <li><a href="#en-uso">Decoradores que ya conoces</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ol>
+          <button class="toc__toggle" aria-label="Índice"><span>En este tutorial</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </aside>
+
+        <article class="prose">
+          <h2 id="que-son">Qué son los decoradores</h2>
+          <p>Un decorador es una función que recibe una función y devuelve otra función (o el mismo objeto modificado). La sintaxis <code>@decorador</code> es azúcar sintáctico de <code>función = decorador(función)</code>:</p>
+          <pre><code data-lang="python">def mi_decorador(funcion):
+    def wrapper(*args, **kwargs):
+        print("Antes de la función")
+        resultado = funcion(*args, **kwargs)
+        print("Después de la función")
+        return resultado
+    return wrapper
+
+
+@mi_decorador
+def saludar(nombre: str) -&gt; str:
+    return f"Hola, {nombre}!"
+
+
+saludar("Ana")
+# Antes de la función
+# Después de la función</code></pre>
+          <p>La línea <code>@mi_decorador</code> equivale exactamente a escribir <code>saludar = mi_decorador(saludar)</code> después de definir la función. Esto ocurre <em>en tiempo de definición</em>, no en tiempo de llamada.</p>
+          <p>Ya usas decoradores sin saberlo: <code>@app.get("/users")</code> en FastAPI, <code>@pytest.fixture</code>, <code>@dataclass</code>, <code>@property</code>. Todos son funciones que transforman lo que se les pasa.</p>
+
+          <h2 id="basico">Decorador básico y functools.wraps</h2>
+          <pre><code data-lang="python">import functools
+import time
+
+
+def medir_tiempo(funcion):
+    @functools.wraps(funcion)
+    def wrapper(*args, **kwargs):
+        inicio = time.perf_counter()
+        resultado = funcion(*args, **kwargs)
+        duracion = time.perf_counter() - inicio
+        print(f"{funcion.__name__} tardó {duracion:.4f}s")
+        return resultado
+    return wrapper
+
+
+@medir_tiempo
+def procesar_datos(n: int) -&gt; list[int]:
+    return [i ** 2 for i in range(n)]
+
+
+print(procesar_datos.__name__)  # 'procesar_datos' (gracias a @wraps)
+print(procesar_datos.__doc__)   # el docstring original</code></pre>
+          <p><code>@functools.wraps(funcion)</code> es crítico: copia <code>__name__</code>, <code>__doc__</code>, <code>__annotations__</code> y otros atributos de la función original al wrapper. Sin él, <code>procesar_datos.__name__</code> devolvería <code>'wrapper'</code>, rompiendo debugging, logging e introspección.</p>
+
+          <h2 id="con-argumentos">Decoradores con argumentos</h2>
+          <p>Un decorador con argumentos necesita tres niveles de anidación: el nivel exterior recibe los argumentos del decorador, el intermedio recibe la función, el interior la llama:</p>
+          <pre><code data-lang="python">import functools
+import time
+
+
+def reintentar(max_intentos: int = 3, pausa: float = 1.0):
+    def decorador(funcion):
+        @functools.wraps(funcion)
+        def wrapper(*args, **kwargs):
+            ultimo_error: Exception | None = None
+
+            for intento in range(max_intentos):
+                try:
+                    return funcion(*args, **kwargs)
+                except Exception as error:
+                    ultimo_error = error
+
+                    if intento &lt; max_intentos - 1:
+                        time.sleep(pausa)
+
+            raise ultimo_error
+
+        return wrapper
+    return decorador
+
+
+@reintentar(max_intentos=5, pausa=0.5)
+def llamar_api(url: str) -&gt; dict:
+    import httpx
+    respuesta = httpx.get(url, timeout=5.0)
+    respuesta.raise_for_status()
+    return respuesta.json()</code></pre>
+          <p>La estructura es: <code>reintentar(max_intentos=5)</code> devuelve <code>decorador</code>, que se aplica a <code>llamar_api</code> y devuelve <code>wrapper</code>. Desde el punto de vista del caller, <code>llamar_api</code> se llama igual que antes pero con reintentos automáticos.</p>
+
+          <h2 id="clases-como-decoradores">Clases como decoradores</h2>
+          <p>Una clase puede actuar como decorador si implementa <code>__call__</code>. Es útil cuando el decorador necesita mantener estado entre llamadas:</p>
+          <pre><code data-lang="python">import functools
+
+
+class LimitarLlamadas:
+    def __init__(self, limite: int) -&gt; None:
+        self._limite = limite
+        self._contador = 0
+
+    def __call__(self, funcion):
+        @functools.wraps(funcion)
+        def wrapper(*args, **kwargs):
+            self._contador += 1
+
+            if self._contador &gt; self._limite:
+                raise RuntimeError(
+                    f"{funcion.__name__} excedió el límite de {self._limite} llamadas"
+                )
+            return funcion(*args, **kwargs)
+        return wrapper
+
+
+@LimitarLlamadas(limite=3)
+def operacion_cara() -&gt; str:
+    return "resultado"
+
+
+operacion_cara()  # OK
+operacion_cara()  # OK
+operacion_cara()  # OK
+operacion_cara()  # RuntimeError</code></pre>
+          <p>La clase es útil cuando necesitas que el decorador recuerde algo entre llamadas (contador, caché, tiempo de última ejecución). Para decoradores stateless, una función anidada es más simple.</p>
+
+          <h2 id="en-uso">Decoradores que ya conoces</h2>
+          <p>Los decoradores que usarás diariamente en un proyecto FastAPI:</p>
+          <pre><code data-lang="python">from fastapi import FastAPI, Depends
+import pytest
+from dataclasses import dataclass
+from functools import cache
+
+
+app = FastAPI()
+
+
+@app.get("/usuarios/{usuario_id}")
+async def obtener_usuario(usuario_id: int):
+    return {"id": usuario_id}
+
+
+@pytest.fixture
+def cliente_http():
+    import httpx
+    return httpx.Client(base_url="http://localhost:8000")
+
+
+@dataclass
+class Punto:
+    x: float
+    y: float
+
+
+class Temperatura:
+    def __init__(self, celsius: float) -&gt; None:
+        self._celsius = celsius
+
+    @property
+    def fahrenheit(self) -&gt; float:
+        return self._celsius * 9 / 5 + 32
+
+    @classmethod
+    def desde_fahrenheit(cls, fahrenheit: float) -&gt; "Temperatura":
+        return cls((fahrenheit - 32) * 5 / 9)
+
+
+@cache
+def fibonacci(n: int) -&gt; int:
+    if n &lt; 2:
+        return n
+    return fibonacci(n - 1) + fibonacci(n - 2)</code></pre>
+          <div class="callout callout--info">
+            <strong><code>@cache</code> de functools</strong>: memoiza los resultados de la función por los argumentos. La primera llamada con un conjunto de argumentos ejecuta la función; las siguientes la devuelven del cache. Para <code>fibonacci(40)</code>, la diferencia es de segundos a microsegundos.
+          </div>
+
+          <h2 id="resumen">Resumen</h2>
+          <ul class="keypoints">
+            <li><code>@decorador</code> es azúcar sintáctico de <code>función = decorador(función)</code>; ocurre en tiempo de definición, no de llamada.</li>
+            <li><code>@functools.wraps(funcion)</code> es obligatorio en cualquier decorador que escribas: preserva el nombre, docstring y anotaciones de la función original.</li>
+            <li>Los decoradores con argumentos necesitan tres niveles: función que recibe los args → función que recibe la función → función wrapper.</li>
+            <li>Las clases como decoradores son útiles cuando necesitas estado entre llamadas (contador, caché, timestamps).</li>
+            <li><code>@app.get</code>, <code>@pytest.fixture</code>, <code>@dataclass</code>, <code>@property</code>, <code>@cache</code>: todos son decoradores aplicando el mismo patrón.</li>
+          </ul>
+        </article>
+      </div>
+    </main>
+
+    <footer class="footer"><div class="container footer__inner"><span><strong>MentorAI</strong> · Formación técnica iterada con IA</span><span>© <span data-year>2026</span></span></div></footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/bridge.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
