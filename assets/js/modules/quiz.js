@@ -84,6 +84,40 @@
     return quizData.passingScore || Math.ceil(quizData.questions.length * 0.7);
   }
 
+  /* ---------- Barajado de opciones ---------- */
+
+  function shuffled(list) {
+    var copy = list.slice();
+
+    for (var index = copy.length - 1; index > 0; index -= 1) {
+      var swap = Math.floor(Math.random() * (index + 1));
+      var current = copy[index];
+
+      copy[index] = copy[swap];
+      copy[swap] = current;
+    }
+
+    return copy;
+  }
+
+  function prepareQuestions(questions) {
+    return questions.map(function (question) {
+      var order = shuffled(
+        question.o.map(function (_option, index) {
+          return index;
+        })
+      );
+
+      return {
+        text: question.q,
+        options: order.map(function (originalIndex) {
+          return question.o[originalIndex];
+        }),
+        correct: order.indexOf(question.a),
+      };
+    });
+  }
+
   /* ---------- Bloquear el botón de completado individual ---------- */
 
   function gateDoneButton() {
@@ -108,10 +142,9 @@
 
   /* ---------- Render del quiz ---------- */
 
-  function buildQuizSection(course, quizData, saved, lessonSlug) {
-    var questions = quizData.questions;
+  function buildQuizSection(course, quizData, prepared, saved) {
     var threshold = passingScore(quizData);
-    var total = questions.length;
+    var total = prepared.length;
 
     var historyHtml = "";
 
@@ -129,9 +162,9 @@
         "</p>";
     }
 
-    var questionsHtml = questions
-      .map(function (q, idx) {
-        var optionsHtml = q.o
+    var questionsHtml = prepared
+      .map(function (question, idx) {
+        var optionsHtml = question.options
           .map(function (opt, optIdx) {
             return (
               '<label class="quiz__option">' +
@@ -143,8 +176,8 @@
           .join("");
 
         return (
-          '<div class="quiz__question" data-correct="' + q.a + '">' +
-          '<p class="quiz__question-text"><strong>' + (idx + 1) + ".</strong> " + escapeHtml(q.q) + "</p>" +
+          '<div class="quiz__question" data-correct="' + question.correct + '">' +
+          '<p class="quiz__question-text"><strong>' + (idx + 1) + ".</strong> " + escapeHtml(question.text) + "</p>" +
           '<div class="quiz__options">' + optionsHtml + "</div>" +
           "</div>"
         );
@@ -172,9 +205,9 @@
 
   /* ---------- Lógica de evaluación ---------- */
 
-  function bindForm(form, resultEl, course, quizData, lessonSlug) {
-    var threshold = passingScore(quizData);
-    var total = quizData.questions.length;
+  function bindForm(form, resultEl, entry, prepared, lessonSlug, prose) {
+    var threshold = passingScore(entry.quizData);
+    var total = prepared.length;
 
     form.addEventListener("submit", function (event) {
       event.preventDefault();
@@ -215,7 +248,7 @@
       }
 
       var passed = score >= threshold;
-      var saved = saveResult(course.slug, passed, score);
+      var saved = saveResult(entry.course.slug, passed, score);
 
       form.querySelector(".quiz__actions").hidden = true;
 
@@ -241,7 +274,11 @@
       var retryBtn = document.getElementById("quiz-retry");
       if (retryBtn) {
         retryBtn.addEventListener("click", function () {
-          window.location.reload();
+          var section = mountQuiz(entry, lessonSlug, prose);
+
+          if (section) {
+            section.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
         });
       }
 
@@ -261,6 +298,48 @@
     });
   }
 
+  /* ---------- Montaje ---------- */
+
+  function insertQuiz(prose, html) {
+    var routeNav = prose.querySelector(".route-nav");
+
+    if (routeNav) {
+      routeNav.insertAdjacentHTML("beforebegin", html);
+      return;
+    }
+
+    var manualNav = prose.querySelector(".tutorial-nav");
+
+    if (manualNav) {
+      manualNav.insertAdjacentHTML("beforebegin", html);
+      return;
+    }
+
+    prose.insertAdjacentHTML("beforeend", html);
+  }
+
+  function mountQuiz(entry, lessonSlug, prose) {
+    var saved = loadResult(entry.course.slug);
+    var prepared = prepareQuestions(entry.quizData.questions);
+    var html = buildQuizSection(entry.course, entry.quizData, prepared, saved);
+    var existing = document.getElementById("quiz");
+
+    if (existing) {
+      existing.outerHTML = html;
+    } else {
+      insertQuiz(prose, html);
+    }
+
+    var form = document.getElementById("quiz-form");
+    var resultEl = document.getElementById("quiz-result");
+
+    if (form && resultEl) {
+      bindForm(form, resultEl, entry, prepared, lessonSlug, prose);
+    }
+
+    return document.getElementById("quiz");
+  }
+
   /* ---------- Punto de entrada ---------- */
 
   function initQuiz() {
@@ -271,35 +350,15 @@
     if (!entry) return;
 
     var saved = loadResult(entry.course.slug);
-    var alreadyPassed = saved && saved.passed;
 
-    if (!alreadyPassed) {
+    if (!saved || !saved.passed) {
       gateDoneButton();
     }
 
     var prose = document.querySelector("article.prose");
     if (!prose) return;
 
-    var quizHtml = buildQuizSection(entry.course, entry.quizData, saved, slug);
-    var routeNav = prose.querySelector(".route-nav");
-
-    if (routeNav) {
-      routeNav.insertAdjacentHTML("beforebegin", quizHtml);
-    } else {
-      var manualNav = prose.querySelector(".tutorial-nav");
-
-      if (manualNav) {
-        manualNav.insertAdjacentHTML("beforebegin", quizHtml);
-      } else {
-        prose.insertAdjacentHTML("beforeend", quizHtml);
-      }
-    }
-
-    var form = document.getElementById("quiz-form");
-    var resultEl = document.getElementById("quiz-result");
-    if (form && resultEl) {
-      bindForm(form, resultEl, entry.course, entry.quizData, slug);
-    }
+    mountQuiz(entry, slug, prose);
   }
 
   MentorAI.initQuiz = initQuiz;
