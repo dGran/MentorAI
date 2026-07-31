@@ -1,172 +1,115 @@
 /* ============================================================
    MentorAI — Persistencia: marcadores, progreso, lectura en curso
+   Uso individual, sin servidor: todo vive en localStorage con el
+   prefijo "academia-".
    Sin dependencias. Funciona por file://. Parte de window.MentorAI.
    ============================================================ */
 
 (function () {
   "use strict";
 
-  var MentorAI = (window.MentorAI = window.MentorAI || {});
+  const MentorAI = (window.MentorAI = window.MentorAI || {});
 
-  /* ---------- Marcadores (favoritos) en localStorage ----------
-     Uso individual, sin servidor: guarda los slugs marcados. */
-  MentorAI.Bookmarks = (function () {
-    const KEY = "academia-bookmarks";
+  /* ---------- Acceso seguro a localStorage ----------
+     Puede fallar por cuota o por modo privado: si falla, la app sigue
+     funcionando aunque no recuerde nada. */
 
-    function read() {
-      try {
-        const stored = JSON.parse(localStorage.getItem(KEY));
-        return Array.isArray(stored) ? stored : [];
-      } catch (error) {
-        return [];
-      }
+  function readJson(key, fallback) {
+    try {
+      return JSON.parse(localStorage.getItem(key)) ?? fallback;
+    } catch {
+      return fallback;
     }
+  }
 
-    function write(slugs) {
-      localStorage.setItem(KEY, JSON.stringify(slugs));
+  function writeJson(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch {
+      /* sin espacio o sin permiso: no persistimos, pero no rompemos */
     }
+  }
+
+  /* ---------- Conjunto de slugs ----------
+     Marcadores y progreso son la misma estructura: una lista de slugs
+     que se alterna. Se construyen los dos desde aquí. */
+
+  function createSlugSet(key) {
+    const read = () => {
+      const stored = readJson(key, []);
+
+      return Array.isArray(stored) ? stored : [];
+    };
 
     return {
-      has: function (slug) {
-        return read().indexOf(slug) !== -1;
-      },
-      count: function () {
-        return read().length;
-      },
-      toggle: function (slug) {
+      has: (slug) => read().includes(slug),
+      count: () => read().length,
+      list: () => read(),
+      toggle(slug) {
         const slugs = read();
-        const index = slugs.indexOf(slug);
-        const isSaved = index !== -1;
+        const isPresent = slugs.includes(slug);
+        const updated = isPresent
+          ? slugs.filter((current) => current !== slug)
+          : [...slugs, slug];
 
-        if (isSaved) {
-          slugs.splice(index, 1);
-        }
+        writeJson(key, updated);
 
-        if (!isSaved) {
-          slugs.push(slug);
-        }
-
-        write(slugs);
-
-        return !isSaved;
+        return !isPresent;
+      },
+      remove(slugsToRemove) {
+        writeJson(
+          key,
+          read().filter((slug) => !slugsToRemove.includes(slug))
+        );
       },
     };
-  })();
+  }
 
-  /* ---------- Progreso de lectura (localStorage) ----------
-     Marca individual de "tutorial completado". Alimenta la ruta. */
-  MentorAI.Progress = (function () {
-    const KEY = "academia-progress";
-
-    function read() {
-      try {
-        const stored = JSON.parse(localStorage.getItem(KEY));
-        return Array.isArray(stored) ? stored : [];
-      } catch (error) {
-        return [];
-      }
-    }
-
-    function write(slugs) {
-      localStorage.setItem(KEY, JSON.stringify(slugs));
-    }
-
-    return {
-      has: function (slug) {
-        return read().indexOf(slug) !== -1;
-      },
-      count: function () {
-        return read().length;
-      },
-      toggle: function (slug) {
-        const slugs = read();
-        const index = slugs.indexOf(slug);
-        const isDone = index !== -1;
-
-        if (isDone) {
-          slugs.splice(index, 1);
-        }
-
-        if (!isDone) {
-          slugs.push(slug);
-        }
-
-        write(slugs);
-
-        return !isDone;
-      },
-      remove: function (slugsToRemove) {
-        const remaining = read().filter(function (slug) {
-          return slugsToRemove.indexOf(slug) === -1;
-        });
-
-        write(remaining);
-      },
-    };
-  })();
+  MentorAI.Bookmarks = createSlugSet("academia-bookmarks");
+  MentorAI.Progress = createSlugSet("academia-progress");
 
   /* ---------- Lectura en curso (% de scroll por tutorial) ----------
-     Persistencia individual del avance dentro de cada tutorial para
-     alimentar "Seguir viendo" en la portada. Guarda el % máximo. */
-  MentorAI.Reading = (function () {
+     Guarda el porcentaje máximo alcanzado en cada tutorial para
+     alimentar "Seguir viendo" en la portada. */
+
+  MentorAI.Reading = (() => {
     const KEY = "academia-reading";
     const MIN_PERCENT = 5;
 
-    function read() {
-      try {
-        const stored = JSON.parse(localStorage.getItem(KEY));
-        return stored && typeof stored === "object" ? stored : {};
-      } catch (error) {
-        return {};
-      }
-    }
+    const read = () => {
+      const stored = readJson(KEY, {});
 
-    function write(map) {
-      localStorage.setItem(KEY, JSON.stringify(map));
-    }
+      return stored && typeof stored === "object" ? stored : {};
+    };
 
     return {
-      save: function (slug, percent) {
-        if (!slug || percent < MIN_PERCENT) {
-          return;
-        }
+      save(slug, percent) {
+        if (!slug || percent < MIN_PERCENT) return;
 
         const map = read();
-        const previous = map[slug] ? map[slug].percent : 0;
+        const previous = map[slug]?.percent ?? 0;
 
         map[slug] = {
           percent: Math.max(previous, Math.round(percent)),
           updatedAt: Date.now(),
         };
 
-        write(map);
+        writeJson(KEY, map);
       },
-      get: function (slug) {
-        return read()[slug] || null;
+      get: (slug) => read()[slug] ?? null,
+      list() {
+        return Object.entries(read())
+          .map(([slug, entry]) => ({ slug, ...entry }))
+          .sort((a, b) => b.updatedAt - a.updatedAt);
       },
-      list: function () {
+      clear(slugsToClear) {
         const map = read();
 
-        return Object.keys(map)
-          .map(function (slug) {
-            return {
-              slug: slug,
-              percent: map[slug].percent,
-              updatedAt: map[slug].updatedAt,
-            };
-          })
-          .sort(function (a, b) {
-            return b.updatedAt - a.updatedAt;
-          });
-      },
-      clear: function (slugsToClear) {
-        const map = read();
-
-        slugsToClear.forEach(function (slug) {
+        for (const slug of slugsToClear) {
           delete map[slug];
-        });
+        }
 
-        write(map);
+        writeJson(KEY, map);
       },
     };
   })();
