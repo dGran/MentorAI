@@ -8,6 +8,14 @@
 
   var MentorAI = (window.MentorAI = window.MentorAI || {});
 
+  /* ---------- Proponer mejora ----------
+     La autoría vive fuera de la app (Claude Code + la skill /tutorial), así
+     que desde la lectura solo se captura la intención: un issue prellenado
+     con el tutorial y la sección desde la que se pulsa. */
+  var REPO_ISSUES_URL = "https://github.com/dGran/MentorAI/issues/new";
+  var FEEDBACK_SVG =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg>';
+
   /* ---------- Página de tutorial: audio, progreso y ruta ----------
      Mejoras inyectadas por JS según el slug del fichero, para no editar
      a mano cada tutorial: lector por voz (Web Speech), marca de
@@ -140,6 +148,53 @@
     return button;
   }
 
+  function issueUrl(slug) {
+    const title = (document.title || slug).split(" — ")[0];
+    const section = currentSectionTitle();
+    const body =
+      "**Tutorial:** `" + slug + "`\n" +
+      (section ? "**Sección:** " + section + "\n" : "") +
+      "\n**Qué mejorarías:**\n\n";
+
+    return (
+      REPO_ISSUES_URL +
+      "?title=" +
+      encodeURIComponent("Mejora en «" + title + "»") +
+      "&body=" +
+      encodeURIComponent(body)
+    );
+  }
+
+  function buildFeedbackButton(slug) {
+    const link = document.createElement("a");
+
+    link.className = "tutorial-action tutorial-action--feedback";
+    link.href = issueUrl(slug);
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.title = "Abrir una propuesta de mejora en GitHub";
+    link.innerHTML = FEEDBACK_SVG + "<span>Proponer mejora</span>";
+
+    link.addEventListener("pointerdown", function () {
+      link.href = issueUrl(slug);
+    });
+
+    return link;
+  }
+
+  function currentSectionTitle() {
+    const headings = Array.from(document.querySelectorAll("article.prose h2[id]"));
+    let current = "";
+
+    headings.forEach(function (heading) {
+      if (heading.getBoundingClientRect().top < 120) {
+        current = heading.textContent.trim();
+      }
+    });
+
+    return current;
+  }
+
   function injectTutorialActions(slug, prose) {
     const host = document.querySelector(".tutorial-hero .container");
 
@@ -161,6 +216,7 @@
 
     actions.appendChild(doneBtn);
     actions.appendChild(resetBtn);
+    actions.appendChild(buildFeedbackButton(slug));
     host.appendChild(actions);
 
     const progress = buildReadingProgress(slug);
