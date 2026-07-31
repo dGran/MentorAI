@@ -17,6 +17,18 @@
     return "serviceWorker" in navigator && location.protocol !== "file:";
   }
 
+  /* ---------- Base del sitio ----------
+     El sitio puede vivir en la raíz o bajo un subdirectorio (Pages lo sirve
+     en /MentorAI/). Todo se resuelve relativo a la página actual, que en los
+     tutoriales cuelga un nivel más abajo. */
+  function basePath() {
+    return location.pathname.indexOf("/tutorials/") !== -1 ? "../" : "./";
+  }
+
+  function baseUrl() {
+    return new URL(basePath(), location.href).href;
+  }
+
   function savedSlugs() {
     try {
       return JSON.parse(localStorage.getItem(SAVED_KEY) || "[]");
@@ -62,7 +74,7 @@
     });
 
     return lessonSlugs.map(function (s) {
-      return "/tutorials/" + s + ".html";
+      return new URL("tutorials/" + s + ".html", baseUrl()).href;
     });
   }
 
@@ -109,8 +121,7 @@
       link.setAttribute("aria-current", "page");
     }
 
-    var base = location.pathname.includes("/tutorials/") ? "../" : "";
-    link.href = base + "offline.html";
+    link.href = basePath() + "offline.html";
 
     var themeBtn = nav.querySelector(".theme-toggle");
     nav.insertBefore(link, themeBtn);
@@ -310,9 +321,11 @@
 
       if (!isSupported()) return;
 
-      navigator.serviceWorker.register("/sw.js").catch(function (err) {
-        console.warn("[MentorAI] SW no registrado:", err);
-      });
+      navigator.serviceWorker
+        .register(basePath() + "sw.js", { scope: basePath() })
+        .catch(function (err) {
+          console.warn("[MentorAI] SW no registrado:", err);
+        });
     },
 
     initCourseButtons: function () {
