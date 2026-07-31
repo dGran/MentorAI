@@ -1274,6 +1274,122 @@ Pendientes menores intactos: quizzes `rust`/`python`, "Ponlo en práctica"
 (mini-retos), añadir Go/Rust/Python y los 4 cursos nuevos a la ruta
 `el-grado-que-no-hiciste` cuando se publiquen.
 
+## Auditoría de producto: autoría en prod, offline y evaluaciones (2026-07-31) — ESTA es la entrada más reciente
+
+Sesión de análisis, **sin tocar código**. El usuario pidió revisar si la app
+está bien planteada en tres frentes. Resultado: **3 planes nuevos** en
+`.agents/notes/`. Veredicto general: la arquitectura y los invariantes son
+sólidos; el problema es que tres funcionalidades están al 70-80 % y su último
+tramo es exactamente donde caen las tres preguntas.
+
+- **`plan-ia-en-la-app.md`** — Confirmado: en prod no se puede crear ni refinar
+  nada. Compositor y refinador **solo existen en `articulos.html`** y hacen POST
+  a `/api/generate` del mismo origen → en Pages fallan siempre (la guarda
+  `IS_FILE_PROTOCOL` no cubre https). El puente además solo escribe
+  `manifest.js`, nunca `courses.js`/`paths.js`/`quizzes.js`.
+  **DECISIÓN DEL USUARIO (misma sesión): la autoría desde la app queda
+  descartada.** Se evaluaron BYOK en el navegador (CORS verificado, pero la
+  clave quedaría expuesta a tutoriales que son HTML generado por IA del mismo
+  origen) y un backend en Vercel (300 s en Hobby verificado, sirve estáticos sin
+  build, FS de solo lectura → habría que commitear por API de GitHub). Ambos se
+  descartan para autoría por un motivo más simple: **la autoría ya está resuelta
+  fuera de la app** — los 194 tutoriales salieron de sesiones de Claude Code con
+  agentes en paralelo y la skill `/tutorial`, no del compositor, que es legacy
+  de junio. Tampoco se pasa a autoría manual (inviable: ~22 KB de HTML por
+  pieza). En su lugar: **botón «proponer mejora»** que abre un issue de GitHub
+  prellenado (D5 de multiusuario) — capturar la intención donde lees,
+  ejecutarla donde están las herramientas. Queda abierto **solo el tutor por
+  lección** (chat sobre el texto que estás leyendo; es estudio, no autoría),
+  condicionado al hábito real de lectura, y con proxy fino en Vercel como forma
+  recomendada si se hace. Aviso: **el tutor necesita red, no sirve en el avión**;
+  no confundirlo con el caso offline.
+- **`plan-offline-real.md`** — **El offline en prod no funciona en absoluto.**
+  Tres bloqueantes encadenados: (1) `offline.js:313` registra `/sw.js`,
+  que en Pages es **404 verificado**; (2) `SHELL_URLS` absolutas + `addAll`
+  atómico → la instalación aborta entera; (3) `cache.match` sin `ignoreSearch`
+  → `curso.html?slug=X` **nunca** acierta en caché, así que aun arreglando 1 y 2
+  el curso guardado da error en el avión. Más: fallback en texto plano, fuentes
+  desde Google CDN en los 200 HTML, iconos fuera del shell, 155/197 tutoriales
+  sin `offline.js`, y shell cache-first sin versión (los usuarios se quedan con
+  CSS/JS viejos tras cada deploy). **Dato clave: el sitio entero pesa 5,2 MB** →
+  se recomienda «Descargar toda la academia» como acción principal.
+  Sustituye y concreta el frente C de `plan-multiusuario.md`.
+- **`plan-evaluaciones.md`** — Los exámenes **ya existen** (251 preguntas, 20 de
+  22 cursos, gate al final del curso). **Fallo crítico: en 233 de 251 preguntas
+  (93 %) la correcta es la segunda opción** — se aprueba todo marcando siempre
+  la B sin leer. Primer arreglo: barajar opciones en el render (`quiz.js`) +
+  chequeo de sesgo en el validador. Después: explicaciones (hoy hay 0), traza
+  pregunta→lección, checks de 2-3 preguntas por lección, repaso espaciado,
+  visibilidad del examen fuera de la última lección, y examen final de ruta.
+  Decisión pendiente del usuario: mantener, suavizar o endurecer el gate.
+
+**Dependencias entre planes:** el validador de catálogo (A1 de
+`plan-multiusuario.md`) es prerrequisito tanto de publicar desde la app como del
+chequeo de sesgo de los quizzes. La inserción ordenada por slug (A2) es
+prerrequisito de publicar vía PR.
+
+## Implementación de la auditoría (2026-07-31, misma sesión) — HECHO, sin commitear
+
+El usuario pidió "arréglalo todo" + "elimina todo lo innecesario". 214 ficheros
+tocados. Todo verificado con Chrome headless sirviendo el sitio bajo
+`/MentorAI/` para reproducir las condiciones de Pages.
+
+### 1. Quiz — sesgo del 93 % eliminado (`assets/js/modules/quiz.js`)
+- `shuffled()` (Fisher-Yates) + `prepareQuestions()`: las opciones se barajan en
+  cada render y `data-correct` se remapea. Arregla las 251 preguntas sin tocar
+  `quizzes.js`. Verificado con 4000 iteraciones: distribución uniforme
+  (946/964/1034/1056) y la correcta sigue siempre a su opción.
+- Reintento **sin recargar**: `mountQuiz()` reemplaza la sección en sitio (y
+  vuelve a barajar), con `scrollIntoView`. Adiós al `window.location.reload()`.
+- `buildQuizSection` y `bindForm` ahora reciben `prepared` en vez de leer
+  `q.o`/`q.a` directamente.
+
+### 2. Service worker — offline operativo en prod (`sw.js`, `offline.js`)
+- **Registro relativo**: `basePath()` devuelve `../` en tutoriales y `./` en el
+  resto; se registra `basePath() + "sw.js"` con su `scope`. Antes pedía `/sw.js`
+  → 404 bajo `/MentorAI/`.
+- **`SHELL_PATHS` relativos**, resueltos con `new URL(path, registration.scope)`.
+- **`cache.addAll` → `cache.add()` por fichero con `.catch()`**: un 404 ya no
+  aborta la instalación entera.
+- **`ignoreSearch` en navegaciones** (`matchIn`): `curso.html?slug=go` por fin
+  acierta en caché. Era el bloqueante que rompía el caso del vuelo.
+- **Fallback a `offline.html`** en navegaciones, en vez del texto plano 503.
+- **Versionado**: `VERSION = "v2"` en el nombre de ambas cachés + `refreshShell()`
+  una vez por arranque del worker → ya no te quedas con CSS viejo tras un deploy,
+  sin pagar revalidación por petición.
+- **Iconos en el shell** (faltaban) y `bridge.js` fuera.
+- **`offline.js` añadido a los 200 HTML** (antes solo en 42; 16 tutoriales de Go
+  tenían los `<script>` en una sola línea y necesitaron segunda pasada).
+
+### 3. Eliminado (decisión "autoría fuera de la app")
+`assets/js/modules/bridge.js`, `server/bridge.js` (y el directorio `server/`),
+los dos modales y el botón «Añadir artículo» de `articulos.html` (−5,4 KB), el
+botón «Refinar» de `catalog.js`, las llamadas en `init.js`, los `<script>` del
+puente en 200 HTML, y el CSS muerto de `.modal*`, `.composer-form*`, `.field*` y
+`.card__refine` (−4,3 KB). Cero referencias huérfanas.
+
+### 4. Botón «proponer mejora» (`tutorial.js`)
+Enlace en las acciones del tutorial que abre un issue de GitHub prellenado con
+el slug y **la sección en la que estás** (`currentSectionTitle()` recalculado en
+`pointerdown`, no al inyectar). Estilo discreto: borde punteado, `--text-soft`.
+
+### Verificación
+Chrome headless bajo `/MentorAI/`: `sw.js` servido y pedido correctamente,
+shell precacheado (styles, quizzes, offline.html, iconos), **0 errores en 47
+peticiones**; examen con 10 preguntas y correctas repartidas 1/5/3/1; botón de
+mejora con URL bien codificada; 22 botones «Guardar para viajar» en cursos.
+Por `file://` (doble clic) todo sigue funcionando: examen, ruta, marcador.
+
+### Pendiente
+- **Sin commitear** — el usuario no lo ha pedido.
+- Sin decidir: el tutor por lección (depende de su hábito de lectura).
+- Del `plan-offline-real.md` quedan P1/P2: fuentes auto-hospedadas (hoy vienen
+  de Google CDN en los 200 HTML y offline caen a la del sistema), «descargar
+  toda la academia» (5,2 MB), guardar por ruta, `storage.persist()`.
+- Del `plan-evaluaciones.md` queda todo lo demás: explicaciones (`w`), traza
+  pregunta→lección, checks por lección, repaso espaciado, visibilidad del
+  examen, examen de ruta, y los quizzes de `rust` y `python`.
+
 ## Notas técnicas
 - Para añadir un lenguaje al resaltado: ampliar `LANGUAGES` en
   `assets/js/modules/syntax.js`.

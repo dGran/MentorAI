@@ -132,6 +132,28 @@ frentes de abajo.
   por el puente, fix del SW en Pages, y features de grupo (novedades, offline
   por curso, quiz en generación, wishlist, feedback). Sin cuentas ni backend.
 
+Auditoría de producto (2026-07-31), los tres frentes de **producto**, no de
+contenido. **Los tres arreglos críticos ya están implementados** (barajado del
+quiz, P0 del service worker, eliminación del compositor + botón de proponer
+mejora); lo que queda pendiente está detallado al final de cada note:
+- `plan-ia-en-la-app.md` — **DECIDIDO 2026-07-31: la autoría desde la app queda
+  descartada** (ni con IA ni manual). La autoría ya está resuelta fuera de la
+  app: sesiones de Claude Code con agentes + skill `/tutorial`; el compositor de
+  `articulos.html` y `assets/js/modules/bridge.js` son legacy y **se borran**,
+  no se arreglan. En su lugar, botón «proponer mejora» → issue de GitHub
+  prellenado. Queda abierto solo el **tutor por lección** (estudio, no autoría),
+  condicionado al hábito de lectura; si se hace, proxy fino en Vercel, nunca la
+  clave en el navegador. Deja sin sentido A2 y A4 de `plan-multiusuario.md`;
+  A1 (validador) sigue siendo prioritario.
+- `plan-offline-real.md` — **el offline en prod está roto de raíz** (SW nunca
+  registrado en Pages, `SHELL_URLS` absolutas, `curso.html?slug=` nunca acierta
+  en caché). Sustituye el frente C de `plan-multiusuario.md`. El sitio pesa
+  5,2 MB → «Descargar toda la academia» como acción principal.
+- `plan-evaluaciones.md` — los quizzes ya existen pero **el 93 % de las
+  respuestas correctas es la segunda opción**: se aprueban sin leer. Barajar
+  opciones, añadir explicaciones, checks por lección, repaso espaciado y examen
+  final de ruta.
+
 Fase 2 (infraestructura, sin tocar):
 - `plan-buscador-fulltext.md` — búsqueda dentro del contenido (índice por el puente).
 - `plan-resaltado-texto.md` — subrayar texto dentro de los tutoriales.
