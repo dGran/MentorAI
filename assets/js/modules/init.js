@@ -23,6 +23,10 @@
       MentorAI.Paths.renderHome();
     }
 
+    if (MentorAI.Exams) {
+      MentorAI.Exams.renderHome();
+    }
+
     MentorAI.Home.render();
     MentorAI.Home.initSearch();
     MentorAI.initHeroStat();

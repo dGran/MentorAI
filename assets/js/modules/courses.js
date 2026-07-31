@@ -205,7 +205,9 @@
         escapeHtml(lessonsLabel) +
         "</span><span>" +
         escapeHtml(course.level || "") +
-        "</span></div></a>"
+        "</span></div>" +
+        (MentorAI.Exams ? MentorAI.Exams.badgeHtml(course) : "") +
+        "</a>"
       );
     }
 
@@ -305,7 +307,8 @@
             "</header>" +
             '<div class="course-modules">' +
             modulesHtml +
-            "</div>";
+            "</div>" +
+            (MentorAI.Exams ? MentorAI.Exams.panelHtml(course) : "");
 
           const resetEl = host.querySelector(".course-hero__reset");
 

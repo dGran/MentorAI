@@ -36,6 +36,7 @@ var SHELL_PATHS = [
   "assets/js/modules/storage.js",
   "assets/js/modules/catalog.js",
   "assets/js/modules/courses.js",
+  "assets/js/modules/exams.js",
   "assets/js/modules/paths.js",
   "assets/js/modules/home.js",
   "assets/js/modules/syntax.js",
