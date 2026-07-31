@@ -1380,8 +1380,54 @@ peticiones**; examen con 10 preguntas y correctas repartidas 1/5/3/1; botón de
 mejora con URL bien codificada; 22 botones «Guardar para viajar» en cursos.
 Por `file://` (doble clic) todo sigue funcionando: examen, ruta, marcador.
 
-### Pendiente
-- **Sin commitear** — el usuario no lo ha pedido.
+## Segunda tanda: calidad de código y aprendizaje (2026-07-31) — HECHO Y COMMITEADO
+
+El usuario pidió "vamos con todo" y, a mitad, "aplica buenas prácticas: ficheros
+no muy grandes, JS moderno, estilos modernos". 8 commits más.
+
+**Restricción que condiciona todo lo de "JS moderno":** los ES modules **no
+funcionan por `file://`** (el navegador los bloquea por CORS). El patrón IIFE +
+`window.MentorAI` no es una preferencia antigua, es obligatorio mientras el
+proyecto quiera abrirse a doble clic. Lo que sí se moderniza es la sintaxis
+interna.
+
+- **Fuentes auto-hospedadas** (`5cbb838`). Cierra el último cabo del offline.
+- **`tutorial.js` partido** (`9be166d`): 681 líneas → `tutorial.js` (193),
+  `tutorial-audio.js` (259), `tutorial-nav.js` (195), `tutorial-feedback.js`
+  (72). Todos en JS moderno.
+- **Explicaciones en el examen** (`3afbba6`): campos `w` y `lesson`, ocultos
+  hasta corregir, con enlace «Repasar «…»» al tutorial de origen.
+- **Visibilidad de exámenes** (`e48ba5b`): `exams.js` nuevo (186 líneas) con
+  badge en tarjeta, panel en la ficha del curso y lista en el inicio. Descubierto
+  y arreglado de paso: el bloque `.quiz` usaba **tokens CSS que nunca existieron**
+  (`--color-primary`, `--color-muted`, `--radius-md`…), así que esas reglas
+  llevaban desde siempre cayendo a los valores por defecto del navegador.
+- **Exámenes de rust y python** (`8c7f9c1`): los 22 cursos tienen examen ya.
+  Además **rotación de las 275 preguntas** para repartir la posición de la
+  correcta (24/28/24/24 % desde 6/93/1/0), con invariante verificado.
+- **`storage.js` deduplicado** (`bc4c648`): `Bookmarks` y `Progress` eran el
+  mismo código dos veces; ahora salen de un `createSlugSet`. Escrituras
+  protegidas frente a cuota y modo privado. 10 comportamientos verificados.
+- **Explicaciones del núcleo de diseño** (`767cfa2`): oop, solid, clean-code y
+  di-contenedores.
+
+**Método de verificación en toda la tanda:** Chrome headless sirviendo el sitio
+bajo `/MentorAI/`, más asserts de invariante en cada transformación masiva de
+datos (mismas opciones, misma respuesta, slugs existentes).
+
+### Pendiente al cerrar
+- **Explicaciones: 83 de 275** (7 cursos de 22). El detalle exacto de lo que
+  falta y el flujo para continuar están en `plan-evaluaciones.md`.
+- **Modernizar los 7 módulos restantes** (`catalog.js` 581 líneas es el
+  siguiente candidato a partir, más core, courses, home, paths, offline,
+  syntax). Criterio acordado: al tocarlos, no en un big-bang.
+- Del plan de evaluaciones: detalle del intento por pregunta, checks por
+  lección, repaso espaciado, examen de ruta, y el chequeo de sesgo en el
+  validador.
+- De offline: «Descargar toda la academia», guardar por ruta, `storage.persist()`.
+
+## Pendiente de la primera tanda
+- ~~Sin commitear~~ → commiteado (5 commits, `a5362e7`..`7431425`).
 - Sin decidir: el tutor por lección (depende de su hábito de lectura).
 - Del `plan-offline-real.md` quedan P1/P2: fuentes auto-hospedadas (hoy vienen
   de Google CDN en los 200 HTML y offline caen a la del sistema), «descargar

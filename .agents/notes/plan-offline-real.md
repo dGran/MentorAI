@@ -151,9 +151,14 @@ shell con `VERSION` + `refreshShell()` una vez por arranque). Además,
 instalación. Verificado con Chrome headless sirviendo bajo `/MentorAI/`:
 `sw.js` pedido y servido, shell precacheado, 0 errores en 47 peticiones.
 
+**P1 fix 5 también HECHO:** Inter y JetBrains Mono auto-hospedadas en
+`assets/fonts/` (solo subset latin, 340 KB; no hay un solo carácter fuera de ese
+rango en el contenido, y `latin-ext` habría añadido 456 KB inútiles). Los
+`<link>` a Google Fonts fuera de los 200 HTML, `@font-face` al principio de
+`styles.css` y los woff2 en el shell del SW. Verificado: cero peticiones a
+terceros.
+
 **Queda pendiente:**
-- **P1 fix 5** — fuentes desde Google CDN en los 200 HTML; auto-hospedar los
-  `.woff2` y meterlos en el shell.
 - **P2 completo** — «Descargar toda la academia» (5,2 MB, la recomendación
   principal de esta note), guardar por ruta, `storage.persist()` + tamaño
   estimado, indicador de estado en la nav.

@@ -176,14 +176,38 @@ barajado Fisher-Yates de las opciones en cada render con remapeo de
 arregladas sin tocar `quizzes.js`. Verificado con 4000 iteraciones: distribución
 uniforme y la correcta sigue siempre a su opción.
 
-**Sigue pendiente todo lo demás de la fase 1 en adelante:** explicaciones (campo
-`w` — hoy siguen siendo 0), traza pregunta→lección (campo `lesson`), guardar el
-detalle del intento, quizzes de `rust` y `python`, checks por lección, repaso
-espaciado, visibilidad del examen fuera de la última lección, y examen de ruta.
+**También implementado (misma sesión):**
+- **Explicaciones (`w`) y traza a la lección (`lesson`)** en el formato de
+  pregunta, renderizadas al corregir con enlace «Repasar «…»». Ambos campos son
+  opcionales, así que conviven con las preguntas sin rellenar.
+- **Exámenes de `rust` y `python`** (12 preguntas cada uno): los **22 cursos**
+  tienen ya examen. 275 preguntas en total.
+- **Sesgo corregido también en los datos**: un script rotó las opciones de las
+  275 preguntas dejando la respuesta correcta repartida (24/28/24/24 %),
+  verificando que cada pregunta conserva su mismo conjunto de opciones y su
+  misma respuesta correcta.
+- **Visibilidad completa** (`assets/js/modules/exams.js`, nuevo): badge de
+  estado en la tarjeta de curso, panel con enlace directo al final de
+  `curso.html`, y lista en el dashboard del inicio ordenada por lo que necesita
+  atención. De paso se arreglaron los tokens CSS inexistentes que usaba el
+  bloque `.quiz` desde que se escribió.
 
-**Y sigue faltando el chequeo de sesgo en el validador** (A1 de
-`plan-multiusuario.md`): el barajado protege al lector, pero los datos siguen
-teniendo el sesgo, y las preguntas nuevas que genere la IA lo reintroducirán.
+**Explicaciones: 83 de 275 (7 cursos de 22).** Cubiertos: `git`, `oop`, `solid`,
+`clean-code`, `di-contenedores`, `rust`, `python`. **Pendientes 192 preguntas**
+en: sql-aplicado (12), apis-rest (12), acceso-a-datos (12), docker (12), ci-cd
+(10), terminal-linux (15), patrones-diseno (15), framework-por-dentro (10),
+testing (10), observabilidad (15), phpunit (12), programar-con-ia (10),
+fundamentos (20), diseno-y-arquitectura (15), go (12).
+
+Flujo para continuar (probado): leer las preguntas del curso, escribir un JSON
+`{curso: [{w, lesson}, …]}` por índice, y aplicar el inyector, que verifica
+después que ningún enunciado, opción o respuesta ha cambiado y que todos los
+slugs de `lesson` existen en el manifest.
+
+**Sigue pendiente:** guardar el detalle del intento por pregunta, checks por
+lección, repaso espaciado y examen de ruta. **Y el chequeo de sesgo en el
+validador** (A1 de `plan-multiusuario.md`): los datos ya están repartidos, pero
+las preguntas nuevas que genere la IA volverán a sesgarse si nadie lo comprueba.
 
 Decisión aún pendiente del usuario: mantener, suavizar o endurecer el gate del
 examen.
