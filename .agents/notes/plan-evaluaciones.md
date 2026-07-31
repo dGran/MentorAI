@@ -192,17 +192,14 @@ uniforme y la correcta sigue siempre a su opción.
   atención. De paso se arreglaron los tokens CSS inexistentes que usaba el
   bloque `.quiz` desde que se escribió.
 
-**Explicaciones: 83 de 275 (7 cursos de 22).** Cubiertos: `git`, `oop`, `solid`,
-`clean-code`, `di-contenedores`, `rust`, `python`. **Pendientes 192 preguntas**
-en: sql-aplicado (12), apis-rest (12), acceso-a-datos (12), docker (12), ci-cd
-(10), terminal-linux (15), patrones-diseno (15), framework-por-dentro (10),
-testing (10), observabilidad (15), phpunit (12), programar-con-ia (10),
-fundamentos (20), diseno-y-arquitectura (15), go (12).
+**Explicaciones: 275 de 275, COMPLETO** en los 22 cursos. Cada pregunta explica
+por qué la correcta lo es y enlaza a la lección de la que sale, así que fallar
+una te lleva directo a lo que hay que releer.
 
-Flujo para continuar (probado): leer las preguntas del curso, escribir un JSON
-`{curso: [{w, lesson}, …]}` por índice, y aplicar el inyector, que verifica
-después que ningún enunciado, opción o respuesta ha cambiado y que todos los
-slugs de `lesson` existen en el manifest.
+El flujo usado, por si hay que rellenar preguntas nuevas: leer las preguntas del
+curso, escribir un JSON `{curso: [{w, lesson}, …]}` por índice y aplicar un
+inyector que verifica después que ningún enunciado, opción o respuesta ha
+cambiado y que todos los slugs de `lesson` existen en el manifest.
 
 **Sigue pendiente:** guardar el detalle del intento por pregunta, checks por
 lección, repaso espaciado y examen de ruta. **Y el chequeo de sesgo en el

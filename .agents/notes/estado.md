@@ -1415,9 +1415,14 @@ interna.
 bajo `/MentorAI/`, más asserts de invariante en cada transformación masiva de
 datos (mismas opciones, misma respuesta, slugs existentes).
 
+### Tercera tanda: explicaciones completas (misma sesión)
+Tres commits más (`9a5a307`, y los dos siguientes) hasta **275 de 275
+explicaciones, los 22 cursos**. Cada pregunta dice por qué la correcta lo es y
+enlaza a su lección. Verificado en cada tanda: ninguna pregunta alterada,
+ningún slug de `lesson` roto, ninguna explicación vacía o de relleno, y
+distribución de la respuesta correcta estable (66/78/65/66).
+
 ### Pendiente al cerrar
-- **Explicaciones: 83 de 275** (7 cursos de 22). El detalle exacto de lo que
-  falta y el flujo para continuar están en `plan-evaluaciones.md`.
 - **Modernizar los 7 módulos restantes** (`catalog.js` 581 líneas es el
   siguiente candidato a partir, más core, courses, home, paths, offline,
   syntax). Criterio acordado: al tocarlos, no en un big-bang.
