@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Colas y topics: RabbitMQ frente a Kafka — MentorAI</title>
+    <meta name="description" content="Repartir y olvidar frente a guardar y releer: los dos modelos de mensajería, qué te empuja a cada uno y por qué usar Kafka como cola de tareas duele." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Sistemas distribuidos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Colas y topics: RabbitMQ frente a Kafka</h1>
+        <p class="tutorial-hero__lead">Se usan para lo mismo de boquilla y por dentro son animales distintos. Uno reparte trabajo y olvida; el otro guarda un registro que se puede releer.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#dos-modelos">Dos modelos, no dos productos</a></li>
+            <li><a href="#cuando-cada-uno">Qué te empuja a cada uno</a></li>
+            <li><a href="#paralelismo">El paralelismo se decide distinto</a></li>
+            <li><a href="#php">El consumidor, en PHP</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            RabbitMQ y Kafka se usan para lo mismo de boquilla —«mover mensajes entre
+            servicios»— y por dentro son animales distintos. Uno reparte trabajo y olvida; el
+            otro guarda un registro que se puede releer. Elegir por moda es cómo se acaba
+            usando Kafka como cola de tareas o RabbitMQ como almacén de eventos, y las dos
+            cosas duelen.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Antes de esta lección</p>
+              <p>
+                Si no has visto RabbitMQ por dentro —exchanges, bindings, durabilidad y
+                <em>acks</em>—, el artículo <a href="rabbitmq.html">RabbitMQ a fondo</a> cubre
+                esa mitad con detalle. Aquí interesa la comparación y el criterio de elección.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="dos-modelos">
+            Dos modelos, no dos productos
+            <a href="#dos-modelos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La diferencia de fondo es qué pasa con el mensaje después de leerlo.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Cola de mensajes (RabbitMQ)</h4>
+              <ul>
+                <li>El broker <b>reparte</b>: cada mensaje va a un consumidor</li>
+                <li>Al confirmarlo, <b>desaparece</b> de la cola</li>
+                <li>El broker lleva la cuenta de quién ha procesado qué</li>
+                <li>La cola vacía es el estado normal y sano</li>
+                <li>Enrutado rico: exchanges, claves, prioridades, TTL</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Registro de eventos (Kafka)</h4>
+              <ul>
+                <li>El broker <b>guarda</b>: un fichero ordenado por partición</li>
+                <li>Leer no borra: el mensaje sigue ahí hasta que caduque</li>
+                <li>Cada consumidor lleva su propio <em>offset</em></li>
+                <li>Un consumidor nuevo puede leer todo desde el principio</li>
+                <li>Enrutado pobre: topic y clave de partición, poco más</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Kafka: el consumidor guarda un offset</b><small>«Voy por el mensaje 8.412 de la partición 3»</small></span>
+              </div>
+              <div class="flow__arrow" data-label="por eso puede"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">2</span>
+                <span><b>Rebobinar</b><small>Poner el offset a 0 y reprocesar la historia entera</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Esa capacidad de rebobinar es la razón principal para elegir Kafka, y no se puede
+              emular en RabbitMQ.
+            </p>
+          </div>
+
+          <h2 id="cuando-cada-uno">
+            Qué te empuja a cada uno
+            <a href="#cuando-cada-uno" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Si necesitas…</th><th>Encaja</th><th>Por qué</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Repartir tareas entre workers</td><td>RabbitMQ</td><td>El broker equilibra y reintenta por ti</td></tr>
+                <tr><td>Reintentos con retardo y colas de muertos</td><td>RabbitMQ</td><td>Viene hecho; en Kafka lo montas tú</td></tr>
+                <tr><td>Prioridades o enrutado por criterio</td><td>RabbitMQ</td><td>Los exchanges existen justo para eso</td></tr>
+                <tr><td>Que un consumidor nuevo lea la historia</td><td>Kafka</td><td>El registro sigue ahí; rebobinas y ya</td></tr>
+                <tr><td>Muchos consumidores del mismo evento</td><td>Kafka</td><td>Cada grupo lleva su offset, no compiten</td></tr>
+                <tr><td>Volumen muy alto y sostenido</td><td>Kafka</td><td>Escribir al final de un fichero es barato</td></tr>
+                <tr><td>Reprocesar tras arreglar un bug</td><td>Kafka</td><td>Vuelves atrás y lo pasas otra vez</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El error caro: Kafka como cola de tareas</p>
+              <p>
+                Si un mensaje falla en Kafka, el consumidor no puede «devolverlo a la cola»: el
+                <em>offset</em> avanza en orden. O paras la partición entera reintentando ese
+                mensaje —bloqueando todo lo que viene detrás—, o lo escribes en un topic de
+                reintentos y montas a mano lo que RabbitMQ te da hecho. Mucha gente descubre
+                esto en producción.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="paralelismo">
+            El paralelismo se decide distinto
+            <a href="#paralelismo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En RabbitMQ, añadir workers a una cola aumenta el paralelismo sin límite práctico: el
+            broker reparte entre los que haya. En Kafka, el paralelismo de un grupo de consumidores
+            está <strong>topado por el número de particiones</strong>: si el topic tiene 6
+            particiones, el séptimo consumidor se queda de brazos cruzados.
+          </p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Elige el número de particiones con margen</p>
+              <p>
+                Ampliar particiones después es posible pero rompe la garantía de orden por
+                clave: los mensajes de una entidad pueden pasar a otra partición y adelantar a
+                los antiguos. Sale mucho más barato empezar con más particiones de las que
+                necesitas que ampliarlas con el sistema en marcha.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            Esto conecta con la lección anterior: la clave de partición es la que fija qué se
+            procesa en orden. Todos los eventos de un pedido con la misma clave van a la misma
+            partición y los ve el mismo consumidor, en orden. Entre pedidos distintos, todo el
+            paralelismo que quieras.
+          </p>
+
+          <h2 id="php">
+            El consumidor, en PHP
+            <a href="#php" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Symfony Messenger abstrae el transporte, y ese es justo su valor: el mismo manejador
+            sirve para los dos, y el cambio es de configuración. Pero cuidado con creer que la
+            abstracción borra las diferencias de arriba.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · .env</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">MESSENGER_TRANSPORT_DSN=amqp://usuario:clave@rabbitmq:5672/%2f/pedidos</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · EnviarCorreoConfirmacion.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+#[AsMessageHandler]
+final class EnviarCorreoConfirmacion
+{
+    public function __invoke(PedidoConfirmado $evento): void
+    {
+        $pedido = $this-&gt;pedidos-&gt;buscar($evento-&gt;idPedido());
+
+        if ($pedido-&gt;correoConfirmacionEnviado()) {
+            return;
+        }
+
+        $this-&gt;correo-&gt;enviarConfirmacion($pedido);
+        $this-&gt;pedidos-&gt;marcarCorreoEnviado($pedido);
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            Ese <code>if</code> de tres líneas es el consumidor idempotente de la lección
+            anterior en su forma más simple. No hace falta más ceremonia cuando el propio
+            dominio ya tiene dónde apuntar que el trabajo está hecho.
+          </p>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El transporte que no es un transporte</p>
+              <p>
+                Messenger trae un transporte <code>doctrine://</code> que usa tu base de datos
+                como cola. Para volúmenes modestos es una opción legítima y te ahorra un
+                servicio que operar. Lo que no es, es un paso previo a Kafka: no rebobina, no
+                escala igual y su rendimiento cae con la tabla llena. Elígelo por lo que es, no
+                como escalón.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>RabbitMQ cuando…</h4>
+              <ul>
+                <li>Repartes trabajo: correos, informes, imágenes</li>
+                <li>Quieres reintentos, retardos y cola de muertos sin construirlos</li>
+                <li>Necesitas enrutar por criterio o priorizar mensajes</li>
+                <li>El mensaje procesado ya no le importa a nadie</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Kafka cuando…</h4>
+              <ul>
+                <li>El evento le interesa a varios consumidores y saldrán más</li>
+                <li>Quieres poder reprocesar la historia tras arreglar un bug</li>
+                <li>Alimentas analítica o un almacén de datos desde los eventos</li>
+                <li>El volumen es alto y sostenido, no a ráfagas</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            Y una tercera opción que nadie menciona en las charlas: <strong>ninguno de los
+            dos</strong>. Si tu volumen cabe en una tabla y un cron, empieza ahí. Un broker es
+            un servicio más que desplegar, monitorizar, actualizar y depurar a las tres de la
+            mañana.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una cola reparte y olvida; un registro de eventos guarda y deja releer. La diferencia es qué pasa con el mensaje después de leerlo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Rebobinar es la razón principal para elegir Kafka, y no se puede emular en RabbitMQ.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Usar Kafka como cola de tareas duele: no hay «devolver a la cola», y los reintentos con retardo hay que construirlos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En Kafka el paralelismo lo topa el número de particiones, y ampliarlas después rompe el orden por clave. Empieza con margen.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La tercera opción es ninguno: una tabla y un cron aguantan más de lo que parece, y no hay que operarlos de madrugada.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

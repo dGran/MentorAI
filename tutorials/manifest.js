@@ -25,6 +25,66 @@
 
 window.ACADEMIA_TUTORIALS = [
   {
+    slug: "sd-colas-y-topicos",
+    title: "Colas y topics: RabbitMQ frente a Kafka",
+    description:
+      "Repartir y olvidar frente a guardar y releer: los dos modelos de mensajería, qué te empuja a cada uno, por qué usar Kafka como cola de tareas duele y por qué el paralelismo se decide distinto en cada uno.",
+    href: "tutorials/sd-colas-y-topicos.html",
+    categories: ["distribuidos"],
+    topic: "Sistemas distribuidos",
+    tags: ["RabbitMQ", "Kafka", "Messenger", "Particiones"],
+    level: "Avanzado",
+    minutes: 13,
+    icon: "signal",
+    status: "published",
+    date: "2026-08-01",
+  },
+  {
+    slug: "sd-sincrono-vs-asincrono",
+    title: "Síncrono o asíncrono: elegir con criterio",
+    description:
+      "Qué pierdes con cada modelo, por qué un servicio lento hace más daño que uno caído, cómo se multiplica la disponibilidad de las dependencias síncronas y el patrón mixto que resuelve la mayoría de casos.",
+    href: "tutorials/sd-sincrono-vs-asincrono.html",
+    categories: ["distribuidos"],
+    topic: "Sistemas distribuidos",
+    tags: ["Acoplamiento", "Colas", "Disponibilidad"],
+    level: "Avanzado",
+    minutes: 12,
+    icon: "signal",
+    status: "published",
+    date: "2026-08-01",
+  },
+  {
+    slug: "sd-garantias-de-entrega",
+    title: "At-most-once, at-least-once, exactly-once",
+    description:
+      "Las tres garantías de entrega de una cola, por qué «exactamente una vez» es publicidad engañosa y cómo escribir consumidores idempotentes que aguanten duplicados sin duplicar cobros.",
+    href: "tutorials/sd-garantias-de-entrega.html",
+    categories: ["distribuidos"],
+    topic: "Sistemas distribuidos",
+    tags: ["Colas", "Idempotencia", "Duplicados", "Orden"],
+    level: "Avanzado",
+    minutes: 14,
+    icon: "signal",
+    status: "published",
+    date: "2026-08-01",
+  },
+  {
+    slug: "sd-outbox",
+    title: "El patrón outbox: guardar y publicar sin perder eventos",
+    description:
+      "Guardar en la base de datos y publicar un evento son dos escrituras a dos sistemas y no pueden ser atómicas. El outbox las convierte en una: el evento es una fila más, y un publicador aparte lo saca al broker.",
+    href: "tutorials/sd-outbox.html",
+    categories: ["distribuidos"],
+    topic: "Sistemas distribuidos",
+    tags: ["Outbox", "Eventos", "Transacciones", "CDC"],
+    level: "Avanzado",
+    minutes: 15,
+    icon: "database",
+    status: "published",
+    date: "2026-08-01",
+  },
+  {
     slug: "sd-fallos-parciales",
     title: "Fallos parciales: la respuesta que nunca llega",
     description:

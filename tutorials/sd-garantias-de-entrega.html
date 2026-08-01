@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>At-most-once, at-least-once, exactly-once — MentorAI</title>
+    <meta name="description" content="Las tres garantías de entrega, por qué una de ellas es publicidad engañosa y cómo escribir consumidores que aguantan duplicados." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Sistemas distribuidos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">At-most-once, at-least-once, exactly-once</h1>
+        <p class="tutorial-hero__lead">Hay tres garantías de entrega posibles y una es publicidad. Saber cuál usa tu cola separa a un consumidor que aguanta de uno que duplica cobros en cuanto hay un reinicio.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#las-tres">Las tres garantías</a></li>
+            <li><a href="#exactly-once">Por qué «exactamente una vez» es publicidad</a></li>
+            <li><a href="#idempotente">Consumidores que aguantan duplicados</a></li>
+            <li><a href="#orden">El orden es otro problema</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Hay tres garantías de entrega posibles y una de ellas es publicidad engañosa. Saber
+            cuál usa tu cola —y qué significa de verdad la que promete «exactamente una vez»— es
+            la diferencia entre un consumidor que aguanta y uno que duplica cobros en cuanto hay
+            un reinicio.
+          </p>
+
+          <h2 id="las-tres">
+            Las tres garantías
+            <a href="#las-tres" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Todo se reduce a <em>cuándo</em> confirmas que has procesado un mensaje. Confirmar
+            antes o después de hacer el trabajo cambia por completo la garantía:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Garantía</th><th>Cuándo confirmas</th><th>Qué puede pasar</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><b>At-most-once</b><br />como mucho una vez</td>
+                  <td>Antes de procesar</td>
+                  <td>Si te caes en medio, el mensaje <b>se pierde</b></td>
+                </tr>
+                <tr>
+                  <td><b>At-least-once</b><br />al menos una vez</td>
+                  <td>Después de procesar</td>
+                  <td>Si te caes antes de confirmar, el mensaje <b>se repite</b></td>
+                </tr>
+                <tr>
+                  <td><b>Exactly-once</b><br />exactamente una vez</td>
+                  <td>—</td>
+                  <td>No existe de extremo a extremo. Ver más abajo</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            No hay una cuarta opción, y no es un problema de implementación: es que el mensaje
+            de confirmación viaja por la misma red poco fiable que el original. Estás eligiendo
+            entre perder o duplicar, y prácticamente siempre quieres <strong>duplicar</strong>,
+            porque un duplicado se puede detectar y un mensaje perdido no.
+          </p>
+
+          <h2 id="exactly-once">
+            Por qué «exactamente una vez» es publicidad
+            <a href="#exactly-once" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Varios sistemas lo anuncian. Lo que ofrecen de verdad es una de estas dos cosas, y
+            ninguna es lo que suena:
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Entrega exactamente una vez</b><small>Imposible. La confirmación viaja por una red que pierde paquetes.</small></span>
+              </div>
+              <div class="flow__arrow" data-label="lo que sí existe"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">2</span>
+                <span><b>Procesamiento con efecto de una vez</b><small>Se entrega varias veces, pero el efecto se aplica una. Eso sí es alcanzable.</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              La distinción no es una sutileza de vocabulario: cambia dónde tienes que escribir código.
+            </p>
+          </div>
+
+          <p>
+            Kafka, por ejemplo, ofrece semántica de efecto único <em>dentro de Kafka</em>: si
+            lees de un topic, transformas y escribes en otro topic, la transacción cubre las
+            dos cosas. En cuanto tu consumidor hace algo fuera —cobrar una tarjeta, mandar un
+            correo, escribir en tu base de datos— esa garantía se acaba. Y ese «algo fuera» es
+            justo lo que hace tu código.
+          </p>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La regla que se te tiene que quedar</p>
+              <p>
+                <b>Asume at-least-once siempre.</b> Da igual lo que prometa el broker: escribe
+                consumidores que puedan ver el mismo mensaje dos veces sin causar daño. Si luego
+                resulta que no se repite nunca, no has perdido nada.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="idempotente">
+            Consumidores que aguantan duplicados
+            <a href="#idempotente" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Hay tres formas de sobrevivir a un duplicado, de menos a más trabajo. La primera es
+            gratis y mucha gente se la salta:
+          </p>
+
+          <p>
+            <strong>1. Que la operación sea idempotente por naturaleza.</strong> «Marca este
+            pedido como enviado» se puede ejecutar cien veces con el mismo resultado. «Suma uno
+            al contador de envíos» no. Cuando puedas elegir cómo expresar el efecto, elige la
+            forma absoluta (<em>fija el valor a X</em>) sobre la relativa (<em>incrementa en
+            uno</em>).
+          </p>
+
+          <p>
+            <strong>2. Registro de mensajes ya vistos.</strong> Guardas el identificador del
+            mensaje en una tabla con índice único y, si ya está, descartas. La clave está en
+            que la inserción y el trabajo ocurran <em>en la misma transacción</em>:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · ConsumidorIdempotente.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class ConsumidorIdempotente
+{
+    public function __invoke(Mensaje $mensaje): void
+    {
+        $this-&gt;conexion-&gt;transactional(function () use ($mensaje): void {
+            try {
+                $this-&gt;conexion-&gt;insert('mensajes_procesados', [
+                    'id_mensaje' =&gt; $mensaje-&gt;id(),
+                    'procesado_en' =&gt; new DateTimeImmutable('now'),
+                ]);
+            } catch (UniqueConstraintViolationException) {
+                return;
+            }
+
+            $this-&gt;manejador-&gt;manejar($mensaje);
+        });
+    }
+}</code></pre>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La misma transacción, o no vale</p>
+              <p>
+                Si marcas el mensaje como visto en Redis y luego haces el trabajo en la base de
+                datos, has cambiado un problema por otro: si el proceso muere entre las dos
+                cosas, el mensaje consta como procesado y el trabajo no se hizo — y ahora lo has
+                perdido, que era lo que querías evitar. El registro va donde va el efecto.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            <strong>3. Clave de idempotencia de extremo a extremo.</strong> Cuando el efecto
+            está en otro servicio —cobrar una tarjeta— no te vale tu tabla: el duplicado lo
+            tiene que detectar quien ejecuta. Por eso las pasarelas de pago serias aceptan una
+            cabecera <code>Idempotency-Key</code>: mandas la misma clave, y si ya procesaron esa
+            operación te devuelven el resultado original en vez de cobrar otra vez.
+          </p>
+
+          <h2 id="orden">
+            El orden es otro problema
+            <a href="#orden" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Que no se pierdan mensajes no implica que lleguen en orden. Con varios consumidores
+            en paralelo, «pedido creado» y «pedido cancelado» pueden procesarse al revés, y no
+            hay reintento que lo arregle.
+          </p>
+          <p>
+            La solución estándar es el <strong>particionado por clave</strong>: todos los
+            mensajes de un mismo pedido van a la misma partición y los procesa el mismo
+            consumidor, en orden. Pierdes paralelismo dentro de esa clave y lo conservas entre
+            claves distintas, que suele ser justo lo que quieres. Kafka lo hace con la clave del
+            mensaje; RabbitMQ, con <em>consistent hashing</em> o colas por entidad.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La alternativa: mensajes que no necesitan orden</p>
+              <p>
+                Si cada evento lleva un número de versión de la entidad, el consumidor puede
+                descartar los que traigan una versión menor que la que ya aplicó. Sale más
+                barato que forzar el orden en la infraestructura, y funciona aunque los mensajes
+                lleguen desordenados.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Blinda el consumidor cuando…</h4>
+              <ul>
+                <li>El mensaje mueve dinero, stock o manda algo al usuario</li>
+                <li>El efecto es acumulativo: contadores, sumas, inserciones</li>
+                <li>El consumidor llama a un tercero que cobra por operación</li>
+                <li>Hay varias réplicas del consumidor leyendo a la vez</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Puedes relajarlo cuando…</h4>
+              <ul>
+                <li>La operación ya es idempotente por su forma: fijar un estado</li>
+                <li>Es una métrica aproximada donde un duplicado no cambia nada</li>
+                <li>Es una caché que se rellena: reescribir el mismo valor no molesta</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Confirmar antes de procesar pierde mensajes; confirmar después los duplica. Elige duplicar: un duplicado se detecta, un mensaje perdido no.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>«Exactamente una vez» no existe en la entrega. Lo que existe es efecto único, y ese lo escribes tú en el consumidor.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Prefiere efectos absolutos («marca como enviado») a relativos («suma uno»): los primeros aguantan duplicados sin código extra.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El registro de mensajes vistos tiene que estar en la misma transacción que el trabajo. En Redis aparte, cambias duplicar por perder.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Orden y entrega son problemas distintos: se resuelve particionando por clave, o versionando el evento para descartar los viejos.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
