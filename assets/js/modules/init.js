@@ -42,6 +42,7 @@
     MentorAI.SyntaxHighlighter.run();
     MentorAI.initHighlights?.();
     MentorAI.Highlights?.renderPage?.();
+    MentorAI.Perfil?.renderPage?.();
 
     MentorAI.Offline?.init();
     MentorAI.Offline?.initCourseButtons();

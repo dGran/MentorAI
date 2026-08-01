@@ -128,22 +128,22 @@ al texto visible); bajar el `effort` es el lever correcto.
   Claude Code.
 
 ## Estado
+**CERRADO 2026-08-01. El tutor por lección queda descartado, no aplazado.**
 
-**Decidido y EJECUTADO 2026-07-31.**
+La autoría desde la app ya se descartó el 2026-07-31 (arriba). Lo único que
+quedaba abierto era el **tutor por lección** —preguntarle a la IA sobre lo que
+estás leyendo—, condicionado al hábito real de lectura. Decisión del usuario:
+**aparcarlo y cerrar el plan.**
 
-- (a) **Hecho.** Eliminados `assets/js/modules/bridge.js`, `server/bridge.js` (y
-  el directorio `server/`), los dos modales y el botón «Añadir artículo» de
-  `articulos.html`, el botón «Refinar» de `catalog.js`, las llamadas de
-  `init.js`, los `<script>` del puente en los 200 HTML y el CSS muerto
-  (`.modal*`, `.composer-form*`, `.field*`, `.card__refine`). Cero referencias
-  huérfanas.
-- (b) **Hecho.** Botón «proponer mejora» en `tutorial.js`: abre un issue de
-  GitHub prellenado con el slug y la sección en la que estás (recalculada en
-  `pointerdown`, no al inyectar el botón).
-- (c) **Sigue pendiente**: decidir el tutor por lección según el hábito real de
-  lectura. Si se hace, todo el diseño técnico está arriba y no hay que volver a
-  investigarlo.
+El razonamiento sigue en pie y es el que hay que recuperar si se reabre:
 
-Nota para quien retome: la autoría es ahora **exclusivamente** Claude Code +
-skill `/tutorial`. Si alguien echa de menos generar desde la web, releer el
-apartado «Decisión» antes de reabrirlo.
+- Con 257 tutoriales, el cuello de botella es leer, no tener más funciones.
+- Un tutor exige un proxy en Vercel (la clave **nunca** en el navegador), una
+  cuenta que vigilar y un gasto que crece con el uso.
+- Y rompe el invariante más valioso del proyecto: hoy todo funciona por
+  `file://` y sin conexión. Un tutor no funcionaría en el avión, que es justo el
+  caso de uso que se cuidó en `plan-offline-real.md`.
+
+Si algún día se reabre, el diseño técnico de más arriba —BYOK frente a proxy,
+CORS del navegador ya verificado, `claude-opus-5`, límites de gasto— está sin
+tocar, para no volver a investigarlo.

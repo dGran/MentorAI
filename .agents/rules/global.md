@@ -107,36 +107,19 @@ global del agente y no se duplican aquí.
 
 ## Planes abiertos
 
-Detalle en `.agents/notes/`. **Norte del proyecto** (ver `plan-carrera-completa.md`):
-llegar a ser "como una carrera universitaria" que dé la base formal que el usuario
-(backend autodidacta) no tuvo — temario completo y coherente, no tutoriales sueltos.
-Estado a 2026-08-01: **257 tutoriales, 26 cursos, 6 rutas**. Los cinco frentes del
-orden original están cerrados **y también los 4 cursos aprobados el 2026-07-06**
-(`sistemas-distribuidos`, `cache-y-rendimiento`, `infraestructura` y
-`protocolos-y-tiempo-real`). Con eso, el norte del proyecto está cubierto:
-`el-grado-que-no-hiciste` son 23 cursos y ningún curso queda fuera de una ruta.
+**Ninguno.** A 2026-08-01 los 16 planes de `.agents/notes/` están cerrados.
 
-**Cerrados, no reabrir** (la note de cada uno lo registra): `plan-diseno-y-calidad`,
-`plan-practica-backend`, `plan-testing-y-observabilidad`, `plan-curso-go`,
-`plan-curso-rust`, `plan-curriculum-fundamentos`, `plan-home-dashboard`, y los tres
-de la auditoría de producto del 2026-07-31 (`plan-ia-en-la-app`, `plan-offline-real`,
-`plan-evaluaciones`).
+**Norte del proyecto cumplido** (`plan-carrera-completa.md`): 257 tutoriales,
+26 cursos y 6 rutas; `el-grado-que-no-hiciste` son 23 cursos y ningún curso
+queda fuera de una ruta.
 
-Pendiente de verdad, por orden de peso:
+Lo único pendiente que no es un plan: la idea **«Ponlo en práctica»**
+(mini-retos al cierre de cada curso), último resto de
+`plan-huecos-versatilidad.md`.
 
-- `plan-huecos-versatilidad.md` — sus cuatro cursos están publicados; queda solo
-  la idea **«Ponlo en práctica»**: mini-retos al cierre de cada curso.
-- `plan-multiusuario.md` — parcial. A1 (validador) hecho como `scripts/validar.js`
-  + CI; C superado por `plan-offline-real`. A2 y A4 quedaron sin sentido al
-  descartarse la autoría desde la app. Quedan A3 (`author`), B (export/import de
-  progreso) y D (features de grupo).
-- **Decisión abierta**: el **tutor por lección** con IA (estudio, no autoría) de
-  `plan-ia-en-la-app.md`, condicionado al hábito real de lectura. Si se hace,
-  proxy fino en Vercel, nunca la clave en el navegador.
-- ~~Verificación manual del offline~~ — **hecha y automatizada**:
-  `node scripts/verificar-offline.js` monta el sitio bajo `/MentorAI/`, descarga
-  todo, **apaga el servidor** y comprueba que sigue funcionando. Ojo: emular
-  «offline» con CDP no vale, porque esa emulación no afecta al service worker.
+Decisiones tomadas que **no se reabren sin motivo nuevo**: no hay autoría desde
+la app, no hay tutor con IA (rompería el `file://` y el offline), no hay tablero
+de tareas, y el uso es individual (nada de `author` ni features de grupo).
 
 Fase 2 — **CERRADA ENTERA el 2026-08-01**:
 - `plan-buscador-fulltext.md` — hecho: índice generado por

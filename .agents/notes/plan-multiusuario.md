@@ -125,9 +125,47 @@ intercalarse con los 4 cursos nuevos aprobados (sistemas-distribuidos, etc.)
 según apetezca. D3 toca el prompt del puente: probar con una generación real.
 
 ## Estado
-**PARCIAL.** A1 (validador del catálogo) hecho 2026-07-31, pero como
-`scripts/validar.js` + workflow de CI, no como `server/validate.js`: el puente
-se borró. C (SW roto en Pages) hecho y superado por `plan-offline-real.md`.
-A2 y A4 perdieron su sentido al descartarse la autoría desde la app
-(ver `plan-ia-en-la-app.md`). Quedan A3 (`author`), B (export/import y sync
-de progreso — el sync por puente ya no aplica) y D (features de grupo).
+**CERRADO 2026-08-01.** El usuario eligió qué frentes le servían y cuáles no,
+con el uso real sobre la mesa: individual, en sus propias máquinas.
+
+- **B1 — export/import del progreso: HECHO.** `assets/js/modules/perfil.js` y
+  una sección «Llévate tu progreso» en `repaso.html`.
+- **B2 — sincronización por el puente: descartado.** El puente ya no existe.
+- **A1 — validador: hecho** (como `scripts/validar.js` + CI, no `server/`).
+- **A2 y A4 — sin sentido** al descartarse la autoría desde la app.
+- **A3 (`author`) y frente D (features de grupo): descartados por ahora.** Solo
+  aplican si alguien más escribe contenido o si se comparte con compañeros, y
+  hoy no es el caso. Reabribles.
+- **C — SW roto en Pages: hecho** y superado por `plan-offline-real.md`.
+
+## Cómo funciona el export/import
+
+Exporta **todas** las claves `academia-*` **menos las que describen a este
+navegador**: `academia-offline-saved`, `academia-offline-todo` y
+`academia-theme`. Importar esas sería mentir sobre una caché que no viaja con el
+fichero.
+
+Al importar **se fusiona, no se reemplaza**, porque el caso real es la misma
+persona leyendo en dos sitios, y reemplazar tira lo leído en el otro. Cada tipo
+de dato tiene su regla, y todas eligen «lo más avanzado»:
+
+| Dato | Regla |
+|---|---|
+| Progreso, marcadores | Unión de slugs |
+| Lectura en curso | Mayor porcentaje y fecha más reciente |
+| Repaso espaciado | Gana el **paso más alto**: refleja más aciertos acumulados |
+| Comprobaciones | Gana la más reciente |
+| Subrayados | Unión por (sección, texto, nth) |
+
+Tras importar se dice qué entró («+2 tutoriales completados · +1 subrayados»),
+que es lo que da confianza en que la fusión hizo algo.
+
+Un fichero corrupto o de una versión futura se rechaza con `FicheroInvalido` y
+un mensaje concreto, sin tocar nada de lo que ya había.
+
+## Verificado en navegador
+
+Estado del «portátil» exportado, estado distinto en el «móvil», e importación:
+progreso unido (3 slugs), lectura al 85 % con la fecha más reciente, repaso
+quedándose con `s:2` frente a `s:0`, subrayados unidos, y las claves de offline
+fuera del fichero. Más los dos casos de error.
