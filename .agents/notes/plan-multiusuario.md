@@ -125,4 +125,9 @@ intercalarse con los 4 cursos nuevos aprobados (sistemas-distribuidos, etc.)
 según apetezca. D3 toca el prompt del puente: probar con una generación real.
 
 ## Estado
-**Documentado (2026-07-13). Nada implementado.**
+**PARCIAL.** A1 (validador del catálogo) hecho 2026-07-31, pero como
+`scripts/validar.js` + workflow de CI, no como `server/validate.js`: el puente
+se borró. C (SW roto en Pages) hecho y superado por `plan-offline-real.md`.
+A2 y A4 perdieron su sentido al descartarse la autoría desde la app
+(ver `plan-ia-en-la-app.md`). Quedan A3 (`author`), B (export/import y sync
+de progreso — el sync por puente ya no aplica) y D (features de grupo).

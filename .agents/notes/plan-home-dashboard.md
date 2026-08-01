@@ -64,7 +64,9 @@ Reestructurar el index de "catálogo con toggle" a **tres vistas**: Inicio
 3. Pulido: re-render de "Seguir viendo" al marcar hecho; vaciar estados; a11y.
 
 ## Estado
-**ETAPA 1 implementada** (sin commit aún). Hecho:
+**CERRADO.** Implementado y commiteado hace tiempo; el módulo vive ahora en
+`assets/js/modules/home.js` (no en `main.js`) y las vistas son páginas HTML
+reales, no pestañas. Lo de abajo queda como registro de lo que se hizo:
 - `Reading` module en `main.js` (clave `academia-reading`, `save/get/list`,
   guarda el % máximo). `initReadingProgress` persiste el % con throttle de 600 ms
   usando el slug del fichero.

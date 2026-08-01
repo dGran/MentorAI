@@ -60,9 +60,12 @@ paths.js, 13 pasos (todos los cursos en orden de plan de estudios, de fundamento
 a CI/CD + programar-con-ia). Se reusó `.path-card`, sin tipo visual nuevo.
 
 ## Estado / orden acordado
-1. **Git** (curso, enfoque chuleta de comandos) — EN CURSO, arrancando.
-2. Montar la ruta "carrera completa" (en paralelo).
-3. Seguir con plan-practica-backend (APIs REST → ORM → Docker → CI/CD).
-4. plan-testing-y-observabilidad (PHPUnit + Observabilidad).
-5. Asignaturas teóricas que faltan (funcional, metodologías).
-Todo pendiente de aprobar estructura curso a curso, como hasta ahora.
+Los cinco puntos del orden original están **hechos**: Git, la ruta transversal
+`el-grado-que-no-hiciste`, `plan-practica-backend` (CERRADO),
+`plan-testing-y-observabilidad` (CERRADO) y las asignaturas teóricas.
+El catálogo va por 22 cursos y 193 tutoriales.
+
+**Lo único pendiente del norte del proyecto** son los 4 cursos aprobados
+2026-07-06 y nunca escritos: `sistemas-distribuidos`, `cache-y-rendimiento`,
+`infraestructura` y `protocolos-y-tiempo-real`. Estructura por aprobar curso
+a curso, como hasta ahora.

@@ -70,4 +70,7 @@ cualquier momento (es producto, no autoría). Compite en cola con las teóricas
 de plan-carrera-completa (funcional, metodologías); decidir prioridad entonces.
 
 ## Estado
-**Cola documentada (2026-07-04). Nada estructurado ni escrito aún.**
+**CASI CERRADO.** Publicados los cuatro cursos: `sql-aplicado`,
+`patrones-diseno`, `framework-por-dentro` y `terminal-linux`.
+**Queda solo** la idea «Ponlo en práctica»: mini-retos al cierre de cada curso
+(no existe nada en el repo; buscar `ponlo en práctica` no devuelve ni un fichero).

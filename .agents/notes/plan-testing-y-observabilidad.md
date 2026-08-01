@@ -140,4 +140,5 @@ arquitectura.
 
 ## Estado
 
-**Plan aprobado en estructura; pendiente de OK para arrancar la autoría.**
+**CERRADO.** Publicados los cursos `phpunit`, `testing` y `observabilidad`.
+Nada pendiente aquí.

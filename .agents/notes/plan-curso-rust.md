@@ -108,4 +108,5 @@ Encolado tras Go (los dos detrás de lo ya comprometido: testing/observabilidad
 en curso, huecos de versatilidad). Confirmar prioridad al arrancar cada tanda.
 
 ## Estado
-**Cola documentada (2026-07-04). Estructura tentativa NO aprobada aún.**
+**CERRADO.** Curso `rust` publicado, en la ruta `mas-alla-de-php`.
+Nada pendiente aquí.

@@ -115,4 +115,5 @@ huecos de versatilidad) **salvo que el usuario lo suba**: al encolarlo no fijó
 prioridad. Preguntar al arrancar la siguiente tanda de autoría.
 
 ## Estado
-**Cola documentada (2026-07-04). Estructura tentativa NO aprobada aún.**
+**CERRADO.** Curso `go` publicado (21 lecciones), en la ruta
+`mas-alla-de-php`. Nada pendiente aquí.

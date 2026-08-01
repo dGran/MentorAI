@@ -132,6 +132,5 @@ entrada en `manifest.js` (mover `featured` al nuevo). Verificar siempre:
 = ids de los `<h2>`, derivación del catálogo.
 
 ## Estado
-Plan aprobado: alcance = currículum COMPLETO (22 tutoriales), orden lógico
-bottom-up, arranque por Representación de datos, enfoque PHP+SQL/bash. Progreso en
-el tracker de arriba. En curso: P1.1 `bits-y-bytes` (primer tutorial).
+**CERRADO.** Curso `fundamentos` publicado al completo (currículum de 22
+tutoriales, orden bottom-up, enfoque PHP+SQL/bash). Nada pendiente aquí.

@@ -108,51 +108,32 @@ global del agente y no se duplican aquí.
 Detalle en `.agents/notes/`. **Norte del proyecto** (ver `plan-carrera-completa.md`):
 llegar a ser "como una carrera universitaria" que dé la base formal que el usuario
 (backend autodidacta) no tuvo — temario completo y coherente, no tutoriales sueltos.
-Ya cubre ~70-80% del temario troncal de un grado; la ruta transversal
-`el-grado-que-no-hiciste` está montada en paths.js (2026-07-04). Quedan los
-frentes de abajo.
+Estado a 2026-08-01: **193 tutoriales, 22 cursos, 6 rutas**. Los cinco frentes del
+orden original están cerrados.
 
-- `plan-diseno-y-calidad.md` — **COMPLETO** (cursos `oop`, `solid`, `clean-code`,
-  `di-contenedores` publicados 2026-06-27).
-- `plan-testing-y-observabilidad.md` — cursos `phpunit` y `observabilidad`
-  (15 tutoriales). Pendiente de autoría.
-- `plan-practica-backend.md` — **CERRADO** (Git, APIs REST, acceso a datos/ORM,
-  Docker, CI/CD, artículos config-y-entornos y composer, y la ruta
-  `construir-un-servicio` montada; 2026-07-04).
-- `plan-curso-go.md` y `plan-curso-rust.md` — cursos amplios de Go y Rust para
-  aprender cada lenguaje desde cero (entorno dockerizado, editores y plugins, y
-  en ambos una lección de virtudes/para qué proyectos, cruzadas entre sí).
-  Encolados 2026-07-04, estructura por aprobar.
-- `plan-huecos-versatilidad.md` — versatilidad transversal aprobada 2026-07-04:
-  SQL aplicado avanzado, patrones GoF, framework por dentro, terminal/Linux, y
-  la idea "Ponlo en práctica" (mini-retos al cierre de cada curso).
-- `plan-multiusuario.md` — uso en grupo de trabajo y multi-dispositivo
-  (2026-07-13): git como capa de colaboración (validador de catálogo, manifest
-  ordenado por slug, `author`, estado `draft`), progreso export/import + sync
-  por el puente, fix del SW en Pages, y features de grupo (novedades, offline
-  por curso, quiz en generación, wishlist, feedback). Sin cuentas ni backend.
+**Cerrados, no reabrir** (la note de cada uno lo registra): `plan-diseno-y-calidad`,
+`plan-practica-backend`, `plan-testing-y-observabilidad`, `plan-curso-go`,
+`plan-curso-rust`, `plan-curriculum-fundamentos`, `plan-home-dashboard`, y los tres
+de la auditoría de producto del 2026-07-31 (`plan-ia-en-la-app`, `plan-offline-real`,
+`plan-evaluaciones`).
 
-Auditoría de producto (2026-07-31), los tres frentes de **producto**, no de
-contenido. **Los tres arreglos críticos ya están implementados** (barajado del
-quiz, P0 del service worker, eliminación del compositor + botón de proponer
-mejora); lo que queda pendiente está detallado al final de cada note:
-- `plan-ia-en-la-app.md` — **DECIDIDO 2026-07-31: la autoría desde la app queda
-  descartada** (ni con IA ni manual). La autoría ya está resuelta fuera de la
-  app: sesiones de Claude Code con agentes + skill `/tutorial`; el compositor de
-  `articulos.html` y `assets/js/modules/bridge.js` son legacy y **se borran**,
-  no se arreglan. En su lugar, botón «proponer mejora» → issue de GitHub
-  prellenado. Queda abierto solo el **tutor por lección** (estudio, no autoría),
-  condicionado al hábito de lectura; si se hace, proxy fino en Vercel, nunca la
-  clave en el navegador. Deja sin sentido A2 y A4 de `plan-multiusuario.md`;
-  A1 (validador) sigue siendo prioritario.
-- `plan-offline-real.md` — **el offline en prod está roto de raíz** (SW nunca
-  registrado en Pages, `SHELL_URLS` absolutas, `curso.html?slug=` nunca acierta
-  en caché). Sustituye el frente C de `plan-multiusuario.md`. El sitio pesa
-  5,2 MB → «Descargar toda la academia» como acción principal.
-- `plan-evaluaciones.md` — los quizzes ya existen pero **el 93 % de las
-  respuestas correctas es la segunda opción**: se aprueban sin leer. Barajar
-  opciones, añadir explicaciones, checks por lección, repaso espaciado y examen
-  final de ruta.
+Pendiente de verdad, por orden de peso:
+
+- **4 cursos aprobados 2026-07-06 y nunca escritos** (`plan-carrera-completa.md`):
+  `sistemas-distribuidos`, `cache-y-rendimiento`, `infraestructura` y
+  `protocolos-y-tiempo-real`. Estructura por aprobar curso a curso.
+- `plan-huecos-versatilidad.md` — sus cuatro cursos están publicados; queda solo
+  la idea **«Ponlo en práctica»**: mini-retos al cierre de cada curso.
+- `plan-multiusuario.md` — parcial. A1 (validador) hecho como `scripts/validar.js`
+  + CI; C superado por `plan-offline-real`. A2 y A4 quedaron sin sentido al
+  descartarse la autoría desde la app. Quedan A3 (`author`), B (export/import de
+  progreso) y D (features de grupo).
+- **Decisión abierta**: el **tutor por lección** con IA (estudio, no autoría) de
+  `plan-ia-en-la-app.md`, condicionado al hábito real de lectura. Si se hace,
+  proxy fino en Vercel, nunca la clave en el navegador.
+- **Verificación manual pendiente**: el flujo «Descargar toda la academia» en un
+  navegador real contra la URL de Pages (headless no activa el service worker).
+  Checklist al final de `plan-offline-real.md`.
 
 Fase 2 (infraestructura, sin tocar):
 - `plan-buscador-fulltext.md` — búsqueda dentro del contenido (índice por el puente).

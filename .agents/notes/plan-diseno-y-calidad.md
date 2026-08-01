@@ -173,6 +173,5 @@ testing/observabilidad (`plan-testing-y-observabilidad.md`).
 
 ## Estado
 
-**Plan en estructura; pendiente OK del usuario para arrancar la autoría.**
-Junto con `plan-testing-y-observabilidad.md`, hay **35 tutoriales** planificados
-sin escribir (20 aquí + 15 allí).
+**CERRADO (2026-06-27).** Publicados los cuatro cursos: `oop`, `solid`,
+`clean-code` y `di-contenedores`. Nada pendiente aquí.
