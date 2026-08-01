@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>gRPC: RPC con contrato y streaming — MentorAI</title>
+    <meta name="description" content="Los cuatro modos de llamada, qué aporta el contrato generado, los plazos que viajan con la llamada y la realidad de gRPC en PHP." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Protocolos y tiempo real</span>
+        </nav>
+        <h1 class="tutorial-hero__title">gRPC: RPC con contrato y streaming</h1>
+        <p class="tutorial-hero__lead">Llamar a un método de otro proceso como si fuera local, con contrato verificado y sobre HTTP/2. Suena a las RPC de los noventa, con una diferencia: esta vez nadie finge que la red no existe.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            12 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#que-es">El contrato genera el código</a></li>
+            <li><a href="#ventajas">Qué aporta de verdad</a></li>
+            <li><a href="#php">La realidad en PHP</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            gRPC es llamar a un método de otro proceso como si fuera local, con un contrato
+            verificado y sobre HTTP/2. Suena a volver a las RPC de los noventa y hay una
+            diferencia importante: esta vez el contrato es explícito y nadie finge que la red no
+            existe.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La comparación general ya está escrita</p>
+              <p>
+                Cuándo elegir REST, RPC o GraphQL se decide en
+                <a href="rest-vs-rpc-vs-graphql.html">REST vs RPC vs GraphQL</a>, del curso de
+                APIs. Aquí vamos a lo concreto de gRPC: qué aporta como protocolo y dónde duele.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="que-es">
+            El contrato genera el código
+            <a href="#que-es" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Defines el servicio y sus mensajes en un fichero, y un generador produce el cliente y
+            el esqueleto del servidor en cada lenguaje. Ese paso es lo que cambia la experiencia:
+            no escribes clientes HTTP ni parseas respuestas.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ini · precios.proto</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="ini">service Precios {
+  rpc Consultar (PeticionPrecio) returns (RespuestaPrecio)
+  rpc ConsultarVarios (stream PeticionPrecio) returns (stream RespuestaPrecio)
+}
+
+message PeticionPrecio {
+  string id_producto = 1
+}
+
+message RespuestaPrecio {
+  int64 centimos = 1
+  string moneda = 2
+}</code></pre>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Modo</th><th>Forma</th><th>Para qué</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><b>Unario</b></td><td>Petición → respuesta</td><td>El caso normal, como una llamada HTTP</td></tr>
+                <tr><td><b>Servidor en flujo</b></td><td>Petición → muchas respuestas</td><td>Suscribirse a actualizaciones</td></tr>
+                <tr><td><b>Cliente en flujo</b></td><td>Muchas peticiones → una respuesta</td><td>Subir datos por lotes</td></tr>
+                <tr><td><b>Bidireccional</b></td><td>Los dos a la vez</td><td>Conversación continua entre servicios</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            El <em>streaming</em> viene de serie porque HTTP/2 multiplexa: no hay que montar nada
+            aparte, es otra firma en el mismo fichero. Esa es la diferencia práctica más grande
+            frente a una API REST, donde mantener un flujo abierto exige SSE o WebSockets.
+          </p>
+
+          <h2 id="ventajas">
+            Qué aporta de verdad
+            <a href="#ventajas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>A favor</h4>
+              <ul>
+                <li>Contrato verificado: un campo mal escrito no compila</li>
+                <li>Clientes generados en todos los lenguajes del equipo</li>
+                <li>Streaming sin infraestructura extra</li>
+                <li>Menos CPU y menos bytes que JSON</li>
+                <li>Plazos y cancelación integrados en el protocolo</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>En contra</h4>
+              <ul>
+                <li>No se puede llamar desde un navegador sin un proxy</li>
+                <li>No se depura con <code>curl</code> ni mirando la pestaña de red</li>
+                <li>Cachear por HTTP deja de aplicar: todo son POST</li>
+                <li>Otra herramienta más: generadores en el pipeline</li>
+                <li>El soporte en PHP es de segunda: extensión C y ergonomía pobre</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Los plazos son lo mejor de gRPC y casi nadie lo cuenta</p>
+              <p>
+                El cliente manda cuánto está dispuesto a esperar, y ese plazo <b>viaja con la
+                llamada</b> a través de toda la cadena. Si el servicio A da 2 s y su llamada a B
+                ya consumió 1,5 s, B recibe 500 ms de plazo, no un timeout suyo inventado. Es el
+                presupuesto de latencia de la lección de rendimiento, implementado en el
+                protocolo.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="php">
+            La realidad en PHP
+            <a href="#php" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Conviene ser honesto: PHP es un ciudadano de segunda en gRPC. El cliente necesita una
+            extensión de C, y <strong>hacer de servidor gRPC en PHP no es viable</strong> con el
+            modelo de FPM, porque el proceso muere al terminar la petición y no puede mantener
+            flujos abiertos.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>PHP como cliente</b><small>Funciona: extensión instalada y clases generadas</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>PHP como servidor unario</b><small>Posible con RoadRunner o similar, no con FPM</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>PHP con streaming</b><small>En la práctica, no. Ese servicio se escribe en Go</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Es una razón legítima para que un servicio concreto no sea PHP, y una mala razón
+              para reescribirlo todo.
+            </p>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Desde el navegador hace falta un proxy</p>
+              <p>
+                Los navegadores no exponen el control de HTTP/2 que gRPC necesita. Se usa
+                gRPC-Web con un proxy que traduce, y en esa traducción se pierden modos de
+                streaming. Si tu consumidor principal es una interfaz web, gRPC te está
+                complicando la vida para nada.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>gRPC cuando…</h4>
+              <ul>
+                <li>Es comunicación entre servicios propios, no con navegadores</li>
+                <li>Hay varios lenguajes y quieres un contrato único</li>
+                <li>El volumen justifica el ahorro de CPU y bytes</li>
+                <li>Necesitas streaming bidireccional de verdad</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>REST sobre JSON cuando…</h4>
+              <ul>
+                <li>La consume un navegador o un cliente externo</li>
+                <li>Quieres aprovechar la caché HTTP</li>
+                <li>Valoras poder depurar con <code>curl</code></li>
+                <li>Tu stack es PHP y no quieres piezas de otro lenguaje</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El contrato genera el código de las dos partes: un campo mal escrito deja de ser un bug en producción y pasa a ser un error de compilación.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El streaming viene de serie porque HTTP/2 multiplexa: es otra firma en el mismo fichero, no infraestructura aparte.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los plazos viajan con la llamada por toda la cadena: es el presupuesto de latencia implementado en el protocolo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Desde el navegador hace falta un proxy y se pierden modos de streaming: si tu consumidor es una web, gRPC estorba.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>PHP sirve como cliente y no como servidor con streaming: es una razón legítima para que un servicio concreto sea Go.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

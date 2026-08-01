@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>De HTTP/1.1 a HTTP/3: qué resuelve cada versión — MentorAI</title>
+    <meta name="description" content="El bloqueo por cabeza de línea empujado una capa más abajo en cada versión, por qué HTTP/2 puede ir peor con pérdida de paquetes y qué trucos antiguos hay que borrar." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Protocolos y tiempo real</span>
+        </nav>
+        <h1 class="tutorial-hero__title">De HTTP/1.1 a HTTP/3: qué resuelve cada versión</h1>
+        <p class="tutorial-hero__lead">Las tres versiones que conviven hoy resuelven el mismo problema en tres capas distintas. Entender ese hilo explica por qué las optimizaciones de 2015 ahora hacen daño.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#http1">HTTP/1.1: una petición cada vez</a></li>
+            <li><a href="#http2">HTTP/2: multiplexar sobre una conexión</a></li>
+            <li><a href="#http3">HTTP/3: cambiar TCP por QUIC</a></li>
+            <li><a href="#que-hago">Qué significa para tu código</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Las tres versiones de HTTP que conviven hoy resuelven el mismo problema en tres
+            capas distintas: el bloqueo por cabeza de línea. Cada versión lo empujó un nivel más
+            abajo, y entender ese hilo explica por qué las optimizaciones que te enseñaron en
+            2015 ahora hacen daño.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Esto da por leídos los fundamentos</p>
+              <p>
+                Métodos, códigos de estado y el modelo de caché están en
+                <a href="http-a-fondo.html">HTTP a fondo</a>, y la capa de transporte en
+                <a href="tcp-ip.html">TCP/IP</a>. Aquí interesa qué cambia entre versiones y qué
+                consecuencias tiene para tu código.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="http1">
+            HTTP/1.1: una petición cada vez
+            <a href="#http1" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Sobre una conexión HTTP/1.1 solo puede haber una petición en vuelo. Hasta que no
+            llega la respuesta, la conexión está ocupada. Si la primera tarda dos segundos, todo
+            lo que iba detrás espera dos segundos: eso es el bloqueo por cabeza de línea, en la
+            capa de aplicación.
+          </p>
+          <p>
+            Los navegadores lo taparon abriendo seis conexiones por dominio. Y de esa limitación
+            —seis— nacieron todos los trucos de la época:
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Trucos de HTTP/1.1</h4>
+              <ul>
+                <li><b>Sharding de dominios:</b> repartir en <code>img1</code>, <code>img2</code>… para tener más conexiones</li>
+                <li><b>Concatenar</b> todo el CSS y el JS en un fichero</li>
+                <li><b>Sprites</b> de imágenes en un solo archivo</li>
+                <li><b>Datos en línea</b> como base64</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Por qué ahora estorban</h4>
+              <ul>
+                <li>Cada dominio extra es otro DNS y otro handshake TLS</li>
+                <li>Un fichero enorme invalida la caché entera por un cambio de una línea</li>
+                <li>Descargas el sprite completo para usar dos iconos</li>
+                <li>base64 pesa un 33 % más y no se cachea aparte</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="http2">
+            HTTP/2: multiplexar sobre una conexión
+            <a href="#http2" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            HTTP/2 parte los mensajes en <em>frames</em> etiquetados con un identificador de flujo,
+            de modo que muchas peticiones y respuestas viajan entrelazadas por la misma conexión
+            TCP. Se acabó el límite de seis, y con él la razón de existir de los trucos de arriba.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Novedad</th><th>Qué aporta</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Multiplexación</td><td>Muchas peticiones simultáneas en una conexión</td></tr>
+                <tr><td>Binario en vez de texto</td><td>Menos ambigüedad al parsear y menos coste</td></tr>
+                <tr><td>Compresión de cabeceras (HPACK)</td><td>Las cabeceras repetidas dejan de mandarse enteras cada vez</td></tr>
+                <tr><td>Prioridades</td><td>El cliente puede pedir que el CSS llegue antes que una imagen</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Pero el bloqueo no desapareció: bajó a TCP</p>
+              <p>
+                TCP garantiza orden. Si se pierde un paquete, el sistema operativo retiene
+                <b>todos</b> los datos posteriores hasta que llegue la retransmisión — aunque
+                pertenezcan a flujos distintos que no tienen nada que ver. Con una red buena no se
+                nota; con pérdida de paquetes, HTTP/2 puede ir <b>peor</b> que HTTP/1.1 con seis
+                conexiones, porque ahí una pérdida solo frenaba a una de las seis.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            Y una nota sobre <em>server push</em>, que se anunció como la gran novedad: resultó
+            que casi siempre empujaba recursos que el cliente ya tenía cacheados, gastando ancho
+            de banda. Los navegadores lo han retirado. Lo que sí funciona para lo mismo es
+            <code>103 Early Hints</code>, que sugiere al cliente qué ir pidiendo sin mandarle nada.
+          </p>
+
+          <h2 id="http3">
+            HTTP/3: cambiar TCP por QUIC
+            <a href="#http3" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Si el problema es TCP, la solución es no usar TCP. HTTP/3 va sobre QUIC, que corre
+            encima de UDP e implementa por su cuenta la fiabilidad, el control de congestión y el
+            cifrado.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Flujos independientes de verdad</b><small>Un paquete perdido solo frena a su flujo, no a los demás</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Handshake más corto</b><small>Transporte y TLS 1.3 se negocian juntos: una ida y vuelta, o cero al reconectar</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Migración de conexión</b><small>Cambias de wifi a datos y la conexión sobrevive: la identifica un ID, no la IP</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              El punto 3 es enorme en móvil, y es imposible con TCP, donde la conexión <em>es</em>
+              la tupla de IP y puertos.
+            </p>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">QUIC vive en espacio de usuario</p>
+              <p>
+                TCP lo implementa el núcleo del sistema operativo, así que mejorarlo exige que
+                todo el mundo actualice. QUIC lo implementa la aplicación, y eso permite iterar
+                el protocolo a la velocidad de los despliegues de un navegador. Es la razón
+                estructural de que HTTP/3 pueda seguir mejorando.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="que-hago">
+            Qué significa esto para tu código
+            <a href="#que-hago" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Casi nada, y esa es la buena noticia: la semántica de HTTP no ha cambiado. Métodos,
+            estados, cabeceras y caché son idénticos. Lo que cambia es qué optimizaciones tienen
+            sentido:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Con HTTP/2 o /3</th><th>Qué hacer</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Sharding de dominios</td><td><b>Quítalo:</b> ahora cuesta handshakes de más</td></tr>
+                <tr><td>Un solo bundle gigante</td><td>Parte en trozos: mejor caché y descargas en paralelo</td></tr>
+                <tr><td>Sprites e imágenes en base64</td><td>Ficheros sueltos, que se cachean por separado</td></tr>
+                <tr><td>Cabeceras y cookies enormes</td><td>Siguen costando, aunque HPACK ayude. Recórtalas</td></tr>
+                <tr><td>Muchas peticiones pequeñas</td><td>Ya no es un problema: el coste por petición cayó mucho</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            Antes de optimizar nada conviene saber qué versión estás usando de verdad, que no
+            siempre es la que crees:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · comprobar la versión negociada</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">curl -sI --http2 https://ejemplo.com | head -1
+
+curl -sI --http3 https://ejemplo.com | head -1
+
+curl -s -o /dev/null -w "version=%{http_version} tls=%{time_appconnect}s total=%{time_total}s\n" \
+     https://ejemplo.com</code></pre>
+          </div>
+
+          <p>
+            La última línea es la más útil de las tres: separa el tiempo hasta que el cifrado está
+            listo del tiempo total, así que te dice cuánto de lo que tarda tu petición es
+            handshake y cuánto es trabajo real.
+          </p>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Y esto solo aplica al último tramo</p>
+              <p>
+                El navegador habla HTTP/2 o /3 con tu CDN o tu balanceador; de ahí a tu
+                aplicación, la conexión suele seguir siendo HTTP/1.1. Activar HTTP/3 no cambia
+                nada entre tus servicios internos, ni acelera la comunicación con tu base de
+                datos.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Activa HTTP/2 y /3 cuando…</h4>
+              <ul>
+                <li>Sirves a navegadores: la mejora es real y no cuesta código</li>
+                <li>Hay usuarios en móvil o en redes con pérdida</li>
+                <li>Tu CDN o tu balanceador lo soportan sin trabajo</li>
+                <li>Y de paso, revisa qué trucos de la era 1.1 puedes borrar</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Da igual cuando…</h4>
+              <ul>
+                <li>Es tráfico entre servicios en la misma red</li>
+                <li>Son pocas peticiones grandes en vez de muchas pequeñas</li>
+                <li>El cuello está en tu base de datos, no en el transporte</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Las tres versiones persiguen el mismo problema —el bloqueo por cabeza de línea— empujándolo una capa más abajo cada vez.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>HTTP/2 multiplexa sobre una conexión, pero como TCP garantiza orden, una pérdida frena a todos los flujos a la vez.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Con pérdida de paquetes, HTTP/2 puede ir peor que HTTP/1.1 con seis conexiones. QUIC lo arregla saliéndose de TCP.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La migración de conexión de QUIC —cambiar de wifi a datos sin cortar— es imposible con TCP, donde la conexión es la tupla IP:puerto.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La semántica no cambia: lo que cambia es que los trucos de HTTP/1.1 —sharding, sprites, bundles gigantes— ahora hacen daño.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
