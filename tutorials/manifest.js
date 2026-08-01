@@ -311,7 +311,6 @@ window.ACADEMIA_TUTORIALS = [
   },
   {
     slug: "python-a-produccion",
-    featured: true,
     date: "2026-07-06",
     title: "Python a producción: Docker, logging y configuración",
     description: "Compilar y dockerizar una aplicación FastAPI con imagen mínima, configuración por variables de entorno, logging estructurado con structlog y health checks.",
@@ -1241,7 +1240,6 @@ window.ACADEMIA_TUTORIALS = [
   },
   {
     slug: "go-que-es",
-    featured: true,
     date: "2026-07-06",
     title: "Por qué Go: fortalezas y casos de uso",
     description: "Go compila a un binario único, tiene concurrencia nativa, se lee en un día y se despliega trivialmente. Qué lo hace diferente de PHP, para qué proyectos brilla y cuándo elegir Rust.",
