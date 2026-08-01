@@ -1323,4 +1323,383 @@ window.MENTORAI_CHECKS = {
       w: "Permite que el binario sepa de qué commit salió sin depender de nada externo, que es justo lo que quieres al depurar producción." },
   ],
 
+
+  "python-que-es": [
+    { q: "¿Qué explica que Python domine en datos y scripting pero no en servicios de altísimo rendimiento?",
+      o: ["Que es un lenguaje joven","Que prioriza legibilidad y velocidad de desarrollo, a costa de velocidad de ejecución","Que no tiene librerías de red"], a: 1,
+      w: "Y cuando el rendimiento importa, se delega en librerías escritas en C: por eso NumPy es rápido aunque Python no lo sea." },
+    { q: "¿Qué es el GIL y qué implica?",
+      o: ["Un gestor de paquetes","Un recolector de basura","Un bloqueo que impide que varios hilos ejecuten bytecode a la vez: los hilos no paralelizan CPU"], a: 2,
+      w: "Para CPU se usan procesos (`multiprocessing`); para I/O, hilos o async, que sí aprovechan la espera." },
+  ],
+
+  "python-entorno-docker": [
+    { q: "¿Sigue haciendo falta un entorno virtual si trabajas en Docker?",
+      o: ["Normalmente no: el contenedor ya te da el aislamiento","Sí, siempre","Solo en producción"], a: 0,
+      w: "Fuera de Docker sí importa: sin él, dos proyectos con versiones distintas de la misma librería se pisan." },
+    { q: "¿Qué se copia primero en el Dockerfile para aprovechar la caché?",
+      o: ["Todo el código","El `requirements.txt` (o `pyproject.toml`) y se instalan las dependencias antes del código","El directorio de tests"], a: 1,
+      w: "Mismo principio que en cualquier lenguaje: lo que cambia poco arriba, lo que cambia en cada commit abajo." },
+  ],
+
+  "python-editores": [
+    { q: "¿Qué aporta un formateador como Black frente a discutir estilo en los PR?",
+      o: ["Detecta bugs","Acelera la ejecución","Decide por ti: elimina una categoría entera de comentarios de revisión"], a: 2,
+      w: "Misma filosofía que `gofmt`. El formato deja de ser una opinión y pasa a ser una herramienta." },
+    { q: "¿Para qué sirve un linter como Ruff o flake8?",
+      o: ["Detectar problemas que el intérprete no ve hasta ejecutar: imports sin usar, variables indefinidas, patrones sospechosos","Formatear el código","Ejecutar los tests"], a: 0,
+      w: "En un lenguaje dinámico esto importa más: sin linter, un nombre mal escrito no se descubre hasta que se ejecuta esa rama." },
+  ],
+
+  "python-primer-programa": [
+    { q: "¿Qué hace `if __name__ == \"__main__\":`?",
+      o: ["Declara la función principal","Ejecuta ese bloque solo al lanzar el fichero directamente, no al importarlo","Comprueba que el módulo está instalado"], a: 1,
+      w: "Al importar, Python ejecuta todo el cuerpo del módulo. Este guardia evita que importar tu script dispare efectos colaterales." },
+    { q: "¿Qué delimita un bloque en Python?",
+      o: ["Las llaves","El punto y coma","La indentación, que es sintaxis y no estilo"], a: 2,
+      w: "Por eso mezclar tabuladores y espacios da error: no es una manía del linter, es que el intérprete no sabe dónde acaba el bloque." },
+  ],
+
+  "python-tipos-y-variables": [
+    { q: "¿Por qué una tupla puede ser clave de un diccionario y una lista no?",
+      o: ["Porque es inmutable y por tanto hasheable","Porque la tupla es más pequeña","Porque la lista admite tipos mezclados"], a: 0,
+      w: "Ojo: una tupla que contenga una lista deja de ser hasheable, porque su contenido sí puede cambiar." },
+    { q: "Asignas `b = a` con una lista y al modificar `b` cambia `a`.",
+      o: ["Es un bug","Ambas apuntan al mismo objeto: para copiar hay que hacerlo explícitamente","Solo pasa con listas de objetos"], a: 1,
+      w: "Python asigna referencias. Con inmutables no se nota porque no puedes modificarlos in situ." },
+  ],
+
+  "python-control-de-flujo": [
+    { q: "¿Qué valores se evalúan como falsos en Python además de `False`?",
+      o: ["Solo `None`","Ninguno más","0, cadenas vacías, listas y diccionarios vacíos, y `None`"], a: 2,
+      w: "De ahí que `if lista:` sea idiomático para «si no está vacía», y también que `if valor:` falle cuando 0 es un valor legítimo." },
+    { q: "¿Qué hace el `else` de un `for`?",
+      o: ["Se ejecuta al terminar el bucle sin `break`","Se ejecuta si el bucle no itera ninguna vez","Es un error de sintaxis"], a: 0,
+      w: "Es de lo más confuso del lenguaje. Se usa para el patrón «buscar y, si no se encontró, hacer algo»." },
+  ],
+
+  "python-funciones": [
+    { q: "`def add(x, l=[])` y la lista va acumulando entre llamadas.",
+      o: ["Es un bug del intérprete","El valor por defecto se evalúa una vez, al definir la función: se usa `None` y se crea dentro","Hay que declararla global"], a: 1,
+      w: "Es de los fallos que más se repiten en Python, y no da ningún aviso: simplemente el comportamiento es otro." },
+    { q: "¿Qué son `*args` y `**kwargs`?",
+      o: ["Punteros","Marcadores de tipo","Recogen argumentos posicionales y con nombre en número variable"], a: 2,
+      w: "Útiles para envolver funciones (decoradores), y peligrosos en una API pública: la firma deja de decir qué se acepta." },
+  ],
+
+  "python-clases-y-oop": [
+    { q: "¿Qué significa el guion bajo inicial en `_atributo`?",
+      o: ["Una convención: «esto es interno», pero se puede acceder igual","Que es privado y el intérprete lo protege","Que es una constante"], a: 0,
+      w: "Python confía en el acuerdo, no en el compilador. El doble guion bajo activa name mangling, que tampoco es privacidad real." },
+    { q: "¿Qué aporta `@dataclass`?",
+      o: ["Hace la clase inmutable","Genera `__init__`, `__repr__` y comparadores a partir de los atributos declarados","Valida los tipos en tiempo de ejecución"], a: 1,
+      w: "La validación en ejecución es cosa de Pydantic. `@dataclass` solo te ahorra el código repetitivo." },
+  ],
+
+  "python-modulos-y-paquetes": [
+    { q: "¿Qué diferencia un import absoluto de uno relativo?",
+      o: ["El relativo es más rápido","El relativo solo vale en tests","El absoluto parte de la raíz del proyecto; el relativo (`from . import x`) del paquete actual"], a: 2,
+      w: "Los absolutos se recomiendan por legibilidad: dicen de dónde viene cada cosa sin saber dónde estás." },
+    { q: "Un import circular entre dos módulos.",
+      o: ["Suele indicar que las responsabilidades están mal repartidas: hay que extraer lo común","Python lo resuelve solo","Se arregla importando dentro de la función"], a: 0,
+      w: "Importar dentro de la función lo esconde y funciona, pero el problema de diseño sigue ahí." },
+  ],
+
+  "python-comprehensions-y-generadores": [
+    { q: "Procesas un fichero de diez millones de líneas y te quedas sin memoria.",
+      o: ["Hay que aumentar el límite del intérprete","Estás construyendo una lista: con un generador el uso de memoria se mantiene constante","Hay que leer el fichero por bloques manualmente"], a: 1,
+      w: "El generador produce bajo demanda. A cambio, solo se puede recorrer una vez." },
+    { q: "¿Cuándo NO conviene una comprehension?",
+      o: ["Cuando itera más de 100 elementos","Cuando el resultado es un diccionario","Cuando anida varios `for` e `if` y deja de leerse: ahí gana el bucle explícito"], a: 2,
+      w: "La comprehension es legible mientras cabe de un vistazo; a partir de ahí es un bucle escrito en una línea." },
+  ],
+
+  "python-decoradores": [
+    { q: "¿Qué es exactamente `@decorador` sobre una función?",
+      o: ["Azúcar para `f = decorador(f)`","Una anotación que lee el intérprete","Una comprobación de tipos"], a: 0,
+      w: "Entenderlo así explica todo lo demás, incluidos los decoradores con parámetros, que son una función que devuelve un decorador." },
+    { q: "Tras decorar una función, su `__name__` es `wrapper`.",
+      o: ["Es inevitable","Falta `functools.wraps` en el decorador","Hay que renombrarla a mano"], a: 1,
+      w: "Sin él, la función envuelta pierde nombre y docstring, y eso rompe herramientas que se apoyan en la introspección." },
+  ],
+
+  "python-context-managers": [
+    { q: "¿Qué garantiza `with open(...) as f`?",
+      o: ["Que el fichero se lee entero","Que nadie más puede escribir","Que se cierra al salir del bloque, incluso si salta una excepción"], a: 2,
+      w: "Es un `try/finally` con nombre. Sirve para conexiones, locks y transacciones, no solo para ficheros." },
+    { q: "¿Cómo se escribe un context manager propio de forma rápida?",
+      o: ["Con `@contextlib.contextmanager` y un `yield` en medio","Heredando de `ContextManager`","Implementando `__init__` y `__del__`"], a: 0,
+      w: "Lo de antes del `yield` es la entrada y lo de después la salida; con `try/finally` alrededor si hay que limpiar pase lo que pase." },
+  ],
+
+  "python-tipado-con-mypy": [
+    { q: "Anotas los tipos y en ejecución pasa un valor del tipo equivocado sin quejarse.",
+      o: ["Falta activar el modo estricto del intérprete","Es lo normal: Python ignora las anotaciones en ejecución; quien las comprueba es mypy, antes","Las anotaciones están mal escritas"], a: 1,
+      w: "Por eso mypy y Pydantic se complementan: uno valida antes de ejecutar, el otro en la frontera de entrada de datos." },
+    { q: "¿Qué ganas anotando tipos en un proyecto Python grande?",
+      o: ["Rendimiento","Menos memoria","Que el editor y mypy detecten errores sin ejecutar, y que las firmas documenten de verdad"], a: 2,
+      w: "En un lenguaje dinámico, muchos errores solo aparecen al recorrer esa rama concreta. Las anotaciones los adelantan." },
+  ],
+
+  "python-fastapi-intro": [
+    { q: "Declaras un parámetro como `int` en un endpoint de FastAPI y llega `\"abc\"`.",
+      o: ["FastAPI devuelve un 422 sin que escribas validación","Llega como string","Se convierte a 0"], a: 0,
+      w: "La validación sale de los tipos que ya declaraste, y de ahí también el esquema OpenAPI y la documentación." },
+    { q: "¿Qué aporta el sistema de dependencias (`Depends`) de FastAPI?",
+      o: ["Gestiona los paquetes instalados","Inyecta y reutiliza cosas como la sesión de BD o el usuario autenticado, y las hace sustituibles en tests","Controla el orden de arranque"], a: 1,
+      w: "Es inyección de dependencias con otra sintaxis, y su mayor valor está justo en poder sustituirlas al testear." },
+  ],
+
+  "python-pydantic": [
+    { q: "¿Qué diferencia hay entre las anotaciones de mypy y un modelo Pydantic?",
+      o: ["Ninguna, Pydantic usa mypy","Pydantic solo sirve para JSON","mypy comprueba antes de ejecutar; Pydantic valida y convierte en tiempo de ejecución"], a: 2,
+      w: "Por eso Pydantic se usa en la frontera (entrada HTTP, ficheros de configuración), donde los datos vienen de fuera y no te fías." },
+    { q: "¿Dónde tiene más sentido usar Pydantic?",
+      o: ["En los bordes: entrada de la API, configuración, mensajes de cola","En toda clase del proyecto","Solo en los tests"], a: 0,
+      w: "Dentro del dominio suele sobrar: si el dato ya entró validado, volver a validarlo en cada capa es ruido." },
+  ],
+
+  "python-sqlalchemy-async": [
+    { q: "Usas SQLAlchemy async pero el driver es síncrono.",
+      o: ["Funciona igual","Bloqueas el event loop: hace falta un driver async como asyncpg","SQLAlchemy lo convierte automáticamente"], a: 1,
+      w: "Es el error típico al migrar a async: la librería es asíncrona pero la llamada de red sigue siendo bloqueante." },
+    { q: "¿Qué problema da una sesión de SQLAlchemy compartida entre peticiones?",
+      o: ["Va más rápido pero gasta memoria","Ninguno si es de solo lectura","No es segura: acumula estado y puede mezclar datos entre peticiones"], a: 2,
+      w: "La sesión es por unidad de trabajo. En FastAPI se entrega por dependencia y se cierra al terminar la petición." },
+  ],
+
+  "python-testing-pytest": [
+    { q: "¿Cómo recibe un test su fixture en pytest?",
+      o: ["Pidiéndola por nombre en la firma del test","Importándola","Con un decorador"], a: 0,
+      w: "Y con `yield` dentro de la fixture haces montaje y desmontaje en el mismo sitio, que es lo que la hace tan cómoda." },
+    { q: "¿Qué controla el `scope` de una fixture?",
+      o: ["Qué tests pueden usarla","Cada cuánto se crea: por test, por módulo o por sesión","Su orden de ejecución"], a: 1,
+      w: "Un scope amplio ahorra tiempo en cosas caras, y a cambio comparte estado: ahí es donde aparecen las dependencias de orden." },
+  ],
+
+  "python-async-await": [
+    { q: "Llamas a `time.sleep(5)` dentro de una corrutina.",
+      o: ["Solo se pausa esa corrutina","Se ejecuta en un hilo aparte","Bloqueas el event loop entero: hay que usar `asyncio.sleep`"], a: 2,
+      w: "Cualquier llamada síncrona larga para el bucle. Para código bloqueante inevitable está `asyncio.to_thread`." },
+    { q: "Llamas a una función `async` sin `await`.",
+      o: ["Obtienes un objeto corrutina y no se ejecuta nada; Python suele avisar","Se ejecuta igual","Da error de sintaxis"], a: 0,
+      w: "El aviso de «coroutine was never awaited» es justo eso, y es fácil pasarlo por alto entre el resto de la salida." },
+  ],
+
+  "python-docker": [
+    { q: "¿Por qué se usa `--no-cache-dir` al instalar con pip en un Dockerfile?",
+      o: ["Para forzar la última versión","Para no dejar la caché de pip dentro de la imagen, que solo abulta","Para acelerar la instalación"], a: 1,
+      w: "Detalle pequeño con efecto real: esa caché no sirve de nada en la imagen final y puede sumar decenas de megas." },
+    { q: "¿Por qué conviene ejecutar como usuario no root dentro del contenedor?",
+      o: ["Para que arranque más rápido","Porque Docker lo exige","Para limitar el daño si alguien consigue ejecutar código dentro"], a: 2,
+      w: "Es defensa en profundidad: el contenedor aísla, pero no conviene que lo que corre dentro tenga todos los privilegios." },
+  ],
+
+  "python-configuracion": [
+    { q: "¿Dónde van los secretos de una app en producción?",
+      o: ["En variables de entorno o un gestor de secretos, fuera del repositorio","En un fichero versionado con el código","Codificados en base64 en el código"], a: 0,
+      w: "Base64 es codificación, no cifrado. El principio es separar configuración de código: lo que cambia entre entornos, fuera." },
+    { q: "¿Qué aporta `BaseSettings` de Pydantic sobre leer `os.environ` a mano?",
+      o: ["Nada, es lo mismo","Tipa, valida y da valores por defecto, y falla al arrancar si falta algo obligatorio","Cifra las variables"], a: 1,
+      w: "Fallar al arrancar es la gracia: mejor que reventar a media petición porque faltaba una variable." },
+  ],
+
+  "python-a-produccion": [
+    { q: "¿Por qué no se usa el servidor de desarrollo en producción?",
+      o: ["Porque no soporta HTTPS","Porque no admite variables de entorno","Porque no está pensado para concurrencia ni robustez: se usa un ASGI/WSGI de verdad como uvicorn o gunicorn"], a: 2,
+      w: "El servidor de desarrollo prioriza recarga automática y mensajes de error, justo lo contrario de lo que quieres fuera." },
+    { q: "¿Cómo se registran los logs de una app en un contenedor?",
+      o: ["A stdout, y que la plataforma los recoja","En un fichero dentro del contenedor","Enviándolos por correo"], a: 0,
+      w: "Escribir a fichero dentro del contenedor es escribir en algo efímero: al recrearlo, los logs se van con él." },
+  ],
+
+  "rust-que-es": [
+    { q: "¿Qué promete Rust que lo distingue?",
+      o: ["Compilación más rápida que C","Seguridad de memoria sin recolector de basura, comprobada al compilar","Sintaxis más simple"], a: 1,
+      w: "Ni recolector ni fugas ni carreras de datos: el compilador lo verifica antes, y ese es el trato (y el coste de aprendizaje)." },
+    { q: "¿Para qué proyectos NO es la mejor elección?",
+      o: ["Sistemas embebidos","Herramientas de línea de comandos","Un CRUD sencillo donde el tiempo de desarrollo importa más que el rendimiento"], a: 2,
+      w: "Pelearse con el borrow checker para un CRUD es pagar un precio sin cobrar el beneficio." },
+  ],
+
+  "rust-entorno-docker": [
+    { q: "¿Qué se cachea en un build de Rust para no recompilar todo cada vez?",
+      o: ["Las dependencias: copiar `Cargo.toml` y `Cargo.lock` y compilarlas antes del código","El binario","El directorio target completo"], a: 0,
+      w: "Compilar dependencias en Rust es lento de verdad, así que este orden en el Dockerfile ahorra minutos por build." },
+    { q: "¿Qué es `cargo add` equivalente a hacer en PHP?",
+      o: ["`composer install`","`composer require`: añade la crate al Cargo.toml y actualiza el lock","`composer update`"], a: 1,
+      w: "`cargo build` sería el equivalente a `composer install`: instala lo que dice el lock sin re-resolver." },
+  ],
+
+  "rust-editores": [
+    { q: "¿Qué es rust-analyzer?",
+      o: ["Un linter de estilo","El compilador","El servidor de lenguaje: autocompletado, tipos inferidos y errores en el editor"], a: 2,
+      w: "En Rust importa especialmente: ver el tipo inferido y el error del borrow checker mientras escribes acorta muchísimo el aprendizaje." },
+    { q: "¿Qué hace `cargo clippy` que `cargo build` no?",
+      o: ["Sugiere formas más idiomáticas de escribir código que ya compila","Compila más rápido","Formatea el código"], a: 0,
+      w: "Formatear es `cargo fmt`. Clippy es de las mejores formas de aprender el estilo de Rust: te corrige mientras avanzas." },
+  ],
+
+  "rust-primer-programa": [
+    { q: "En Rust, `let x = 5;` y luego `x = 6;`.",
+      o: ["Funciona","No compila: las variables son inmutables por defecto, hace falta `let mut`","Da un warning"], a: 1,
+      w: "La inmutabilidad por defecto es una decisión de diseño: mutar es la excepción y se declara explícitamente." },
+    { q: "¿Qué es el shadowing en Rust?",
+      o: ["Un error de ámbito","Copiar una variable","Volver a declarar con `let` un nombre existente, incluso cambiando el tipo"], a: 2,
+      w: "Es distinto de mutar: creas una variable nueva que tapa la anterior. Muy usado al convertir un valor conservando el nombre." },
+  ],
+
+  "rust-tipos-y-variables": [
+    { q: "¿Qué diferencia hay entre `String` y `&str`?",
+      o: ["`String` posee su memoria y crece; `&str` es una vista prestada de un texto que vive en otro sitio","Ninguna, son alias","`&str` es más moderno"], a: 0,
+      w: "Es de las primeras cosas que chocan, y es una consecuencia directa del modelo de propiedad." },
+    { q: "Rust no deja sumar un `i32` y un `u8` directamente.",
+      o: ["Es una limitación temporal","No hay conversiones implícitas: hay que convertir a propósito","Hay que activar una feature"], a: 1,
+      w: "Evita la clase de bugs donde una conversión silenciosa trunca o cambia el signo de un valor." },
+  ],
+
+  "rust-control-de-flujo": [
+    { q: "En Rust, `let x = if cond { 1 } else { 2 };`.",
+      o: ["No compila, `if` no devuelve valor","Hace falta un `return`","Funciona: `if` es una expresión"], a: 2,
+      w: "Casi todo en Rust es expresión, incluidos `match` y los bloques. Por eso la última línea sin punto y coma es el valor." },
+    { q: "¿Qué diferencia a `loop` de `while true`?",
+      o: ["`loop` puede devolver un valor con `break valor`, y el compilador sabe que no termina solo","Ninguna","`loop` es más rápido"], a: 0,
+      w: "Ese detalle permite usarlo como expresión, típico en reintentos: sales del bucle devolviendo el resultado." },
+  ],
+
+  "rust-funciones": [
+    { q: "¿Qué captura una closure en Rust?",
+      o: ["Siempre una copia","Lo que necesite: por referencia, por referencia mutable o por valor, y el compilador lo deduce","Solo variables globales"], a: 1,
+      w: "Con `move` fuerzas la captura por valor, que es lo que hace falta al pasarla a otro hilo." },
+    { q: "¿Por qué la última expresión de una función va sin punto y coma?",
+      o: ["Por estilo","Es opcional, da igual","Porque el punto y coma la convierte en sentencia y descarta el valor"], a: 2,
+      w: "Es la causa del error «expected i32, found ()» que todo el mundo se come al empezar." },
+  ],
+
+  "rust-structs-y-enums": [
+    { q: "¿Qué hace potentes a los enums de Rust frente a los de otros lenguajes?",
+      o: ["Que cada variante puede llevar datos propios, como `Some(T)` o `Err(E)`","Que son más rápidos","Que se pueden extender"], a: 0,
+      w: "Es lo que permite que `Option` y `Result` sean simples enums de la librería estándar y no magia del compilador." },
+    { q: "¿Qué representa `Option<T>`?",
+      o: ["Un valor que puede fallar con un error","Un valor que puede estar (`Some`) o no (`None`)","Un puntero que puede ser nulo"], a: 1,
+      w: "Es la respuesta de Rust al null: la ausencia se codifica en el tipo y el compilador te obliga a tratarla." },
+  ],
+
+  "rust-pattern-matching": [
+    { q: "Añades una variante a un enum y varios `match` dejan de compilar.",
+      o: ["Es un problema, hay que añadir `_` en todos","Hay que recompilar limpio","Es la ventaja: el compilador te da la lista de sitios donde falta tratarla"], a: 2,
+      w: "Poner `_` a la ligera renuncia justo a esa red: convierte una refactorización guiada en un fallo silencioso." },
+    { q: "¿Qué permite `if let Some(x) = opcion`?",
+      o: ["Tratar solo un caso sin escribir el `match` completo","Comprobar sin extraer","Convertir Option en Result"], a: 0,
+      w: "Es azúcar para un match con un solo brazo interesante. Y existe `let else` para el caso contrario: salir pronto si no encaja." },
+  ],
+
+  "rust-traits": [
+    { q: "¿Puedes implementar un trait para un tipo que no es tuyo?",
+      o: ["No, nunca","Sí, siempre que el trait sea tuyo (regla del huérfano)","Solo con macros"], a: 1,
+      w: "La regla evita que dos crates implementen lo mismo para el mismo tipo y el compilador no sepa cuál usar." },
+    { q: "¿Qué diferencia hay entre `impl Trait` y `dyn Trait`?",
+      o: ["Ninguna, son sintaxis alternativas","`dyn` es más rápido","`impl` se resuelve al compilar (estático); `dyn` en ejecución, con coste de indirección"], a: 2,
+      w: "El estático genera una versión por tipo (más binario, más rápido); el dinámico permite colecciones heterogéneas." },
+  ],
+
+  "rust-ownership": [
+    { q: "Asignas un `String` a otra variable y usas la primera después.",
+      o: ["No compila: la propiedad se movió","Funciona, se copia","Compila con un warning"], a: 0,
+      w: "Con tipos `Copy` (enteros, bool, char) sí se copia y ambas siguen vivas. `String` posee memoria del heap y por eso se mueve." },
+    { q: "¿Quién libera la memoria en Rust?",
+      o: ["Un recolector de basura","El compilador inserta la liberación cuando el propietario sale de ámbito","El programador, con free"], a: 1,
+      w: "Ni recolector ni liberación manual: es determinista y sin coste en ejecución. Ese es el gran truco del lenguaje." },
+  ],
+
+  "rust-borrowing": [
+    { q: "¿Cuántas referencias mutables simultáneas admite Rust sobre el mismo dato?",
+      o: ["Las que quieras en el mismo hilo","Dos: lectura y escritura","Una como máximo, y ninguna si hay alguna inmutable viva"], a: 2,
+      w: "De esa regla salen gratis la ausencia de carreras de datos y de invalidación de iteradores." },
+    { q: "¿Por qué no puedes modificar un vector mientras lo recorres?",
+      o: ["Porque el iterador mantiene un préstamo, y modificar exigiría otro mutable a la vez","Por rendimiento","Porque el índice se descoloca"], a: 0,
+      w: "En otros lenguajes esto compila y revienta en ejecución (o corrompe el recorrido). Aquí no llega a compilar." },
+  ],
+
+  "rust-lifetimes": [
+    { q: "¿Qué hace un lifetime explícito como `<'a>`?",
+      o: ["Alarga la vida de la variable","Describe cómo se relacionan las duraciones de varias referencias, algo que el compilador no puede inferir solo","Marca que va en el heap"], a: 1,
+      w: "No cambia cuánto vive nada: solo documenta una relación para que el compilador pueda verificarla." },
+    { q: "La mayoría del código Rust no lleva lifetimes escritos. ¿Por qué?",
+      o: ["Porque son opcionales y se ignoran","Porque solo hacen falta en structs","Por elisión: en los casos comunes el compilador los infiere"], a: 2,
+      w: "Aparecen cuando devuelves una referencia y hay varias entradas candidatas: ahí el compilador necesita que se lo digas." },
+  ],
+
+  "rust-smart-pointers": [
+    { q: "Necesitas varios propietarios de un dato en un solo hilo.",
+      o: ["`Rc<T>`, que lleva un contador de referencias","`Box<T>`","`Arc<T>`"], a: 0,
+      w: "`Arc` es el equivalente para varios hilos, con contador atómico y por tanto algo más caro." },
+    { q: "¿Para qué sirve `RefCell<T>`?",
+      o: ["Para compartir entre hilos","Para mover la comprobación de préstamos a tiempo de ejecución, permitiendo mutar tras una referencia inmutable","Para evitar copias"], a: 1,
+      w: "El precio es que si rompes la regla, el programa hace panic en ejecución en vez de no compilar." },
+  ],
+
+  "rust-concurrencia": [
+    { q: "¿Qué garantiza el marcador `Send`?",
+      o: ["Que el tipo se puede enviar por un canal sin bloquear","Que se puede compartir por referencia","Que su propiedad se puede transferir a otro hilo con seguridad"], a: 2,
+      w: "Compartir referencias entre hilos es `Sync`. El compilador deduce ambos solo, y por eso las carreras se detectan al compilar." },
+    { q: "¿Por qué se dice que en Rust la concurrencia es «sin miedo»?",
+      o: ["Porque las reglas de propiedad y préstamo impiden las carreras de datos en tiempo de compilación","Porque tiene un runtime que lo gestiona","Porque usa procesos en vez de hilos"], a: 0,
+      w: "No elimina los deadlocks ni los errores de lógica: elimina una categoría concreta, la de acceso concurrente sin sincronizar." },
+  ],
+
+  "rust-async-tokio": [
+    { q: "Llamas a una función `async` y no haces `.await`.",
+      o: ["Se ejecuta en segundo plano","No pasa nada: los Future de Rust son perezosos","Se ejecuta de forma síncrona"], a: 1,
+      w: "En otros lenguajes una promesa arranca al crearse. Aquí hace falta que alguien la sondee: un `.await` o un `spawn`." },
+    { q: "¿Por qué hace falta un runtime como Tokio?",
+      o: ["Para compilar el código async","Para gestionar la memoria","Porque Rust define `async`/`await` en el lenguaje pero no incluye el ejecutor"], a: 2,
+      w: "Es coherente con la filosofía: el lenguaje da la abstracción y tú eliges el runtime según el caso." },
+  ],
+
+  "rust-errores": [
+    { q: "¿Qué hace el operador `?` al final de una expresión `Result`?",
+      o: ["Devuelve el error al llamante y, si no lo hay, extrae el valor","Ignora el error","Lanza un panic"], a: 0,
+      w: "Quien hace panic es `unwrap()`, que es justo lo que `?` te evita en código de producción." },
+    { q: "¿Cuándo es aceptable `unwrap()`?",
+      o: ["Nunca","En prototipos, tests o cuando puedes demostrar que el caso es imposible","Siempre que el error sea improbable"], a: 1,
+      w: "«Improbable» no basta: en producción, improbable por un millón de peticiones es todos los días." },
+  ],
+
+  "rust-cargo-y-crates": [
+    { q: "¿Se versiona `Cargo.lock`?",
+      o: ["Siempre","Nunca","En binarios sí, para que todos compilen lo mismo; en librerías se suele omitir"], a: 2,
+      w: "Quien usa tu librería resolverá su propio grafo, así que fijar el tuyo no le sirve de nada." },
+    { q: "¿Qué son las features de una crate?",
+      o: ["Partes opcionales que se activan al declarar la dependencia, para no arrastrar lo que no usas","Versiones alternativas","Ramas de desarrollo"], a: 0,
+      w: "Es lo que permite que una crate sirva tanto en un servidor como en un embebido sin sistema operativo." },
+  ],
+
+  "rust-axum": [
+    { q: "¿Qué son los extractors en Axum?",
+      o: ["Middlewares","Tipos en la firma del handler que sacan y validan datos de la petición","Plantillas de respuesta"], a: 1,
+      w: "Declaras `Json<MiTipo>` o `Path<u32>` y el framework se encarga: si no encaja, el handler ni se ejecuta." },
+    { q: "¿Cómo comparte Axum estado entre handlers, como un pool de conexiones?",
+      o: ["Con variables globales","Con un singleton","Con un estado compartido que se inyecta como extractor, típicamente dentro de un `Arc`"], a: 2,
+      w: "El `Arc` es justo por lo de antes: varios hilos atendiendo peticiones necesitan propiedad compartida y segura." },
+  ],
+
+  "rust-serde-y-bd": [
+    { q: "¿Qué hacen `#[derive(Serialize, Deserialize)]`?",
+      o: ["Generan en tiempo de compilación el código para convertir a y desde JSON u otros formatos","Validan el tipo","Registran el tipo en un contenedor"], a: 0,
+      w: "Al generarse al compilar, no hay reflexión ni coste en ejecución: es el enfoque habitual de Rust." },
+    { q: "¿Qué aporta `sqlx` frente a un ORM clásico?",
+      o: ["Genera el esquema automáticamente","Comprueba tus consultas SQL contra la base en tiempo de compilación","Evita escribir SQL"], a: 1,
+      w: "Escribes SQL de verdad y aun así una columna mal escrita no llega a producción: falla al compilar." },
+  ],
+
+  "rust-testing-y-produccion": [
+    { q: "¿Dónde van los tests unitarios en Rust?",
+      o: ["En el directorio `tests/`","En un fichero `test.rs`","En un `mod tests` con `#[cfg(test)]` dentro del mismo fichero"], a: 2,
+      w: "Así pueden probar funciones privadas y no entran en el binario final. El directorio `tests/` es para los de integración." },
+    { q: "¿Por qué la imagen Docker de un servicio Rust puede ser mínima?",
+      o: ["Porque el binario compilado no necesita runtime: con multi-stage la imagen final solo lo lleva a él","Porque Rust comprime mucho","Porque usa menos memoria"], a: 0,
+      w: "Igual que en Go. Ojo si enlazas contra glibc: ahí conviene una base con esas librerías o compilar contra musl." },
+  ],
+
 };
