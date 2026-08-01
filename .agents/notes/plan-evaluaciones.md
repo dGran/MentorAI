@@ -210,10 +210,25 @@ ruta, así que el orden en la página es contenido → check → examen → nave
 El resultado por pregunta se guarda en `academia-checks` para alimentar el
 repaso espaciado.
 
-**Contenido: 15 lecciones de 194** (cursos `git`, `oop` y `clean-code`
-completos, 35 preguntas). Faltan 179 lecciones. Mismo criterio que en las
-explicaciones: repartir la posición de la correcta en los datos aunque el
+**Contenido: 96 lecciones de 194** (205 preguntas). Cubiertos por completo
+**18 de los 22 cursos**: git, oop, clean-code, solid, di-contenedores, testing,
+phpunit, apis-rest, acceso-a-datos, docker, ci-cd, sql-aplicado,
+patrones-diseno, diseno-y-arquitectura, framework-por-dentro, terminal-linux,
+observabilidad y programar-con-ia.
+
+**Pendientes 97 lecciones:** `go` (21), `fundamentos` (22), `python` (21),
+`rust` (21) y 12 artículos sueltos.
+
+Criterio de redacción que ha ido saliendo: **plantear la pregunta como una
+situación, no como una definición** («recibes un 502 de nginx, ¿dónde miras
+primero?» en vez de «¿qué es un 502?»). Mide lo mismo pero se parece a cómo se
+usa de verdad. Y repartir la posición de la correcta en los datos aunque el
 render baraje.
+
+Flujo para continuar: escribir un fichero `/tmp/checksN.js` con
+`const NUEVOS = { slug: [{q,o,a,w}] }` y aplicar el script de anexado, que rota
+las posiciones continuando la serie del fichero y valida slugs, duplicados y
+explicaciones vacías.
 
 **Sigue pendiente:** guardar el detalle del intento del examen por pregunta,
 repaso espaciado y examen de ruta. **Y el chequeo de sesgo en el

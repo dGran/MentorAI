@@ -1428,14 +1428,15 @@ distribución de la respuesta correcta estable (66/78/65/66).
   `ui-text.js` (26) con lo que de verdad era compartido. Los iconos vivían
   dentro de Catalog, y por eso cursos, rutas e inicio tenían que pedirle iconos
   al catálogo: ese acoplamiento ya no existe.
-- **Checks por lección** (`a4dedad`): ver `plan-evaluaciones.md`. 15 lecciones
-  cubiertas de 194.
+- **Checks por lección** (`a4dedad` y cuatro tandas más hasta `622bb9a`): ver
+  `plan-evaluaciones.md`. **96 lecciones de 194**, 205 preguntas, 18 de los 22
+  cursos completos. Quedan go, fundamentos, python, rust y 12 artículos sueltos.
 - SW en `VERSION = "v3"` por el cambio de shell.
 
 ### Pendiente al cerrar
 - **Modernizar los módulos restantes**: core, courses, home, paths, offline,
   syntax, init. Criterio acordado: al tocarlos, no en un big-bang.
-- Del plan de evaluaciones: **checks para las 179 lecciones restantes**,
+- Del plan de evaluaciones: **checks para las 97 lecciones restantes**,
   detalle del intento del examen por pregunta, repaso espaciado, examen de
   ruta, y el chequeo de sesgo en el validador.
 - De offline: «Descargar toda la academia», guardar por ruta, `storage.persist()`.
