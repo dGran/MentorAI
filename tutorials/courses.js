@@ -22,6 +22,123 @@
 
 window.MENTORAI_COURSES = [
   {
+    slug: "cache-y-rendimiento",
+    title: "Caché y rendimiento",
+    summary:
+      "El ciclo completo de hacer que algo vaya rápido: medir con percentiles en vez de medias, perfilar para saber dónde se va el tiempo, arreglar la base de datos —que es casi siempre— y cachear con criterio, incluida la parte difícil de verdad, que es invalidar. Cierra sabiendo cuándo parar.",
+    level: "Avanzado",
+    icon: "bolt",
+    modules: [
+      {
+        title: "Medir antes de tocar",
+        summary: "Optimizar sin medir es adivinar: percentiles, perfilado y presupuesto de latencia.",
+        lessons: ["cr-medir-primero", "cr-perfilado", "cr-presupuesto"],
+      },
+      {
+        title: "Casi siempre es la base de datos",
+        summary: "Encontrar la consulta culpable y arreglarla sin romper lo demás.",
+        lessons: [
+          "cr-consultas-lentas",
+          "cr-indices-en-practica",
+          "cr-paginacion",
+          "cr-conexiones-y-pool",
+        ],
+      },
+      {
+        title: "Cachear con criterio",
+        summary: "Las capas, los patrones, la invalidación y la estampida.",
+        lessons: [
+          "cr-capas-de-cache",
+          "cr-patrones-de-cache",
+          "cr-invalidacion",
+          "cr-estampida",
+          "cr-http-cache",
+        ],
+      },
+      {
+        title: "El resto del stack",
+        summary: "Lo que mueves, lo que puedes sacar de la petición y cuándo parar.",
+        lessons: ["cr-payload-y-serializacion", "cr-fuera-del-camino-critico", "cr-cuando-parar"],
+      },
+    ],
+  },
+  {
+    slug: "infraestructura",
+    title: "Infraestructura",
+    summary:
+      "Operar lo que hay debajo de tu código: un servidor que arranca solo y se defiende, nginx y TLS delante, DNS y balanceo repartiendo el tráfico, despliegues que no tiran nada, y las cosas de las que nadie se acuerda hasta que hacen falta — copias que restauran, capacidad medida y una guardia con runbook.",
+    level: "Avanzado",
+    icon: "shield",
+    modules: [
+      {
+        title: "La máquina",
+        summary: "Qué hay debajo y cómo se deja lista para producción.",
+        lessons: ["inf-servidor-por-dentro", "inf-systemd", "inf-hardening"],
+      },
+      {
+        title: "Servir tráfico",
+        summary: "De la petición del navegador a tu proceso: proxy, cifrado, nombres y reparto.",
+        lessons: ["inf-nginx", "inf-tls", "inf-dns", "inf-balanceo"],
+      },
+      {
+        title: "Empaquetar y desplegar",
+        summary: "Dónde corre tu código y cómo se sustituye sin que se note.",
+        lessons: [
+          "inf-vm-contenedor-funcion",
+          "inf-orquestacion",
+          "inf-despliegues-sin-caida",
+          "inf-configuracion-y-secretos",
+        ],
+      },
+      {
+        title: "Que siga funcionando",
+        summary: "Reproducible, recuperable, dimensionado y atendido.",
+        lessons: ["inf-iac", "inf-backups", "inf-capacidad", "inf-guardias-y-postmortem"],
+      },
+    ],
+  },
+  {
+    slug: "protocolos-y-tiempo-real",
+    title: "Protocolos y tiempo real",
+    summary:
+      "Cómo hablan de verdad dos máquinas: qué resuelve cada versión de HTTP, qué cuesta el handshake de TLS, cuándo un formato binario compensa, y todo el repertorio de tiempo real — polling, SSE, WebSockets y webhooks— con la tabla de decisión para no elegir por moda.",
+    level: "Avanzado",
+    icon: "signal",
+    modules: [
+      {
+        title: "HTTP de verdad",
+        summary: "Las versiones, el cifrado y las cabeceras que cambian el comportamiento.",
+        lessons: ["pr-http1-a-http3", "pr-tls-handshake", "pr-cabeceras-que-importan"],
+      },
+      {
+        title: "Formatos y contratos",
+        summary: "Qué mueves por el cable y cómo cambiarlo sin romper a nadie.",
+        lessons: ["pr-serializacion", "pr-grpc", "pr-compatibilidad"],
+      },
+      {
+        title: "Tiempo real",
+        summary: "Las cuatro formas de empujar datos al cliente y qué cuesta cada una.",
+        lessons: [
+          "pr-polling",
+          "pr-sse",
+          "pr-websockets",
+          "pr-elegir-transporte",
+          "pr-escalar-tiempo-real",
+        ],
+      },
+      {
+        title: "Integrar con otros",
+        summary: "Recibir eventos de terceros, firmarlos y devolver respuestas largas.",
+        lessons: [
+          "pr-webhooks",
+          "pr-firmas-y-replay",
+          "pr-streaming-http",
+          "pr-cuando-no-tiempo-real",
+        ],
+      },
+    ],
+  },
+  {
     slug: "sistemas-distribuidos",
     title: "Sistemas distribuidos",
     summary:
