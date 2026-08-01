@@ -566,4 +566,152 @@ window.MENTORAI_CHECKS = {
       w: "Es el orden de evaluación de SQL: cuando el WHERE actúa, el número de fila todavía no existe." },
   ],
 
+
+  "patrones-introduccion": [
+    { q: "Reconoces un patrón y te apetece aplicarlo, aunque el problema es sencillo.",
+      o: ["Si la tensión que resuelve no existe todavía, solo estás añadiendo indirección","Aplícalo: es la forma de practicar","Aplícalo solo si el equipo lo conoce"], a: 0,
+      w: "Cada patrón resuelve una tensión concreta. Sin esa tensión, el siguiente que lea el código tendrá que atravesar la abstracción para nada." },
+    { q: "¿Para qué sirve conocer los nombres de los patrones, más allá del código?",
+      o: ["Para las entrevistas técnicas","Para tener vocabulario común: decir «aquí hay un Strategy» ahorra un párrafo entero","Para poder aplicarlos automáticamente"], a: 1,
+      w: "Los patrones son tanto vocabulario como solución; buena parte de su valor está en la conversación de diseño." },
+  ],
+
+  "patrones-creacionales": [
+    { q: "Tu constructor ha acabado con siete parámetros, cinco de ellos opcionales.",
+      o: ["Añade sobrecargas del constructor","Pásalos en un array asociativo","Builder: nombra cada paso, deja construir por fases y valida al final"], a: 2,
+      w: "El array asociativo quita el problema de vista pero pierde el tipado: sigues sin saber qué se puede pasar." },
+    { q: "¿Por qué el Singleton complica los tests?",
+      o: ["Porque es estado global: un test deja la instancia tocada y el siguiente hereda la resaca","Porque es más lento de instanciar","Porque no se puede documentar"], a: 0,
+      w: "Y además no se puede sustituir por un doble, porque la clase controla su propia creación." },
+  ],
+
+  "patrones-estructurales": [
+    { q: "Decorator y Proxy tienen la misma estructura. ¿Qué los distingue?",
+      o: ["El número de clases que envuelven","La intención: Decorator amplía lo que hace, Proxy decide si y cuándo se llega a hacer","Que Proxy requiere una interfaz y Decorator no"], a: 1,
+      w: "Misma forma, propósito distinto. Es el ejemplo de por qué los patrones no se distinguen por su diagrama." },
+    { q: "Tienes que integrar una librería externa cuya interfaz no encaja con tu código.",
+      o: ["Facade, para simplificar su uso","Modificas la librería en tu fork","Adapter: la envuelves y le das la forma que tu código espera"], a: 2,
+      w: "La clave del Adapter es «sin modificar el código existente»: es el patrón de integración por excelencia." },
+  ],
+
+  "patrones-comportamiento-1": [
+    { q: "Un `switch` elige entre cinco formas de calcular el envío, y cada país nuevo lo toca.",
+      o: ["Strategy: cada algoritmo en su clase, y añadir uno no toca al cliente","Extrae cada rama a un método privado","Observer, para notificar el cambio de país"], a: 0,
+      w: "Extraer a métodos privados reduce el ruido pero no el problema: sigues editando código existente por cada caso nuevo." },
+    { q: "¿Qué permite el Observer que una llamada directa no?",
+      o: ["Mejor rendimiento","Que quien publica no sepa quién escucha, así que se añade comportamiento sin tocarlo","Ejecución en segundo plano"], a: 1,
+      w: "Esa es la gracia y también el peligro: el flujo real deja de leerse en un solo sitio." },
+  ],
+
+  "patrones-comportamiento-2": [
+    { q: "Necesitas poder encolar una operación, reintentarla y deshacerla.",
+      o: ["Strategy, encapsulando el algoritmo","Template Method","Command: la operación pasa a ser un objeto, y por eso se puede guardar y reintentar"], a: 2,
+      w: "Strategy responde a «cómo hacerlo»; Command a «qué hay que hacer», empaquetado." },
+    { q: "¿Dónde reconoces Chain of Responsibility en Symfony o Laravel?",
+      o: ["En el middleware HTTP: la petición pasa por una cadena y cada eslabón decide si sigue","En el contenedor de servicios","En los eventos del kernel"], a: 0,
+      w: "Reconocerlo explica por qué el orden importa tanto, y por qué un middleware que no llama al siguiente corta la petición." },
+  ],
+
+  "patrones-en-el-framework": [
+    { q: "El contenedor entrega un proxy para un servicio lazy. ¿Qué patrón es y por qué?",
+      o: ["Decorator, porque añade la carga diferida","Proxy: controla el acceso, instanciando la clase real al primer método","Factory, porque lo construye"], a: 1,
+      w: "El proxy cumple la misma interfaz y es barato de crear; controlar el acceso es exactamente la definición del patrón." },
+    { q: "¿Qué patrón hay detrás de los tagged services y por qué encaja con OCP?",
+      o: ["Observer: los servicios se suscriben","Ninguno en concreto; es una utilidad del contenedor","El consumidor recibe todos los etiquetados sin conocerlos, así que añadir uno es solo registrarlo"], a: 2,
+      w: "Es OCP implementado por el framework, y el mecanismo detrás de validadores, normalizadores y comandos." },
+  ],
+
+  "hexagonal": [
+    { q: "¿Qué prueba de fuego dice si tu hexagonal es real?",
+      o: ["Que ninguna clase de dominio importe nada de infraestructura","Que existan carpetas Domain, Application e Infrastructure","Que uses interfaces para los repositorios"], a: 0,
+      w: "Las carpetas y las interfaces se pueden tener y seguir apuntando al revés. La regla de dependencia es lo que sostiene todo lo demás." },
+    { q: "¿Quién define el puerto?",
+      o: ["La infraestructura, que sabe cómo se implementa","El dominio, según lo que necesita","El framework, por convención"], a: 1,
+      w: "Si la interfaz la escribe la infraestructura pensando en su tecnología, la flecha sigue apuntando hacia dentro y no has invertido nada." },
+  ],
+
+  "hexagonal-en-php": [
+    { q: "Tu entidad de dominio extiende de la clase base del ORM.",
+      o: ["Es lo habitual y no pasa nada","Solo es un problema si usas Active Record","El dominio acaba de depender de infraestructura: eso rompe la regla de dependencia"], a: 2,
+      w: "Es justo el punto donde la arquitectura se queda en el diagrama: el dominio deja de poder probarse ni existir sin el ORM." },
+    { q: "¿Qué ganas de verdad al proteger el dominio?",
+      o: ["Poder probar el núcleo sin levantar base de datos ni servidor, y cambiar lo de fuera sin tocarlo","Mejor rendimiento","Menos clases en total"], a: 0,
+      w: "Cuesta más clases, no menos. Lo que compras es independencia del detalle externo." },
+  ],
+
+  "ddd-que-es": [
+    { q: "En las reuniones dicen «póliza» y en el código la clase se llama `Contract`.",
+      o: ["Es normal, el código usa inglés","Es una fuga del lenguaje ubicuo: cada traducción es donde se cuelan los malentendidos","Basta con documentar la equivalencia"], a: 1,
+      w: "El lenguaje ubicuo no es un glosario: es que el código hable el idioma del negocio para que no haya traducción constante." },
+    { q: "¿Qué NO es DDD?",
+      o: ["Una forma de modelar el dominio con el negocio","Una manera de decidir dónde poner los límites","Una estructura de carpetas y un conjunto de clases base"], a: 2,
+      w: "La parte táctica (entidades, agregados) es la visible, pero sin la conversación con el negocio es solo ceremonia." },
+  ],
+
+  "ddd-estrategico": [
+    { q: "«Cliente» significa cosas distintas en facturación y en soporte.",
+      o: ["Son bounded contexts distintos: cada uno puede tener su propio modelo","Hay que unificar el modelo en una sola clase Cliente","Hay que renombrarlas para distinguirlas"], a: 0,
+      w: "Forzar un modelo único produce una clase enorme que no sirve bien a nadie. El contexto acotado admite la diferencia." },
+    { q: "¿Para qué sirve distinguir subdominio core de los de soporte?",
+      o: ["Para repartir el trabajo por seniority","Para saber dónde merece la pena invertir diseño y dónde basta con comprar o hacer lo simple","Para decidir qué se documenta"], a: 1,
+      w: "No todo el sistema merece el mismo cuidado: el core es donde compites, el resto es coste." },
+  ],
+
+  "ddd-tactico": [
+    { q: "¿Entidad o value object para un importe de dinero?",
+      o: ["Entidad: cada importe es distinto","Depende de si se guarda en base de datos","Value object: se define por sus atributos y da igual cuál es cuál"], a: 2,
+      w: "El criterio es si importa la identidad. Dos billetes de 10 € son intercambiables; dos personas con el mismo nombre no." },
+    { q: "Un agregado enorme está provocando bloqueos y conflictos al guardar.",
+      o: ["Suele indicar que hay que hacerlo más pequeño y relacionar por identificador","Es inevitable si el dominio es complejo","Hay que subir el nivel de aislamiento de la transacción"], a: 0,
+      w: "El agregado es la unidad de consistencia: lo que debe cuadrar a la vez. Todo lo demás puede ser eventual." },
+    { q: "¿Por qué solo se accede al agregado por su raíz?",
+      o: ["Por rendimiento del ORM","Porque si se puede tocar una pieza interna por fuera, la regla que protege la raíz se salta sin querer","Por convención de nomenclatura"], a: 1,
+      w: "Un pedido que valida su total no sirve de nada si alguien puede modificar sus líneas por su cuenta." },
+  ],
+
+  "eventos-de-dominio": [
+    { q: "¿Por qué los eventos de dominio se nombran en pasado (`PedidoConfirmado`)?",
+      o: ["Por convención estética","Porque se procesan de forma asíncrona","Porque describen un hecho consumado, y por eso nadie puede rechazarlo"], a: 2,
+      w: "Un comando puede fallar; un evento ya ocurrió. De ahí que quien lo publica no espere respuesta." },
+    { q: "¿Qué ganas publicando un evento en vez de llamar directamente al otro servicio?",
+      o: ["Que quien publica no sabe quién escucha: añadir reacciones no le obliga a cambiar","Rendimiento","Garantía de entrega"], a: 0,
+      w: "La garantía de entrega no viene gratis con el evento: eso lo aporta el transporte, y es otro problema." },
+  ],
+
+  "cqrs": [
+    { q: "¿Obliga CQRS a tener dos bases de datos?",
+      o: ["Sí, es lo que define el patrón","No: en su versión simple son dos caminos dentro de la misma aplicación y la misma base","Solo si usas Event Sourcing"], a: 1,
+      w: "Confundirlo con la versión extrema es lo que hace que suene desproporcionado para casi todo." },
+    { q: "¿Por qué separar el modelo de lectura del de escritura?",
+      o: ["Porque las lecturas son más frecuentes","Para poder escalar la base de datos","Porque sus necesidades son opuestas: escribir quiere invariantes, leer quiere datos ya masticados"], a: 2,
+      w: "Separarlos permite desnormalizar el lado de lectura sin ensuciar el dominio." },
+  ],
+
+  "cqrs-event-sourcing": [
+    { q: "Con Event Sourcing, ¿dónde vive el estado actual de un agregado?",
+      o: ["No se guarda: se deriva reproduciendo sus eventos","En una tabla de estado que se actualiza con cada evento","En la caché"], a: 0,
+      w: "El estado deja de ser el dato y pasa a ser una consecuencia. Las proyecciones son estado derivado, y por eso se pueden regenerar." },
+    { q: "¿Cuándo NO usar CQRS + Event Sourcing?",
+      o: ["En sistemas con muchos usuarios","En un CRUD: multiplica el código sin resolver ningún problema que tuvieras","Cuando no se usa DDD"], a: 1,
+      w: "Son herramientas para dominios complejos y auditables, no una meta. Y los eventos son inmutables: versionarlos duele." },
+  ],
+
+  "framework-ciclo-http": [
+    { q: "¿Qué te dice un 502 frente a un 500?",
+      o: ["Que la base de datos no responde","Que la ruta no existe","Que nginx no pudo hablar con PHP-FPM: tu código no llegó a ejecutarse"], a: 2,
+      w: "El 500 significa que tu código corrió y falló. Distinguirlos te ahorra mirar en el sitio equivocado." },
+    { q: "¿Qué aporta el front controller frente al PHP clásico de un fichero por página?",
+      o: ["Un único punto de entrada, y por eso puede haber arranque, enrutado y middlewares comunes","Mejor rendimiento","URLs más cortas"], a: 0,
+      w: "Sin él cada script se apañaba solo, y no había dónde poner lo transversal." },
+  ],
+
+  "framework-extension-points": [
+    { q: "Necesitas enganchar a un evento desde una clase de una librería que no puedes modificar.",
+      o: ["Un Event Subscriber, que declara en sí mismo lo que escucha","Un Event Listener, que se configura desde fuera","Un compiler pass"], a: 1,
+      w: "El subscriber lleva su configuración dentro y se lee de un vistazo; el listener sirve justo cuando no puedes tocar la clase." },
+    { q: "¿Cuándo se ejecuta un compiler pass?",
+      o: ["En cada petición, antes del controlador","Al arrancar cada worker","Una vez, al compilar el contenedor"], a: 2,
+      w: "Por eso puede hacer trabajo caro sin coste en producción, y por eso hay que limpiar caché para que se aplique." },
+  ],
+
 };
