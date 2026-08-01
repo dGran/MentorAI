@@ -1,10 +1,13 @@
 # Plan — Los 3 cursos que cierran la carrera
 
 ## Estado
-**En curso desde 2026-08-01.** Son los tres que quedaban de los 4 aprobados el
-2026-07-06 (`sistemas-distribuidos` se cerró el mismo día, ver
-`plan-curso-sistemas-distribuidos.md`). Al terminar los tres, el norte de
-`plan-carrera-completa.md` queda cubierto.
+**CERRADO 2026-08-01. Los tres escritos y publicados**, 45 lecciones en total,
+más 91 preguntas de examen y 90 checks. Con esto, **los 4 cursos aprobados el
+2026-07-06 están hechos** y el norte de `plan-carrera-completa.md` queda
+cubierto.
+
+Los tres están en `el-grado-que-no-hiciste` (ahora 23 cursos), y
+`cache-y-rendimiento` e `infraestructura` además en `construir-un-servicio`.
 
 Estructura aprobada de un tirón por el usuario («vamos con esos 3 cursos»), con
 el mismo criterio que el anterior: **ejemplos en PHP** y nivel **Avanzado**.
@@ -111,3 +114,34 @@ desde las lecciones, igual que se hizo con `rabbitmq` en el curso anterior.
   `construir-un-servicio`.
 - Examen en `quizzes.js` y checks en `checks.js`. **El validador ahora mide el
   sesgo de posición por curso**, no solo en total: si no repartes, falla.
+
+
+## Lo que salió por el camino
+
+- **El chequeo de sesgo por curso funcionó a la primera**: los 26 exámenes y 30
+  checks de `cache-y-rendimiento` salieron con un 50 % en la misma posición y el
+  validador los rechazó antes de commitear. Sin ese chequeo —añadido con
+  `sistemas-distribuidos`— habrían pasado, porque sobre el total no movían la
+  aguja. Se rotaron con el script del scratchpad, que verifica que ni las
+  opciones ni la respuesta correcta cambian.
+- **Dos lexers nuevos en `assets/js/modules/syntax.js`**: el de `bash` solo
+  conocía 15 comandos y los bloques de infraestructura salían sin resaltar (ahora
+  cubre la caja de herramientas habitual), y se añadió `yaml`, que hacía falta
+  para manifiestos y para el curso de CI/CD.
+- **Cuatro lecciones quedaron sin bloques de código a propósito**, todas de
+  criterio: `cr-cuando-parar`, `inf-guardias-y-postmortem`,
+  `pr-elegir-transporte` y `pr-cuando-no-tiempo-real`. En las tres que sí
+  desentonaban se añadió código después (parada limpia con SIGTERM, manifiesto de
+  Kubernetes y las migraciones de expandir/contraer).
+
+## Si se retoma alguno de los tres
+
+Los temarios de arriba están completos. Lo que se podría ampliar, por orden:
+
+- `cache-y-rendimiento`: los artículos sueltos `opcache`, `preload`,
+  `memoria-php` y `redis-a-fondo` encajarían como lecciones, pero **absorberlos
+  los sacaría de `articulos.html`** y cambiaría la ruta `php-a-fondo`. Decisión
+  consciente: se enlazan, no se absorben.
+- `infraestructura`: falta el bloque de redes de nube (VPC, subredes, grupos de
+  seguridad), que se dejó fuera por ser muy dependiente del proveedor.
+- `protocolos-y-tiempo-real`: WebRTC quedó fuera del alcance; es otro curso.

@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Server-Sent Events: el que casi nadie usa — MentorAI</title>
+    <meta name="description" content="HTTP con un cuerpo que no termina: el formato completo, la reconexión con reanudación que viene hecha, sus dos limitaciones reales y cómo montarlo en PHP sin quedarte sin workers." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Protocolos y tiempo real</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Server-Sent Events: el que casi nadie usa</h1>
+        <p class="tutorial-hero__lead">Casi todo lo que se resuelve con WebSockets es unidireccional. Para eso hay una tecnología que es HTTP normal, va sobre lo que ya tienes y reconecta sola. Y casi nadie la usa.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#que-es">HTTP que no se cierra</a></li>
+            <li><a href="#reconexion">La reconexión viene hecha</a></li>
+            <li><a href="#limites">Sus dos limitaciones reales</a></li>
+            <li><a href="#php">El problema en PHP, y su salida</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Casi todo lo que se resuelve con WebSockets es en realidad unidireccional: el servidor
+            empuja y el cliente escucha. Para eso existe una tecnología que es HTTP normal, va
+            sobre la infraestructura que ya tienes y reconecta sola. Y casi nadie la usa.
+          </p>
+
+          <h2 id="que-es">
+            HTTP que no se cierra
+            <a href="#que-es" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un endpoint de <em>Server-Sent Events</em> es una respuesta HTTP corriente con un
+            <code>Content-Type</code> especial y un cuerpo que no termina. El servidor va
+            escribiendo eventos en formato de texto y el navegador los entrega conforme llegan.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · el formato entero</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">Content-Type: text/event-stream
+
+id: 1042
+event: pedido-actualizado
+data: {"id":"4871","estado":"enviado"}
+
+: este es un comentario, sirve de latido</code></pre>
+          </div>
+
+          <p>
+            Eso es todo el protocolo: cuatro campos —<code>id</code>, <code>event</code>,
+            <code>data</code> y <code>retry</code>— separados por líneas en blanco. No hay
+            handshake de actualización, ni tramas, ni librería en el cliente: el navegador trae
+            <code>EventSource</code> de serie.
+          </p>
+
+          <h2 id="reconexion">
+            La reconexión viene hecha
+            <a href="#reconexion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Es la característica que más lo diferencia de WebSockets y la que menos se menciona.
+            Si la conexión se corta, el navegador <strong>reconecta solo</strong>, y además manda
+            el identificador del último evento recibido:
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>El cliente recibe hasta el evento 1042</b><small>Y se le va el wifi</small></span>
+              </div>
+              <div class="flow__arrow" data-label="el navegador reconecta solo"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Manda <code>Last-Event-ID: 1042</code></b><small>Sin que tú escribas una línea</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>El servidor reanuda desde el 1043</b><small>Si guardas los eventos recientes, no se pierde nada</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Con WebSockets, todo esto —detectar el corte, reintentar con backoff, saber por dónde
+              ibas— lo escribes tú.
+            </p>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Y hereda todo lo que ya tienes montado</p>
+              <p>
+                Es HTTP: pasa por tu autenticación con cookies, tus cabeceras, tu proxy, tu
+                limitador de tasa. No hay que configurar nada especial en nginx salvo desactivar
+                el buffering, ni abrir puertos, ni tratar un protocolo aparte en el balanceador.
+                Esa continuidad vale mucho en un sistema que ya funciona.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="limites">
+            Sus dos limitaciones reales
+            <a href="#limites" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <strong>Es unidireccional.</strong> El cliente no puede mandar nada por ese canal;
+            para eso hace un <code>POST</code> normal. En la práctica no molesta —enviar es
+            puntual y recibir es continuo— y conceptualmente es incluso más limpio.
+          </p>
+          <p>
+            <strong>Solo texto.</strong> Para binario hay que codificar en base64, con el 33 % de
+            sobrecoste. Si mandas audio o vídeo, este no es tu protocolo.
+          </p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Y una tercera que se resolvió sola</p>
+              <p>
+                Sobre HTTP/1.1, el límite de seis conexiones por dominio se aplicaba también a
+                SSE: con seis pestañas abiertas, la séptima se quedaba colgada. Sobre HTTP/2 ese
+                límite desapareció con la multiplexación. Si lees que «SSE no escala por el límite
+                de conexiones», es información de la era HTTP/1.1.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="php">
+            El problema en PHP, y su salida
+            <a href="#php" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Mantener una respuesta abierta ocupa un proceso de FPM, exactamente igual que el long
+            polling. Un endpoint SSE ingenuo con doscientos usuarios conectados te deja sin
+            workers:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · esto ocupa un worker mientras dure</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class EventosController
+{
+    private const LATIDO_SEGUNDOS = 15;
+    private const VIDA_MAXIMA_SEGUNDOS = 60;
+
+    public function __invoke(): StreamedResponse
+    {
+        $respuesta = new StreamedResponse(function (): void {
+            $fin = hrtime(true) + self::VIDA_MAXIMA_SEGUNDOS * 1e9;
+
+            while (hrtime(true) &lt; $fin) {
+                foreach ($this-&gt;eventos-&gt;pendientes() as $evento) {
+                    echo "id: {$evento-&gt;id()}\n";
+                    echo "data: {$evento-&gt;json()}\n\n";
+                }
+
+                echo ": latido\n\n";
+                flush();
+                sleep(self::LATIDO_SEGUNDOS);
+            }
+        });
+
+        $respuesta-&gt;headers-&gt;set('Content-Type', 'text/event-stream');
+        $respuesta-&gt;headers-&gt;set('X-Accel-Buffering', 'no');
+
+        return $respuesta;
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            Dos detalles importantes ahí. El <strong>latido</strong> —esa línea de comentario— es
+            lo que evita que proxies y balanceadores corten la conexión por inactividad. Y
+            <code>X-Accel-Buffering: no</code> le dice a nginx que no acumule la respuesta antes
+            de mandarla; sin eso, tus eventos llegan a ráfagas o no llegan.
+          </p>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La vida máxima de 60 segundos no es un parche: es el diseño</p>
+              <p>
+                Cerrar a propósito y dejar que el navegador reconecte convierte un problema
+                —ocupar un worker— en un ciclo controlado, y aprovecha justo la reconexión
+                automática que SSE te regala. Aun así, para cientos de conexiones simultáneas la
+                salida real es sacar el endpoint de FPM: un runtime asíncrono como RoadRunner,
+                o un componente aparte.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>SSE cuando…</h4>
+              <ul>
+                <li>El flujo es del servidor al cliente y ya está</li>
+                <li>Quieres reconexión y reanudación sin escribirlas</li>
+                <li>Valoras que sea HTTP y herede tu autenticación y tus proxies</li>
+                <li>Notificaciones, paneles, progreso de tareas, respuestas de IA</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No encaja cuando…</h4>
+              <ul>
+                <li>El cliente manda mensajes continuamente</li>
+                <li>Mueves datos binarios</li>
+                <li>Necesitas latencia por debajo de decenas de milisegundos</li>
+                <li>Tu stack es FPM y no puedes añadir otro runtime</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>SSE es HTTP normal con un cuerpo que no termina: cuatro campos de texto y <code>EventSource</code> ya viene en el navegador.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La reconexión con reanudación desde el último evento viene hecha. Con WebSockets todo eso lo escribes tú.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Hereda tu autenticación, tus proxies y tu limitador de tasa, porque no deja de ser una petición HTTP.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El latido evita que los proxies corten por inactividad, y <code>X-Accel-Buffering: no</code> evita que nginx acumule los eventos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Cerrar a propósito cada minuto y dejar que reconecte convierte el problema del worker ocupado en un ciclo controlado.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

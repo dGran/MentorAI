@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Polling y long polling: la línea base — MentorAI</title>
+    <meta name="description" content="Por qué el polling resuelve más casos de los que se admite, cómo hacerlo barato con ETag, qué aporta el long polling y por qué en PHP con FPM no es una opción." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Protocolos y tiempo real</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Polling y long polling: la línea base</h1>
+        <p class="tutorial-hero__lead">Antes de montar WebSockets conviene mirar la opción aburrida. Preguntar cada X segundos no tiene nada de elegante y funciona en todas partes, se depura y no mantiene nada abierto.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            12 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#polling">Polling: el suelo del que partimos</a></li>
+            <li><a href="#long-polling">Long polling: esperar en el servidor</a></li>
+            <li><a href="#latencia-real">Cuánta latencia necesitas de verdad</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Antes de montar WebSockets conviene mirar la opción aburrida, porque resuelve más
+            casos de los que se admite en público. Preguntar cada X segundos no tiene nada de
+            elegante y tiene tres virtudes difíciles de batir: funciona en todas partes, se
+            depura con la pestaña de red y no mantiene nada abierto.
+          </p>
+
+          <h2 id="polling">
+            Polling: el suelo del que partimos
+            <a href="#polling" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El cliente pregunta cada cierto tiempo si hay algo nuevo. La crítica evidente es el
+            desperdicio: la mayoría de las respuestas son «nada». Pero ese coste depende de dos
+            cosas que puedes controlar, y suele ser menor de lo que la gente supone.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>A favor</h4>
+              <ul>
+                <li>Funciona con cualquier infraestructura, sin excepción</li>
+                <li>Sin estado: cualquier servidor atiende cualquier petición</li>
+                <li>Se cachea, se limita por tasa y se depura como todo lo demás</li>
+                <li>Si el cliente se va, deja de preguntar. No hay que limpiar nada</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>En contra</h4>
+              <ul>
+                <li>Latencia media = la mitad del intervalo</li>
+                <li>Peticiones inútiles cuando no hay novedades</li>
+                <li>Cada una paga cabeceras, autenticación y arranque</li>
+                <li>Con muchos clientes y poco intervalo, se nota</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Un polling bien hecho cuesta muy poco</p>
+              <p>
+                Con <code>ETag</code>, una consulta que no ha cambiado devuelve un
+                <b>304 sin cuerpo</b>, y si el ETag se calcula sobre algo barato ni siquiera toca
+                la base de datos. Añade un intervalo adaptativo —más lento cuando no pasa nada— y
+                pausar cuando la pestaña está en segundo plano, y el coste real se desploma.
+              </p>
+            </div>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · un endpoint de polling barato</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class EstadoPedidoController
+{
+    #[Route('/pedidos/{id}/estado')]
+    public function __invoke(string $id, Request $peticion): Response
+    {
+        $version = $this-&gt;pedidos-&gt;versionDe($id);
+        $respuesta = new JsonResponse(null);
+
+        $respuesta-&gt;setEtag((string) $version);
+        $respuesta-&gt;setPrivate();
+
+        if ($respuesta-&gt;isNotModified($peticion)) {
+            return $respuesta;
+        }
+
+        return $respuesta-&gt;setData($this-&gt;pedidos-&gt;estadoDe($id));
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            La clave está en el orden: primero se obtiene una versión barata —un
+            <code>SELECT</code> de una columna, o un contador en Redis—, y solo si ha cambiado se
+            monta la respuesta completa. Sin ese detalle, el ETag ahorra ancho de banda y no
+            trabajo.
+          </p>
+
+          <h2 id="long-polling">
+            Long polling: esperar en el servidor
+            <a href="#long-polling" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La variante: el servidor <strong>no responde inmediatamente</strong>. Retiene la
+            petición hasta que haya novedades o hasta agotar un plazo, y el cliente vuelve a
+            preguntar en cuanto recibe respuesta.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>El cliente pregunta</b><small>Y el servidor no contesta</small></span>
+              </div>
+              <div class="flow__arrow" data-label="pasan 25 segundos"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Ocurre algo</b><small>El servidor responde en ese instante</small></span>
+              </div>
+              <div class="flow__arrow" data-label="o se agota el plazo"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Respuesta vacía y vuelta a empezar</b><small>El plazo existe para que proxies y balanceadores no corten</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Latencia casi inmediata sin conexión persistente. El precio lo paga el servidor.
+            </p>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">En PHP con FPM, long polling es una mala idea</p>
+              <p>
+                Cada petición retenida ocupa <b>un proceso de FPM entero</b> durante 25 segundos.
+                Con <code>pm.max_children = 50</code>, cincuenta usuarios esperando dejan el sitio
+                sin capacidad para nada más — incluido el resto de la web. Es un caso donde el
+                modelo de ejecución de PHP decide la arquitectura, y la salida es SSE con un
+                runtime asíncrono, o una pieza en otro lenguaje.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="latencia-real">
+            Cuánta latencia necesitas de verdad
+            <a href="#latencia-real" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La pregunta que decide todo el módulo, y que casi nunca se hace antes de elegir la
+            tecnología:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Caso</th><th>Latencia aceptable</th><th>Basta con</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Estado de un pedido</td><td>10-30 s</td><td>Polling con ETag</td></tr>
+                <tr><td>Notificaciones de la aplicación</td><td>5-10 s</td><td>Polling</td></tr>
+                <tr><td>Progreso de una tarea larga</td><td>1-2 s</td><td>Polling rápido o SSE</td></tr>
+                <tr><td>Panel que se actualiza solo</td><td>1-5 s</td><td>SSE</td></tr>
+                <tr><td>Chat</td><td>&lt; 1 s</td><td>SSE o WebSocket</td></tr>
+                <tr><td>Edición colaborativa, juego</td><td>&lt; 100 ms</td><td>WebSocket</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            Las cuatro primeras filas son la mayoría de las funcionalidades «en tiempo real» que
+            se piden en una aplicación de negocio, y ninguna necesita una conexión persistente.
+            Empezar por polling y subir de escalón cuando el número lo exija ahorra una
+            infraestructura entera.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Polling cuando…</h4>
+              <ul>
+                <li>Unos segundos de retraso no molestan a nadie</li>
+                <li>Son pocos clientes concurrentes por recurso</li>
+                <li>No quieres infraestructura nueva que operar</li>
+                <li>Tu stack es PHP con FPM y no quieres piezas extra</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Sube de escalón cuando…</h4>
+              <ul>
+                <li>Necesitas por debajo del segundo de forma consistente</li>
+                <li>El volumen de peticiones vacías ya es un coste medible</li>
+                <li>Hay miles de clientes mirando lo mismo a la vez</li>
+                <li>La interacción es continua, no puntual</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El polling no tiene nada de elegante y funciona en todas partes, sin estado y sin nada que limpiar cuando el cliente se va.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Con ETag calculado sobre algo barato, una respuesta sin novedades es un 304 que ni toca la base de datos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El long polling da latencia casi inmediata sin conexión persistente, y en PHP con FPM ocupa un proceso entero por cliente en espera.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La pregunta que decide todo es cuánta latencia necesitas de verdad, y casi nunca se hace antes de elegir tecnología.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La mayoría de lo que se pide «en tiempo real» en una aplicación de negocio tolera segundos, y no necesita conexión persistente.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

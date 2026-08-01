@@ -18,6 +18,143 @@
 
 window.MENTORAI_CHECKS = {
 
+  /* ================= Curso: Protocolos y tiempo real ================= */
+
+  "pr-http1-a-http3": [
+    { q: "¿Qué persiguen las tres versiones de HTTP?",
+      o: ["Empujar el bloqueo por cabeza de línea una capa más abajo", "Reducir el tamaño de las cabeceras", "Mejorar el cifrado"], a: 0,
+      w: "De la capa de aplicación en HTTP/1.1, a la de transporte en HTTP/2, y fuera de TCP con QUIC en HTTP/3." },
+    { q: "Con HTTP/2, ¿qué pasa con un bundle único gigante de JavaScript?",
+      o: ["Sigue siendo lo óptimo", "Conviene partirlo: mejor caché y descargas en paralelo", "Hay que meterlo en base64"], a: 1,
+      w: "Un fichero enorme invalida la caché entera por un cambio de una línea, y ya no hay límite de conexiones que justifique concatenarlo todo." },
+  ],
+
+  "pr-tls-handshake": [
+    { q: "¿Qué garantía da el intercambio de claves efímero?",
+      o: ["Que el handshake es más rápido", "Que no hace falta certificado", "Forward secrecy: robar la clave privada mañana no descifra el tráfico grabado ayer"], a: 2,
+      w: "Cada sesión deriva su propia clave, y esa clave no se puede reconstruir a partir de la privada del servidor." },
+    { q: "¿Qué pierdes al poner `verify_peer => false`?",
+      o: ["La autenticación: cualquiera en medio puede presentar su certificado y leerlo todo", "Nada, sigue cifrado", "El rendimiento"], a: 0,
+      w: "Conservas el beneficio menor y tiras el importante. Si el problema es un certificado interno, se añade tu autoridad al almacén de confianza." },
+  ],
+
+  "pr-cabeceras-que-importan": [
+    { q: "¿Cuándo dispara el navegador un preflight?",
+      o: ["Siempre que hay CORS", "Cuando la petición lleva JSON o cabeceras propias", "Solo en peticiones DELETE"], a: 1,
+      w: "Un GET o un POST de formulario van directos. El preflight añade una ida y vuelta que se puede cachear con `Access-Control-Max-Age`." },
+    { q: "¿Qué cabecera de seguridad ya no hace falta poner?",
+      o: ["`Content-Security-Policy`", "`X-Content-Type-Options`", "`X-XSS-Protection`"], a: 2,
+      w: "Está obsoleta y algunos navegadores la ignoran o la consideran contraproducente. Copiar listas de artículos viejos añade ruido sin aportar nada." },
+  ],
+
+  "pr-serializacion": [
+    { q: "¿Cómo debe viajar un importe en JSON?",
+      o: ["Como entero de céntimos o como cadena", "Como número decimal", "Como float con dos decimales"], a: 0,
+      w: "JSON no tiene tipo decimal, así que un importe en coma flotante puede volver con un céntimo de menos tras cruzar dos lenguajes." },
+    { q: "¿Por qué el esquema importa más en colas que en HTTP?",
+      o: ["Porque las colas son más rápidas", "Porque los mensajes persisten y los releerán consumidores que hoy no existen", "Porque HTTP ya valida los tipos"], a: 1,
+      w: "Un evento publicado hoy puede releerse dentro de seis meses, y para entonces el esquema habrá cambiado. Por eso existen los registros de esquemas." },
+  ],
+
+  "pr-grpc": [
+    { q: "¿Por qué el streaming viene de serie en gRPC?",
+      o: ["Porque usa WebSockets por debajo", "Porque Protobuf lo incluye", "Porque HTTP/2 multiplexa: es otra firma en el mismo fichero .proto"], a: 2,
+      w: "En REST, mantener un flujo abierto exige montar SSE o WebSockets aparte. Aquí es un modo más de llamada." },
+    { q: "¿Se puede llamar a gRPC desde un navegador?",
+      o: ["Solo con gRPC-Web y un proxy que traduzca, perdiendo modos de streaming", "Sí, directamente", "Solo con HTTP/3"], a: 0,
+      w: "Los navegadores no exponen el control de HTTP/2 que gRPC necesita. Si tu consumidor principal es una web, gRPC te complica la vida." },
+  ],
+
+  "pr-compatibilidad": [
+    { q: "¿Qué compatibilidad necesitas al desplegar el servidor?",
+      o: ["Hacia adelante", "Hacia atrás: que un cliente viejo funcione con el servidor nuevo", "Las dos siempre"], a: 1,
+      w: "Hacia adelante la necesitas si el cliente se actualiza antes que el servidor, o durante un rolling update donde conviven las dos versiones." },
+    { q: "¿Con qué se abre una versión nueva de una API?",
+      o: ["Con su documentación", "Con un anuncio a los clientes", "Con la fecha de retirada de la anterior ya decidida"], a: 2,
+      w: "Sin esa fecha, la v1 seguirá viva dentro de cinco años porque siempre habrá un cliente que no migró. Cada versión viva es mantenimiento duplicado." },
+  ],
+
+  "pr-polling": [
+    { q: "¿Cuál es la latencia media del polling?",
+      o: ["La mitad del intervalo", "El intervalo completo", "Cero"], a: 0,
+      w: "Con un intervalo de 10 segundos, de media el usuario espera 5. Suficiente para la mayoría de lo que se pide «en tiempo real» en una aplicación de negocio." },
+    { q: "¿Qué ventaja operativa tiene el polling que se olvida?",
+      o: ["Es más rápido", "Sin estado: cualquier servidor atiende, y si el cliente se va no hay nada que limpiar", "Consume menos ancho de banda"], a: 1,
+      w: "No hay conexiones que drenar al desplegar, ni presencia que caducar, ni fan-out que montar. Es la razón principal de que aguante tanto." },
+  ],
+
+  "pr-sse": [
+    { q: "¿Cuáles son las dos limitaciones reales de SSE?",
+      o: ["No funciona en móviles y no se puede cifrar", "No reconecta y no soporta autenticación", "Es unidireccional y solo transporta texto"], a: 2,
+      w: "Lo de unidireccional casi nunca molesta —enviar es puntual y recibir continuo—. Para binario habría que codificar en base64, con un 33 % de sobrecoste." },
+    { q: "En PHP, ¿por qué se cierra el flujo SSE a propósito cada minuto?",
+      o: ["Para convertir el worker ocupado en un ciclo controlado, aprovechando la reconexión automática", "Porque el navegador lo exige", "Para renovar la autenticación"], a: 0,
+      w: "Aun así, para cientos de conexiones simultáneas la salida real es sacar el endpoint de FPM: un runtime asíncrono o un componente aparte." },
+  ],
+
+  "pr-websockets": [
+    { q: "¿Qué es una conexión zombi?",
+      o: ["Una conexión sin autenticar", "Una que parece abierta desde el servidor cuando el cliente ya no está", "Una que consume demasiada memoria"], a: 1,
+      w: "Un móvil que entra en un túnel no manda ningún aviso. Crees que el usuario está conectado y le mandas mensajes que se pierden. Hace falta un ping con plazo de respuesta." },
+    { q: "La autorización de un WebSocket se comprueba en el saludo. ¿Qué problema tiene?",
+      o: ["Que es lenta", "Que no soporta OAuth", "Que la conexión dura horas: si revocan permisos o expira el token, sigue recibiendo"], a: 2,
+      w: "Hace falta revalidar periódicamente o cerrar la conexión cuando cambian los permisos del usuario." },
+  ],
+
+  "pr-elegir-transporte": [
+    { q: "¿Qué criterio decide en la práctica y casi nunca se discute?",
+      o: ["Quién va a operar la flota con estado", "La latencia teórica de cada protocolo", "La elegancia de la solución"], a: 0,
+      w: "Conexiones persistentes necesitan monitorización propia, despliegues que drenen y alguien que entienda por qué un servidor tiene el triple de conexiones. Sin eso, la decisión ya está tomada." },
+    { q: "¿Es deuda técnica empezar por polling?",
+      o: ["Sí, siempre hay que hacerlo bien desde el principio", "No, si el transporte está detrás de una interfaz: es aplazar la decisión hasta tener datos", "Sí, porque migrar después es imposible"], a: 1,
+      w: "Encapsular «suscribirse a cambios de X» permite cambiar el transporte de debajo sin tocar el resto de la aplicación." },
+  ],
+
+  "pr-escalar-tiempo-real": [
+    { q: "¿Por dónde se empieza para mandar un mensaje a un usuario conectado a otro servidor?",
+      o: ["Montando un directorio desde el principio", "Particionando por usuario", "Difundiendo a todos los servidores por pub/sub"], a: 2,
+      w: "Con diez servidores, mandar cada mensaje a los diez cuesta poco y te ahorra mantener un directorio que puede desincronizarse. El directorio llega cuando la difusión sea medible." },
+    { q: "¿Qué pasa en cada despliegue con conexiones persistentes?",
+      o: ["Se cierran todas y los clientes reconectan a la vez, pudiendo tumbar lo que acaba de arrancar", "Se mantienen abiertas", "Solo se cierran las inactivas"], a: 0,
+      w: "Se maneja drenando, avisando al cliente antes de cerrar y sobre todo con jitter en el cliente, que es lo que reparte la avalancha." },
+  ],
+
+  "pr-webhooks": [
+    { q: "¿Cómo se descartan los eventos duplicados?",
+      o: ["Comparando el contenido con el último recibido", "Con un índice único sobre el identificador del evento, devolviendo 200 al chocar", "Rechazándolos con un 409"], a: 1,
+      w: "Se devuelve 200 porque para el emisor el evento está entregado; devolver error provocaría más reintentos del mismo duplicado." },
+    { q: "¿Por qué guardar el evento en crudo?",
+      o: ["Por requisitos legales", "Para ahorrar consultas", "Para reprocesar tras arreglar un bug y para ganar discusiones de «yo te lo mandé»"], a: 2,
+      w: "Con su firma y sus cabeceras, para poder reverificar. Ojo con la retención si lleva datos personales y con que la tabla crezca sin límite." },
+  ],
+
+  "pr-firmas-y-replay": [
+    { q: "¿Dónde debe ir la marca de tiempo respecto a la firma?",
+      o: ["Dentro de lo que se firma", "En una cabecera aparte", "No hace falta marca de tiempo"], a: 0,
+      w: "Si va aparte, un atacante la cambia y reutiliza la misma firma. Firmada, cualquier manipulación invalida la comprobación." },
+    { q: "¿Cómo se rota un secreto compartido sin cortar?",
+      o: ["Avisando con un mes de antelación", "Aceptando el secreto nuevo y el anterior durante la transición", "Cambiándolo de madrugada"], a: 1,
+      w: "El receptor prueba con el actual y, si falla, con el anterior. Por eso los proveedores serios mandan varias firmas en la misma cabecera." },
+  ],
+
+  "pr-streaming-http": [
+    { q: "¿Qué problema resuelve NDJSON que un JSON grande no?",
+      o: ["Ocupa menos", "Es más rápido de generar", "Se puede consumir línea a línea con memoria constante, sin esperar al cierre del array"], a: 2,
+      w: "Y si la conexión se corta a la mitad, todo lo recibido hasta la última línea completa sigue siendo válido." },
+    { q: "El streaming funciona en local y en producción llega todo de golpe al final. ¿Por qué?",
+      o: ["Alguna pieza del camino acumula: el buffer de PHP, `fastcgi_buffering` o la CDN", "El navegador lo acumula", "Falta `Content-Length`"], a: 0,
+      w: "Basta con que una sola pieza acumule para que el streaming desaparezca, y no da ningún error: solo deja de comportarse como esperabas." },
+  ],
+
+  "pr-cuando-no-tiempo-real": [
+    { q: "Detrás de «que se vea al momento», ¿qué suele haber?",
+      o: ["Un requisito de latencia medido", "No tener que recargar la página a mano", "Un problema de rendimiento"], a: 1,
+      w: "Refrescar cada diez segundos resuelve esa petición entera, sin flota con estado, sin fan-out y sin presencia que mantener." },
+    { q: "¿Cuándo el tiempo real no se discute?",
+      o: ["Cuando lo pide el cliente", "Cuando hay muchos usuarios", "Cuando la interacción entre personas ocurre dentro del sistema y en el momento"], a: 2,
+      w: "Chat, edición colaborativa, juegos, subastas. Si lo que muestras es el avance de un proceso, casi siempre estás en el otro grupo." },
+  ],
+
   /* ================= Curso: Infraestructura ================= */
 
   "inf-servidor-por-dentro": [

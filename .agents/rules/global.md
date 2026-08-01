@@ -108,9 +108,11 @@ global del agente y no se duplican aquí.
 Detalle en `.agents/notes/`. **Norte del proyecto** (ver `plan-carrera-completa.md`):
 llegar a ser "como una carrera universitaria" que dé la base formal que el usuario
 (backend autodidacta) no tuvo — temario completo y coherente, no tutoriales sueltos.
-Estado a 2026-08-01: **212 tutoriales, 23 cursos, 6 rutas**. Los cinco frentes del
-orden original están cerrados, y `sistemas-distribuidos` (19 lecciones) es el
-primero de los 4 cursos aprobados en 2026-07-06 que ya está escrito.
+Estado a 2026-08-01: **257 tutoriales, 26 cursos, 6 rutas**. Los cinco frentes del
+orden original están cerrados **y también los 4 cursos aprobados el 2026-07-06**
+(`sistemas-distribuidos`, `cache-y-rendimiento`, `infraestructura` y
+`protocolos-y-tiempo-real`). Con eso, el norte del proyecto está cubierto:
+`el-grado-que-no-hiciste` son 23 cursos y ningún curso queda fuera de una ruta.
 
 **Cerrados, no reabrir** (la note de cada uno lo registra): `plan-diseno-y-calidad`,
 `plan-practica-backend`, `plan-testing-y-observabilidad`, `plan-curso-go`,
@@ -120,10 +122,6 @@ de la auditoría de producto del 2026-07-31 (`plan-ia-en-la-app`, `plan-offline-
 
 Pendiente de verdad, por orden de peso:
 
-- **3 cursos aprobados 2026-07-06 y aún sin escribir** (`plan-carrera-completa.md`):
-  `cache-y-rendimiento`, `infraestructura` y `protocolos-y-tiempo-real`.
-  Estructura por aprobar curso a curso, como se hizo con `sistemas-distribuidos`
-  (ver `plan-curso-sistemas-distribuidos.md`).
 - `plan-huecos-versatilidad.md` — sus cuatro cursos están publicados; queda solo
   la idea **«Ponlo en práctica»**: mini-retos al cierre de cada curso.
 - `plan-multiusuario.md` — parcial. A1 (validador) hecho como `scripts/validar.js`
