@@ -25,6 +25,66 @@
 
 window.ACADEMIA_TUTORIALS = [
   {
+    slug: "sd-dlq-y-reproceso",
+    title: "Colas de muertos y reproceso",
+    description:
+      "El mensaje envenenado que bloquea el consumidor y detiene todo lo que viene detrás, cómo distinguir fallo transitorio de permanente y por qué una cola de muertos sin alerta es un vertedero que nadie mira.",
+    href: "tutorials/sd-dlq-y-reproceso.html",
+    categories: ["distribuidos", "mensajeria"],
+    topic: "Sistemas distribuidos",
+    tags: ["DLQ", "Reintentos", "Messenger"],
+    level: "Avanzado",
+    minutes: 12,
+    icon: "signal",
+    status: "published",
+    date: "2026-08-01",
+  },
+  {
+    slug: "sd-backpressure",
+    title: "Contrapresión y degradación elegante",
+    description:
+      "Qué hacer cuando entra más trabajo del que puedes procesar: por qué la cola no es un amortiguador infinito, cómo reconstruir la contrapresión que el asíncrono destruye y cómo decidir de antemano qué se sacrifica.",
+    href: "tutorials/sd-backpressure.html",
+    categories: ["distribuidos", "rendimiento"],
+    topic: "Sistemas distribuidos",
+    tags: ["Contrapresión", "Degradación", "Rate limiting"],
+    level: "Avanzado",
+    minutes: 12,
+    icon: "shield",
+    status: "published",
+    date: "2026-08-01",
+  },
+  {
+    slug: "sd-timeouts-y-reintentos",
+    title: "Timeouts, reintentos, backoff y jitter",
+    description:
+      "Qué se puede reintentar y qué no, por qué el backoff sin jitter sincroniza a todos los clientes en oleadas, y cómo los reintentos en cadena multiplican la carga hasta tumbar lo que intentaban salvar.",
+    href: "tutorials/sd-timeouts-y-reintentos.html",
+    categories: ["distribuidos"],
+    topic: "Sistemas distribuidos",
+    tags: ["Reintentos", "Backoff", "Jitter", "Timeouts"],
+    level: "Avanzado",
+    minutes: 13,
+    icon: "shield",
+    status: "published",
+    date: "2026-08-01",
+  },
+  {
+    slug: "sd-circuit-breaker",
+    title: "Circuit breaker y mamparos",
+    description:
+      "Cuándo dejar de intentarlo: los tres estados del cortacircuitos, por qué el umbral va en porcentaje y no en número absoluto, qué devolver mientras está abierto y cómo aislar recursos para que un fallo no se extienda.",
+    href: "tutorials/sd-circuit-breaker.html",
+    categories: ["distribuidos", "arquitectura"],
+    topic: "Sistemas distribuidos",
+    tags: ["Circuit breaker", "Bulkhead", "Resiliencia"],
+    level: "Avanzado",
+    minutes: 13,
+    icon: "shield",
+    status: "published",
+    date: "2026-08-01",
+  },
+  {
     slug: "sd-transacciones-distribuidas",
     title: "Transacciones distribuidas: 2PC y por qué casi nadie lo usa",
     description:

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Timeouts, reintentos, backoff y jitter — MentorAI</title>
+    <meta name="description" content="Qué se puede reintentar y qué no, por qué el backoff sin jitter sincroniza a todos los clientes y cómo los reintentos en cadena multiplican la carga." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Sistemas distribuidos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Timeouts, reintentos, backoff y jitter</h1>
+        <p class="tutorial-hero__lead">Reintentar es la respuesta obvia a un fallo transitorio y la forma más común de convertir un problema pequeño en una caída general. La diferencia son tres detalles.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#timeout-primero">Sin timeout no hay nada que hablar</a></li>
+            <li><a href="#que-reintentar">Qué se puede reintentar</a></li>
+            <li><a href="#backoff">Backoff exponencial y jitter</a></li>
+            <li><a href="#amplificacion">La amplificación en cadena</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Reintentar es la respuesta obvia a un fallo transitorio y la forma más común de
+            convertir un problema pequeño en una caída general. La diferencia entre las dos
+            cosas son tres detalles: cuándo reintentas, cuánto esperas y si todos tus servidores
+            esperan lo mismo.
+          </p>
+
+          <h2 id="timeout-primero">
+            Sin timeout no hay nada que hablar
+            <a href="#timeout-primero" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Antes del reintento va el timeout, porque una llamada sin límite no falla: se queda
+            esperando y bloquea un worker. Con suficientes peticiones así, el pool se agota y tu
+            servicio deja de responder también a lo que no dependía de nadie.
+          </p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Elige el timeout con datos, no con un número redondo</p>
+              <p>
+                El criterio útil es el percentil 99 de esa llamada, con algo de margen: si el
+                99 % de las respuestas llega en menos de 300 ms, un timeout de 1 s corta lo
+                anómalo sin castigar lo normal. «30 segundos porque es lo que venía puesto» no
+                es una decisión, y en la práctica equivale a no tener timeout.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            Y hay un presupuesto que respetar: si tu endpoint promete responder en 2 s, la suma
+            de <em>timeout × intentos</em> de todo lo que llames por dentro tiene que caber ahí.
+            Tres intentos de 1 s con esperas entre medias ya se te ha ido.
+          </p>
+
+          <h2 id="que-reintentar">
+            Qué se puede reintentar
+            <a href="#que-reintentar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Reintentar a ciegas es peligroso. La regla depende de dos cosas: si el error es
+            transitorio y si la operación es idempotente.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Respuesta</th><th>¿Reintentar?</th><th>Por qué</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Timeout de conexión</td><td><b>Sí</b></td><td>Ni siquiera llegó: es seguro</td></tr>
+                <tr><td>503, 502, 429</td><td><b>Sí</b></td><td>El servidor dice explícitamente «ahora no»</td></tr>
+                <tr><td>Timeout de lectura</td><td><b>Solo si es idempotente</b></td><td>Puede haberse ejecutado ya</td></tr>
+                <tr><td>500</td><td>Con cuidado</td><td>Puede haber dejado efectos a medias</td></tr>
+                <tr><td>400, 422, 404</td><td><b>No</b></td><td>Va a fallar igual las diez veces</td></tr>
+                <tr><td>401, 403</td><td><b>No</b></td><td>Refresca la credencial; reintentar no la arregla</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Reintentar un 400 es gastar el doble para el mismo error</p>
+              <p>
+                Un error de cliente es determinista: la petición está mal formada y lo va a estar
+                en el segundo intento. Reintentarlo multiplica la carga sin ninguna posibilidad
+                de éxito, y encima ensucia las métricas del otro servicio.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="backoff">
+            Backoff exponencial y jitter
+            <a href="#backoff" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Reintentar inmediatamente es lo peor que puedes hacer: el servicio está saturado y le
+            mandas el doble de tráfico. De ahí el <strong>backoff exponencial</strong>: esperar
+            cada vez más entre intentos —100 ms, 200, 400, 800— para dar tiempo a que se
+            recupere.
+          </p>
+          <p>
+            Pero el backoff solo no basta, y este es el detalle que casi todo el mundo se salta:
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>El servicio se cae un instante</b><small>500 peticiones fallan a la vez</small></span>
+              </div>
+              <div class="flow__arrow" data-label="todas esperan 100 ms"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Las 500 reintentan en el mismo milisegundo</b><small>Backoff sin jitter = todos sincronizados</small></span>
+              </div>
+              <div class="flow__arrow" data-label="lo tumban otra vez"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Oleadas cada vez más separadas</b><small>El servicio no levanta cabeza entre ellas</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              La manada atronadora. El jitter la rompe: cada cliente espera un tiempo aleatorio.
+            </p>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · EsperaConJitter.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class EsperaConJitter
+{
+    private const BASE_MS = 100;
+    private const TOPE_MS = 10_000;
+
+    public function milisegundosParaIntento(int $intento): int
+    {
+        $exponencial = min(self::BASE_MS * (2 ** $intento), self::TOPE_MS);
+
+        return random_int(0, $exponencial);
+    }
+}</code></pre>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Sí, aleatorio entre cero y el máximo</p>
+              <p>
+                Se llama <em>full jitter</em> y sorprende porque parece que desperdicia espera.
+                Los estudios de AWS sobre el tema concluyen que reparte mejor la carga y termina
+                antes que las variantes conservadoras que solo añaden un pequeño porcentaje
+                aleatorio. Lo importante no es cuánto esperas: es que no esperes lo mismo que
+                los demás.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="amplificacion">
+            La amplificación en cadena
+            <a href="#amplificacion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Este es el fallo que convierte un problema local en una caída general, y no se ve
+            leyendo un servicio aislado. Si tienes cuatro capas y cada una reintenta tres veces:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · la cuenta</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">API -> Pedidos -> Facturación -> Base de datos
+ 3   x    3     x      3        = 27 peticiones a la BD por cada una del usuario</code></pre>
+          </div>
+
+          <p>
+            Veintisiete. Con la base de datos ya saturada. La regla que evita esto es
+            <strong>reintentar en una sola capa</strong>, normalmente la más cercana al fallo, y
+            que las de arriba propaguen el error. Si necesitas reintentos en varias, usa un
+            presupuesto compartido: un contador que viaje en una cabecera y limite el total.
+          </p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Y respeta el <code>Retry-After</code></p>
+              <p>
+                Cuando un servicio devuelve 429 o 503 con esa cabecera, te está diciendo
+                exactamente cuándo volver. Ignorarla y aplicar tu propio backoff es la forma más
+                rápida de que te limiten más agresivamente o te bloqueen.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Reintenta cuando…</h4>
+              <ul>
+                <li>El error es transitorio: red, 503, 429, saturación puntual</li>
+                <li>La operación es idempotente o llevas clave de idempotencia</li>
+                <li>Estás en la capa más cercana al fallo</li>
+                <li>El presupuesto de tiempo del endpoint da para ello</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No reintentes cuando…</h4>
+              <ul>
+                <li>El error es de cliente: 400, 404, 422</li>
+                <li>La operación no es idempotente y no llevas clave</li>
+                <li>Otra capa por encima ya está reintentando</li>
+                <li>El usuario está esperando y ya has gastado su paciencia</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Sin timeout no hay reintento posible: una llamada sin límite no falla, bloquea un worker hasta agotar el pool.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Solo se reintenta lo transitorio. Un 400 va a fallar igual las diez veces: reintentarlo es gastar el doble para el mismo error.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Backoff sin jitter sincroniza a todos los clientes en oleadas que vuelven a tumbar el servicio. Lo importante no es cuánto esperas, sino no esperar lo mismo que los demás.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Reintentos en cuatro capas se multiplican: 3×3×3 son 27 peticiones por cada una del usuario, contra un sistema ya saturado.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Reintenta en una sola capa, la más cercana al fallo, y respeta el <code>Retry-After</code> cuando te lo manden.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
