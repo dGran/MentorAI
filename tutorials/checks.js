@@ -714,4 +714,221 @@ window.MENTORAI_CHECKS = {
       w: "Por eso puede hacer trabajo caro sin coste en producción, y por eso hay que limpiar caché para que se aplique." },
   ],
 
+
+  "linux-filesystem": [
+    { q: "¿Qué implica que «todo sea un fichero» en Linux?",
+      o: ["Que dispositivos, procesos y conexiones se leen y escriben con las mismas herramientas","Que la configuración está siempre en texto plano","Que no existen las carpetas, solo rutas"], a: 0,
+      w: "`/proc/1234/status` es un proceso y `/dev/null` un dispositivo, y a los dos los lees con `cat`. Por eso un puñado de herramientas sirve para todo." },
+    { q: "¿Dónde vive la configuración del sistema y de las aplicaciones?",
+      o: ["/var","/etc","/usr/local"], a: 1,
+      w: "La regla que ordena el árbol: `/etc` configura, `/var` cambia (logs, colas), `/usr` es software instalado, `/tmp` se puede borrar sin miedo." },
+  ],
+
+  "linux-navegacion": [
+    { q: "Quieres volver al directorio en el que estabas antes del último `cd`.",
+      o: ["`cd ..`","`cd ~`","`cd -`"], a: 2,
+      w: "`cd -` alterna entre el actual y el anterior. `..` sube un nivel y `~` va a tu home, que son otras cosas." },
+    { q: "¿Qué te dice `ls -la` que no te dice `ls`?",
+      o: ["Los ficheros ocultos y los permisos, propietario y fecha de cada uno","El tamaño en formato legible","El tipo MIME"], a: 0,
+      w: "El tamaño legible es `-h`. Los ocultos (los que empiezan por punto) son justo los de configuración que sueles buscar." },
+  ],
+
+  "linux-permisos": [
+    { q: "Un fichero tiene 644. ¿Qué puede hacer el grupo?",
+      o: ["Leer y escribir","Solo leer","Leer y ejecutar"], a: 1,
+      w: "6 es lectura+escritura para el propietario; 4 es solo lectura para grupo y otros. El bit de ejecución sería 1." },
+    { q: "Tienes permiso de lectura sobre un fichero pero «permiso denegado» al abrirlo.",
+      o: ["El fichero está corrupto","Hay que ser root","Probablemente falta el bit de ejecución en algún directorio del camino: en directorios significa poder entrar"], a: 2,
+      w: "Es la confusión clásica: en ficheros `x` es ejecutar, en directorios es atravesarlos." },
+  ],
+
+  "linux-usuarios": [
+    { q: "Ejecutas `usermod -G docker david` y el usuario pierde sudo.",
+      o: ["Sin `-a` reemplaza TODOS sus grupos por `docker`","Es un bug de usermod","Falta reiniciar el servicio"], a: 0,
+      w: "La `-a` es de append. Es el clásico que deja a alguien fuera hasta que otro lo arregla desde otra sesión." },
+    { q: "Añades a un usuario a un grupo y sigue sin tener el permiso.",
+      o: ["Hay que reiniciar la máquina","Hay que reabrir sesión: los grupos se resuelven al iniciarla","El grupo no existe"], a: 1,
+      w: "La sesión abierta conserva los grupos con los que arrancó; `newgrp` o volver a entrar es lo que lo aplica." },
+  ],
+
+  "linux-busquedas": [
+    { q: "¿Qué hace `find . -name '*.log' -mtime +7 -delete`?",
+      o: ["Borra los .log modificados en los últimos 7 días","Lista los .log de la última semana","Borra los .log con más de 7 días"], a: 2,
+      w: "`+7` es «más de 7 días». Conviene ejecutarlo primero sin `-delete`: es muy fácil lanzarlo desde el directorio equivocado." },
+    { q: "Buscas un texto dentro de todos los ficheros de un árbol de directorios.",
+      o: ["`grep -r texto .`","`find . -name texto`","`ls -R | grep texto`"], a: 0,
+      w: "`find` busca por nombre y metadatos; `grep` busca por contenido. El `ls -R | grep` solo mira los nombres." },
+  ],
+
+  "linux-texto-y-pipes": [
+    { q: "Rediriges la salida a un fichero pero los errores siguen apareciendo en pantalla.",
+      o: ["Hay que usar `>>` en vez de `>`","Falta `2>&1`: stderr va por otro descriptor","Hay que ejecutarlo con sudo"], a: 1,
+      w: "Y el orden importa: primero rediriges stdout y después enganchas stderr a donde apunte." },
+    { q: "¿Qué diferencia hay entre `>` y `>>`?",
+      o: ["`>` es para texto y `>>` para binario","Ninguna, son sinónimos","`>` sobrescribe el fichero; `>>` añade al final"], a: 2,
+      w: "Confundirlos cuesta caro: un `>` sobre un log lo deja vacío al instante." },
+  ],
+
+  "linux-scripting": [
+    { q: "¿Qué evita `set -euo pipefail` al principio de un script?",
+      o: ["Que siga adelante tras un error y que una variable vacía se trate como cadena vacía","Que el script se ejecute sin permisos","Que se ejecute más de una vez a la vez"], a: 0,
+      w: "Así nacen los `rm -rf $DIR/` catastróficos: sin esto, `$DIR` vacío no es un error, es una cadena vacía." },
+    { q: "¿Por qué se entrecomillan las variables en bash, como en `\"$fichero\"`?",
+      o: ["Por estilo","Porque sin comillas, un valor con espacios se parte en varios argumentos","Porque bash no acepta variables sin comillas"], a: 1,
+      w: "Un fichero llamado «mi informe.txt» se convierte en dos argumentos, y el comando hace algo distinto de lo que crees." },
+  ],
+
+  "linux-sistema": [
+    { q: "Tu script funciona en la terminal pero falla en cron.",
+      o: ["Cron no soporta scripts largos","Falta darle permisos de ejecución","Cron corre con un entorno mínimo: sin tu PATH ni lo que cargue el .bashrc"], a: 2,
+      w: "Por eso en cron se usan rutas absolutas y se declaran explícitamente las variables que el script necesita." },
+    { q: "¿Qué significa `*/15 * * * *`?",
+      o: ["Cada 15 minutos","A las 15 de cada día","El día 15 de cada mes"], a: 0,
+      w: "Los cinco campos son minuto, hora, día del mes, mes y día de la semana. Ante la duda, mejor comprobarlo: un cron mal puesto tarda en notarse." },
+    { q: "Sincronizas con `rsync -av --delete origen/ destino/` y borra cosas que no esperabas.",
+      o: ["rsync nunca borra, es un bug","`--delete` borra en destino lo que no está en origen: si el origen es el equivocado, vacías el destino","Faltaba la opción -z"], a: 1,
+      w: "Y ojo con la barra final del origen: con ella copia el contenido, sin ella copia el directorio dentro del destino." },
+  ],
+
+  "linux-procesos-y-red": [
+    { q: "Un proceso no responde a `kill`. ¿Qué señal se está mandando y cuál es la alternativa?",
+      o: ["Manda SIGKILL; la alternativa es SIGTERM","Manda SIGHUP; la alternativa es reiniciar","Manda SIGTERM (recoge y vete); si no responde, SIGKILL lo mata sin margen"], a: 2,
+      w: "Con SIGTERM el proceso puede cerrar conexiones y guardar. SIGKILL no le da esa oportunidad, así que es el último recurso." },
+    { q: "Quieres saber qué proceso está ocupando el puerto 8080.",
+      o: ["`ss -tlnp`","`ps aux | grep 8080`","`netstat -r`"], a: 0,
+      w: "El `-p` (que suele necesitar sudo) es el que revela el proceso. `ps` no sabe nada de puertos." },
+    { q: "¿Qué te ahorra un `~/.ssh/config`?",
+      o: ["Tener que introducir la contraseña","Repetir usuario, puerto y clave en cada conexión: `ssh prod` y listo","Abrir el firewall"], a: 1,
+      w: "Y lo aprovechan también `scp`, `rsync` y git: se configura una vez y sirve para todo." },
+  ],
+
+  "observabilidad-pilares": [
+    { q: "Tienes métricas pero ni logs ni trazas. ¿Qué te falta poder responder?",
+      o: ["Si algo va mal","Cuántos usuarios hay","Dónde y por qué: las métricas avisan, las trazas localizan y los logs explican"], a: 2,
+      w: "Cada pilar responde a una pregunta distinta. Con uno solo siempre te queda media investigación sin poder hacer." },
+    { q: "¿Qué diferencia observabilidad de monitorización?",
+      o: ["La monitorización vigila lo que ya sabías que podía fallar; la observabilidad te deja preguntar cosas que no previste","Son sinónimos","La observabilidad es solo para microservicios"], a: 0,
+      w: "Por eso importa el contexto rico: sin él solo puedes contestar las preguntas que dejaste preparadas." },
+  ],
+
+  "logs-estructurados": [
+    { q: "¿Qué ganas escribiendo los logs en JSON en vez de texto libre?",
+      o: ["Ocupan menos","Puedes filtrar por campo y correlacionar entre servicios, sin regex frágiles sobre líneas que cambian","Se leen mejor en la terminal"], a: 1,
+      w: "En la terminal se leen peor, de hecho. La ganancia está en cuanto los consulta una herramienta." },
+    { q: "¿Qué campo hace posible seguir una petición a través de varios servicios?",
+      o: ["El timestamp","El nivel de log","Un identificador de petición o traza propagado entre servicios"], a: 2,
+      w: "Sin él, correlacionar es adivinar por marca de tiempo, que con concurrencia deja de funcionar." },
+  ],
+
+  "sentry-error-tracking": [
+    { q: "Un bug en un bucle genera diez mil notificaciones del mismo error.",
+      o: ["El fingerprinting los agrupa en un solo issue","Hay que bajar el nivel de log","Hay que desactivar Sentry en ese endpoint"], a: 0,
+      w: "La huella se puede ajustar cuando agrupa de más (todo junto) o de menos (el mismo bug repartido en veinte issues)." },
+    { q: "¿Qué captura Sentry además de la excepción?",
+      o: ["Solo el stack trace","El contexto: usuario, petición, release y los breadcrumbs de lo que pasó antes","Una copia de la base de datos"], a: 1,
+      w: "La excepción dice qué reventó; el contexto es lo que hace el fallo reproducible." },
+  ],
+
+  "sentry-a-fondo": [
+    { q: "¿Qué es un breadcrumb?",
+      o: ["La ruta del fichero donde ocurrió el error","El identificador del release","El rastro de eventos justo anteriores al fallo, en orden"], a: 2,
+      w: "Casi siempre es lo que revela la secuencia que llevó al error, más útil que la propia línea que petó." },
+    { q: "¿Para qué sirve asociar los errores a un release?",
+      o: ["Para ver si un error es nuevo, si lo introdujo un despliegue concreto y si una versión lo arregló","Para facturar por versión","Para ordenar los issues alfabéticamente"], a: 0,
+      w: "Convierte «esto falla» en «esto empezó a fallar con el despliegue del martes», que es una pista y no un lamento." },
+  ],
+
+  "metricas-prometheus": [
+    { q: "Quieres medir la memoria usada por el proceso. ¿Counter o Gauge?",
+      o: ["Counter, porque acumula","Gauge, porque sube y baja","Histogram"], a: 1,
+      w: "Elegir mal el tipo estropea las consultas: un contador que baja rompe el cálculo de tasas." },
+    { q: "Quieres el percentil 95 de latencia agregando varias instancias del servicio.",
+      o: ["Summary, que ya calcula percentiles","Gauge con el valor máximo","Histogram: los percentiles del Summary se calculan por instancia y no se pueden sumar"], a: 2,
+      w: "La media de dos percentiles 95 no es el percentil 95 del conjunto. El Histogram guarda cubetas, que sí se agregan." },
+  ],
+
+  "promql": [
+    { q: "Consultas el valor de un contador y ves un número que solo crece. ¿Qué te interesa en realidad?",
+      o: ["Su pendiente: `rate()` sobre un intervalo","El valor absoluto","El máximo histórico"], a: 0,
+      w: "`rate()` además maneja los reinicios del proceso, que si no aparecerían como una caída a cero." },
+    { q: "¿Para qué sirven las labels en Prometheus?",
+      o: ["Para documentar la métrica","Para dividir una métrica en dimensiones (ruta, método, código) y poder filtrar y agregar","Para ordenar los paneles"], a: 1,
+      w: "Ojo con la cardinalidad: una label con valores casi únicos, como un id de usuario, multiplica las series y tumba el servidor." },
+  ],
+
+  "grafana-dashboards": [
+    { q: "¿Dónde guarda Grafana las métricas que pinta?",
+      o: ["En su propia base de datos","En ficheros JSON del dashboard","En ningún sitio: consulta datasources como Prometheus o Loki"], a: 2,
+      w: "Por eso puede reunir en un mismo panel métricas y logs de sistemas distintos: solo es la capa de consulta y pintura." },
+    { q: "¿Qué distingue un buen dashboard de uno que nadie mira?",
+      o: ["Que responda a una pregunta concreta y se lea de un vistazo cuando algo va mal","El número de paneles","Que use colores llamativos"], a: 0,
+      w: "Un muro de treinta gráficas es tan inútil como no tener ninguna: nadie sabe dónde mirar cuando hay una incidencia." },
+  ],
+
+  "loki-logql": [
+    { q: "¿Qué hace Loki distinto de Elasticsearch para logs?",
+      o: ["Comprime mejor","Solo indexa los labels, no el contenido, así que es mucho más barato de almacenar","Guarda los logs en memoria"], a: 1,
+      w: "El precio es que las búsquedas por texto recorren los datos: hay que acotar bien por labels y por tiempo." },
+    { q: "Tu consulta LogQL tarda muchísimo.",
+      o: ["Hay que añadir más labels a los logs","Loki no sirve para volúmenes grandes","Probablemente no estás acotando por label y rango de tiempo, y está recorriendo todo"], a: 2,
+      w: "Añadir labels sin criterio empeora las cosas: dispara la cardinalidad, que es el otro modo de tumbarlo." },
+  ],
+
+  "alerting": [
+    { q: "Alertas cuando la CPU pasa del 90 %. ¿Qué problema tiene?",
+      o: ["Que es una causa, no un síntoma: si las respuestas siguen siendo rápidas, no molesta a nadie","Que el umbral es bajo","Que la CPU no se puede medir con fiabilidad"], a: 0,
+      w: "Alertar sobre síntomas de impacto (latencia, errores) reduce el ruido y hace que cada aviso signifique algo." },
+    { q: "¿Qué es el error budget y para qué se usa?",
+      o: ["El presupuesto de infraestructura","El margen de fallo que permite tu SLO, que sirve para decidir si arriesgas o estabilizas","El número de bugs abiertos"], a: 1,
+      w: "Un 99,9 % concede unos 43 minutos al mes. Si queda mucho, puedes desplegar agresivamente; si se agotó, toca frenar." },
+    { q: "El equipo ha dejado de mirar las alertas.",
+      o: ["Hay que subir la prioridad de todas","Hay que cambiar de herramienta","Es fatiga de alertas: menos avisos y mejores vale más que cobertura total"], a: 2,
+      w: "Es el peor final posible: el día que la alerta era de verdad, nadie la mira." },
+  ],
+
+  "conceptos-ia": [
+    { q: "¿Qué es en el fondo un LLM?",
+      o: ["Un modelo que predice el siguiente token a partir del contexto","Una base de datos de código indexado","Un motor de reglas entrenado por expertos"], a: 0,
+      w: "Entenderlo explica sus dos caras: por qué escribe código plausible con soltura y por qué se inventa una función con la misma seguridad." },
+    { q: "¿Qué es la ventana de contexto?",
+      o: ["El tiempo máximo de una respuesta","El texto máximo que el modelo puede tener delante en una inferencia, prompt y respuesta incluidos","El número de mensajes de la conversación"], a: 1,
+      w: "Cuando se llena, lo que sobra se cae: por eso en conversaciones largas parece olvidar lo del principio." },
+  ],
+
+  "como-piensa-un-llm": [
+    { q: "¿Prompting o fine-tuning para adaptar un modelo a tu dominio?",
+      o: ["Fine-tuning siempre, es más potente","Da igual, el resultado es el mismo","Empezar por prompting y RAG; el fine-tuning solo compensa para formato o estilo muy específicos"], a: 2,
+      w: "El fine-tuning cambia los pesos y cuesta datos, tiempo y dinero; el prompting no toca nada y se itera en segundos." },
+    { q: "¿Qué es RAG?",
+      o: ["Buscar información relevante y pasársela en el prompt, para que responda con datos actualizados","Reentrenar el modelo con tus datos","Un formato de prompt estructurado"], a: 0,
+      w: "Sale más barato que reentrenar y permite citar la fuente, que es lo que hace verificable la respuesta." },
+  ],
+
+  "prompting-para-codigo": [
+    { q: "Pides «arregla este bug» y te devuelve algo plausible pero equivocado.",
+      o: ["El modelo no sirve para depurar","Falta contexto: qué esperabas, qué pasó, qué has probado ya","Hay que repetir la petición varias veces"], a: 1,
+      w: "Sin el comportamiento esperado y el observado, solo puede adivinar cuál de los muchos «arreglos» posibles querías." },
+    { q: "¿Qué suele mejorar más una respuesta de código?",
+      o: ["Pedirle que sea breve","Pedirle varias alternativas siempre","Darle las restricciones reales: versiones, convenciones del proyecto y qué no debe tocar"], a: 2,
+      w: "El modelo no conoce tu proyecto salvo que se lo cuentes, y por defecto escribirá código idiomático… de otro proyecto." },
+  ],
+
+  "flujo-con-agentes": [
+    { q: "¿Qué distingue a un agente de una sola llamada al modelo?",
+      o: ["El bucle: planifica, actúa con herramientas, observa el resultado y vuelve a decidir","Que usa un modelo más grande","Que responde más rápido"], a: 0,
+      w: "Ahí está su fuerza (puede corregirse solo) y su riesgo (puede irse por las ramas sin que nadie lo pare)." },
+    { q: "¿Qué papel tienen las herramientas en un agente?",
+      o: ["El modelo las ejecuta directamente","El modelo pide que se ejecuten y tu harness decide: esa frontera es donde viven los permisos","Sustituyen al prompt"], a: 1,
+      w: "El modelo nunca ejecuta nada por sí mismo. Todo lo que un agente puede hacer es lo que tú le dejas hacer." },
+  ],
+
+  "criterio-y-riesgos": [
+    { q: "Un agente lee un issue de GitHub que contiene instrucciones ocultas y las obedece.",
+      o: ["Es un fallo del modelo","Solo pasa con modelos pequeños","Es prompt injection: el agente no distingue tus instrucciones del contenido que lee"], a: 2,
+      w: "Por eso importa acotar sus permisos y desconfiar de todo lo que entre desde fuera, igual que con cualquier entrada de usuario." },
+    { q: "¿Qué hace peligrosas a las alucinaciones?",
+      o: ["Que llegan con el mismo tono de seguridad que los aciertos, sin ninguna señal de duda","Que son frecuentes","Que solo ocurren en temas oscuros"], a: 0,
+      w: "No hay indicador de confianza en el texto, así que la verificación tiene que venir de fuera: tests, documentación, ejecutarlo." },
+  ],
+
 };
