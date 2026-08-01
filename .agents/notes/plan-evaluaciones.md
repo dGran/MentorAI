@@ -201,8 +201,22 @@ curso, escribir un JSON `{curso: [{w, lesson}, …]}` por índice y aplicar un
 inyector que verifica después que ningún enunciado, opción o respuesta ha
 cambiado y que todos los slugs de `lesson` existen en el manifest.
 
-**Sigue pendiente:** guardar el detalle del intento por pregunta, checks por
-lección, repaso espaciado y examen de ruta. **Y el chequeo de sesgo en el
+**Fase 2 (checks por lección) IMPLEMENTADA.** `assets/js/modules/checks.js` +
+`tutorials/checks.js` → `window.MENTORAI_CHECKS`, indexado por slug de tutorial.
+2-3 preguntas al final de la lección, corrección **inmediata por pregunta** (sin
+botón de enviar, que es lo que hace que funcione como recuperación activa), con
+el porqué. No bloquean nada. Se insertan antes del examen y de la navegación de
+ruta, así que el orden en la página es contenido → check → examen → navegación.
+El resultado por pregunta se guarda en `academia-checks` para alimentar el
+repaso espaciado.
+
+**Contenido: 15 lecciones de 194** (cursos `git`, `oop` y `clean-code`
+completos, 35 preguntas). Faltan 179 lecciones. Mismo criterio que en las
+explicaciones: repartir la posición de la correcta en los datos aunque el
+render baraje.
+
+**Sigue pendiente:** guardar el detalle del intento del examen por pregunta,
+repaso espaciado y examen de ruta. **Y el chequeo de sesgo en el
 validador** (A1 de `plan-multiusuario.md`): los datos ya están repartidos, pero
 las preguntas nuevas que genere la IA volverán a sesgarse si nadie lo comprueba.
 

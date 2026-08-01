@@ -1422,13 +1422,22 @@ enlaza a su lección. Verificado en cada tanda: ninguna pregunta alterada,
 ningún slug de `lesson` roto, ninguna explicación vacía o de relleno, y
 distribución de la respuesta correcta estable (66/78/65/66).
 
+### Cuarta tanda: catalog partido y checks por lección (2026-08-01)
+- **`catalog.js` partido** (`701eb54`): 581 líneas → `catalog.js` (97),
+  `catalog-card.js` (106), `catalog-filters.js` (257), más `ui-icons.js` (34) y
+  `ui-text.js` (26) con lo que de verdad era compartido. Los iconos vivían
+  dentro de Catalog, y por eso cursos, rutas e inicio tenían que pedirle iconos
+  al catálogo: ese acoplamiento ya no existe.
+- **Checks por lección** (`a4dedad`): ver `plan-evaluaciones.md`. 15 lecciones
+  cubiertas de 194.
+- SW en `VERSION = "v3"` por el cambio de shell.
+
 ### Pendiente al cerrar
-- **Modernizar los 7 módulos restantes** (`catalog.js` 581 líneas es el
-  siguiente candidato a partir, más core, courses, home, paths, offline,
-  syntax). Criterio acordado: al tocarlos, no en un big-bang.
-- Del plan de evaluaciones: detalle del intento por pregunta, checks por
-  lección, repaso espaciado, examen de ruta, y el chequeo de sesgo en el
-  validador.
+- **Modernizar los módulos restantes**: core, courses, home, paths, offline,
+  syntax, init. Criterio acordado: al tocarlos, no en un big-bang.
+- Del plan de evaluaciones: **checks para las 179 lecciones restantes**,
+  detalle del intento del examen por pregunta, repaso espaciado, examen de
+  ruta, y el chequeo de sesgo en el validador.
 - De offline: «Descargar toda la academia», guardar por ruta, `storage.persist()`.
 
 ## Pendiente de la primera tanda
