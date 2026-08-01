@@ -352,4 +352,218 @@ window.MENTORAI_CHECKS = {
       w: "Es rápido y deja la base como estaba pase lo que pase. Su límite: si el código bajo prueba hace su propio commit, deja de servir." },
   ],
 
+
+  "rest-que-es": [
+    { q: "Ves una ruta `/crearPedido` en una API que se llama REST.",
+      o: ["El verbo lo aporta HTTP: la URL debería nombrar el recurso, `/pedidos`","Está bien si el método es POST","Debería ser `/crear-pedido` por convención de guiones"], a: 0,
+      w: "El recurso es el sustantivo de la API. Si te sale un verbo en la URL, estás modelando acciones, no recursos." },
+    { q: "¿Qué implica que REST sea stateless?",
+      o: ["Que la API no puede guardar nada en base de datos","Que cada petición trae lo necesario para procesarse, sin sesión en el servidor","Que las respuestas no se pueden cachear"], a: 1,
+      w: "El estado no desaparece: se mueve al cliente (un token) o a un almacén compartido. Es lo que permite poner N instancias detrás de un balanceador." },
+  ],
+
+  "rest-metodos-y-estados": [
+    { q: "Usas PUT para actualizar solo el email de un usuario y el resto de campos se quedan vacíos.",
+      o: ["Es un bug del framework","Hay que enviar los campos como null explícito","PUT reemplaza el recurso completo: para un cambio parcial es PATCH"], a: 2,
+      w: "Es el error clásico: PUT es idempotente justo porque manda el recurso entero." },
+    { q: "El cliente está autenticado pero no tiene permiso para ese recurso. ¿Qué devuelves?",
+      o: ["403 Forbidden","401 Unauthorized","404 Not Found para no revelar que existe"], a: 0,
+      w: "401 es «no sé quién eres» y tiene sentido reintentar autenticándose; 403 es «sé quién eres y no puedes»." },
+    { q: "Acabas de crear un recurso con POST. ¿Qué respondes?",
+      o: ["200 OK con el cuerpo del recurso","201 Created, y conviene añadir un `Location` con su URL","204 No Content"], a: 1,
+      w: "El 201 comunica que ahora existe algo que antes no; el `Location` dice dónde encontrarlo." },
+  ],
+
+  "rest-diseno-de-urls": [
+    { q: "Tienes `/usuarios/1/pedidos/5/lineas/2`. ¿Qué problema arrastra?",
+      o: ["Ninguno: refleja bien la jerarquía","Es demasiado larga para algunos navegadores","Acopla al cliente a tu modelo interno; si cambia, sus URLs se rompen"], a: 2,
+      w: "Si la línea tiene identidad propia, `/lineas/2` basta. Anidar más de un nivel casi nunca compensa." },
+    { q: "Paginas con offset y los usuarios ven registros repetidos o se saltan alguno.",
+      o: ["Es inherente al offset cuando se insertan filas mientras paginas: el cursor lo evita","Hay que ordenar por id además de por fecha","Falta bloquear la tabla durante la paginación"], a: 0,
+      w: "Además `OFFSET 100000` obliga al motor a descartar cien mil filas. El cursor apunta a la última vista y sigue desde ahí." },
+  ],
+
+  "rest-errores-y-validacion": [
+    { q: "El móvil pierde cobertura justo después de enviar un pago y reintenta. ¿Cómo evitas cobrar dos veces?",
+      o: ["Comprobando por importe y fecha en el servidor","Con una `Idempotency-Key` que el cliente repite y el servidor deduplica","Convirtiendo el POST en PUT"], a: 1,
+      w: "Es idempotencia añadida a un POST, que por definición no la tiene." },
+    { q: "¿Qué aporta usar `problem+json` (RFC 9457) para los errores?",
+      o: ["Respuestas más pequeñas","Compatibilidad con GraphQL","Un formato conocido, así que el cliente trata los errores de forma genérica en vez de parsear el JSON de cada API"], a: 2,
+      w: "Evita que cada servicio invente su propia forma de contar lo que ha salido mal." },
+  ],
+
+  "rest-vs-rpc-vs-graphql": [
+    { q: "Comunicación interna entre tus propios servicios, con foco en rendimiento y contratos estrictos.",
+      o: ["gRPC: controlas ambos extremos y ganas con binario y contratos generados","REST, por simplicidad","GraphQL, para que cada servicio pida lo que necesita"], a: 0,
+      w: "Hacia fuera pesa más que REST se depure con un navegador y lo entienda cualquiera sin herramientas." },
+    { q: "¿Qué pierdes al pasar de REST a GraphQL en cuanto a caché?",
+      o: ["Nada, GraphQL cachea igual","La caché HTTP intermedia: al ir todo por POST, los proxies no pueden cachear","Solo la caché del navegador"], a: 1,
+      w: "GraphQL lo compensa con caché en cliente, pero es caché que gestionas tú, no infraestructura que ya estaba." },
+  ],
+
+  "orm-vs-sql": [
+    { q: "Necesitas un informe con window functions y CTEs. ¿ORM o SQL?",
+      o: ["ORM siempre, por consistencia","Depende del tamaño de la tabla","SQL a mano: es más claro y más rápido para eso"], a: 2,
+      w: "No es traicionar al ORM: es usar cada herramienta donde gana. El ORM brilla en el CRUD, que es la mayoría del código." },
+    { q: "¿Qué es el desajuste de impedancia entre objetos y tablas?",
+      o: ["Que objetos y tablas modelan las relaciones de forma distinta, y ninguna traducción es perfecta","Que las consultas son más lentas desde código","Que los tipos de datos no coinciden entre PHP y SQL"], a: 0,
+      w: "El ORM es precisamente la capa que absorbe esa fricción, con los costes que eso trae." },
+  ],
+
+  "active-record-vs-data-mapper": [
+    { q: "Quieres poder probar el dominio sin levantar una base de datos.",
+      o: ["Active Record, si mockeas la conexión","Data Mapper: la entidad es pura y un mapper externo gestiona la persistencia","Da igual, depende del framework"], a: 1,
+      w: "En Active Record la entidad se persiste a sí misma, así que arrastra la base de datos allá donde vaya." },
+    { q: "¿Qué gana Active Record a cambio?",
+      o: ["Mejor rendimiento en consultas","Independencia del motor de base de datos","Rapidez para escribir: menos ceremonia y todo a mano en la entidad"], a: 2,
+      w: "Eloquent y Doctrine son los ejemplos de cada escuela, y la elección es un intercambio, no una jerarquía." },
+  ],
+
+  "problema-n-mas-1": [
+    { q: "Iteras 500 posts y dentro del bucle accedes a `$post->comments`. ¿Cuántas consultas se lanzan?",
+      o: ["501: la de la lista más una por post","Una","500"], a: 0,
+      w: "Con 10 filas no se nota; con 1.000 la página se cae, y el código es idéntico. Se detecta con un profiler, no leyendo." },
+    { q: "¿Qué hace el eager loading y qué cuesta?",
+      o: ["Cachea las relaciones en memoria; cuesta RAM","Carga las relaciones por adelantado en 1-2 consultas; cuesta traer datos que quizá no uses","Difiere la carga hasta que se necesita; no cuesta nada"], a: 1,
+      w: "Es un intercambio consciente, no una optimización gratis. Lo que difiere la carga es el lazy loading, que es el origen del problema." },
+  ],
+
+  "migraciones-de-esquema": [
+    { q: "Te has equivocado en una migración que ya aplicaron tus compañeros y producción.",
+      o: ["La editas y avisas al equipo de que vuelvan a ejecutarla","Haces rollback en todos los entornos","Añades una migración nueva que corrija: las aplicadas son inmutables"], a: 2,
+      w: "Editarla deja la base de los demás sin coincidir con el código, y nadie se entera hasta que algo falla." },
+    { q: "¿Por qué en producción se prefiere «roll forward» al `down()`?",
+      o: ["Porque revertir un `DROP COLUMN` no devuelve los datos: el rollback suena bien y falla en la práctica","Porque es más rápido de ejecutar","Porque `down()` no está soportado en todos los ORM"], a: 0,
+      w: "Se avanza siempre, con una migración nueva que arregle, y se trata el rollback como algo excepcional." },
+  ],
+
+  "orm-transacciones-unit-of-work": [
+    { q: "Llamas a `flush()` dentro de un bucle de 1.000 entidades.",
+      o: ["Es lo correcto para no acumular memoria","Pierdes el agrupamiento: pasas de una transacción a 1.000, con su coste de red y disco","No cambia nada, el ORM lo optimiza"], a: 1,
+      w: "Lo habitual es acumular y hacer `flush()` por lotes, equilibrando memoria y número de transacciones." },
+    { q: "¿`flush()` y `commit()` son lo mismo?",
+      o: ["Sí, `flush()` es el nombre de Doctrine para commit","No: `commit()` solo aplica a transacciones explícitas y `flush()` a las implícitas","No: `flush()` manda el SQL, pero hasta el `commit()` nada es definitivo"], a: 2,
+      w: "Confundirlos lleva a creer que los datos están a salvo cuando aún pueden revertirse." },
+  ],
+
+  "docker-imagen-vs-contenedor": [
+    { q: "Instalas un paquete dentro de un contenedor y luego lo borras y lo vuelves a crear.",
+      o: ["Se ha perdido: los cambios dentro del contenedor no se guardan en la imagen","El paquete sigue ahí: forma parte de la imagen","Depende de si hiciste commit del contenedor"], a: 0,
+      w: "La imagen es la receta congelada; el contenedor, el plato. Lo que quieras conservar va en un volumen o en el Dockerfile." },
+    { q: "¿Por qué un contenedor arranca en milisegundos y una VM en segundos?",
+      o: ["Porque el contenedor usa menos memoria","Porque comparte el kernel del anfitrión en vez de virtualizarlo","Porque la imagen está comprimida"], a: 1,
+      w: "De ahí también su limitación: no puedes correr un kernel distinto al del anfitrión." },
+  ],
+
+  "dockerfile-y-capas": [
+    { q: "Cambias una línea de código y el build reinstala todas las dependencias.",
+      o: ["Es inevitable, Docker no cachea dependencias","Falta usar `--no-cache` al revés","El `COPY . .` está antes del `composer install`: hay que copiar primero solo el composer.json"], a: 2,
+      w: "La caché es en cascada: si una capa cambia, todas las de abajo se invalidan. El orden del Dockerfile determina el tiempo de build." },
+    { q: "¿Qué invalida la caché de una capa?",
+      o: ["Que esa capa cambie, y entonces también todas las siguientes","Que haya pasado más de un día","Que cambie cualquier capa del Dockerfile"], a: 0,
+      w: "Por eso lo que cambia poco (dependencias) va arriba y lo que cambia mucho (tu código) va abajo." },
+  ],
+
+  "docker-compose": [
+    { q: "Ejecutas `docker-compose down -v` y desaparecen los datos de tu base local.",
+      o: ["Es un bug conocido de compose","El `-v` borra también los volúmenes nombrados; sin él los datos sobreviven","Faltaba declarar el volumen como externo"], a: 1,
+      w: "Es la diferencia entre reiniciar el entorno y perderlo." },
+    { q: "¿Cómo conecta tu app con el contenedor de MySQL en compose?",
+      o: ["Por la IP del contenedor, que hay que averiguar","Publicando el puerto 3306 en el anfitrión","Por el nombre del servicio como hostname, en la red privada que crea compose"], a: 2,
+      w: "Por eso no hace falta publicar puertos para que los servicios se hablen entre sí; publicar es para llegar tú desde fuera." },
+  ],
+
+  "docker-buenas-practicas": [
+    { q: "Metes un secreto en una capa y lo borras en la siguiente instrucción del Dockerfile.",
+      o: ["Sigue en el historial de capas: cualquiera con la imagen puede recuperarlo","Queda eliminado de la imagen final","Solo es recuperable si la imagen no está comprimida"], a: 0,
+      w: "Los secretos entran en tiempo de ejecución, por variables de entorno o montajes." },
+    { q: "¿Qué te da un multi-stage build?",
+      o: ["Builds paralelos más rápidos","Compilar con todo el herramental y copiar solo el artefacto a una imagen limpia","Poder usar varias imágenes base a la vez en producción"], a: 1,
+      w: "Imagen mucho menor y menos superficie de ataque, porque el compilador no viaja a producción." },
+    { q: "¿Qué pasa si no tienes `.dockerignore`?",
+      o: ["El build falla si hay ficheros binarios","Docker ignora los ficheros ocultos por defecto","Todo el directorio se envía al daemon en cada build, incluidos `.git`, `vendor/` y quizá tu `.env`"], a: 2,
+      w: "Además de lentitud, es una vía habitual de acabar con secretos dentro de la imagen." },
+  ],
+
+  "php-en-docker": [
+    { q: "Recibes un 502 de nginx en tu entorno dockerizado. ¿Dónde miras primero?",
+      o: ["Entre nginx y PHP-FPM: PHP no ha llegado a ejecutarse","En los logs de PHP: el código ha fallado","En la base de datos"], a: 0,
+      w: "Un 500 significa que tu código corrió y falló; un 502, que nginx no pudo hablar con FPM. Distinguirlo ahorra mucho tiempo." },
+    { q: "¿Por qué nginx y PHP-FPM van en contenedores separados?",
+      o: ["Porque no pueden compartir el mismo puerto","Por el principio de un proceso por contenedor: escalar y actualizar cada uno por su cuenta","Porque nginx necesita más memoria"], a: 1,
+      w: "Encaja con cómo Docker entiende un contenedor: un proceso en primer plano cuyo ciclo de vida es el del contenedor." },
+  ],
+
+  "ci-cd-que-es": [
+    { q: "Una rama lleva tres semanas sin integrarse. ¿Por qué es un problema creciente?",
+      o: ["Porque git pierde rendimiento con ramas largas","Porque el CI caduca los artefactos","Porque los conflictos crecen más que linealmente y el fallo puede venir de cambios que nadie ha visto juntos"], a: 2,
+      w: "Integrar a menudo no es una manía de proceso: reduce el tamaño de cada problema." },
+    { q: "¿Qué diferencia hay entre integración continua y entrega continua?",
+      o: ["CI valida cada cambio al integrarlo; CD extiende la cinta hasta dejarlo listo para desplegar","Son sinónimos","CI es para código y CD para infraestructura"], a: 0,
+      w: "Se nombran juntas pero se adoptan por separado, y CI es la que da valor desde el primer día." },
+  ],
+
+  "pipeline-anatomia": [
+    { q: "¿Por qué el linter va antes que los tests en el pipeline?",
+      o: ["Porque tarda menos en instalarse","Para fallar rápido: no gastas cinco minutos de tests si el código no pasa un check de un segundo","Porque los tests dependen del linter"], a: 1,
+      w: "Acorta la realimentación en el caso más común, que es el error tonto." },
+    { q: "¿Qué diferencia a un artefacto de una caché en CI?",
+      o: ["El artefacto se guarda más tiempo","La caché es para dependencias y el artefacto para logs","El artefacto es salida que quieres conservar o pasar a otro job; la caché es una optimización que puede fallar sin consecuencias"], a: 2,
+      w: "Si tu pipeline se rompe cuando la caché no está, la estás usando como artefacto." },
+  ],
+
+  "ci-para-php": [
+    { q: "Los tests fallan en CI de forma intermitente al conectar con MySQL.",
+      o: ["Falta un healthcheck: el contenedor arranca antes de aceptar conexiones","Falta aumentar el timeout de conexión","El runner no tiene suficiente memoria"], a: 0,
+      w: "Es una carrera de arranque, y de las causas clásicas de tests inestables en CI." },
+    { q: "¿Qué hace `needs: [lint, test]` en un job de GitHub Actions?",
+      o: ["Instala lint y test como dependencias","Espera a que ambos terminen con éxito; si uno falla, el job ni se intenta","Ejecuta los tres en paralelo"], a: 1,
+      w: "Es lo que convierte una lista de jobs en un grafo: sin `needs` correrían todos a la vez." },
+  ],
+
+  "despliegue-continuo": [
+    { q: "Vas a borrar una columna que la versión actual todavía usa, y el despliegue es gradual.",
+      o: ["Se despliega y se borra a la vez, es atómico","Se para el servicio durante la migración","Expand and contract: primero añades, migras, y solo cuando nadie usa la vieja, contraes"], a: 2,
+      w: "Durante el despliegue conviven dos versiones contra la misma base. Borrar antes de tiempo rompe producción a mitad." },
+    { q: "¿Qué te da blue-green que no da un despliegue directo?",
+      o: ["Rollback instantáneo: basta con redirigir el tráfico al entorno anterior","Despliegues más rápidos","Menos consumo de recursos"], a: 0,
+      w: "Tienes dos entornos idénticos y solo uno recibe tráfico; despliegas en el dormido y conmutas." },
+  ],
+
+  "sql-joins": [
+    { q: "Quieres listar todos los clientes, tengan pedidos o no.",
+      o: ["INNER JOIN, que trae todo","LEFT JOIN desde clientes","RIGHT JOIN desde pedidos"], a: 1,
+      w: "El INNER solo devuelve la intersección: los clientes sin pedidos desaparecerían del listado." },
+    { q: "¿Cómo encuentras solo los clientes SIN pedidos?",
+      o: ["`WHERE pedidos.id != clientes.id`","Con un INNER JOIN negado","`LEFT JOIN ... WHERE pedidos.id IS NULL`"], a: 2,
+      w: "El LEFT JOIN trae las filas huérfanas con NULL en el lado derecho; filtrar por ese NULL las aísla." },
+  ],
+
+  "sql-agregacion": [
+    { q: "Quieres quedarte solo con los grupos que tienen más de 5 pedidos.",
+      o: ["`HAVING COUNT(*) > 5`","`WHERE COUNT(*) > 5`","`WHERE` con una subconsulta"], a: 0,
+      w: "WHERE filtra filas antes de agrupar; HAVING filtra grupos ya formados. Por eso el agregado solo vale en HAVING." },
+    { q: "`COUNT(email)` te da menos que `COUNT(*)` sobre la misma tabla.",
+      o: ["Es un error del motor","Normal: `COUNT(columna)` no cuenta los NULL","Falta un DISTINCT"], a: 1,
+      w: "Solo se nota cuando hay NULL, y entonces se nota mucho: es una fuente clásica de informes que no cuadran." },
+  ],
+
+  "sql-subqueries-ctes": [
+    { q: "Una subconsulta referencia una columna de la consulta exterior y la query se degrada al crecer la tabla.",
+      o: ["Falta un índice en la subconsulta","Hay que convertirla en CTE y ya está resuelto","Es correlacionada: se evalúa una vez por fila de la exterior"], a: 2,
+      w: "A veces el planificador la reescribe, pero es el sospechoso habitual cuando algo escala mal." },
+    { q: "¿Qué ganas al pasar una subconsulta anidada a un CTE?",
+      o: ["Legibilidad: pasos con nombre que se leen de arriba abajo y se pueden reutilizar","Siempre más rendimiento","Que el motor la cachea entre ejecuciones"], a: 0,
+      w: "Ojo: en algunos motores el CTE actúa como barrera de optimización, así que legibilidad y plan no siempre van juntos." },
+  ],
+
+  "sql-window-functions": [
+    { q: "Quieres el salario de cada empleado y, al lado, la media de su departamento, sin perder filas.",
+      o: ["GROUP BY departamento","`AVG(salario) OVER (PARTITION BY departamento)`","Un self-join de la tabla consigo misma"], a: 1,
+      w: "Ahí está la diferencia: GROUP BY colapsa las filas, la window function conserva el detalle y añade el agregado al lado." },
+    { q: "Necesitas los 3 mejores de cada categoría. ¿Dónde va el filtro `rn <= 3`?",
+      o: ["En el WHERE de la misma consulta","En un HAVING","Fuera, envolviendo en subconsulta o CTE: la window function se calcula después del WHERE"], a: 2,
+      w: "Es el orden de evaluación de SQL: cuando el WHERE actúa, el número de fila todavía no existe." },
+  ],
+
 };
