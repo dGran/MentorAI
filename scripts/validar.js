@@ -123,6 +123,28 @@ function validarManifest() {
     aviso(`manifest: ${sueltosDestacados} artículos sueltos marcados featured (el badge "Nuevo" pierde sentido si son varios)`);
   }
 
+  /* Una categoría con un solo tutorial casi siempre es una errata o un
+     sinónimo de otra que ya existe («bases-de-datos» frente a «bbdd»).
+     Hoy no salta ninguna: está para que salte el día que se cuele. */
+  const porCategoria = {};
+
+  for (const tutorial of manifest) {
+    for (const categoria of tutorial.categories ?? []) {
+      porCategoria[categoria] = (porCategoria[categoria] ?? 0) + 1;
+    }
+  }
+
+  for (const [categoria, cuantos] of Object.entries(porCategoria)) {
+    if (cuantos > 1) continue;
+
+    aviso(
+      `manifest: la categoría «${categoria}» solo la usa un tutorial. ` +
+        `¿Es una errata o un sinónimo de alguna de: ${Object.keys(porCategoria)
+          .filter((otra) => otra !== categoria)
+          .join(", ")}?`
+    );
+  }
+
   const huerfanos = fs
     .readdirSync(path.join(ROOT, "tutorials"))
     .filter((f) => f.endsWith(".html") && !f.startsWith("_"))

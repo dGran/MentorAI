@@ -137,8 +137,11 @@ Pendiente de verdad, por orden de peso:
   navegador real contra la URL de Pages (headless no activa el service worker).
   Checklist al final de `plan-offline-real.md`.
 
-Fase 2 (infraestructura):
-- `plan-buscador-fulltext.md` — **CERRADO 2026-08-01**: índice generado por
+Fase 2 — **CERRADA ENTERA el 2026-08-01**:
+- `plan-buscador-fulltext.md` — hecho: índice generado por
   `scripts/generar-indice.js`, carga perezosa al escribir en un buscador.
-- `plan-resaltado-texto.md` — subrayar texto dentro de los tutoriales.
-- `plan-autocategorizacion.md` — que la IA proponga las categorías al generar.
+- `plan-resaltado-texto.md` — hecho: `assets/js/modules/highlights.js`, con
+  Custom Highlight API y los subrayados reunidos en `repaso.html`.
+- `plan-autocategorizacion.md` — **obsoleto**: era todo código del puente
+  borrado, y el problema que resolvía no existe (25 categorías, 1,43 por
+  tutorial). Queda un aviso del validador si alguna se queda con un solo uso.

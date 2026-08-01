@@ -40,6 +40,8 @@
     MentorAI.initQuiz();
     MentorAI.initYear();
     MentorAI.SyntaxHighlighter.run();
+    MentorAI.initHighlights?.();
+    MentorAI.Highlights?.renderPage?.();
 
     MentorAI.Offline?.init();
     MentorAI.Offline?.initCourseButtons();

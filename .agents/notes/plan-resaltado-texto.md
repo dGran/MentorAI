@@ -1,6 +1,47 @@
 # Plan — Resaltar/subrayar texto en los tutoriales (fase 2)
 
-Estado: **pendiente**. Hoy hay favoritos a nivel de tarjeta (`Bookmarks` en
+Estado: **CERRADO 2026-08-01. Implementado y verificado en navegador.**
+
+Ficheros: `assets/js/modules/highlights.js`, `MentorAI.Highlights` en
+`storage.js`, estilos en `styles.css`, sección nueva en `repaso.html`.
+
+## Dónde se desvió del plan
+
+- **Se usó la CSS Custom Highlight API como principal, no `<mark>`.** El plan
+  proponía empezar por `<mark>` por compatibilidad, pero `surroundContents` falla
+  justo en el caso normal: subrayar una frase que cruza un `<code>` o un
+  `<strong>`. La prueba en navegador seleccionó un fragmento que cruzaba **7
+  nodos de texto** y funcionó. La API no toca el DOM, así que tampoco choca con
+  el resaltador de sintaxis. Si el navegador no la soporta, el módulo hace
+  early-return y no pasa nada.
+- **El contador de subrayados se crea al vuelo** dentro del `.toc`, en vez de
+  añadir un `<span>` a 257 ficheros.
+- **Índice de slugs con subrayados** (`academia-highlights-index`) además de la
+  clave por tutorial, para que la página de repaso no recorra todo
+  `localStorage`.
+- **Se añadió la página de repaso**, que el plan no pedía: subrayar sin poder
+  ver después lo subrayado es media funcionalidad. Están agrupados por tutorial
+  y cada fragmento enlaza a su sección con ancla.
+
+## Verificado en Chrome headless
+
+Seleccionar cruzando etiquetas → popover «Subrayar» → guardado con
+`seccion=doble-escritura nth=1` → pintado → **sobrevive a repintar desde cero**
+(equivalente a recargar) → «Quitar» lo borra y limpia el índice. Y en
+`repaso.html`, dos grupos con sus títulos del manifest y enlaces con ancla
+correcta.
+
+## Lo que sigue siendo cierto del plan
+
+El anclaje por sección + texto + nº de ocurrencia significa que **si un tutorial
+se reescribe y ese texto desaparece, el subrayado se pierde**. Es esperado: el
+contador lo dice («N ya no encajan con el texto») en vez de fallar en silencio.
+
+---
+
+## Plan original (para referencia)
+
+Hoy hay favoritos a nivel de tarjeta (`Bookmarks` en
 `main.js`). Esto es el siguiente nivel: seleccionar texto **dentro** de un
 tutorial y resaltarlo, persistente y por usuario.
 

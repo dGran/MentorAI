@@ -1,6 +1,35 @@
 # Plan — Auto-categorización con IA (fase 2)
 
-Estado: **pendiente**. Hoy las `categories` de un tutorial las teclea el usuario
+Estado: **OBSOLETO. Cerrado 2026-08-01 sin implementar, y a propósito.**
+
+Todo este plan es `server/bridge.js`, `handleGenerate` y el campo «Categoría» del
+compositor. **Las tres cosas se borraron el 2026-07-31** al descartar la autoría
+desde la app (ver `plan-ia-en-la-app.md`). No hay generación que categorizar: los
+tutoriales se escriben en sesiones de Claude Code, donde el modelo ya elige las
+categorías mirando el manifest.
+
+## Y el problema que quería resolver tampoco existe
+
+Se midió antes de decidir. Con 257 tutoriales: **25 categorías**, media de
+**1,43 por tutorial**, ninguno sin categoría, y solo cuatro con tres o menos.
+El único sinónimo real que llegó a colarse —`bases-de-datos` frente a `bbdd`—
+se detectó y corrigió el mismo 2026-08-01, en el momento de crearlo.
+
+## El residuo que sí se implementó
+
+`scripts/validar.js` avisa cuando **una categoría la usa un solo tutorial**, que
+es la forma que tiene una errata o un sinónimo de aparecer. Hoy no salta ninguna;
+está puesto para el día que se cuele. Verificado escribiendo `distribudos` en una
+entrada y comprobando que lo caza.
+
+Es lo mismo que el plan quería —evitar proliferación de sinónimos— resuelto con
+una regla determinista de cinco líneas en vez de con un modelo.
+
+---
+
+## Plan original (para referencia)
+
+Hoy las `categories` de un tutorial las teclea el usuario
 en el modal del compositor (campo "Categoría", con datalist de las existentes).
 La idea: que **Claude proponga** las categorías al generar, reutilizando las que
 ya existen y creando una nueva solo si ninguna encaja.
