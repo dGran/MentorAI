@@ -1133,4 +1133,194 @@ window.MENTORAI_CHECKS = {
       w: "El navegador manda las cookies solas; el token demuestra que la petición salió de tu propia página y no de una ajena." },
   ],
 
+
+  "go-que-es": [
+    { q: "¿Para qué encaja especialmente bien Go?",
+      o: ["Aplicaciones de escritorio con interfaz","Servicios de red y CLIs: concurrencia barata y un binario sin dependencias","Cálculo científico"], a: 1,
+      w: "El binario estático es media razón por la que se usa tanto en contenedores: la imagen final puede ser de unos pocos megas." },
+    { q: "¿Qué decisión de diseño explica la mayoría de las «rarezas» de Go?",
+      o: ["Ser lo más rápido posible","Compatibilidad con C","Priorizar la simplicidad y la legibilidad, aunque cueste verbosidad"], a: 2,
+      w: "De ahí sale que no haya excepciones, ni herencia, ni (hasta hace poco) generics: menos formas de hacer lo mismo." },
+  ],
+
+  "go-entorno-docker": [
+    { q: "¿Por qué la imagen final de un servicio Go puede ser tan pequeña?",
+      o: ["Porque compila a un binario estático: la imagen final no necesita ni runtime ni dependencias","Porque Go comprime el binario","Porque usa una imagen base especial"], a: 0,
+      w: "Con multi-stage, compilas en una fase con todo el herramental y copias solo el binario a una imagen mínima." },
+    { q: "¿Qué se cachea para que un build de Go no descargue todo cada vez?",
+      o: ["El binario compilado","Los módulos: copiar `go.mod` y `go.sum` y hacer `go mod download` antes del código","El directorio /tmp"], a: 1,
+      w: "Mismo principio que con `composer.json`: lo que cambia poco va arriba en el Dockerfile." },
+  ],
+
+  "go-editores": [
+    { q: "¿Qué te da `gofmt` que no es negociable en Go?",
+      o: ["Detecta errores de compilación","Optimiza el binario","Un formato único: en Go no hay debates de estilo porque lo decide la herramienta"], a: 2,
+      w: "Es una decisión cultural deliberada: elimina una categoría entera de discusiones en los pull requests." },
+    { q: "¿Qué hace `go vet` que el compilador no?",
+      o: ["Detecta construcciones sospechosas que compilan pero casi seguro son un error","Compila más rápido","Formatea el código"], a: 0,
+      w: "Cosas como un `Printf` cuyos verbos no casan con los argumentos: válido para el compilador, casi siempre un bug." },
+  ],
+
+  "go-primer-programa": [
+    { q: "Declaras una variable y no la usas.",
+      o: ["Un warning","No compila: en Go es un error","Se ignora silenciosamente"], a: 1,
+      w: "Igual que los imports sin usar. Molesta al principio y evita que el código acumule restos muertos." },
+    { q: "¿Qué hace especial al paquete `main`?",
+      o: ["Es el único que puede importar otros","Es obligatorio en todo proyecto","Es el que produce un ejecutable, con su función `main()` como punto de entrada"], a: 2,
+      w: "Una librería no tiene `package main`: se compila como paquete y no genera binario." },
+  ],
+
+  "go-paquetes-y-modulos": [
+    { q: "¿Qué determina si un identificador es visible desde fuera del paquete?",
+      o: ["La mayúscula inicial: `Nombre` se exporta, `nombre` no","Una palabra clave `public`","Su posición en el fichero"], a: 0,
+      w: "Es la regla de visibilidad más simple que existe, y se ve en la propia llamada sin ir a mirar la declaración." },
+    { q: "¿Para qué sirve `go.sum` junto a `go.mod`?",
+      o: ["Listar las dependencias","Guardar los hashes de cada versión para detectar que el contenido cambió","Definir la versión de Go"], a: 1,
+      w: "`go.mod` declara qué quieres; `go.sum` verifica que lo que te bajas es exactamente lo que se bajó la primera vez." },
+  ],
+
+  "go-tipos-y-variables": [
+    { q: "Declaras `var n int` y no le asignas nada.",
+      o: ["Vale nil","Da error hasta que se asigne","Vale 0: en Go todo tipo tiene un zero value"], a: 2,
+      w: "String vacío, false, 0 y nil para punteros y slices. Es lo que hace que nunca haya variables «sin inicializar»." },
+    { q: "¿Qué diferencia hay entre `:=` y `var`?",
+      o: ["`:=` declara e infiere el tipo, y solo vale dentro de funciones","Ninguna","`var` es para constantes"], a: 0,
+      w: "A nivel de paquete solo puedes usar `var`. Y `:=` exige que al menos una variable de la izquierda sea nueva." },
+  ],
+
+  "go-funciones-y-control": [
+    { q: "¿Qué garantiza `defer`?",
+      o: ["Que la función se ejecute en otra goroutine","Que la llamada se ejecute al salir, incluso si hay panic","Que se ejecute la primera"], a: 1,
+      w: "Por eso el `defer f.Close()` va justo tras abrir: la liberación queda al lado de la reserva y no se olvida en un `return` raro." },
+    { q: "¿Por qué Go no tiene `while`?",
+      o: ["Se eliminó por rendimiento","Se usa `loop` en su lugar","Porque `for` cubre todos los casos: `for cond {}` es el while"], a: 2,
+      w: "Una sola construcción de bucle, coherente con la idea de tener una forma de hacer cada cosa." },
+  ],
+
+  "go-structs-y-metodos": [
+    { q: "¿Cuándo declaras el receptor de un método como puntero?",
+      o: ["Cuando el método debe modificar el struct, o este es grande","Siempre, por rendimiento","Solo si el struct tiene punteros dentro"], a: 0,
+      w: "Con receptor por valor trabajas sobre una copia: modificarla no cambia el original, y ahí nacen muchos «no me guarda el cambio»." },
+    { q: "¿Qué es un struct tag como `json:\"nombre\"`?",
+      o: ["Un comentario","Metadatos que leen las librerías por reflexión, por ejemplo para serializar","Una restricción de tipo"], a: 1,
+      w: "El compilador no los interpreta: es `encoding/json` quien los lee. Por eso una errata en el tag no da error, solo no funciona." },
+  ],
+
+  "go-punteros": [
+    { q: "¿Hay aritmética de punteros en Go?",
+      o: ["Sí, como en C","Solo con el paquete unsafe","No: puedes referenciar y desreferenciar, pero no sumar posiciones"], a: 2,
+      w: "Es lo que hace los punteros de Go seguros: sirven para compartir y modificar, no para recorrer memoria a mano." },
+    { q: "Pasas un struct grande a una función por valor.",
+      o: ["Se copia entero: para evitarlo se pasa un puntero","Se pasa la referencia automáticamente","Da error de compilación"], a: 0,
+      w: "Go siempre pasa por valor; pasar un puntero es pasar por valor el puntero. Entenderlo evita sorpresas con slices y maps." },
+  ],
+
+  "go-slices-y-maps": [
+    { q: "Creas un map con `var m map[string]int` y escribes en él.",
+      o: ["Funciona","Panic: el map nulo se puede leer pero no escribir; hay que usar `make`","Se crea automáticamente"], a: 1,
+      w: "Leer de un map nulo devuelve el zero value, escribir revienta. Es de los primeros tropiezos con Go." },
+    { q: "Haces `append` a un slice dentro de una función y fuera no se ve el cambio.",
+      o: ["Es un bug","Hay que pasar el slice por puntero siempre","`append` puede realojar y devolver otro slice: hay que asignar el resultado"], a: 2,
+      w: "El slice es una cabecera (puntero, longitud, capacidad) que se copia. Por eso `s = append(s, x)` y no solo `append(s, x)`." },
+  ],
+
+  "go-interfaces": [
+    { q: "¿Cómo declara un tipo que implementa una interfaz?",
+      o: ["No lo declara: basta con tener los métodos, Go lo comprueba solo","Con `implements`","Registrándose en un init()"], a: 0,
+      w: "Permite definir la interfaz donde se consume y que tipos ya existentes la cumplan sin tocarlos." },
+    { q: "¿Qué tamaño debería tener una interfaz en Go?",
+      o: ["Cuantos más métodos, más útil","Pequeña: «the bigger the interface, the weaker the abstraction»","Da igual"], a: 1,
+      w: "`io.Reader` tiene un solo método y es de las más potentes de la librería estándar." },
+  ],
+
+  "go-composicion": [
+    { q: "Embebes un tipo en un struct. ¿Es herencia?",
+      o: ["Sí, funciona igual","Solo si el embebido es una interfaz","No: promueve campos y métodos, pero no hay polimorfismo por el tipo embebido"], a: 2,
+      w: "Es la forma de Go de reutilizar sin jerarquías: no puedes tratar el contenedor como si fuera del tipo embebido." },
+    { q: "¿Cómo consigues polimorfismo en Go si no hay herencia?",
+      o: ["Con interfaces: el comportamiento común se declara y cada tipo lo implementa","Con embedding","Con generics"], a: 0,
+      w: "Composición para reutilizar, interfaces para abstraer. Son dos herramientas distintas y se confunden a menudo." },
+  ],
+
+  "go-errores": [
+    { q: "¿Qué se hace en Go cuando una función puede fallar?",
+      o: ["Lanzar un panic","Devolver el error como último valor y comprobar `if err != nil`","Devolver nil y registrar el fallo"], a: 1,
+      w: "Resulta verboso, y a cambio cada punto de fallo es visible en el propio código, sin saltos invisibles en el flujo." },
+    { q: "¿Cuándo es aceptable un `panic`?",
+      o: ["Cuando falla una consulta a base de datos","Cuando el error se repite","Ante un error irrecuperable de programación, como un estado imposible al arrancar"], a: 2,
+      w: "Panic no es la excepción de Go: es el «esto no debería poder pasar». Los errores esperables son valores." },
+  ],
+
+  "go-generics": [
+    { q: "¿Qué problema venían a resolver los generics en Go?",
+      o: ["Escribir la misma función N veces por tipo, o perder el tipado usando `interface{}`","La velocidad de compilación","La concurrencia"], a: 0,
+      w: "Antes tenías `MaxInt`, `MaxFloat`… o un `interface{}` con casts. Ahora se escribe una vez con un type parameter." },
+    { q: "¿Cuándo NO usar generics?",
+      o: ["Cuando el equipo no los conoce","Cuando una interfaz resuelve el caso: si lo que varía es el comportamiento y no el tipo, la interfaz encaja mejor","Nunca, siempre son preferibles"], a: 1,
+      w: "El consejo de la propia comunidad: escribe el código concreto primero y generalízalo cuando la repetición aparezca de verdad." },
+  ],
+
+  "goroutines": [
+    { q: "Lanzas 100.000 goroutines. ¿Es descabellado?",
+      o: ["Sí, son hilos del sistema","Solo si la máquina tiene muchos núcleos","No: arrancan con unos 2 KB y el runtime las multiplexa sobre unos pocos hilos"], a: 2,
+      w: "Un hilo del sistema pide entre 1 y 8 MB. Esa diferencia de tres órdenes de magnitud es lo que cambia el modelo mental." },
+    { q: "Tu `main` termina mientras hay goroutines trabajando.",
+      o: ["El programa termina y se las lleva por delante","Espera a que acaben","Se quedan huérfanas ejecutándose"], a: 0,
+      w: "Por eso hace falta coordinar la espera con un `WaitGroup` o un canal: nadie lo hace por ti." },
+  ],
+
+  "go-channels": [
+    { q: "Envías a un canal sin buffer y no hay nadie recibiendo.",
+      o: ["El valor se pierde","La goroutine emisora se bloquea hasta que alguien recibe","Da error"], a: 1,
+      w: "Un canal sin buffer es un punto de cita, y por eso sirve también como mecanismo de sincronización." },
+    { q: "¿Qué añade `select` sobre leer de un canal directamente?",
+      o: ["Mejor rendimiento","Lectura no bloqueante siempre","Esperar en varios canales a la vez, que es lo que permite combinar trabajo y cancelación"], a: 2,
+      w: "El patrón habitual: un case para el trabajo y otro para `ctx.Done()`. Con `default` deja de bloquear." },
+  ],
+
+  "go-sync-y-context": [
+    { q: "¿Dónde va el `wg.Add(1)` respecto a lanzar la goroutine?",
+      o: ["Antes de lanzarla: si va dentro, `Wait` puede haber pasado ya de largo","Dentro de la goroutine","Da igual"], a: 0,
+      w: "Es el fallo clásico con `WaitGroup`, y produce un programa que a veces espera y a veces no." },
+    { q: "¿Qué hace el race detector y cuándo se usa?",
+      o: ["Optimiza el acceso concurrente","Detecta accesos concurrentes sin sincronizar en tiempo de ejecución: `go test -race`","Analiza el código estáticamente"], a: 1,
+      w: "Solo detecta las carreras que ocurren en esa ejecución, así que conviene tenerlo puesto en CI y no solo en local." },
+  ],
+
+  "go-http": [
+    { q: "¿Qué necesitas para montar un servidor HTTP básico en Go?",
+      o: ["Un framework externo","Un servidor delante, como nginx","La librería estándar: `net/http` basta"], a: 2,
+      w: "Es una de las razones de que Go se use tanto en servicios: el servidor HTTP viene de serie y es de calidad de producción." },
+    { q: "Un `http.Handler` es cualquier cosa con `ServeHTTP`. ¿Qué permite eso?",
+      o: ["Ambas cosas","Que se pueda testear sin levantar el servidor","Componer middlewares: cada uno envuelve al siguiente y devuelve otro Handler"], a: 0,
+      w: "Es interfaz pequeña llevada al extremo, y de ahí sale el patrón de middleware sin necesitar framework." },
+  ],
+
+  "go-json-y-bd": [
+    { q: "Serializas un struct a JSON y faltan campos.",
+      o: ["Falta el struct tag","Los campos empiezan por minúscula: no se exportan y `encoding/json` no los ve","Hay que implementar Marshaler"], a: 1,
+      w: "Es la regla de visibilidad de siempre mordiendo por reflexión: si el paquete json no puede leerlo, no lo escribe." },
+    { q: "¿Qué representa `sql.NullString` y por qué existe?",
+      o: ["Un string vacío","Un error de lectura","Un valor que puede ser NULL en base de datos, cosa que un `string` de Go no puede expresar"], a: 2,
+      w: "El zero value de Go (`\"\"`) y el NULL de SQL son cosas distintas, y confundirlos cambia el significado del dato." },
+  ],
+
+  "go-testing": [
+    { q: "¿Qué necesita un test en Go para ejecutarse?",
+      o: ["Estar en un fichero `_test.go`, con función `TestXxx(t *testing.T)`","Una librería de aserciones","Un fichero de configuración"], a: 0,
+      w: "No hay framework ni aserciones de serie: se comprueba con `if` y se falla con `t.Errorf`. Deliberadamente austero." },
+    { q: "¿Qué aporta `t.Run` dentro de un table-driven test?",
+      o: ["Ejecuta los casos en paralelo","Da nombre a cada caso, así que la salida dice cuál falló","Reintenta los que fallan"], a: 1,
+      w: "El paralelismo es `t.Parallel()`, que es otra cosa. Sin `t.Run`, un fallo solo te dice que el test grande falló." },
+  ],
+
+  "go-a-produccion": [
+    { q: "¿Qué imagen base necesita un binario Go compilado estáticamente?",
+      o: ["Una con el runtime de Go","Alpine obligatoriamente","Ninguna: puede correr sobre `scratch` o una distroless"], a: 2,
+      w: "Ojo con cgo: si está activo, el binario deja de ser estático y `scratch` ya no vale." },
+    { q: "¿Cómo se inyecta la versión en el binario al compilar?",
+      o: ["Con `-ldflags` sobre una variable del paquete","En un fichero de configuración","Leyendo el tag de git en tiempo de ejecución"], a: 0,
+      w: "Permite que el binario sepa de qué commit salió sin depender de nada externo, que es justo lo que quieres al depurar producción." },
+  ],
+
 };
