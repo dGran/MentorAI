@@ -12,7 +12,7 @@ caminos; elige según el caso.
 ## Autoría
 
 El puente (`server/bridge.js`) **se borró el 2026-07-31**: la autoría desde la
-app quedó descartada (ver `.agents/notes/plan-ia-en-la-app.md`). Se escribe a
+app quedó descartada (ver `.agents/notes/archivo/plan-ia-en-la-app.md`). Se escribe a
 mano desde una sesión de Claude Code, que es donde ya estaba el músculo.
 
 1. Copia la plantilla a un slug descriptivo:

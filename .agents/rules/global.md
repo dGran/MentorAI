@@ -96,36 +96,34 @@ global del agente y no se duplican aquí.
 
 - Editar reglas y skills **solo** en `.agents/` (las herramientas las leen por
   symlink: `AGENTS.md` y `CLAUDE.md` apuntan aquí; `.claude/skills` → `.agents/skills`).
-- **Al inicio de sesión:** leer `.agents/notes/estado.md` y los `plan-*.md` para
-  retomar lo en curso.
-- **Al cerrar una unidad de trabajo:** volcar a una note el estado (qué se hizo,
-  qué quedó a medias, decisiones y porqué, siguiente paso). Si emerge una
-  convención, va a este fichero de rules, no a una note.
+- **Al inicio de sesión:** leer `.agents/notes/estado.md`, y **solo eso**. Está
+  escrito para leerse entero: dónde está el proyecto, qué queda, qué decisiones
+  no se reabren y qué trampas ya nos mordieron. Lo cerrado vive en
+  `.agents/notes/archivo/` y no hace falta abrirlo salvo para responder «¿por qué
+  esto es así?».
+- **Al cerrar una unidad de trabajo:** actualizar `estado.md` — qué se hizo, qué
+  quedó a medias, decisiones y porqué. Si emerge una convención, va a este
+  fichero de rules. Si el trabajo tenía un plan propio, se cierra su note
+  poniendo el veredicto **al principio** y se mueve a `archivo/`.
+- **`estado.md` no crece sin límite.** Es un retrato del presente, no un diario:
+  lo que envejece se archiva. Ya pasó una vez —llegó a 106 KB y 50 secciones, dos
+  de ellas afirmando ser «la más reciente»— y se partió el 2026-08-01.
 - **Decisión deliberada:** este proyecto **no usa** el flujo `spec → implement →
   review → qa → deploy` ni tablero de GitHub; no lo necesita. No proponer
   `/new-project`. La continuidad vive en `.agents/notes/` y basta.
 
 ## Planes abiertos
 
-**Ninguno.** A 2026-08-01 los 16 planes de `.agents/notes/` están cerrados.
+**Ninguno.** A 2026-08-01 los 16 planes están cerrados y archivados en
+`.agents/notes/archivo/`, junto con las tres colas de ideas, ya consumidas.
 
-**Norte del proyecto cumplido** (`plan-carrera-completa.md`): 257 tutoriales,
-26 cursos y 6 rutas; `el-grado-que-no-hiciste` son 23 cursos y ningún curso
-queda fuera de una ruta.
+El norte del proyecto está cumplido: **257 tutoriales, 26 cursos y 6 rutas**;
+`el-grado-que-no-hiciste` son 23 cursos y ningún curso queda fuera de una ruta.
 
-Lo único pendiente que no es un plan: la idea **«Ponlo en práctica»**
-(mini-retos al cierre de cada curso), último resto de
-`plan-huecos-versatilidad.md`.
+Lo único pendiente que no es un plan: **«Ponlo en práctica»** (mini-retos al
+cierre de cada curso), último resto de `archivo/plan-huecos-versatilidad.md`.
 
 Decisiones tomadas que **no se reabren sin motivo nuevo**: no hay autoría desde
 la app, no hay tutor con IA (rompería el `file://` y el offline), no hay tablero
-de tareas, y el uso es individual (nada de `author` ni features de grupo).
-
-Fase 2 — **CERRADA ENTERA el 2026-08-01**:
-- `plan-buscador-fulltext.md` — hecho: índice generado por
-  `scripts/generar-indice.js`, carga perezosa al escribir en un buscador.
-- `plan-resaltado-texto.md` — hecho: `assets/js/modules/highlights.js`, con
-  Custom Highlight API y los subrayados reunidos en `repaso.html`.
-- `plan-autocategorizacion.md` — **obsoleto**: era todo código del puente
-  borrado, y el problema que resolvía no existe (25 categorías, 1,43 por
-  tutorial). Queda un aviso del validador si alguna se queda con un solo uso.
+de tareas, y el uso es individual (nada de `author` ni features de grupo). El
+detalle y el porqué, en `.agents/notes/estado.md`.

@@ -1,55 +1,93 @@
-# Academia
+# MentorAI
 
-Plataforma visual de formación técnica: una colección de tutoriales profundos
-pero fáciles de leer, pensada para ir **creciendo tutorial a tutorial**.
+Una carrera de backend en HTML estático: **257 tutoriales, 26 cursos y 6 rutas**
+de aprendizaje, pensados para dar la base formal que uno se salta cuando aprende
+a programar por su cuenta.
 
-Son ficheros HTML estáticos: no hay build, ni servidor, ni dependencias. Abres
-`index.html` en el navegador y funciona, incluso offline.
+Sin build, sin dependencias, sin servidor. Abres `index.html` con doble clic y
+funciona, incluso sin conexión.
+
+## Las tres capas
+
+Cada capa referencia a la de abajo por _slug_, sin duplicar contenido:
+
+| Capa | Fichero | Qué es |
+| --- | --- | --- |
+| **Rutas** | `tutorials/paths.js` | Ordenan cursos y artículos hacia un objetivo |
+| **Cursos** | `tutorials/courses.js` | Ordenan lecciones en módulos |
+| **Manifiesto** | `tutorials/manifest.js` | La verdad de cada pieza: la fuente del catálogo |
+
+El catálogo es **auto-generado**. `articulos.html` solo tiene contenedores
+vacíos; los filtros, los conteos y las tarjetas los construye
+`assets/js/modules/catalog.js` leyendo el manifiesto. Nunca se edita el HTML del
+catálogo a mano.
 
 ## Estructura
 
 ```
-elearning/
-├── index.html               # Inicio: dashboard + buscador
-├── cursos.html              # Cursos: colecciones temáticas
-├── articulos.html           # Artículos: catálogo con filtros
+mentorai/
+├── index.html            Inicio: dashboard, buscador y rutas
+├── rutas.html            Itinerarios completos
+├── cursos.html           Cursos, y curso.html?slug=... para cada ficha
+├── articulos.html        Catálogo con filtros y buscador
+├── repaso.html           Repaso espaciado, subrayados y tus datos
+├── offline.html          Descargar la academia para leerla sin red
+├── sw.js                 Service worker (shell + contenido descargado)
 ├── tutorials/
-│   ├── opcache.html         # Un tutorial = una página
-│   └── _PLANTILLA.html      # Plantilla para crear nuevos (no se enlaza)
+│   ├── manifest.js       Fuente de verdad del catálogo
+│   ├── courses.js        paths.js  quizzes.js  checks.js
+│   ├── search-index.js   Índice full-text (GENERADO)
+│   ├── _PLANTILLA.html   Punto de partida de cada tutorial
+│   └── <slug>.html       Un tutorial = una página
 ├── assets/
-│   ├── css/styles.css       # Sistema de diseño (tokens + componentes)
-│   └── js/modules/          # JS por responsabilidad (core, catalog, home… init.js arranca)
-└── README.md
+│   ├── css/styles.css    Sistema de diseño (tokens + componentes)
+│   ├── fonts/            Autoalojadas, subconjunto latino
+│   └── js/modules/       Un fichero por responsabilidad; init.js arranca
+└── scripts/              Herramientas de mantenimiento (Node puro)
 ```
 
 ## Cómo verlo
 
-Abre `index.html` con doble clic, o sírvelo para una experiencia idéntica a
-producción:
-
 ```bash
-python3 -m http.server 8000
-# luego abre http://localhost:8000
+# opción 1: doble clic en index.html
+
+# opción 2: servido, idéntico a producción
+python3 -m http.server 8000   # http://localhost:8000
 ```
 
-## Añadir un tutorial nuevo
+El service worker y la descarga offline **solo funcionan por http(s)**, no por
+`file://`. Por `file://` todo lo demás sí, incluido leer sin conexión.
 
-El catálogo es **auto-generado**: la portada lee `tutorials/manifest.js` y
-construye sola los filtros (con su conteo) y las tarjetas. No se edita
-`index.html` nunca.
+## Herramientas
 
-Dos pasos:
+```bash
+node scripts/validar.js            # valida el catálogo entero
+node scripts/generar-indice.js     # regenera el índice de búsqueda
+node scripts/verificar-offline.js  # comprueba el modo offline de verdad
+```
 
-1. **Copia la plantilla** a un nombre con _slug_ descriptivo y rellena el
-   contenido (`<title>`, hero, índice `.toc__list` y secciones). Cada
-   `<h2 id="...">` debe tener un `id` que coincida con su enlace en el TOC; así
-   funcionan el scrollspy y el resaltado del índice.
+`validar.js` corre también en CI (`.github/workflows/validar.yml`). Comprueba
+slugs y `href`, ficheros que faltan, referencias rotas de cursos y rutas, `<`
+sin escapar dentro de `<code>`, que el índice de búsqueda esté al día, y el
+**sesgo de posición** de las respuestas correctas — por curso y en total, porque
+un curso nuevo mal repartido se diluye en el conjunto.
 
-   ```bash
-   cp tutorials/_PLANTILLA.html tutorials/preload.html
-   ```
+`verificar-offline.js` monta el sitio bajo un subdirectorio como hace GitHub
+Pages, descarga toda la academia, **apaga el servidor** y comprueba que sigue
+funcionando. Apagar el servidor es la única forma honesta de probarlo: emular
+«offline» desde las herramientas del navegador no afecta a las peticiones del
+service worker.
 
-2. **Añade una entrada** al array de `tutorials/manifest.js`:
+## Añadir un tutorial
+
+Se escribe a mano, en una sesión de Claude Code con la skill `/tutorial`
+(`.agents/skills/tutorial/`). Tres pasos:
+
+1. `cp tutorials/_PLANTILLA.html tutorials/<slug>.html` y rellenar. Cada
+   `<h2 id="...">` necesita su enlace en el `.toc__list`: de ahí dependen el
+   scrollspy y el índice. Y toda lección lleva una sección
+   **«Cuándo aplicarlo»** (`id="cuando"`).
+2. Añadir la entrada al array de `tutorials/manifest.js`:
 
    ```js
    {
@@ -57,99 +95,78 @@ Dos pasos:
      title: "Preload: precargar clases al arrancar PHP",
      description: "Resumen de una o dos frases.",
      href: "tutorials/preload.html",
-     categories: ["php", "rendimiento"], // genera/clasifica los filtros solo
+     categories: ["php", "rendimiento"],  // el chip del filtro aparece solo
      topic: "PHP",
      tags: ["PHP", "Rendimiento"],
      level: "Avanzado",
      minutes: 12,
-     icon: "signal",          // bolt | signal | database | shield | code | default
-     status: "published",     // o "soon" para una tarjeta "Próximamente"
-     date: "2026-06-25",      // ordena el catálogo (más nuevo arriba)
-     featured: true            // muestra la insignia "Nuevo"
+     icon: "signal",       // bolt | signal | database | shield | code | default
+     status: "published",  // o "soon" para una tarjeta «Próximamente»
+     date: "2026-06-25",   // ordena el catálogo
    }
    ```
 
-   **Las categorías se auto-catalogan**: si usas una categoría nueva, su chip
-   (con conteo) aparece solo en los filtros. Para que salga con nombre bonito en
-   vez de capitalizado, añádela al mapa `CATEGORY_LABELS` de
-   `assets/js/modules/catalog.js`.
+3. `node scripts/generar-indice.js && node scripts/validar.js`
 
-## Generar tutoriales desde la web (puente local)
+Al publicar algo nuevo conviene mirar si encaja en algún curso de `courses.js` y
+en alguna ruta de `paths.js`. Hoy **ningún curso queda fuera de una ruta**.
 
-La web puede pedirle un tutorial nuevo a Claude **sin API key**, reutilizando tu
-sesión de Claude Code. Lo hace un servidor local que sirve el sitio y expone
-`/api/generate`:
+## Qué sabe hacer
 
-```bash
-node server/bridge.js
-# abre http://localhost:4321
-```
+- **Buscar dentro del contenido.** El índice full-text (1,6 MB) no se carga con
+  la página: se inyecta la primera vez que escribes en un buscador. Los
+  resultados del inicio muestran el fragmento con la coincidencia resaltada.
+- **Leer sin conexión.** Descarga toda la academia desde `offline.html` y
+  funciona en un avión, con el buscador incluido.
+- **Evaluarse.** Examen por curso, comprobaciones de dos o tres preguntas al
+  final de cada lección, examen final de ruta y **repaso espaciado** que devuelve
+  las preguntas falladas a intervalos crecientes.
+- **Subrayar.** Selecciona texto en un tutorial y queda guardado; todo lo
+  subrayado se reúne en `repaso.html`.
+- **Llevarte tu progreso.** Exporta un fichero e impórtalo en otro dispositivo:
+  se **fusiona**, no reemplaza.
 
-Pulsa **«Añadir tutorial»**, indica tema, categoría, nivel y minutos, y dale a
-generar. El flujo:
+Todo se guarda en `localStorage` con el prefijo `academia-`. Uso individual, sin
+cuentas ni servidor.
 
-1. El servidor ejecuta `claude -p` en modo headless (tu login, sin API key) y le
-   pasa la plantilla y el tutorial de OPcache como referencia de estilo.
-2. Claude devuelve un JSON con el HTML y los metadatos.
-3. **El servidor** escribe `tutorials/<slug>.html` y añade la entrada al
-   manifiesto. La web recarga y el tutorial ya aparece catalogado.
+## Componentes
 
-Que el servidor escriba los ficheros (en vez de Claude) evita prompts de
-permisos y mantiene el control de qué se crea y dónde.
+Están todos en `_PLANTILLA.html` para copiar y pegar:
 
-### Refinar un tutorial existente
+| Componente | Clase base | Variantes |
+| --- | --- | --- |
+| Aviso / callout | `.callout` | `--info` `--tip` `--warning` `--danger` |
+| Bloque de código | `.code-block` | `data-lang="php\|bash\|…"` |
+| Diagrama de flujo | `.diagram .flow` | nodos `--start` `--end` |
+| Comparativa | `.compare` | columnas `--good` `--bad` |
+| Tabla | `.table-wrap` | — |
+| Resumen final | `.keypoints` | — |
 
-Cada tarjeta publicada tiene un botón **«Refinar»**. Lo pulsas, escribes qué
-quieres cambiar o añadir («añade una sección sobre el _hit rate_», «aclara el
-diagrama del ciclo de petición»…) y Claude reescribe la página **sobre el
-contenido actual**, no desde cero. El servidor sobrescribe `tutorials/<slug>.html`
-y actualiza en sitio los metadatos del manifiesto (título, descripción, tags,
-minutos) si han cambiado. Endpoint: `POST /api/refine` con `{slug, instructions}`.
-
-Variables de entorno: `PORT` (4321), `CLAUDE_BIN` (`claude`), `CLAUDE_MODEL`.
-
-> Abierto como `file://` (doble clic), el catálogo y los tutoriales funcionan,
-> pero el botón «Añadir tutorial» necesita el puente arrancado.
-
-## Buscar y guardar
-
-El catálogo tiene un **buscador** instantáneo que filtra las tarjetas por
-título, descripción, tags, tema y categoría (sin distinguir mayúsculas ni
-acentos). Se combina con los filtros por categoría: puedes buscar dentro de una
-categoría ya filtrada.
-
-Cada tutorial publicado tiene una **estrella** para guardarlo como favorito. Los
-marcadores se guardan en `localStorage` (uso individual, sin servidor ni login)
-y el chip **«Guardados»** los reúne con su conteo en vivo.
-
-## Componentes disponibles
-
-Todos están listos en `_PLANTILLA.html` para copiar y pegar:
-
-| Componente            | Clase base        | Variantes                                  |
-| --------------------- | ----------------- | ------------------------------------------ |
-| Aviso / callout       | `.callout`        | `--info` `--tip` `--warning` `--danger`    |
-| Bloque de código      | `.code-block`     | `data-lang="php\|bash\|ini"`               |
-| Diagrama de flujo     | `.diagram .flow`  | nodos `--start` `--end` `--cache` `--miss` |
-| Comparativa 2 columnas| `.compare`        | columnas `--good` `--bad`                  |
-| Tabla                 | `.table-wrap`     | —                                          |
-| Resumen final         | `.keypoints`      | —                                          |
-
-### Resaltado de código
-
-Pon el lenguaje en el `<code>` con `data-lang`. El resaltador
-(`assets/js/modules/syntax.js`) soporta `php`, `bash` e `ini`. Recuerda escapar
-`<`, `>` y `&` en el HTML (`&lt;?php`, por ejemplo). Para añadir otro lenguaje,
-amplía el objeto `LANGUAGES` en `assets/js/modules/syntax.js`.
+**Resaltado de código:** el resaltador propio (`assets/js/modules/syntax.js`)
+conoce `php`, `bash`, `ini`, `sql`, `yaml`, `rust`, `go` y `redis`. Dentro de un
+`<code data-lang>` hay que escapar `<`, `>` y `&` (`&lt;?php`); el validador lo
+comprueba porque un `<` suelto se come el resto del bloque.
 
 ## Decisiones de diseño
 
-- **Sin dependencias ni build**: máxima portabilidad y cero mantenimiento. Las
-  fuentes vienen de Google Fonts vía `<link>`, con _fallback_ al sistema si no
+- **Sin dependencias ni build.** Máxima portabilidad y cero mantenimiento. Las
+  fuentes están autoalojadas, así que no hay peticiones a terceros ni fallo si no
   hay red.
-- **Tema claro/oscuro** con `data-theme` en `<html>`, persistido en
-  `localStorage` y aplicado antes del render para evitar parpadeo.
-- **Todo en design tokens** (variables CSS en `:root`): cambiar la marca o la
-  paleta es tocar un puñado de variables, no recorrer el CSS.
-- **Diagramas en CSS puro**: sin imágenes ni librerías; escalan y respetan el
-  tema automáticamente.
+- **`file://` manda.** Nada de `fetch` a ficheros `.json`: CORS lo bloquea al
+  abrir por `file://`. Los datos se cargan como `.js` que asignan a un global.
+  Lo que pesa demasiado para cargarlo siempre se inyecta como `<script>` bajo
+  demanda, que sí funciona por `file://`.
+- **Una vista = una página.** Páginas HTML reales con `<a href>`, no pestañas
+  conmutadas por JS. Cada módulo hace early-return si su contenedor no está.
+- **Todo en design tokens.** Cambiar la marca o la paleta es tocar variables CSS,
+  no recorrer el CSS. Tema claro/oscuro aplicado antes del render para evitar el
+  parpadeo.
+- **Diagramas en CSS puro.** Sin imágenes ni librerías: escalan y respetan el
+  tema solos.
+
+## Cómo se mantiene
+
+Las reglas del proyecto y la memoria entre sesiones viven en `.agents/`:
+`rules/global.md` (invariantes y convenciones), `skills/tutorial/` (cómo se
+escribe un tutorial) y `notes/` (estado y decisiones tomadas, con lo cerrado en
+`notes/archivo/`). `AGENTS.md` y `CLAUDE.md` son enlaces a las reglas.
