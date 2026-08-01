@@ -92,57 +92,41 @@
       ],
     };
 
+    /* Qué alternativa del regex combinado ha casado: la primera cuyo grupo
+       capturador viene definido. Ese índice es el de su regla. */
+    function ruleOf(rules, groups) {
+      const index = groups.findIndex((group) => group !== undefined);
+
+      return index === -1 ? { cls: "default" } : rules[index];
+    }
+
     function highlight(rawCode, language) {
       const rules = LANGUAGES[language];
 
-      if (!rules) {
-        return escapeHtml(rawCode);
-      }
+      if (!rules) return escapeHtml(rawCode);
 
-      const combined = new RegExp(
-        rules
-          .map(function (rule) {
-            return "(" + rule.src + ")";
-          })
-          .join("|"),
-        "gm"
-      );
+      const combined = new RegExp(rules.map((rule) => `(${rule.src})`).join("|"), "gm");
 
       let result = "";
       let lastIndex = 0;
 
-      rawCode.replace(combined, function () {
-        const match = arguments[0];
-        const offset = arguments[arguments.length - 2];
+      for (const match of rawCode.matchAll(combined)) {
+        const [token, ...groups] = match;
 
-        result += escapeHtml(rawCode.slice(lastIndex, offset));
+        result += escapeHtml(rawCode.slice(lastIndex, match.index));
+        result += `<span class="tok-${ruleOf(rules, groups).cls}">${escapeHtml(token)}</span>`;
+        lastIndex = match.index + token.length;
+      }
 
-        let cls = "default";
-
-        for (let group = 1; group < arguments.length - 2; group++) {
-          if (arguments[group] !== undefined) {
-            cls = rules[group - 1].cls;
-            break;
-          }
-        }
-
-        result +=
-          '<span class="tok-' + cls + '">' + escapeHtml(match) + "</span>";
-        lastIndex = offset + match.length;
-
-        return match;
-      });
-
-      result += escapeHtml(rawCode.slice(lastIndex));
-
-      return result;
+      return result + escapeHtml(rawCode.slice(lastIndex));
     }
 
     return {
-      run: function () {
-        document.querySelectorAll("code[data-lang]").forEach(function (code) {
+      highlight,
+      run() {
+        for (const code of document.querySelectorAll("code[data-lang]")) {
           code.innerHTML = highlight(code.textContent, code.dataset.lang);
-        });
+        }
       },
     };
   })();

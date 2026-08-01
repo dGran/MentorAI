@@ -1,443 +1,390 @@
 /* ============================================================
-   MentorAI — Offline / Guardar para viajar
-   Requiere service worker (solo http/https, no file://).
-   Expone MentorAI.Offline con init(), initCourseButtons()
-   e initOfflinePage().
+   MentorAI — Offline: guardar para viajar
+   Requiere service worker, o sea http/https: por file:// no aplica (y no
+   hace falta, porque ahí ya está todo en disco).
+
+   El sitio puede vivir en la raíz o bajo un subdirectorio (Pages lo sirve
+   en /MentorAI/), así que todo se resuelve relativo a la página actual.
+   Sin dependencias. Parte de window.MentorAI.
    ============================================================ */
 
 (function () {
   "use strict";
 
-  var MentorAI = (window.MentorAI = window.MentorAI || {});
+  const MentorAI = (window.MentorAI = window.MentorAI || {});
 
-  /* ---------- Estado local ---------- */
-  var SAVED_KEY = "academia-offline-saved";
+  const SAVED_KEY = "academia-offline-saved";
+  const ALL_KEY = "academia-offline-todo";
+  const SHELL_PAGES = ["index.html", "cursos.html", "rutas.html", "articulos.html", "curso.html", "repaso.html"];
 
-  function isSupported() {
-    return "serviceWorker" in navigator && location.protocol !== "file:";
-  }
+  const isSupported = () => "serviceWorker" in navigator && location.protocol !== "file:";
 
-  /* ---------- Base del sitio ----------
-     El sitio puede vivir en la raíz o bajo un subdirectorio (Pages lo sirve
-     en /MentorAI/). Todo se resuelve relativo a la página actual, que en los
-     tutoriales cuelga un nivel más abajo. */
-  function basePath() {
-    return location.pathname.indexOf("/tutorials/") !== -1 ? "../" : "./";
-  }
+  /* ---------- Base del sitio ---------- */
 
-  function baseUrl() {
-    return new URL(basePath(), location.href).href;
-  }
+  const basePath = () => (location.pathname.includes("/tutorials/") ? "../" : "./");
+  const baseUrl = () => new URL(basePath(), location.href).href;
+  const absolute = (ruta) => new URL(ruta, baseUrl()).href;
+
+  /* ---------- Cursos guardados ---------- */
 
   function savedSlugs() {
     try {
-      return JSON.parse(localStorage.getItem(SAVED_KEY) || "[]");
-    } catch (_) {
+      const stored = JSON.parse(localStorage.getItem(SAVED_KEY));
+
+      return Array.isArray(stored) ? stored : [];
+    } catch {
       return [];
     }
   }
 
-  function markSaved(slug) {
-    var slugs = savedSlugs();
-
-    if (slugs.indexOf(slug) === -1) {
-      slugs.push(slug);
+  function writeSaved(slugs) {
+    try {
       localStorage.setItem(SAVED_KEY, JSON.stringify(slugs));
+    } catch {
+      /* sin espacio: la caché sigue, solo se pierde la lista */
     }
   }
 
-  function markRemoved(slug) {
-    var slugs = savedSlugs().filter(function (s) {
-      return s !== slug;
-    });
+  const markSaved = (slug) => writeSaved([...new Set([...savedSlugs(), slug])]);
+  const markRemoved = (slug) => writeSaved(savedSlugs().filter((s) => s !== slug));
 
-    localStorage.setItem(SAVED_KEY, JSON.stringify(slugs));
-  }
+  /* ---------- URLs ---------- */
 
-  /* ---------- URLs de un curso ---------- */
   function urlsForCourse(slug) {
-    var course = (window.MENTORAI_COURSES || []).filter(function (c) {
-      return c.slug === slug;
-    })[0];
+    const course = (window.MENTORAI_COURSES ?? []).find((c) => c.slug === slug);
 
     if (!course) return [];
 
-    var lessonSlugs = [];
-    var modules = Array.isArray(course.modules)
-      ? course.modules
-      : [{ lessons: course.lessons || [] }];
+    const lessons = Array.isArray(course.modules)
+      ? course.modules.flatMap((module) => module.lessons ?? [])
+      : course.lessons ?? [];
 
-    modules.forEach(function (m) {
-      (m.lessons || []).forEach(function (s) {
-        lessonSlugs.push(s);
-      });
-    });
+    return lessons.map((lesson) => absolute(`tutorials/${lesson}.html`));
+  }
 
-    return lessonSlugs.map(function (s) {
-      return new URL("tutorials/" + s + ".html", baseUrl()).href;
+  function urlsForEverything() {
+    const tutoriales = (window.ACADEMIA_TUTORIALS ?? [])
+      .filter((tutorial) => tutorial.status !== "soon")
+      .map((tutorial) => `tutorials/${tutorial.slug}.html`);
+
+    return [...SHELL_PAGES, ...tutoriales].map(absolute);
+  }
+
+  /* ---------- Diálogo con el service worker ----------
+     El worker descarga y responde con el avance. Envolverlo en una promesa
+     evita repetir el baile de addEventListener/removeEventListener en cada
+     sitio que guarda algo. */
+
+  function sendToSW(message) {
+    return navigator.serviceWorker.ready.then((registration) => {
+      const worker = registration.active ?? registration.waiting ?? registration.installing;
+
+      worker?.postMessage(message);
     });
   }
 
-  /* ---------- Comunicación con el SW ---------- */
-  function sendToSW(message) {
-    return navigator.serviceWorker.ready.then(function (reg) {
-      var worker = reg.active || reg.waiting || reg.installing;
+  function cacheUrls(slug, urls, onProgress) {
+    return new Promise((resolve) => {
+      const onMessage = (event) => {
+        const data = event.data ?? {};
 
-      if (worker) worker.postMessage(message);
+        if (data.slug !== slug) return;
+
+        if (data.type === "SAVE_PROGRESS") onProgress?.(data.done, data.total);
+
+        if (data.type === "SAVE_DONE") {
+          navigator.serviceWorker.removeEventListener("message", onMessage);
+          resolve();
+        }
+      };
+
+      navigator.serviceWorker.addEventListener("message", onMessage);
+      sendToSW({ type: "SAVE_COURSE", slug, urls });
     });
+  }
+
+  const dropUrls = (slug, urls) => sendToSW({ type: "REMOVE_COURSE", slug, urls });
+
+  /* ---------- Cuota ---------- */
+
+  function requestPersistence() {
+    navigator.storage?.persisted?.().then((already) => {
+      if (!already) navigator.storage.persist();
+    });
+  }
+
+  function usedMegabytes() {
+    if (!navigator.storage?.estimate) return Promise.resolve(null);
+
+    return navigator.storage
+      .estimate()
+      .then((info) => (info.usage ? Math.round(info.usage / 1024 / 1024) : null));
   }
 
   /* ---------- Iconos ---------- */
-  function iconDownload() {
-    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
-  }
 
-  function iconCheck() {
-    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
-  }
+  const ICONS = {
+    download:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+    check:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+    spinner:
+      '<svg class="offline-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>',
+    trash:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>',
+  };
 
-  function iconSpinner() {
-    return '<svg class="offline-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>';
-  }
+  /* ---------- Enlace en la navegación ---------- */
 
-  function iconTrash() {
-    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>';
-  }
-
-  /* ---------- Inyectar enlace en nav ---------- */
   function injectNavLink() {
-    var nav = document.querySelector(".nav__actions");
+    const nav = document.querySelector(".nav__actions");
 
     if (!nav || nav.querySelector(".offline-nav-link")) return;
 
-    var link = document.createElement("a");
+    const link = document.createElement("a");
+
     link.className = "nav__link offline-nav-link";
     link.textContent = "Sin conexión";
+    link.href = `${basePath()}offline.html`;
 
-    var isActive = /\boffline\.html\b/.test(location.pathname);
-
-    if (isActive) {
+    if (/\boffline\.html\b/.test(location.pathname)) {
       link.classList.add("is-active");
       link.setAttribute("aria-current", "page");
     }
 
-    link.href = basePath() + "offline.html";
-
-    var themeBtn = nav.querySelector(".theme-toggle");
-    nav.insertBefore(link, themeBtn);
+    nav.insertBefore(link, nav.querySelector(".theme-toggle"));
   }
 
-  /* ---------- Botones de descarga en cursos.html ---------- */
+  /* ---------- Botón por curso en cursos.html ---------- */
+
+  const BUTTON_STATES = {
+    idle: {
+      html: `${ICONS.download}<span>Guardar para viajar</span>`,
+      title: "Guardar para consultar sin internet",
+      extra: "",
+    },
+    saving: {
+      html: `${ICONS.spinner}<span>Guardando…</span>`,
+      title: "Guardando…",
+      extra: "offline-btn--saving",
+    },
+    saved: {
+      html: `${ICONS.check}<span>Guardado · Eliminar</span>`,
+      title: "Guardado para sin conexión. Pulsa para eliminar.",
+      extra: "offline-btn--saved",
+    },
+  };
+
+  function setButtonState(button, state) {
+    const { html, title, extra } = BUTTON_STATES[state];
+
+    button.dataset.state = state;
+    button.classList.remove("offline-btn--saved", "offline-btn--saving");
+
+    if (extra) button.classList.add(extra);
+
+    button.innerHTML = html;
+    button.title = title;
+  }
+
+  function buildButton(slug, isSaved) {
+    const button = document.createElement("button");
+
+    button.className = "offline-btn";
+    button.dataset.slug = slug;
+    setButtonState(button, isSaved ? "saved" : "idle");
+
+    button.addEventListener("click", () => {
+      if (button.dataset.state === "saving") return;
+
+      if (button.dataset.state === "saved") {
+        dropUrls(slug, urlsForCourse(slug));
+        markRemoved(slug);
+        setButtonState(button, "idle");
+        return;
+      }
+
+      const urls = urlsForCourse(slug);
+
+      if (urls.length === 0) return;
+
+      setButtonState(button, "saving");
+
+      cacheUrls(slug, urls, (done, total) => {
+        const label = button.querySelector("span");
+
+        if (label) label.textContent = `Guardando ${done}/${total}…`;
+      }).then(() => {
+        markSaved(slug);
+        setButtonState(button, "saved");
+      });
+    });
+
+    return button;
+  }
+
   function addCourseButtons() {
-    var container = document.getElementById("courses");
+    const container = document.getElementById("courses");
 
     if (!container) return;
 
-    var saved = savedSlugs();
+    const saved = savedSlugs();
 
-    Array.from(container.querySelectorAll(".course-card")).forEach(function (card) {
-      if (card.parentElement.classList.contains("course-card-wrap")) return;
+    for (const card of container.querySelectorAll(".course-card")) {
+      if (card.parentElement.classList.contains("course-card-wrap")) continue;
 
-      var href = card.getAttribute("href") || "";
-      var match = href.match(/slug=([^&]+)/);
-      var slug = match ? decodeURIComponent(match[1]) : null;
+      const slug = decodeURIComponent(card.getAttribute("href")?.match(/slug=([^&]+)/)?.[1] ?? "");
 
-      if (!slug) return;
+      if (!slug) continue;
 
-      var wrap = document.createElement("div");
+      const wrap = document.createElement("div");
+
       wrap.className = "course-card-wrap";
       card.parentNode.insertBefore(wrap, card);
-      wrap.appendChild(card);
-
-      var isSaved = saved.indexOf(slug) !== -1;
-      wrap.appendChild(buildBtn(slug, isSaved));
-    });
-  }
-
-  function buildBtn(slug, isSaved) {
-    var btn = document.createElement("button");
-    btn.className = "offline-btn" + (isSaved ? " offline-btn--saved" : "");
-    btn.dataset.slug = slug;
-    setbtnState(btn, isSaved ? "saved" : "idle");
-
-    btn.addEventListener("click", function () {
-      if (btn.dataset.state === "saving") return;
-
-      if (btn.dataset.state === "saved") {
-        doRemove(slug, btn);
-      } else {
-        doSave(slug, btn);
-      }
-    });
-
-    return btn;
-  }
-
-  function setbtnState(btn, state) {
-    btn.dataset.state = state;
-    btn.classList.remove("offline-btn--saved", "offline-btn--saving");
-
-    if (state === "idle") {
-      btn.innerHTML = iconDownload() + "<span>Guardar para viajar</span>";
-      btn.title = "Guardar para consultar sin internet";
-    }
-
-    if (state === "saving") {
-      btn.classList.add("offline-btn--saving");
-      btn.innerHTML = iconSpinner() + "<span>Guardando…</span>";
-      btn.title = "Guardando…";
-    }
-
-    if (state === "saved") {
-      btn.classList.add("offline-btn--saved");
-      btn.innerHTML = iconCheck() + "<span>Guardado · Eliminar</span>";
-      btn.title = "Guardado para sin conexión. Pulsa para eliminar.";
+      wrap.append(card, buildButton(slug, saved.includes(slug)));
     }
   }
 
-  function doSave(slug, btn) {
-    var urls = urlsForCourse(slug);
-
-    if (!urls.length) return;
-
-    setbtnState(btn, "saving");
-
-    sendToSW({ type: "SAVE_COURSE", slug: slug, urls: urls });
-
-    function onMessage(event) {
-      var data = event.data || {};
-
-      if (data.slug !== slug) return;
-
-      if (data.type === "SAVE_PROGRESS" && btn.querySelector("span")) {
-        btn.querySelector("span").textContent = "Guardando " + data.done + "/" + data.total + "…";
-      }
-
-      if (data.type === "SAVE_DONE") {
-        navigator.serviceWorker.removeEventListener("message", onMessage);
-        markSaved(slug);
-        setbtnState(btn, "saved");
-      }
-    }
-
-    navigator.serviceWorker.addEventListener("message", onMessage);
-  }
-
-  function doRemove(slug, btn) {
-    var urls = urlsForCourse(slug);
-
-    sendToSW({ type: "REMOVE_COURSE", slug: slug, urls: urls });
-    markRemoved(slug);
-    setbtnState(btn, "idle");
-  }
-
-  /* ---------- Descargar todo ----------
+  /* ---------- Descargar toda la academia ----------
      El catálogo entero pesa unos 5 MB, menos que una foto del móvil. Antes
      de un vuelo, «me lo llevo todo» es más útil que ir eligiendo cursos. */
 
-  var ALL_KEY = "academia-offline-todo";
-
-  function urlsForEverything() {
-    var paginas = ["index.html", "cursos.html", "rutas.html", "articulos.html", "curso.html", "repaso.html"];
-    var tutoriales = (window.ACADEMIA_TUTORIALS || [])
-      .filter(function (t) {
-        return t.status !== "soon";
-      })
-      .map(function (t) {
-        return "tutorials/" + t.slug + ".html";
-      });
-
-    return paginas.concat(tutoriales).map(function (ruta) {
-      return new URL(ruta, baseUrl()).href;
-    });
-  }
-
-  function pedirPersistencia() {
-    if (!navigator.storage || !navigator.storage.persist) return;
-
-    navigator.storage.persisted().then(function (yaEs) {
-      if (!yaEs) navigator.storage.persist();
-    });
-  }
-
-  function tamanoEstimado() {
-    if (!navigator.storage || !navigator.storage.estimate) return Promise.resolve(null);
-
-    return navigator.storage.estimate().then(function (info) {
-      return info.usage ? Math.round(info.usage / 1024 / 1024) : null;
-    });
-  }
-
   function initDownloadAll() {
-    var host = document.getElementById("offline-todo");
+    const host = document.getElementById("offline-todo");
 
     if (!host || !isSupported()) return;
 
-    var guardado = localStorage.getItem(ALL_KEY) === "1";
-    var total = urlsForEverything().length;
+    const yaEsta = localStorage.getItem(ALL_KEY) === "1";
+    const total = urlsForEverything().length;
 
-    host.innerHTML =
-      '<div class="offline-all">' +
-      '<div class="offline-all__body">' +
-      '<h2 class="offline-all__title">Toda la academia</h2>' +
-      '<p class="offline-all__copy">' +
-      (guardado
-        ? "Ya la tienes entera. Vuelve a descargar si has actualizado el contenido."
-        : "Son " + total + " páginas, unos 5 MB. Antes de un vuelo suele salir más a cuenta que ir curso por curso.") +
-      "</p>" +
-      '<p class="offline-all__size" id="offline-size"></p>' +
-      "</div>" +
-      '<button class="btn btn--primary" id="offline-all-btn">' +
-      (guardado ? "Volver a descargar" : "Descargar todo") +
-      "</button>" +
-      "</div>";
+    host.innerHTML = `<div class="offline-all">
+      <div class="offline-all__body">
+        <h2 class="offline-all__title">Toda la academia</h2>
+        <p class="offline-all__copy">${
+          yaEsta
+            ? "Ya la tienes entera. Vuelve a descargar si has actualizado el contenido."
+            : `Son ${total} páginas, unos 5 MB. Antes de un vuelo suele salir más a cuenta que ir curso por curso.`
+        }</p>
+        <p class="offline-all__size" id="offline-size"></p>
+      </div>
+      <button class="btn btn--primary" id="offline-all-btn">${
+        yaEsta ? "Volver a descargar" : "Descargar todo"
+      }</button>
+    </div>`;
 
-    var boton = document.getElementById("offline-all-btn");
-    var copia = host.querySelector(".offline-all__copy");
+    const button = document.getElementById("offline-all-btn");
+    const copy = host.querySelector(".offline-all__copy");
 
-    tamanoEstimado().then(function (mb) {
-      var el = document.getElementById("offline-size");
+    const paintSize = () =>
+      usedMegabytes().then((mb) => {
+        const el = document.getElementById("offline-size");
 
-      if (el && mb) el.textContent = "Ocupado ahora mismo: unos " + mb + " MB.";
-    });
+        if (el && mb) el.textContent = `Ocupado ahora mismo: unos ${mb} MB.`;
+      });
 
-    boton.addEventListener("click", function () {
-      if (boton.disabled) return;
+    paintSize();
 
-      boton.disabled = true;
-      pedirPersistencia();
-      sendToSW({ type: "SAVE_COURSE", slug: "__todo__", urls: urlsForEverything() });
+    button.addEventListener("click", () => {
+      if (button.disabled) return;
 
-      function onMessage(event) {
-        var data = event.data || {};
+      button.disabled = true;
+      requestPersistence();
 
-        if (data.slug !== "__todo__") return;
-
-        if (data.type === "SAVE_PROGRESS") {
-          copia.textContent = "Descargando " + data.done + " de " + data.total + "…";
-        }
-
-        if (data.type === "SAVE_DONE") {
-          navigator.serviceWorker.removeEventListener("message", onMessage);
+      cacheUrls("__todo__", urlsForEverything(), (done, hecho) => {
+        copy.textContent = `Descargando ${done} de ${hecho}…`;
+      }).then(() => {
+        try {
           localStorage.setItem(ALL_KEY, "1");
-          copia.textContent = "Listo. Puedes desconectarte y seguir estudiando.";
-          boton.textContent = "Volver a descargar";
-          boton.disabled = false;
-          tamanoEstimado().then(function (mb) {
-            var el = document.getElementById("offline-size");
-
-            if (el && mb) el.textContent = "Ocupado ahora mismo: unos " + mb + " MB.";
-          });
+        } catch {
+          /* no se recordará, pero la caché está */
         }
-      }
 
-      navigator.serviceWorker.addEventListener("message", onMessage);
+        copy.textContent = "Listo. Puedes desconectarte y seguir estudiando.";
+        button.textContent = "Volver a descargar";
+        button.disabled = false;
+        paintSize();
+      });
     });
   }
 
-  /* ---------- Página offline.html ---------- */
+  /* ---------- Lista de la página offline.html ---------- */
+
+  function courseItemHtml(course) {
+    const escapeHtml = MentorAI.escapeHtml;
+    const total = (course.modules ?? []).reduce(
+      (n, module) => n + (module.lessons ?? []).length,
+      Array.isArray(course.lessons) ? course.lessons.length : 0
+    );
+
+    return `<li class="offline-item">
+      <div class="offline-item__info">
+        <strong>${escapeHtml(course.title)}</strong>
+        <span>${total} lecciones guardadas</span>
+      </div>
+      <div class="offline-item__actions">
+        <a href="curso.html?slug=${encodeURIComponent(
+          course.slug
+        )}" class="btn btn--ghost btn--sm">Abrir curso</a>
+        <button class="btn btn--ghost btn--sm offline-remove-btn" data-slug="${escapeHtml(
+          course.slug
+        )}">${ICONS.trash} Eliminar</button>
+      </div>
+    </li>`;
+  }
+
   function initOfflinePage() {
-    var host = document.getElementById("offline-content");
+    const host = document.getElementById("offline-content");
 
     if (!host) return;
 
     if (!isSupported()) {
       host.innerHTML =
-        '<p class="offline-empty">La función sin conexión requiere acceder a la academia vía navegador web (http/https), no con el protocolo <code>file://</code>.</p>';
+        '<p class="offline-empty">La función sin conexión requiere abrir la academia por http o https, no con el protocolo <code>file://</code> (aunque por <code>file://</code> ya lo tienes todo en disco).</p>';
       return;
     }
 
-    var saved = savedSlugs();
+    const saved = savedSlugs();
 
-    if (!saved.length) {
+    if (saved.length === 0) {
       host.innerHTML =
-        '<p class="offline-empty">Aún no has guardado ningún curso. Ve a <a href="cursos.html">Cursos</a> y pulsa <strong>«Guardar para viajar»</strong> en los que quieras consultar sin internet.</p>';
+        '<p class="offline-empty">Aún no has guardado ningún curso suelto. Puedes descargarlo todo aquí arriba, o ir a <a href="cursos.html">Cursos</a> y pulsar <strong>«Guardar para viajar»</strong> en los que quieras.</p>';
       return;
     }
 
-    var courses = (window.MENTORAI_COURSES || []).filter(function (c) {
-      return saved.indexOf(c.slug) !== -1;
-    });
+    const courses = (window.MENTORAI_COURSES ?? []).filter((course) =>
+      saved.includes(course.slug)
+    );
 
-    var html =
-      '<ul class="offline-list">' +
-      courses
-        .map(function (course) {
-          var total = 0;
-          (course.modules || []).forEach(function (m) {
-            total += (m.lessons || []).length;
-          });
+    host.innerHTML = `<ul class="offline-list">${courses.map(courseItemHtml).join("")}</ul>`;
 
-          return (
-            '<li class="offline-item">' +
-            '<div class="offline-item__info">' +
-            "<strong>" +
-            escapeHtml(course.title) +
-            "</strong>" +
-            "<span>" +
-            total +
-            " lecciones guardadas</span>" +
-            "</div>" +
-            '<div class="offline-item__actions">' +
-            '<a href="curso.html?slug=' +
-            encodeURIComponent(course.slug) +
-            '" class="btn btn--ghost btn--sm">Abrir curso</a>' +
-            '<button class="btn btn--ghost btn--sm offline-remove-btn" data-slug="' +
-            escapeHtml(course.slug) +
-            '">' +
-            iconTrash() +
-            " Eliminar" +
-            "</button>" +
-            "</div>" +
-            "</li>"
-          );
-        })
-        .join("") +
-      "</ul>";
+    for (const button of host.querySelectorAll(".offline-remove-btn")) {
+      button.addEventListener("click", () => {
+        const { slug } = button.dataset;
 
-    host.innerHTML = html;
-
-    host.querySelectorAll(".offline-remove-btn").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var slug = btn.dataset.slug;
-        var urls = urlsForCourse(slug);
-
-        sendToSW({ type: "REMOVE_COURSE", slug: slug, urls: urls });
+        dropUrls(slug, urlsForCourse(slug));
         markRemoved(slug);
         initOfflinePage();
       });
-    });
-  }
-
-  /* ---------- Helpers ---------- */
-  function escapeHtml(text) {
-    return String(text)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
+    }
   }
 
   /* ---------- API pública ---------- */
+
   MentorAI.Offline = {
-    init: function () {
+    urlsForEverything,
+    init() {
       injectNavLink();
 
       if (!isSupported()) return;
 
       navigator.serviceWorker
-        .register(basePath() + "sw.js", { scope: basePath() })
-        .catch(function (err) {
-          console.warn("[MentorAI] SW no registrado:", err);
-        });
+        .register(`${basePath()}sw.js`, { scope: basePath() })
+        .catch((error) => console.warn("[MentorAI] SW no registrado:", error));
     },
-
-    initCourseButtons: function () {
-      if (!isSupported()) return;
-      addCourseButtons();
+    initCourseButtons() {
+      if (isSupported()) addCourseButtons();
     },
-
-    initOfflinePage: function () {
+    initOfflinePage() {
       initDownloadAll();
       initOfflinePage();
     },
