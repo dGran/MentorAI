@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Locks distribuidos: el que casi siempre está mal — MentorAI</title>
+    <meta name="description" content="Por qué el bloqueo de cinco líneas con Redis está mal, el fallo que no se arregla con más código y las alternativas que casi siempre salen mejor." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Sistemas distribuidos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Locks distribuidos: el que casi siempre está mal</h1>
+        <p class="tutorial-hero__lead">«Que solo un proceso haga esto a la vez» parece un problema de cinco líneas con Redis. La versión de cinco líneas está mal de una forma que no se ve hasta que factura dos veces al mismo cliente.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#el-intento">El intento de cinco líneas</a></li>
+            <li><a href="#fallo-fundamental">El fallo que no se arregla</a></li>
+            <li><a href="#evitarlo">Casi siempre hay una salida mejor</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            «Que solo un proceso haga esto a la vez» parece un problema de cinco líneas con
+            Redis. Y la versión de cinco líneas está mal de una forma que no se ve hasta que
+            factura dos veces al mismo cliente. Esta lección va de por qué está mal y de qué
+            hacer al respecto.
+          </p>
+
+          <h2 id="el-intento">
+            El intento de cinco líneas
+            <a href="#el-intento" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Casi todo el mundo escribe esto la primera vez, y en el 95 % de las ejecuciones
+            funciona:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · el bloqueo que parece bien</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+if (!$redis-&gt;set('bloqueo:facturacion', '1', ['NX', 'EX' =&gt; 60])) {
+    return;
+}
+
+$this-&gt;facturar();
+
+$redis-&gt;del('bloqueo:facturacion');</code></pre>
+          </div>
+
+          <p>
+            El <code>NX</code> hace que solo lo consiga el primero, y el <code>EX</code> evita
+            que el bloqueo se quede para siempre si el proceso muere. Dos aciertos. Y aun así
+            tiene dos fallos serios.
+          </p>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Fallo 1: borras el bloqueo de otro</p>
+              <p>
+                Si tu proceso tarda más de 60 s, el bloqueo caduca y lo coge otro. Cuando el
+                tuyo termina, ejecuta ese <code>del</code> y borra <b>el bloqueo del segundo</b>,
+                que sigue trabajando. Entra un tercero. Ahora hay tres facturando a la vez y el
+                bloqueo no ha «fallado» en ningún momento visible.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            Se arregla marcando el bloqueo con un valor único y borrando solo si sigue siendo el
+            tuyo, de forma atómica. En Redis eso significa un script Lua, porque comprobar y
+            borrar en dos comandos tiene la misma carrera que intentabas evitar:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · BloqueoConDueño.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class BloqueoConDueno
+{
+    private const SOLTAR_SI_ES_MIO = &lt;&lt;&lt;'LUA'
+        if redis.call("get", KEYS[1]) == ARGV[1] then
+            return redis.call("del", KEYS[1])
+        end
+        return 0
+        LUA;
+
+    public function tomar(string $clave, int $segundos): ?string
+    {
+        $testigo = bin2hex(random_bytes(16));
+
+        if (!$this-&gt;redis-&gt;set($clave, $testigo, ['NX', 'EX' =&gt; $segundos])) {
+            return null;
+        }
+
+        return $testigo;
+    }
+
+    public function soltar(string $clave, string $testigo): void
+    {
+        $this-&gt;redis-&gt;eval(self::SOLTAR_SI_ES_MIO, [$clave, $testigo], 1);
+    }
+}</code></pre>
+          </div>
+
+          <h2 id="fallo-fundamental">
+            Fallo 2: el que no se arregla
+            <a href="#fallo-fundamental" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El testigo evita que borres el bloqueo de otro, pero no evita que <strong>dos
+            procesos se crean dueños a la vez</strong>. Y esto no tiene arreglo con más código:
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>El proceso A coge el bloqueo</b><small>60 s de caducidad</small></span>
+              </div>
+              <div class="flow__arrow" data-label="pausa de GC, o el host se congela"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>A se queda parado 70 s</b><small>Él no lo sabe: para él no ha pasado el tiempo</small></span>
+              </div>
+              <div class="flow__arrow" data-label="mientras, el bloqueo caduca"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>B coge el bloqueo legítimamente</b><small>Empieza a facturar</small></span>
+              </div>
+              <div class="flow__arrow" data-label="y entonces"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>A despierta y sigue facturando</b><small>Convencido de que tiene el bloqueo. Dos a la vez.</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Ningún componente ha fallado. El bloqueo hizo su trabajo. Y aun así hubo dos.
+            </p>
+          </div>
+
+          <p>
+            La razón de fondo es de la primera lección: los relojes y las pausas no son fiables.
+            Un proceso no puede saber cuánto tiempo estuvo detenido, así que no puede saber si su
+            bloqueo sigue vivo. Redlock, el algoritmo que usa varios Redis independientes, tampoco
+            resuelve esto — su discusión pública es un clásico del tema— porque el problema no
+            está en el almacén del bloqueo, está en el que lo sostiene.
+          </p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La única salida real: que el recurso también se defienda</p>
+              <p>
+                El bloqueo entrega un número que crece con cada concesión (un <em>token de
+                barrera</em>). El recurso —tu base de datos— guarda el último número que aceptó y
+                rechaza cualquier escritura con uno menor. Así, cuando A despierta con el token
+                7 y el recurso ya vio el 8, su escritura se rechaza. Es la única forma de estar
+                seguro, y exige cooperación del recurso.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="evitarlo">
+            Casi siempre hay una salida mejor
+            <a href="#evitarlo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Antes de montar nada de lo anterior, merece la pena mirar si el problema se puede
+            reformular. Casi siempre se puede, y sale más barato:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>En vez de bloquear…</th><th>Haz esto</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Para que no se procese dos veces</td><td>Que la operación sea idempotente: da igual cuántas veces corra</td></tr>
+                <tr><td>Para que solo un worker toque un pedido</td><td>Particiona por clave: los mensajes de ese pedido van al mismo consumidor</td></tr>
+                <tr><td>Para actualizar un contador sin perder incrementos</td><td><code>UPDATE ... SET n = n + 1</code>: la base de datos ya lo serializa</td></tr>
+                <tr><td>Para evitar dos escrituras concurrentes</td><td>Bloqueo optimista: una columna de versión y reintento si cambió</td></tr>
+                <tr><td>Para que un cron no se solape consigo mismo</td><td>Un bloqueo local en el fichero, si solo corre en una máquina</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            El bloqueo optimista de la cuarta fila merece un momento: en vez de impedir que otro
+            entre, dejas que entren los dos y detectas el conflicto al escribir. Un
+            <code>UPDATE ... WHERE version = 3</code> que afecta a cero filas te dice que alguien
+            se te adelantó, y reintentas con el dato fresco. Sin bloqueos, sin caducidades y sin
+            el problema de arriba.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Un bloqueo con caducidad basta cuando…</h4>
+              <ul>
+                <li>Es una optimización: evitar trabajo duplicado, no corrupción</li>
+                <li>Que se ejecute dos veces es molesto pero no rompe nada</li>
+                <li>Es un cron pesado y lo que quieres es no gastar el doble</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Necesitas algo más fuerte cuando…</h4>
+              <ul>
+                <li>Una ejecución doble corrompe datos o cobra dos veces</li>
+                <li>No puedes acotar cuánto tarda la sección crítica</li>
+                <li>La corrección depende de que sea uno y solo uno</li>
+                <li>→ Token de barrera con recurso cooperativo, o consenso de verdad</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Soltar el bloqueo sin comprobar que sigue siendo tuyo borra el de otro y encadena una cascada de solapamientos invisibles.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Comprobar y borrar tiene que ser atómico: en Redis, un script Lua, porque en dos comandos vuelve la carrera.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El fallo que no se arregla con código: una pausa larga hace que dos procesos se crean dueños a la vez sin que nada haya fallado.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La única garantía real es el token de barrera: el recurso guarda el último número aceptado y rechaza los anteriores.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Casi siempre hay salida mejor: idempotencia, particionar por clave o bloqueo optimista con una columna de versión.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

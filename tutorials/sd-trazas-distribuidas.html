@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seguir una petición entre servicios — MentorAI</title>
+    <meta name="description" content="Trazas, tramos y propagación de contexto: cómo convertir seis logs que no se hablan en una sola historia, y por qué se muestrea al final." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Sistemas distribuidos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Seguir una petición entre servicios</h1>
+        <p class="tutorial-hero__lead">En un monolito lees una traza de pila y ves toda la historia. Con seis servicios tienes seis registros que no se hablan, y «¿por qué tardó 4 segundos?» pasa de ser un vistazo a una investigación de media mañana.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#el-problema">Seis logs y ninguna historia</a></li>
+            <li><a href="#modelo">Traza, tramos y contexto</a></li>
+            <li><a href="#propagacion">Lo único que hay que hacer bien</a></li>
+            <li><a href="#php">El identificador en los logs</a></li>
+            <li><a href="#muestreo">No guardes todas las trazas</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            En un monolito, cuando algo va mal, lees una traza de pila y ves toda la historia. Con
+            seis servicios tienes seis registros que no se hablan, y la pregunta «¿por qué esta
+            petición tardó 4 segundos?» pasa de ser un vistazo a ser una investigación de media
+            mañana. Las trazas distribuidas devuelven esa historia única.
+          </p>
+
+          <h2 id="el-problema">
+            Seis logs y ninguna historia
+            <a href="#el-problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El síntoma es siempre el mismo: un usuario se queja de lentitud, miras el log de la
+            API y ves que la petición tardó 4,2 s. ¿Dónde? Abres el log de pedidos, buscas por
+            hora aproximada, encuentras tres candidatas, eliges una… y ya estás adivinando. Con
+            los relojes desalineados de la lección tres, además, puede que ni siquiera estés
+            comparando bien.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El tercer pilar</p>
+              <p>
+                El curso de <a href="observabilidad-pilares.html">observabilidad</a> cubre logs y
+                métricas a fondo. Las trazas son el pilar que solo cobra sentido cuando hay varios
+                servicios, y por eso vive aquí: son las que responden «dónde», mientras que las
+                métricas responden «cuánto» y los logs «qué pasó exactamente».
+              </p>
+            </div>
+          </div>
+
+          <h2 id="modelo">
+            Traza, tramos y contexto
+            <a href="#modelo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El modelo es de tres piezas y se entiende en un minuto:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Pieza</th><th>Qué es</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><b>Traza</b></td><td>Todo el recorrido de una petición. Tiene un identificador único</td></tr>
+                <tr><td><b>Tramo (<em>span</em>)</b></td><td>Una operación dentro de la traza: una llamada HTTP, una consulta SQL. Tiene inicio, fin y padre</td></tr>
+                <tr><td><b>Contexto</b></td><td>El identificador de traza y el del tramo padre, viajando en las cabeceras entre servicios</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>API · 4.200 ms</b><small>El tramo raíz. Todo cuelga de aquí.</small></span>
+              </div>
+              <div class="flow__arrow" data-label="hijo"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Pedidos · 4.100 ms</b><small>Casi todo el tiempo está aquí dentro</small></span>
+              </div>
+              <div class="flow__arrow" data-label="hijo"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>SELECT sin índice · 3.900 ms</b><small>Ahí estaba. Sin adivinar nada.</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              La jerarquía de tramos convierte «tardó 4 segundos» en «tardó 4 segundos aquí».
+            </p>
+          </div>
+
+          <h2 id="propagacion">
+            Lo único que de verdad hay que hacer bien
+            <a href="#propagacion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Toda la magia depende de una cosa: que el contexto viaje. Si un servicio no propaga
+            las cabeceras, la traza se corta ahí y todo lo que venga después aparece como una
+            traza suelta sin relación con la original. El estándar es
+            <code>traceparent</code>, del W3C:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · la cabecera</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
+             ^  ^                                ^                ^
+          versión  id de traza (32 hex)     id del tramo    flags (muestreo)</code></pre>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Donde más se rompe: las colas</p>
+              <p>
+                En HTTP la propagación suele venir hecha por la librería. En mensajería no: hay
+                que meter el contexto en las cabeceras del mensaje al publicar y recuperarlo al
+                consumir, a mano. Si no lo haces, todas tus trazas terminan justo donde empieza
+                lo asíncrono, que es donde más falta te hacían.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="php">
+            El identificador en los logs
+            <a href="#php" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Antes de montar OpenTelemetry entero, hay una versión reducida que cuesta una tarde y
+            resuelve el 70 % del dolor: propagar un identificador de correlación y meterlo en
+            todos los logs. No te da la jerarquía de tiempos, pero te deja filtrar los seis logs
+            por un mismo valor y leer la historia en orden.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · ContextoDeTraza.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class ContextoDeTraza
+{
+    private string $idTraza;
+
+    public function iniciarDesde(Request $peticion): void
+    {
+        $this-&gt;idTraza = $peticion-&gt;headers-&gt;get('X-Trace-Id')
+            ?? bin2hex(random_bytes(16));
+    }
+
+    public function cabecerasSalientes(): array
+    {
+        return ['X-Trace-Id' =&gt; $this-&gt;idTraza];
+    }
+
+    public function contextoParaLogs(): array
+    {
+        return ['trace_id' =&gt; $this-&gt;idTraza];
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            Lo importante es el <code>??</code>: si la cabecera viene, la respetas; si no, generas
+            una. Así el primer servicio que toca la petición abre la traza y todos los demás la
+            continúan. Con eso enganchado al procesador de Monolog y al cliente HTTP, ya puedes
+            buscar un identificador y ver la historia completa.
+          </p>
+
+          <h2 id="muestreo">
+            No guardes todas las trazas
+            <a href="#muestreo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Con volumen real, guardar todas las trazas cuesta más que el sistema que observan. Se
+            muestrea, y hay dos formas con un matiz que importa:
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Al principio (<em>head sampling</em>)</h4>
+              <ul>
+                <li>Decides al empezar: «guardo el 1 %»</li>
+                <li>Barato y sencillo</li>
+                <li><b>Te pierdes el 99 % de los errores</b></li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Al final (<em>tail sampling</em>)</h4>
+              <ul>
+                <li>Decides al terminar, viendo cómo fue</li>
+                <li>Guardas todas las que fallaron o fueron lentas</li>
+                <li>Y un porcentaje pequeño de las normales, como referencia</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            El muestreo al final es lo que quieres casi siempre: las trazas interesantes son
+            justo las raras. A cambio, el recolector tiene que retener los tramos hasta que la
+            traza termine, lo que gasta memoria.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Monta trazas cuando…</h4>
+              <ul>
+                <li>Una petición pasa por tres o más servicios</li>
+                <li>Ya has perdido tardes cruzando logs a ojo</li>
+                <li>Hay lentitud intermitente que nadie sabe localizar</li>
+                <li>Varios equipos se pasan la culpa sin datos</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Con el identificador de correlación basta cuando…</h4>
+              <ul>
+                <li>Son dos servicios y una cola</li>
+                <li>Lo que necesitas es reconstruir qué pasó, no medir tiempos</li>
+                <li>No tienes aún dónde almacenar y consultar trazas</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Las trazas responden «dónde» tardó; las métricas «cuánto» y los logs «qué pasó». Solo cobran sentido con varios servicios.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Todo depende de que el contexto viaje: si un servicio no propaga las cabeceras, la traza se corta ahí.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En HTTP la propagación viene hecha; en las colas hay que meterla a mano, y ahí es donde más falta hace.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Propagar un identificador de correlación y meterlo en los logs cuesta una tarde y resuelve buena parte del dolor.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Muestrea al final, no al principio: las trazas que te interesan son las que fallaron, y son justo las raras.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

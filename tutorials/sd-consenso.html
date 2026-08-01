@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Consenso: Raft, quórum y para qué lo necesitas — MentorAI</title>
+    <meta name="description" content="Cómo varias máquinas se ponen de acuerdo sin poder desdecirse: por qué el quórum funciona, las cuatro ideas de Raft y por qué no vas a implementarlo." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Sistemas distribuidos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Consenso: Raft, quórum y para qué lo necesitas</h1>
+        <p class="tutorial-hero__lead">Consenso es que varias máquinas se pongan de acuerdo y no puedan desdecirse, aunque algunas caigan y la red se parta. Es el problema más duro del curso, y lo más importante que puedes aprender es a no implementarlo tú.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#para-que">Para qué se necesita</a></li>
+            <li><a href="#quorum">Quórum: la mayoría manda</a></li>
+            <li><a href="#raft">Raft en cuatro ideas</a></li>
+            <li><a href="#no-lo-implementes">Por qué no vas a escribir esto</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Consenso es que varias máquinas se pongan de acuerdo en un valor y no puedan
+            desdecirse, aunque algunas se caigan y la red se parta. Es el problema más duro del
+            curso, tiene solución conocida, y lo más importante que puedes aprender de él es a
+            no implementarlo tú.
+          </p>
+
+          <h2 id="para-que">
+            Para qué se necesita
+            <a href="#para-que" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El consenso aparece siempre que hace falta una respuesta única a una pregunta que
+            varias máquinas podrían contestar distinto:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Pregunta</th><th>Dónde aparece</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>¿Quién es el líder ahora?</td><td>Promoción de réplicas de base de datos</td></tr>
+                <tr><td>¿Quién tiene este bloqueo?</td><td>Bloqueos distribuidos, trabajos únicos</td></tr>
+                <tr><td>¿Cuál es el valor actual de esta configuración?</td><td>etcd, Consul, ZooKeeper</td></tr>
+                <tr><td>¿En qué orden ocurrieron estas escrituras?</td><td>Registros replicados</td></tr>
+                <tr><td>¿Qué nodos forman el clúster ahora mismo?</td><td>Pertenencia y descubrimiento</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Sin consenso: cerebro dividido</p>
+              <p>
+                Si dos mitades de un clúster particionado eligen cada una su líder, las dos
+                aceptan escrituras y las dos historias divergen. Cuando la red se recupera, no
+                hay forma automática de fusionarlas sin perder datos. Es el fallo que todo esto
+                existe para evitar.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="quorum">
+            Quórum: la mayoría manda
+            <a href="#quorum" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La idea central es de una simplicidad tramposa: para decidir algo hace falta el
+            acuerdo de <strong>más de la mitad</strong> de los nodos. Y funciona por una razón
+            aritmética: dos mayorías del mismo conjunto siempre comparten al menos un nodo, y ese
+            nodo impide que se tomen dos decisiones contradictorias.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Clúster de 5 nodos</b><small>El quórum son 3</small></span>
+              </div>
+              <div class="flow__arrow" data-label="la red se parte"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Un lado con 3, otro con 2</b><small>El de 3 tiene quórum y sigue operando</small></span>
+              </div>
+              <div class="flow__arrow" data-label="y el otro"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>El lado de 2 se para solo</b><small>Sabe que no tiene mayoría y deja de aceptar escrituras</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Solo puede haber una mayoría a la vez. Por eso no puede haber dos líderes.
+            </p>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Por qué los clústeres tienen 3, 5 o 7 nodos</p>
+              <p>
+                Con un número impar no hay empates. Y añadir un nodo par no compra nada: con 3
+                nodos toleras 1 caída, y con 4 sigues tolerando solo 1 (el quórum pasa a ser 3).
+                Pagas una máquina más para la misma tolerancia. De ahí que nunca veas clústeres
+                de 4.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="raft">
+            Raft en cuatro ideas
+            <a href="#raft" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Raft se diseñó explícitamente para ser <em>entendible</em>, frente a Paxos, que es
+            correcto y notoriamente difícil de seguir. Descompone el problema en piezas que se
+            pueden explicar por separado:
+          </p>
+
+          <p>
+            <strong>1. Mandatos.</strong> El tiempo se divide en mandatos numerados. Cada uno
+            tiene como mucho un líder, y el número de mandato permite descartar mensajes de
+            líderes antiguos que reaparecen.
+          </p>
+          <p>
+            <strong>2. Elección.</strong> Si un seguidor no oye al líder en un plazo, se
+            presenta candidato y pide votos. Si consigue mayoría, es líder. Los plazos son
+            aleatorios para que dos nodos no se presenten a la vez una y otra vez — el mismo
+            truco del jitter de la lección de reintentos.
+          </p>
+          <p>
+            <strong>3. Registro replicado.</strong> El líder recibe las escrituras, las añade a
+            su registro y las manda a los seguidores. Cuando la mayoría confirma haberlas
+            escrito, la entrada se considera comprometida y se aplica.
+          </p>
+          <p>
+            <strong>4. Seguridad.</strong> Un nodo solo vota por candidatos cuyo registro esté
+            al menos tan al día como el suyo. Eso garantiza que un líder nuevo nunca pierde
+            entradas ya comprometidas.
+          </p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El precio: cada escritura cuesta una ronda de red</p>
+              <p>
+                Nada se confirma sin que la mayoría lo haya recibido. Eso pone un suelo a la
+                latencia de escritura —la de la mediana de tus nodos— y explica por qué no se
+                mete un sistema de consenso en el camino de cada petición. Se usa para decisiones
+                de coordinación, que son pocas y muy importantes, no para datos de aplicación.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="no-lo-implementes">
+            Por qué no vas a escribir esto
+            <a href="#no-lo-implementes" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Entender Raft es útil; implementarlo, casi nunca. Los detalles que hacen que un
+            algoritmo de consenso sea correcto están en los casos extremos: mensajes duplicados
+            que llegan con retraso de un mandato viejo, un nodo que se reincorpora con un
+            registro divergente, un líder que sigue creyéndose líder tras una partición. Las
+            implementaciones serias llevan años de pruebas contra fallos inyectados a propósito.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Usa una pieza probada</h4>
+              <ul>
+                <li><b>etcd</b> — Raft; es lo que hay debajo de Kubernetes</li>
+                <li><b>Consul</b> — Raft, con descubrimiento de servicios encima</li>
+                <li><b>ZooKeeper</b> — el veterano; Kafka lo usó durante años</li>
+                <li>Tu gestor de base de datos, que ya trae su promoción</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Señales de que te estás metiendo donde no debes</h4>
+              <ul>
+                <li>«Elegimos líder con un campo en la base de datos»</li>
+                <li>«El que coja el bloqueo en Redis primero, manda»</li>
+                <li>«Si no responde en 10 s, asumimos que está muerto»</li>
+                <li>«Total, la red interna no falla»</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            Y usarlas no es complicado: la elección de líder que tanto cuesta implementar es un
+            par de comandos contra etcd, que hace el Raft por debajo.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · elección de líder con etcd</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">etcdctl elect facturacion worker-1
+
+etcdctl endpoint status --write-out=table</code></pre>
+          </div>
+
+          <p>
+            El primer comando se queda bloqueado hasta que ese nodo gana la elección, y la pierde
+            automáticamente si el proceso muere: la concesión caduca y otro toma el relevo sin que
+            nadie tenga que darse cuenta. Toda la complejidad de los mandatos, los votos y el
+            registro replicado está ahí dentro, probada.
+          </p>
+
+          <p>
+            Y una nota sobre la columna derecha de arriba: un bloqueo en Redis <em>puede</em> ser
+            suficiente según para qué. Lo que no es, es consenso — y confundir las dos cosas es
+            justo el tema de la lección siguiente.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Necesitas consenso cuando…</h4>
+              <ul>
+                <li>Una decisión incorrecta corrompe datos de forma irrecuperable</li>
+                <li>Tiene que haber exactamente un líder, sin ambigüedad</li>
+                <li>La configuración debe ser idéntica en todos los nodos</li>
+                <li>Ya te has topado con un cerebro dividido</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No lo necesitas cuando…</h4>
+              <ul>
+                <li>Basta con que la operación sea idempotente y se repita</li>
+                <li>Una ejecución doble ocasional es tolerable</li>
+                <li>Un solo nodo con reinicio automático te vale</li>
+                <li>Es coordinación dentro de un proceso: eso son locks normales</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El quórum funciona por aritmética: dos mayorías del mismo conjunto siempre comparten un nodo, y ese impide decisiones contradictorias.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los clústeres son de 3, 5 o 7 porque un nodo par no compra tolerancia: con 4 aguantas las mismas caídas que con 3.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Raft son cuatro ideas: mandatos numerados, elección con plazos aleatorios, registro replicado por mayoría y voto solo a quien está al día.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Cada escritura cuesta una ronda de red hasta la mayoría: por eso el consenso coordina decisiones, no datos de aplicación.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Entiéndelo, no lo implementes: lo que hace correcto a un algoritmo de consenso vive en los casos extremos, y eso son años de pruebas.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

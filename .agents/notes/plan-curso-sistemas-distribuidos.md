@@ -1,10 +1,12 @@
 # Plan — Curso `sistemas-distribuidos`
 
 ## Estado
-**Estructura APROBADA 2026-08-01 (19 lecciones, ejemplos en PHP).**
-Es el primero de los 4 cursos aprobados el 2026-07-06 y nunca escritos
-(ver `plan-carrera-completa.md`). Progreso lección a lección en el tracker
-de abajo.
+**CERRADO 2026-08-01. Las 19 lecciones escritas y publicadas**, más 20
+preguntas de examen y 39 checks. El curso está en la ruta
+`el-grado-que-no-hiciste`, después de `observabilidad`.
+Era el primero de los 4 cursos aprobados el 2026-07-06 y nunca escritos
+(ver `plan-carrera-completa.md`); quedan `cache-y-rendimiento`,
+`infraestructura` y `protocolos-y-tiempo-real`.
 
 ## Por qué este curso no es una introducción
 
@@ -62,14 +64,29 @@ previa del módulo 2 en lugar de duplicarlo.
 
 ## Tracker
 
-Ninguna lección escrita todavía. Al escribir cada una: `.html` + entrada en
-`manifest.js` + marcar aquí.
+Las 19 escritas. Todas con sección «Cuándo aplicarlo», TOC verificado contra
+los `<h2 id>` y render comprobado en Chrome headless.
 
-## Al terminar el curso
+Dos lecciones salieron **sin bloques de código** y es deliberado:
+`sd-cuando-no-distribuir` es de criterio, no de implementación. A
+`sd-transacciones-distribuidas` y `sd-consenso` sí se les añadió uno después
+(las sentencias `XA` de MySQL y `etcdctl elect`) porque en un curso con
+ejemplos en PHP quedaban descolgadas.
 
-- Añadirlo a `tutorials/paths.js`. Encaja en `el-grado-que-no-hiciste`
-  (después de `observabilidad`) y da pie a una ruta propia de escalado junto a
-  `cache-y-rendimiento` cuando ese exista.
+## Lo que se aprendió por el camino
+
+- **El sesgo de posición volvió a colarse**, y el validador NO lo detectó: mis
+  39 checks tenían un 54 % en la posición 1, pero se diluía en el total de 440.
+  Arreglado en dos sitios: los datos rotados a 13/13/13, y `scripts/validar.js`
+  ahora mide el sesgo **por curso además de en total** (agrupando los checks por
+  el curso al que pertenece cada lección, porque van por lección y una muestra
+  de 2-3 no dice nada). Verificado reintroduciendo el sesgo a propósito.
+- **El validador chocaba con una función documentada**: `courses.js` dice que
+  una lección que aún no existe se pinta como «Planificado», pero el validador
+  lo daba por error. Ahora es aviso.
+
+## Al añadir más lecciones aquí
+
 - Preguntas de examen en `tutorials/quizzes.js` y checks en `tutorials/checks.js`.
-  **Ojo al sesgo de posición**: `scripts/validar.js` falla si la respuesta
-  correcta cae en la misma posición más del 45 % de las veces.
+  **Ojo al sesgo de posición**: `scripts/validar.js` falla si la correcta cae en
+  la misma posición más del 45 % de las veces, ahora también por curso.

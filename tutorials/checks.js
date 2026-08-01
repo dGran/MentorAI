@@ -18,6 +18,182 @@
 
 window.MENTORAI_CHECKS = {
 
+  /* ================= Curso: Sistemas distribuidos ================= */
+
+  "sd-falacias": [
+    { q: "¿Por qué las ocho falacias se siguen cometiendo después de leerlas?",
+      o: ["Porque son el estado por defecto de todo código que no se escribió explícitamente en su contra", "Porque están mal explicadas en la literatura", "Porque solo afectan a sistemas muy grandes"], a: 0,
+      w: "No son errores conceptuales que se corrijan una vez: dentro de un proceso las ocho son ciertas, y el código que las asume sigue funcionando hasta que cruza la red." },
+    { q: "En latencia de red, ¿qué pesa más?",
+      o: ["El tamaño de cada mensaje", "El número de saltos", "El lenguaje de programación"], a: 1,
+      w: "Un bucle con 200 llamadas de 2 ms tarda 400 ms aunque muevas cuatro bytes en cada una. Es el N+1 de siempre, pero sobre la red y sin profiler que te lo cante." },
+  ],
+
+  "sd-fallos-parciales": [
+    { q: "Ante un timeout, ¿cuántos de los cuatro escenarios posibles dejan el trabajo hecho?",
+      o: ["Ninguno", "Los cuatro", "Dos: si se procesó y murió al responder, o si la respuesta se perdió"], a: 2,
+      w: "Y desde el cliente los cuatro son indistinguibles. Por eso tratar el timeout como un fallo es lo que produce cobros duplicados." },
+    { q: "¿Dónde suele estar el error de diseño de fondo?",
+      o: ["En el modelo de datos: un booleano `pagado` no tiene dónde guardar «no sé»", "En la configuración del cliente HTTP", "En la falta de logs"], a: 0,
+      w: "Un enum con un estado incierto explícito sí lo tiene. Y ese estado necesita un proceso de conciliación que lo cierre, o solo es una forma elegante de perder dinero." },
+  ],
+
+  "sd-relojes-y-orden": [
+    { q: "¿Qué reloj usas para medir cuánto tarda una operación?",
+      o: ["El de pared: `time()`", "El monotónico: `hrtime(true)`", "Cualquiera, si sincronizas con NTP"], a: 1,
+      w: "El monotónico nunca retrocede porque NTP no lo toca. El de pared puede saltar hacia atrás y darte duraciones negativas." },
+    { q: "¿Qué garantiza un reloj de Lamport?",
+      o: ["Que dos eventos con contadores distintos están causalmente relacionados", "Que todos los nodos tienen la misma hora", "Que si A causó B, el contador de A es menor que el de B"], a: 2,
+      w: "La implicación no vale al revés: dos contadores distintos pueden ser eventos concurrentes sin relación. Para distinguirlo hacen falta relojes vectoriales." },
+  ],
+
+  "sd-sincrono-vs-asincrono": [
+    { q: "¿Cuál es la pregunta que decide entre síncrono y asíncrono?",
+      o: ["¿Necesitas la respuesta para poder seguir?", "¿Cuántos mensajes por segundo hay?", "¿Tienes un broker desplegado?"], a: 0,
+      w: "Si el usuario espera el resultado para decidir, es síncrono. Si solo hace falta que alguien se entere de que pasó algo, es asíncrono. Casi todo lo demás son detalles." },
+    { q: "¿Qué hace más daño, un servicio caído o uno lento?",
+      o: ["Uno caído: no responde a nada", "Uno lento: consume tus workers fingiendo que todo va bien", "Los dos igual"], a: 1,
+      w: "El caído falla rápido y tu código lo maneja. El lento agota el pool de workers esperando, y acabas sin responder ni a lo que no dependía de él." },
+  ],
+
+  "sd-garantias-de-entrega": [
+    { q: "Si confirmas el mensaje antes de procesarlo, ¿qué garantía tienes?",
+      o: ["At-least-once: puede repetirse", "Exactly-once", "At-most-once: si te caes en medio, se pierde"], a: 2,
+      w: "Confirmar antes pierde; confirmar después duplica. Casi siempre quieres duplicar, porque un duplicado se puede detectar y un mensaje perdido no." },
+    { q: "Entre «marca el pedido como enviado» y «suma uno al contador de envíos», ¿cuál aguanta duplicados?",
+      o: ["La primera: es un efecto absoluto", "La segunda: es más rápida", "Las dos igual"], a: 0,
+      w: "Fijar un valor se puede repetir cien veces con el mismo resultado; incrementar, no. Cuando puedas elegir cómo expresar el efecto, elige la forma absoluta." },
+  ],
+
+  "sd-outbox": [
+    { q: "¿Arregla algo meter el `publicar` dentro de la transacción?",
+      o: ["Sí: el rollback deshace la publicación", "No: si el publicar tiene éxito y el COMMIT falla después, el evento ya salió", "Sí, si el broker soporta XA"], a: 1,
+      w: "Encima mantienes la transacción abierta durante una llamada de red, que es su propio problema. La transacción solo cubre la base de datos." },
+    { q: "¿Qué garantiza el outbox?",
+      o: ["Que cada evento se publica exactamente una vez", "Que los eventos llegan en orden a todos los consumidores", "Que ningún evento se pierde, pero puede repetirse"], a: 2,
+      w: "Si el publicador muere entre publicar y marcar la fila, el evento sale dos veces. Por eso el outbox necesita al consumidor idempotente al otro lado: son dos piezas del mismo mecanismo." },
+  ],
+
+  "sd-colas-y-topicos": [
+    { q: "¿Qué pasa con un mensaje después de leerlo?",
+      o: ["En una cola desaparece al confirmarlo; en un registro de eventos sigue ahí", "En los dos desaparece", "En los dos sigue ahí hasta que caduque"], a: 0,
+      w: "Esa es la diferencia de fondo entre RabbitMQ y Kafka, y de ella salen todas las demás: quién lleva la cuenta, si puedes rebobinar y cómo se decide el paralelismo." },
+    { q: "En Kafka, ¿qué topa el paralelismo de un grupo de consumidores?",
+      o: ["El número de brokers", "El número de particiones del topic", "La memoria del consumidor"], a: 1,
+      w: "Con 6 particiones, el séptimo consumidor se queda parado. Y ampliar particiones después rompe el orden por clave, así que conviene empezar con margen." },
+  ],
+
+  "sd-replicacion": [
+    { q: "¿Qué patrón de código destapa el replication lag?",
+      o: ["Leer muchas veces seguidas el mismo dato", "Escribir dentro de una transacción larga", "Escribir y leer inmediatamente después"], a: 2,
+      w: "La escritura va al líder y la lectura a una réplica que aún no la aplicó. El usuario ve el dato viejo justo después de guardarlo, recarga y ya sale bien: nadie reproduce el fallo." },
+    { q: "¿Qué pierdes al promocionar un seguidor con replicación asíncrona?",
+      o: ["Las escrituras que el líder confirmó y no llegó a propagar", "Nada: la promoción es transparente", "Todo el historial de la tabla"], a: 0,
+      w: "Y si algún identificador de esos ya se lo diste a un sistema externo, ahora apunta a una fila que no existe. Por eso la semi-síncrona es el punto razonable para lo que no puedes perder." },
+  ],
+
+  "sd-particionado": [
+    { q: "¿Qué problema resuelve particionar que replicar no resuelve?",
+      o: ["La latencia de las lecturas", "El volumen de escritura y el tamaño de los datos", "La tolerancia a fallos"], a: 1,
+      w: "Cada réplica sigue teniendo que aplicar todas las escrituras y almacenarlo todo. Cuando eso es lo que no cabe, replicar no ayuda." },
+    { q: "¿Qué tiene de malo `crc32($clave) % $numeroDeParticiones`?",
+      o: ["Que crc32 es criptográficamente débil", "Que no funciona con claves numéricas", "Que al añadir una máquina cambia el destino de casi todas las claves"], a: 2,
+      w: "Pasar de 4 a 5 particiones obliga a mover casi todos los datos. El hashing consistente coloca claves y nodos en un anillo para que añadir un nodo solo mueva su fracción." },
+  ],
+
+  "sd-transacciones-distribuidas": [
+    { q: "¿Qué significa que un participante vote «sí» en la primera fase?",
+      o: ["Que se compromete irrevocablemente: tiene que poder confirmar aunque se reinicie", "Que puede cambiar de opinión al confirmar", "Que ya ha aplicado los cambios"], a: 0,
+      w: "Ese compromiso es lo que hace correcto al protocolo, y también lo que lo bloquea: tras votar sí, el participante no puede decidir por su cuenta si el coordinador desaparece." },
+    { q: "¿Por qué 2PC no sirve con una pasarela de pagos?",
+      o: ["Porque son demasiado lentas", "Porque exige soporte XA en todos los participantes, y una API HTTP no lo tiene", "Porque cobran por operación"], a: 1,
+      w: "Puedes hacer 2PC entre dos MySQL, pero no entre tu base de datos y Stripe. Y la mayoría de operaciones que te preocupan cruzan justo esa frontera." },
+  ],
+
+  "sd-sagas": [
+    { q: "¿Cuándo pasa de coreografía a orquestación?",
+      o: ["En cuanto hay más de dos servicios", "Nunca: la coreografía siempre escala mejor", "Cuando hay cinco o seis pasos con ramas y nadie sabe ya cuál es el flujo completo"], a: 2,
+      w: "Para tres pasos la coreografía va bien. El problema aparece cuando el flujo no está escrito en ningún sitio y hay que reconstruirlo leyendo suscripciones de seis repositorios." },
+    { q: "¿Qué distingue una saga de un método largo con try/catch?",
+      o: ["Que la saga persiste su estado tras cada paso y se puede retomar", "Que la saga usa excepciones tipadas", "Que la saga corre en segundo plano"], a: 0,
+      w: "Si el proceso muere entre el paso 2 y el 3, el estado guardado dice exactamente dónde estaba y un proceso de recuperación la retoma. Sin eso, se pierde." },
+    { q: "¿Qué pierdes con una saga que sí tenías con una transacción?",
+      o: ["La durabilidad", "El aislamiento: los estados intermedios son visibles para otras operaciones", "La atomicidad de cada paso individual"], a: 1,
+      w: "Otra operación concurrente puede ver que el stock está reservado y el pago hecho mientras el pedido «no existe» todavía. Se mitiga con estados explícitos que digan al resto que ahí no se toca." },
+  ],
+
+  "sd-timeouts-y-reintentos": [
+    { q: "¿Cuál de estos NO se debe reintentar?",
+      o: ["Un 503", "Un timeout de conexión", "Un 422"], a: 2,
+      w: "Un error de cliente es determinista: la petición está mal formada y lo estará en el segundo intento. Reintentarlo multiplica la carga sin ninguna posibilidad de éxito." },
+    { q: "Cuatro capas reintentando 3 veces cada una, ¿cuántas peticiones llegan al fondo por cada una del usuario?",
+      o: ["27", "12", "3"], a: 0,
+      w: "3×3×3 contra un sistema que ya estaba saturado. La regla es reintentar en una sola capa, la más cercana al fallo, y que las de arriba propaguen el error." },
+  ],
+
+  "sd-circuit-breaker": [
+    { q: "¿Para qué sirve el estado medio abierto?",
+      o: ["Para registrar métricas sin afectar al tráfico", "Para probar con unas pocas peticiones antes de soltar toda la carga sobre un servicio que apenas se levanta", "Para permitir solo las peticiones críticas"], a: 1,
+      w: "Sin él tendrías que elegir entre quedarte abierto para siempre o volver de golpe al 100 % y tumbar otra vez lo que estaba recuperándose." },
+    { q: "¿Deben contar los 404 y los 422 para abrir el circuito?",
+      o: ["Sí: cualquier error indica un problema", "Sí, pero con menos peso", "No: un cliente mandando peticiones mal formadas abriría el circuito para todos"], a: 2,
+      w: "Los errores de cliente no dicen nada sobre la salud del servicio. Contarlos convierte el error de un usuario en una caída general." },
+  ],
+
+  "sd-dlq-y-reproceso": [
+    { q: "¿Qué distingue un fallo transitorio de uno permanente?",
+      o: ["Que el transitorio volverá a funcionar solo y el permanente fallará igual dentro de una hora", "El código HTTP", "Cuántas veces ha fallado ya"], a: 0,
+      w: "Un JSON que no se puede deserializar no mejora con el tiempo: va a la cola de muertos en el primer intento, sin gastar cinco reintentos para nada." },
+    { q: "¿Qué hay que vigilar en una cola de muertos?",
+      o: ["El tamaño en disco", "Una alerta cuando pasa de cero mensajes", "El ratio respecto al total procesado"], a: 1,
+      w: "No es un vertedero, es una bandeja de entrada. Si un mensaje llega ahí, hay trabajo de negocio sin hacer, y una gráfica que nadie mira no sirve de nada." },
+  ],
+
+  "sd-backpressure": [
+    { q: "¿Qué pasa con la contrapresión al pasar de síncrono a asíncrono?",
+      o: ["Mejora: la cola absorbe todo", "No cambia", "Desaparece: el emisor publica y se olvida, y hay que reconstruirla"], a: 2,
+      w: "En síncrono es automática: si tardas en responder, el cliente espera y no manda más. En asíncrono nada frena al emisor, así que las colas acotadas y los límites hay que ponerlos a mano." },
+    { q: "Bajo sobrecarga, ¿qué es mejor?",
+      o: ["Rechazar rápido con un 429 y `Retry-After`", "Aceptar todo y procesarlo cuando se pueda", "Escalar automáticamente sin límite"], a: 0,
+      w: "Aceptar, encolar, procesar treinta segundos después y devolver un timeout te cuesta todos los recursos del camino para acabar en el mismo sitio, con el sistema entero degradado." },
+  ],
+
+  "sd-consenso": [
+    { q: "¿Por qué el quórum impide que haya dos líderes?",
+      o: ["Porque el líder viejo se apaga automáticamente", "Porque dos mayorías del mismo conjunto siempre comparten al menos un nodo", "Porque los relojes están sincronizados"], a: 1,
+      w: "Ese nodo compartido no puede votar dos decisiones contradictorias. Es aritmética, no un mecanismo: por eso el lado minoritario de una partición se para solo." },
+    { q: "¿Qué deberías hacer si necesitas consenso?",
+      o: ["Implementar Raft siguiendo el paper", "Elegir líder con un campo en la base de datos", "Usar una pieza probada: etcd, Consul o el propio gestor de tu base de datos"], a: 2,
+      w: "Lo que hace correcto a un algoritmo de consenso vive en los casos extremos: mensajes viejos que reaparecen, nodos con registros divergentes, líderes que no saben que ya no lo son. Eso son años de pruebas." },
+  ],
+
+  "sd-locks-distribuidos": [
+    { q: "¿Por qué hay que comprobar el testigo antes de soltar el bloqueo?",
+      o: ["Porque si el tuyo caducó, el `del` borra el bloqueo de otro que sigue trabajando", "Para poder registrar quién lo tenía", "Para renovar la caducidad"], a: 0,
+      w: "Y entra un tercero. Ahora hay tres procesos en la sección crítica sin que el bloqueo haya «fallado» en ningún momento visible. La comprobación y el borrado tienen que ser atómicos." },
+    { q: "¿Qué garantiza de verdad la exclusión mutua distribuida?",
+      o: ["Redlock con cinco instancias de Redis", "Un token de barrera que el recurso valida, rechazando números menores que el último aceptado", "Una caducidad suficientemente larga"], a: 1,
+      w: "El problema no está en dónde se guarda el bloqueo, sino en que un proceso pausado no puede saber si el suyo sigue vivo. La única salida es que el recurso también se defienda." },
+  ],
+
+  "sd-trazas-distribuidas": [
+    { q: "¿Dónde se rompe casi siempre la propagación del contexto?",
+      o: ["En las llamadas HTTP entre servicios", "En las consultas a la base de datos", "En las colas: hay que meter el contexto en el mensaje y recuperarlo a mano"], a: 2,
+      w: "En HTTP suele venir hecho por la librería. Si no lo haces en mensajería, todas tus trazas terminan justo donde empieza lo asíncrono, que es donde más falta te hacían." },
+    { q: "¿Qué versión reducida resuelve buena parte del problema en una tarde?",
+      o: ["Propagar un identificador de correlación y meterlo en todos los logs", "Aumentar el nivel de detalle de los logs", "Sincronizar los relojes con NTP"], a: 0,
+      w: "No te da la jerarquía de tiempos, pero te deja filtrar los seis logs por un mismo valor y leer la historia en orden, que es el 70 % del dolor." },
+  ],
+
+  "sd-cuando-no-distribuir": [
+    { q: "¿Qué es un monolito distribuido?",
+      o: ["Un monolito desplegado en varias máquinas", "Servicios que se llaman en cadena, comparten esquema y hay que desplegar juntos: el coste de lo distribuido con el acoplamiento del monolito", "Un monolito con módulos bien separados"], a: 1,
+      w: "Es el resultado más común de repartir por las razones malas: tienes las dos facturas y ninguna de las dos ventajas." },
+    { q: "¿Qué ventaja tiene empezar por un monolito modular?",
+      o: ["Que es más rápido de ejecutar", "Que no necesita tests", "Que valida las fronteras gratis: si un módulo no se puede aislar dentro, tampoco funcionaría como servicio"], a: 2,
+      w: "Y lo descubres sin desplegar nada. Da el 80 % del beneficio organizativo por el 5 % del coste operativo." },
+  ],
+
   /* ================= Curso: Git ================= */
 
   "git-comandos-esenciales": [

@@ -1483,3 +1483,47 @@ tablas de lenguajes no se han tocado.
 - Escapar `<`, `>`, `&` dentro de los `<code data-lang=...>` (ej. `&lt;?php`).
 - El JS vive en `assets/js/modules/` (un fichero por módulo, namespace
   `window.MentorAI`, `init.js` el último). `main.js` ya no existe.
+
+
+## Sesión 2026-08-01 — rutas huérfanas y curso de sistemas distribuidos
+
+**Punto de partida:** al preguntar «¿por dónde seguimos?» se auditaron las notes
+contra los datos reales y **mentían**: seis planes declaraban «pendiente de
+autoría» cursos publicados hacía semanas, y las rules describían como rotos el
+offline y el sesgo del quiz, ya arreglados el 2026-07-31. Sincronizado todo
+(commit `51d5cab`). Lección: al cerrar un plan hay que tocar su `## Estado`, no
+solo la lista de las rules.
+
+**Rutas huérfanas (commit `533e33f`).** Se detectó que 6 cursos publicados no
+colgaban de ninguna ruta —`terminal-linux`, `framework-por-dentro`,
+`patrones-diseno`, `sql-aplicado`, `observabilidad`, `phpunit`—: ~40 tutoriales
+solo alcanzables navegando la lista de cursos. Colocados:
+- `diseno-oo` 6 → 8 pasos (patrones GoF, y cierra con framework por dentro).
+- `construir-un-servicio` 7 → 9 (sql-aplicado y observabilidad, que su propio
+  resumen ya prometía al decir «construir y operar»).
+- `el-grado-que-no-hiciste` 13 → 19 pasos, 118 de las 193 piezas.
+**Cero cursos huérfanos ahora.** Merece la pena repetir esa comprobación al
+publicar cursos nuevos.
+
+**Curso `sistemas-distribuidos` — COMPLETO.** 19 lecciones, 20 preguntas de
+examen, 39 checks. Detalle y decisiones en
+`plan-curso-sistemas-distribuidos.md`. Diseñado para NO ser una introducción:
+`fundamentos` ya trae CAP, idempotencia y Redis a nivel intro, y
+`diseno-y-arquitectura` cubre eventos de dominio y CQRS. Añadido a
+`el-grado-que-no-hiciste` (ahora 20 cursos).
+
+**Dos arreglos de herramienta que salieron del trabajo:**
+- `scripts/validar.js` medía el sesgo de posición solo en el total: 39 checks
+  nuevos con 54 % en la misma posición pasaron el filtro por dilución. Ahora
+  mide **también por curso**, agrupando los checks por el curso de cada lección.
+  Verificado reintroduciendo el sesgo a propósito.
+- El validador daba error por lecciones planificadas, que es una función
+  documentada de `courses.js`. Ahora es aviso, y el esqueleto del curso puede
+  publicarse antes de escribir las lecciones.
+- `.agents/skills/tutorial/SKILL.md` seguía documentando el puente borrado el
+  2026-07-31 y decía que el resaltador solo conocía php/bash/ini (ya son 7).
+
+**Siguiente paso concreto:** proponer estructura de `cache-y-rendimiento` (el
+lexer de Redis ya está en `syntax.js` y `redis-cache` existe en `fundamentos`,
+así que ese curso tampoco puede ser una introducción). Sigue pendiente la
+verificación manual del offline en navegador real contra la URL de Pages.

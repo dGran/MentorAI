@@ -75,6 +75,7 @@ window.MENTORAI_PATHS = [
       { type: "course", ref: "docker" },
       { type: "course", ref: "ci-cd" },
       { type: "course", ref: "observabilidad" },
+      { type: "course", ref: "sistemas-distribuidos" },
       { type: "course", ref: "programar-con-ia" },
     ],
   },

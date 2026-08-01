@@ -25,6 +25,66 @@
 
 window.ACADEMIA_TUTORIALS = [
   {
+    slug: "sd-trazas-distribuidas",
+    title: "Seguir una petición entre servicios",
+    description:
+      "Trazas, tramos y propagación de contexto: cómo convertir seis logs que no se hablan en una sola historia, dónde se rompe siempre la propagación y por qué se muestrea al final y no al principio.",
+    href: "tutorials/sd-trazas-distribuidas.html",
+    categories: ["distribuidos", "observabilidad"],
+    topic: "Sistemas distribuidos",
+    tags: ["Trazas", "OpenTelemetry", "Correlación"],
+    level: "Avanzado",
+    minutes: 13,
+    icon: "signal",
+    status: "published",
+    date: "2026-08-01",
+  },
+  {
+    slug: "sd-cuando-no-distribuir",
+    title: "Cuándo NO distribuir: el monolito que aguanta",
+    description:
+      "La factura completa de repartir un sistema, las razones que no valen para hacerlo, el monolito distribuido como peor de los dos mundos y por qué el monolito modular valida las fronteras gratis.",
+    href: "tutorials/sd-cuando-no-distribuir.html",
+    categories: ["distribuidos", "arquitectura"],
+    topic: "Sistemas distribuidos",
+    tags: ["Monolito", "Microservicios", "Criterio"],
+    level: "Avanzado",
+    minutes: 12,
+    icon: "signal",
+    status: "published",
+    date: "2026-08-01",
+  },
+  {
+    slug: "sd-consenso",
+    title: "Consenso: Raft, quórum y para qué lo necesitas",
+    description:
+      "Cómo varias máquinas se ponen de acuerdo sin poder desdecirse: por qué el quórum funciona por aritmética, por qué los clústeres son de 3, 5 o 7, las cuatro ideas de Raft y por qué no vas a implementarlo.",
+    href: "tutorials/sd-consenso.html",
+    categories: ["distribuidos"],
+    topic: "Sistemas distribuidos",
+    tags: ["Raft", "Quórum", "Consenso", "etcd"],
+    level: "Avanzado",
+    minutes: 13,
+    icon: "signal",
+    status: "published",
+    date: "2026-08-01",
+  },
+  {
+    slug: "sd-locks-distribuidos",
+    title: "Locks distribuidos: el que casi siempre está mal",
+    description:
+      "Por qué el bloqueo de cinco líneas con Redis borra el bloqueo de otro, el fallo por pausas largas que no se arregla con más código, el token de barrera y las alternativas que casi siempre salen mejor.",
+    href: "tutorials/sd-locks-distribuidos.html",
+    categories: ["distribuidos"],
+    topic: "Sistemas distribuidos",
+    tags: ["Locks", "Redis", "Concurrencia"],
+    level: "Avanzado",
+    minutes: 14,
+    icon: "shield",
+    status: "published",
+    date: "2026-08-01",
+  },
+  {
     slug: "sd-dlq-y-reproceso",
     title: "Colas de muertos y reproceso",
     description:

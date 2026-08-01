@@ -162,8 +162,28 @@ function validarCursosYRutas() {
    El sesgo de posición es el fallo que ya se coló tres veces: la IA tiende
    a poner la correcta siempre en el mismo sitio al generar. */
 
+const MAXIMO_MISMA_POSICION = 45;
+const MINIMO_PARA_MEDIR_GRUPO = 12;
+
+function avisarSiHaySesgo(nombre, posiciones, total, comoError) {
+  if (total === 0) return;
+
+  const maximo = Math.max(...Object.values(posiciones));
+  const porcentaje = Math.round((maximo / total) * 100);
+
+  if (porcentaje <= MAXIMO_MISMA_POSICION) return;
+
+  const mensaje =
+    `${nombre}: la respuesta correcta cae en la misma posición un ${porcentaje}% de las veces ` +
+    `sobre ${total} preguntas (${JSON.stringify(posiciones)}). ` +
+    `Se aprueba sin leer: reparte las posiciones en los datos.`;
+
+  comoError ? error(mensaje) : aviso(mensaje);
+}
+
 function validarPreguntas(nombre, entradas, contexto) {
   const posiciones = {};
+  const porGrupo = {};
   let total = 0;
 
   for (const [clave, preguntas] of Object.entries(entradas)) {
@@ -173,6 +193,10 @@ function validarPreguntas(nombre, entradas, contexto) {
       error(`${nombre}: «${clave}» sin preguntas`);
       continue;
     }
+
+    const grupo = contexto.agrupaEn(clave);
+
+    porGrupo[grupo] ??= { posiciones: {}, total: 0 };
 
     preguntas.forEach((pregunta, indice) => {
       const donde = `${nombre} «${clave}» #${indice}`;
@@ -186,20 +210,22 @@ function validarPreguntas(nombre, entradas, contexto) {
       if (new Set(pregunta.o ?? []).size !== (pregunta.o ?? []).length) error(`${donde}: opciones repetidas`);
 
       posiciones[pregunta.a] = (posiciones[pregunta.a] ?? 0) + 1;
+      porGrupo[grupo].posiciones[pregunta.a] = (porGrupo[grupo].posiciones[pregunta.a] ?? 0) + 1;
+      porGrupo[grupo].total += 1;
     });
   }
 
-  if (total === 0) return;
+  /* El sesgo de un curso concreto se diluye en el total: con 400 preguntas bien
+     repartidas, un curso nuevo entero mal repartido no mueve la aguja. Y en los
+     checks las preguntas van por lección, así que hay que agruparlas por curso
+     para que la muestra signifique algo. */
+  for (const [grupo, datosDelGrupo] of Object.entries(porGrupo)) {
+    if (datosDelGrupo.total < MINIMO_PARA_MEDIR_GRUPO) continue;
 
-  const maximo = Math.max(...Object.values(posiciones));
-  const porcentaje = Math.round((maximo / total) * 100);
-
-  if (porcentaje > 45) {
-    error(
-      `${nombre}: la respuesta correcta cae en la misma posición un ${porcentaje}% de las veces ` +
-        `(${JSON.stringify(posiciones)}). Se aprueba sin leer: reparte las posiciones en los datos.`
-    );
+    avisarSiHaySesgo(`${nombre} «${grupo}»`, datosDelGrupo.posiciones, datosDelGrupo.total, true);
   }
+
+  avisarSiHaySesgo(nombre, posiciones, total, true);
 }
 
 /* ---------- 5. TOC, anclas y escapado en los tutoriales ---------- */
@@ -294,8 +320,21 @@ const examenesPlanos = Object.fromEntries(
   Object.entries(examenes).map(([curso, quiz]) => [curso, quiz.questions ?? []])
 );
 
-validarPreguntas("quizzes", examenesPlanos, { existe: (c) => slugsDeCurso.has(c), que: "un curso" });
-validarPreguntas("checks", checks, { existe: (s) => slugs.has(s), que: "un tutorial" });
+const cursoDeLeccion = Object.fromEntries(
+  cursos.flatMap((curso) => leccionesDe(curso).map((slug) => [slug, curso.slug]))
+);
+
+validarPreguntas("quizzes", examenesPlanos, {
+  existe: (c) => slugsDeCurso.has(c),
+  que: "un curso",
+  agrupaEn: (c) => c,
+});
+
+validarPreguntas("checks", checks, {
+  existe: (s) => slugs.has(s),
+  que: "un tutorial",
+  agrupaEn: (s) => cursoDeLeccion[s] ?? "artículos sueltos",
+});
 validarTutoriales();
 validarScripts();
 validarShell();
