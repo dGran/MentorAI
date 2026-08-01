@@ -1702,4 +1702,116 @@ window.MENTORAI_CHECKS = {
       w: "Igual que en Go. Ojo si enlazas contra glibc: ahí conviene una base con esas librerías o compilar contra musl." },
   ],
 
+
+  "config-y-entornos": [
+    { q: "¿Por qué la regla 12-factor dice que la configuración no es código?",
+      o: ["Porque cambia más a menudo","Porque varía entre entornos: el mismo build debe poder desplegarse en todos","Porque no se puede testear"], a: 1,
+      w: "La prueba es sencilla: si tuvieras que hacer público el repo mañana, ¿habría credenciales dentro? Si sí, hay configuración en el código." },
+    { q: "¿Qué papel tiene de verdad un fichero `.env`?",
+      o: ["Es el sitio donde va la configuración de producción","Un fichero de ejemplo que no se lee","Una comodidad para desarrollo: en producción las variables las pone la plataforma"], a: 2,
+      w: "Por eso se versiona un `.env.example` con las claves y valores falsos, y nunca el `.env` real." },
+  ],
+
+  "composer": [
+    { q: "¿Cuál es la diferencia entre `composer install` y `composer update`?",
+      o: ["`install` obedece al lock sin resolver nada; `update` re-resuelve y reescribe el lock","`install` es para producción y `update` para desarrollo","Son sinónimos"], a: 0,
+      w: "Por eso en CI y en producción siempre `install`: garantiza el mismo grafo de dependencias al byte." },
+    { q: "¿Qué va al repositorio: `composer.lock` o `vendor/`?",
+      o: ["Los dos","El lock sí; `vendor/` va al .gitignore porque es regenerable","Solo vendor/, el lock se genera"], a: 1,
+      w: "Sin el lock, cada `install` resuelve por su cuenta y aparece el «en mi máquina funciona» de las dependencias." },
+    { q: "¿Qué permite `^1.2.3` según semver?",
+      o: ["Solo la 1.2.3 exacta","Cualquier versión 1.x o 2.x","Actualizaciones que no rompan compatibilidad: hasta la 2.0.0 sin llegar a ella"], a: 2,
+      w: "`~1.2.3` es más restrictivo: solo permite subir el parche. Y todo esto depende de que el autor respete semver." },
+  ],
+
+  "object-calisthenics": [
+    { q: "Una de las reglas es «no usar else». ¿Qué persigue?",
+      o: ["Reducir el anidamiento con retornos tempranos, que hace el flujo más plano y legible","Escribir menos líneas","Mejorar el rendimiento"], a: 0,
+      w: "Son ejercicios llevados al extremo a propósito: la idea no es cumplirlas siempre, es notar la incomodidad y aprender de ella." },
+    { q: "«Envolver los primitivos» propone cambiar un `int $edad` por un objeto `Edad`. ¿Qué se gana?",
+      o: ["Rendimiento","Que las reglas del valor (no negativa, máximo razonable) vivan en un sitio y no repartidas por todo el código","Menos memoria"], a: 1,
+      w: "Es la puerta de entrada a los value objects: el tipo pasa a garantizar lo que antes comprobabas a mano en cada uso." },
+  ],
+
+  "jerga": [
+    { q: "Alguien dice que un bug solo pasa en un «edge case».",
+      o: ["Que ocurre en el borde de la pantalla","Que está en el código del frontend","Que ocurre en un caso límite poco frecuente, no en el flujo habitual"], a: 2,
+      w: "El caso límite es donde vive la mayor parte de los bugs de verdad: lista vacía, cero elementos, el último día del mes." },
+    { q: "¿Qué es la deuda técnica?",
+      o: ["El coste futuro de una decisión que hoy acelera: no es siempre mala, pero hay que saber que se contrae","El dinero que cuesta mantener el software","Los bugs pendientes de arreglar"], a: 0,
+      w: "La metáfora funciona porque paga intereses: cuanto más tardas en devolverla, más caro sale cada cambio." },
+  ],
+
+  "extensiones-php": [
+    { q: "¿Qué es una extensión de PHP?",
+      o: ["Una librería instalada con Composer","Un módulo en C que se enchufa al motor y se carga al arrancar","Un fichero .php que se incluye automáticamente"], a: 1,
+      w: "De ahí que se instalen en el sistema (o en la imagen Docker) y no con el gestor de paquetes del proyecto." },
+    { q: "Tu código falla con «Class Redis not found» aunque instalaste el paquete de Composer.",
+      o: ["Falta el autoload","Hay que reiniciar el navegador","Probablemente falta la extensión del sistema: el cliente de Composer no la sustituye"], a: 2,
+      w: "Es la confusión habitual: `predis` es una implementación en PHP puro y `ext-redis` es la extensión en C. No son lo mismo." },
+  ],
+
+  "php-fpm": [
+    { q: "¿Qué es un SAPI en PHP?",
+      o: ["La interfaz por la que el motor se comunica con su entorno: CLI, FPM, mod_php…","Un framework","Una extensión de rendimiento"], a: 0,
+      w: "Explica por qué el mismo script se comporta distinto por CLI que por web: cambia el SAPI, y con él límites y configuración." },
+    { q: "¿Qué modo de pool de FPM conviene si la carga es estable y quieres latencia predecible?",
+      o: ["ondemand","static: procesos fijos, sin coste de arranque","dynamic siempre"], a: 1,
+      w: "`ondemand` ahorra memoria en servicios poco usados a cambio de pagar el arranque; `dynamic` es el término medio." },
+  ],
+
+  "memoria-php": [
+    { q: "¿Qué limita de verdad `memory_limit`?",
+      o: ["La memoria del servidor","La de todos los procesos de FPM juntos","La que puede usar un único script en una petición"], a: 2,
+      w: "Por eso multiplicarlo por el número de procesos de FPM es la cuenta que hay que hacer para no quedarte sin RAM." },
+    { q: "¿Qué es copy-on-write en PHP?",
+      o: ["Que al asignar una variable no se copia el valor hasta que uno de los dos lo modifica","Un modo de escritura en disco","Una técnica de caché"], a: 0,
+      w: "Es lo que hace que pasar arrays grandes por valor no sea tan caro como parece… hasta que la función los modifica." },
+  ],
+
+  "workers-php": [
+    { q: "«Worker» significa dos cosas distintas en PHP. ¿Cuáles?",
+      o: ["Los hilos y los procesos","Los procesos de FPM que atienden peticiones, y los consumidores de una cola de trabajos","Los de desarrollo y los de producción"], a: 1,
+      w: "Confundirlos genera conversaciones cruzadas: «subimos los workers» no significa lo mismo en cada caso." },
+    { q: "Pasas de FPM a un worker long-running con Swoole o RoadRunner. ¿Qué deja de perdonarse?",
+      o: ["Los errores de sintaxis","Las consultas lentas","El estado global y los servicios con estado: ya no se limpian entre peticiones"], a: 2,
+      w: "En FPM cada petición arrancaba de cero. En un proceso que vive horas, lo que guardes puede acabar en la petición de otro usuario." },
+  ],
+
+  "redis-a-fondo": [
+    { q: "¿Por qué se dice que Redis es un servidor de estructuras de datos y no solo una caché?",
+      o: ["Porque ofrece listas, sets, sorted sets y hashes con operaciones atómicas sobre ellos","Porque persiste en disco","Porque admite SQL"], a: 0,
+      w: "Un sorted set resuelve un ranking en una línea; una lista, una cola. Usarlo solo como almacén clave-valor desaprovecha la mitad." },
+    { q: "¿Qué operación usarías para un contador de visitas concurrente?",
+      o: ["GET, sumar en PHP y SET","INCR, que es atómico","Una transacción con MULTI"], a: 1,
+      w: "El leer-sumar-guardar desde la aplicación pierde incrementos con concurrencia; `INCR` lo hace en el servidor sin carrera." },
+  ],
+
+  "rabbitmq": [
+    { q: "¿Quién decide a qué cola llega un mensaje en RabbitMQ?",
+      o: ["El productor, indicando la cola","El consumidor, al suscribirse","El exchange, según su tipo y los bindings"], a: 2,
+      w: "El productor publica en un exchange, no en una cola. Entenderlo es lo que permite fan-out y enrutado por clave." },
+    { q: "¿Qué hace falta para que un mensaje sobreviva a un reinicio del broker?",
+      o: ["Cola durable, mensaje persistente y confirmaciones del publicador: las tres cosas","Solo que la cola sea durable","Nada, RabbitMQ persiste siempre"], a: 0,
+      w: "Es el fallo clásico: cola durable pero mensajes no persistentes, y al reiniciar la cola sigue ahí… vacía." },
+  ],
+
+  "opcache": [
+    { q: "¿Qué cachea OPcache exactamente?",
+      o: ["El resultado de las consultas","Los opcodes compilados de tus ficheros PHP, en memoria compartida","El HTML generado"], a: 1,
+      w: "Sin él, PHP relee y recompila cada fichero en cada petición. Es la optimización de mayor impacto y menor esfuerzo que existe en PHP." },
+    { q: "Despliegas y los usuarios siguen viendo el código viejo.",
+      o: ["Falta limpiar la caché del navegador","Hay que reiniciar la base de datos","OPcache sigue sirviendo los opcodes anteriores: hay que invalidarla al desplegar"], a: 2,
+      w: "Con `validate_timestamps=0` en producción ganas rendimiento a cambio de tener que invalidar explícitamente en cada despliegue." },
+  ],
+
+  "preload": [
+    { q: "¿Qué añade preload sobre OPcache?",
+      o: ["Deja las clases cargadas y enlazadas en memoria desde el arranque, sin pasar por el autoload","Cachea también las consultas","Comprime los opcodes"], a: 0,
+      w: "OPcache evita recompilar; preload evita además resolver y enlazar. Encaja bien con el código estable de un framework." },
+    { q: "¿Qué implica cambiar una clase precargada?",
+      o: ["Nada, se recarga sola","Hay que reiniciar PHP-FPM: lo precargado vive mientras vive el proceso","Hay que limpiar la caché del navegador"], a: 1,
+      w: "Por eso se precarga lo que no cambia (el framework) y no el código de tu aplicación en desarrollo." },
+  ],
+
 };
