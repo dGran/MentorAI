@@ -158,10 +158,17 @@ rango en el contenido, y `latin-ext` habría añadido 456 KB inútiles). Los
 `styles.css` y los woff2 en el shell del SW. Verificado: cero peticiones a
 terceros.
 
+**P2 casi completo:** «Descargar toda la academia» implementado en
+`offline.html` como acción principal (199 páginas), con `storage.persist()`
+para que el navegador no desaloje la caché justo antes del vuelo y el tamaño
+ocupado a la vista. La generación de URLs está testeada; **la descarga en sí no
+se ha podido probar de punta a punta**, porque Chrome headless no llega a
+activar el service worker con tiempo virtual: queda para una comprobación
+manual en un navegador real.
+
 **Queda pendiente:**
-- **P2 completo** — «Descargar toda la academia» (5,2 MB, la recomendación
-  principal de esta note), guardar por ruta, `storage.persist()` + tamaño
-  estimado, indicador de estado en la nav.
+- Guardar por ruta (hoy es por curso o todo).
+- Indicador de estado en la nav.
 - **La verificación manual del checklist de abajo sigue sin hacerse sobre la URL
   real de Pages**, con la PWA instalada y modo avión de verdad. Lo verificado es
   una reproducción local de las condiciones de subruta, no el despliegue.

@@ -1433,6 +1433,19 @@ distribución de la respuesta correcta estable (66/78/65/66).
   cursos completos. Quedan go, fundamentos, python, rust y 12 artículos sueltos.
 - SW en `VERSION = "v3"` por el cambio de shell.
 
+### Quinta tanda: terminar lo pendiente (2026-08-01)
+- **Checks al 100 %**: los 193 tutoriales publicados, 401 preguntas.
+- **Repaso espaciado** (`756942b`) y **examen de ruta** (`045dcee`): el plan de
+  evaluaciones queda completo salvo el detalle del intento por pregunta.
+- **Validador** (`0f1bc88`): `scripts/validar.js` + GitHub Action. En su primera
+  ejecución encontró **5 tutoriales con un `<` sin escapar dentro de un bloque
+  de código** (`sum::<u64>`, `WHERE posicion <= 3`, `^1.0: <2.0.0`): el navegador
+  lo parseaba como etiqueta y **destruía el resto del bloque**, así que el código
+  que mostraban esas lecciones era silenciosamente incorrecto. Arreglados.
+  Incluye el chequeo de sesgo de posición que llevaba tres tandas haciendo falta.
+- **Descargar toda la academia** (`02ed701`) con `storage.persist()`.
+- **paths.js e init.js modernizados** (`8c321fa`).
+
 ### Pendiente al cerrar
 - **Modernizar los módulos restantes**: core, courses, home, paths, offline,
   syntax, init. Criterio acordado: al tocarlos, no en un big-bang.

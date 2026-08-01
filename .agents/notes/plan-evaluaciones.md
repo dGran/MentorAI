@@ -230,8 +230,25 @@ Flujo para continuar: escribir un fichero `/tmp/checksN.js` con
 las posiciones continuando la serie del fichero y valida slugs, duplicados y
 explicaciones vacías.
 
-**Sigue pendiente:** guardar el detalle del intento del examen por pregunta,
-repaso espaciado y examen de ruta. **Y el chequeo de sesgo en el
+**Fase 3 (repaso espaciado) IMPLEMENTADA.** `assets/js/modules/repaso.js` +
+`repaso.html`. Cada respuesta de un check o de un examen entra en una cola con
+su próxima fecha (1 → 3 → 7 → 16 → 35 → 70 días; fallar vuelve al primero).
+Tarjeta en el inicio, contador en la navegación y sesión en su propia página.
+Solo entran las preguntas ya respondidas, así que la cola crece según estudias
+en vez de volcarte el catálogo entero de golpe.
+
+**Fase 4 (examen de ruta) IMPLEMENTADA.** `assets/js/modules/examen-ruta.js`:
+muestrea 4 preguntas de cada curso de la ruta, las mezcla y no dice de cuál
+viene cada una. Solo se abre con la ruta terminada; antes muestra el progreso y
+en qué consistirá. Para `el-grado-que-no-hiciste` son 52 preguntas de 13 cursos.
+
+**El chequeo de sesgo YA ESTÁ**, dentro del validador nuevo
+(`scripts/validar.js`): falla si alguna posición concentra más del 45 % de las
+respuestas correctas, tanto en `quizzes` como en `checks`.
+
+**Sigue pendiente:** guardar el detalle del intento del examen de curso por
+pregunta (hoy solo se guarda nota máxima e intentos; el repaso ya guarda el
+detalle por su cuenta, así que esto es menos urgente de lo que parecía). **Y el chequeo de sesgo en el
 validador** (A1 de `plan-multiusuario.md`): los datos ya están repartidos, pero
 las preguntas nuevas que genere la IA volverán a sesgarse si nadie lo comprueba.
 
