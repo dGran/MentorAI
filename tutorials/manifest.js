@@ -25,6 +25,66 @@
 
 window.ACADEMIA_TUTORIALS = [
   {
+    slug: "sd-transacciones-distribuidas",
+    title: "Transacciones distribuidas: 2PC y por qué casi nadie lo usa",
+    description:
+      "Cómo funciona el commit en dos fases, por qué su fallo mortal no es la lógica sino el bloqueo cuando muere el coordinador, y por qué no sirve con una pasarela de pagos al otro lado.",
+    href: "tutorials/sd-transacciones-distribuidas.html",
+    categories: ["distribuidos", "bbdd"],
+    topic: "Sistemas distribuidos",
+    tags: ["2PC", "XA", "Atomicidad"],
+    level: "Avanzado",
+    minutes: 12,
+    icon: "database",
+    status: "published",
+    date: "2026-08-01",
+  },
+  {
+    slug: "sd-sagas",
+    title: "Sagas: transacciones largas con compensación",
+    description:
+      "Pasos que confirman por su cuenta y compensaciones que deshacen lo hecho: coreografía frente a orquestación, por qué la saga tiene que persistir su estado y las tres partes que de verdad cuestan.",
+    href: "tutorials/sd-sagas.html",
+    categories: ["distribuidos", "arquitectura"],
+    topic: "Sistemas distribuidos",
+    tags: ["Sagas", "Compensación", "Orquestación"],
+    level: "Avanzado",
+    minutes: 15,
+    icon: "signal",
+    status: "published",
+    date: "2026-08-01",
+  },
+  {
+    slug: "sd-replicacion",
+    title: "Replicación: líder, seguidores y lecturas obsoletas",
+    description:
+      "Qué le pasa a tu código en cuanto hay una réplica: el replication lag, el bug de escribir y leer justo después, cómo garantizar «lee tus propias escrituras» y qué se pierde cuando el líder muere.",
+    href: "tutorials/sd-replicacion.html",
+    categories: ["distribuidos", "bbdd"],
+    topic: "Sistemas distribuidos",
+    tags: ["Replicación", "Lag", "Failover"],
+    level: "Avanzado",
+    minutes: 14,
+    icon: "database",
+    status: "published",
+    date: "2026-08-01",
+  },
+  {
+    slug: "sd-particionado",
+    title: "Particionado y sharding: repartir los datos",
+    description:
+      "Cuándo replicar deja de servir, los tres requisitos de una buena clave de particionado, las estrategias por rango, hash y directorio, y qué se rompe el día que los datos dejan de caber en una sola máquina.",
+    href: "tutorials/sd-particionado.html",
+    categories: ["distribuidos", "bbdd"],
+    topic: "Sistemas distribuidos",
+    tags: ["Sharding", "Particiones", "Hashing consistente"],
+    level: "Avanzado",
+    minutes: 14,
+    icon: "database",
+    status: "published",
+    date: "2026-08-01",
+  },
+  {
     slug: "sd-colas-y-topicos",
     title: "Colas y topics: RabbitMQ frente a Kafka",
     description:

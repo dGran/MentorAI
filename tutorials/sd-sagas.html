@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sagas: transacciones largas con compensación — MentorAI</title>
+    <meta name="description" content="Pasos que confirman por su cuenta y compensaciones que deshacen lo hecho: coreografía frente a orquestación y las tres partes que de verdad cuestan." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Sistemas distribuidos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Sagas: transacciones largas con compensación</h1>
+        <p class="tutorial-hero__lead">Una saga cambia «todo o nada a la vez» por «todo, o deshago lo que ya hice». La parte difícil no es el camino feliz: son las compensaciones que fallan, los pasos irreversibles y el aislamiento que pierdes.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#la-idea">Pasos y compensaciones</a></li>
+            <li><a href="#coreografia">Coreografía u orquestación</a></li>
+            <li><a href="#php">Un orquestador con estado</a></li>
+            <li><a href="#dificil">Las tres partes difíciles</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Una saga cambia «todo o nada a la vez» por «todo, o deshago lo que ya hice». Cada
+            paso confirma por su cuenta y libera sus bloqueos; si uno falla, se ejecutan las
+            compensaciones de los anteriores en orden inverso. Es la forma práctica de
+            coordinar una operación larga entre servicios, y la parte difícil no es el camino
+            feliz.
+          </p>
+
+          <h2 id="la-idea">
+            Pasos y compensaciones
+            <a href="#la-idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cada paso de la saga tiene una operación y su contraria. Confirmar un pedido, con
+            tres servicios implicados, se ve así:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Paso</th><th>Operación</th><th>Compensación</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>1</td><td>Reservar stock</td><td>Liberar la reserva</td></tr>
+                <tr><td>2</td><td>Cobrar la tarjeta</td><td>Emitir un reembolso</td></tr>
+                <tr><td>3</td><td>Crear el envío</td><td>Cancelar el envío</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Reservar stock</b><small>OK</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Cobrar</b><small>OK</small></span>
+              </div>
+              <div class="flow__arrow" data-label="y aquí falla"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Crear envío</b><small>ERROR: no hay reparto a esa zona</small></span>
+              </div>
+              <div class="flow__arrow" data-label="compensar hacia atrás"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>Reembolsar y liberar stock</b><small>En orden inverso al que se hicieron</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              No hay rollback: hay operaciones nuevas que dejan el sistema en un estado aceptable.
+            </p>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Compensar no es deshacer</p>
+              <p>
+                Un <code>ROLLBACK</code> borra la historia: nadie supo nunca que aquello pasó. Una
+                compensación <b>añade</b> historia: el cliente ve el cargo y el reembolso en su
+                extracto, y recibe dos correos. Diseñar una saga es aceptar que los estados
+                intermedios son visibles y que el negocio tiene que estar de acuerdo con eso.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="coreografia">
+            Coreografía u orquestación
+            <a href="#coreografia" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Hay dos formas de decidir cuál es el paso siguiente, y la elección envejece muy
+            distinto:
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Coreografía</h4>
+              <ul>
+                <li>Cada servicio escucha eventos y reacciona</li>
+                <li>Nadie manda: el flujo emerge de las suscripciones</li>
+                <li>Fácil de arrancar, sin pieza central</li>
+                <li><b>Pero:</b> el flujo no está escrito en ningún sitio</li>
+                <li><b>Pero:</b> depurar «por qué se paró» es arqueología</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Orquestación</h4>
+              <ul>
+                <li>Un orquestador conoce los pasos y los va llamando</li>
+                <li>El flujo se lee en una clase</li>
+                <li>El estado de cada saga es consultable</li>
+                <li><b>Pero:</b> una pieza más que mantener</li>
+                <li><b>Pero:</b> tiende a acumular lógica de negocio</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            Para tres pasos, la coreografía va bien. A partir de cinco o seis, con ramas y
+            condiciones, nadie sabe ya cuál es el flujo completo y cada cambio da miedo. La
+            orquestación cuesta más al principio y se paga sola en cuanto el proceso importa de
+            verdad.
+          </p>
+
+          <h2 id="php">
+            Un orquestador con estado
+            <a href="#php" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La clave está en que la saga <strong>persista su estado</strong>: si el proceso muere
+            a mitad, alguien tiene que poder retomarla. Sin eso, tienes un método largo con
+            <code>try/catch</code>, no una saga.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · SagaConfirmarPedido.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class SagaConfirmarPedido
+{
+    public function avanzar(EstadoSaga $saga): void
+    {
+        $paso = $this-&gt;pasos[$saga-&gt;indicePaso()];
+
+        try {
+            $paso-&gt;ejecutar($saga-&gt;contexto());
+            $saga-&gt;marcarPasoCompletado();
+        } catch (PasoFallido $fallo) {
+            $saga-&gt;marcarCompensando($fallo-&gt;motivo());
+        }
+
+        $this-&gt;repositorio-&gt;guardar($saga);
+    }
+
+    public function compensar(EstadoSaga $saga): void
+    {
+        foreach ($saga-&gt;pasosCompletadosEnOrdenInverso() as $paso) {
+            $this-&gt;pasos[$paso]-&gt;compensar($saga-&gt;contexto());
+            $saga-&gt;marcarPasoCompensado($paso);
+            $this-&gt;repositorio-&gt;guardar($saga);
+        }
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            El <code>guardar</code> después de cada paso es lo que hace que esto funcione: si el
+            proceso se cae entre el paso 2 y el 3, el estado en base de datos dice exactamente
+            dónde estaba, y un proceso de recuperación la retoma.
+          </p>
+
+          <h2 id="dificil">
+            Las tres partes difíciles
+            <a href="#dificil" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            <strong>1. Compensaciones que también fallan.</strong> ¿Y si el reembolso da error?
+            No puedes compensar la compensación. Se resuelve reintentando indefinidamente —las
+            compensaciones deben ser idempotentes y estar diseñadas para acabar saliendo— y, si
+            se agotan los intentos, escalando a una persona. Una saga sin ruta de escalado
+            manual está incompleta.
+          </p>
+
+          <p>
+            <strong>2. Pasos que no se pueden compensar.</strong> Un correo enviado no se
+            desenvía. La técnica es ordenar los pasos poniendo los irreversibles al final, cuando
+            ya no puede fallar nada por delante. Si el correo es el paso 2 de 5, muévelo al 5.
+          </p>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">3. La falta de aislamiento</p>
+              <p>
+                Es lo que más sorprende. Durante la saga hay estados intermedios visibles: el
+                stock está reservado y el pago hecho, pero el pedido «no existe» todavía. Otra
+                operación concurrente puede ver ese estado y decidir sobre él. Las transacciones
+                de verdad te daban aislamiento; una saga, no. Se mitiga con estados explícitos
+                («reservado», «pendiente de confirmar») que digan al resto del sistema que ahí no
+                se toca.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Monta una saga cuando…</h4>
+              <ul>
+                <li>La operación cruza servicios con bases de datos distintas</li>
+                <li>Algún paso es una API externa que no habla XA</li>
+                <li>Los pasos tardan: envíos, revisiones, confirmaciones humanas</li>
+                <li>Cada paso tiene una compensación con sentido de negocio</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No la montes cuando…</h4>
+              <ul>
+                <li>Todo cabe en una transacción local: úsala, es más simple y más fuerte</li>
+                <li>No existe compensación razonable para algún paso central</li>
+                <li>El negocio no acepta que se vean estados intermedios</li>
+                <li>Es un caso puntual: a veces una tarea manual sale más barata</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una saga cambia «todo o nada a la vez» por «todo, o deshago lo hecho»: cada paso confirma y libera sus bloqueos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Compensar no es deshacer: añade historia en vez de borrarla. El cliente ve el cargo y el reembolso, y el negocio tiene que aceptarlo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Coreografía para tres pasos; orquestación en cuanto haya ramas, porque si no el flujo no está escrito en ningún sitio.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Si la saga no persiste su estado tras cada paso, no es una saga: es un método largo con try/catch que se pierde al reiniciar.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Pierdes el aislamiento: los estados intermedios son visibles y otra operación puede decidir sobre ellos. Hazlos explícitos.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

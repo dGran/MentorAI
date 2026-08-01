@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Transacciones distribuidas: 2PC y por qué casi nadie lo usa — MentorAI</title>
+    <meta name="description" content="Cómo funciona el commit en dos fases, por qué su fallo no es la lógica sino el bloqueo, y qué se usa en su lugar." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Sistemas distribuidos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Transacciones distribuidas: 2PC y por qué casi nadie lo usa</h1>
+        <p class="tutorial-hero__lead">Si el pedido está en una base de datos y el pago en otra, ¿cómo haces que pasen las dos cosas o ninguna? Hay una respuesta formal que funciona, está en productos serios y casi nadie usa.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            12 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#el-problema">El BEGIN que ya no sirve</a></li>
+            <li><a href="#como-funciona">Cómo funciona 2PC</a></li>
+            <li><a href="#por-que-no">Por qué casi nadie lo usa</a></li>
+            <li><a href="#alternativa">Lo que se usa en su lugar</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            La pregunta llega sola en cuanto partes el sistema: si el pedido está en una base de
+            datos y el pago en otra, ¿cómo hago que las dos cosas pasen o ninguna? Existe una
+            respuesta formal —<em>two-phase commit</em>— que funciona, está implementada en
+            productos serios y casi nadie usa. Merece la pena entender por qué.
+          </p>
+
+          <h2 id="el-problema">
+            El <code>BEGIN</code> que ya no sirve
+            <a href="#el-problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Dentro de una base de datos, la atomicidad es un problema resuelto: el gestor tiene
+            un registro de deshacer, controla todos los datos implicados y decide solo. En cuanto
+            hay dos gestores, esa decisión hay que <em>coordinarla</em>, y coordinar sobre una red
+            poco fiable es otra liga.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Si vienes de ACID</p>
+              <p>
+                Todo lo que da por hecho el tutorial de <a href="transacciones-acid.html">transacciones
+                y ACID</a> —atomicidad, aislamiento, durabilidad— vale dentro de un gestor. Esta
+                lección es qué queda de eso cuando la operación cruza dos.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="como-funciona">
+            Cómo funciona 2PC
+            <a href="#como-funciona" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un <em>coordinador</em> orquesta a los participantes en dos fases. La idea es
+            separar «¿puedes?» de «hazlo»:
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Fase 1 — preparar</b><small>El coordinador pregunta a todos: «¿puedes confirmar esto?»</small></span>
+              </div>
+              <div class="flow__arrow" data-label="cada uno reserva y bloquea"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Cada participante vota</b><small>Sí = «me comprometo, pase lo que pase». No = abortar</small></span>
+              </div>
+              <div class="flow__arrow" data-label="si todos votaron sí"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Fase 2 — confirmar</b><small>El coordinador ordena commit. Nadie puede negarse ya.</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              El voto «sí» es una promesa irrevocable: a partir de ahí el participante tiene que
+              poder confirmar aunque se reinicie.
+            </p>
+          </div>
+
+          <p>
+            No es teoría: MySQL expone las dos fases como sentencias, y verlas ayuda a entender
+            qué le estás pidiendo al gestor.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · las dos fases en MySQL</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">XA START 'pedido-4871';
+
+UPDATE stock SET unidades = unidades - 1 WHERE id_producto = 22;
+
+XA END 'pedido-4871';
+XA PREPARE 'pedido-4871';
+
+XA COMMIT 'pedido-4871';</code></pre>
+          </div>
+
+          <p>
+            Entre el <code>PREPARE</code> y el <code>COMMIT</code> puede pasar tiempo
+            arbitrario, y durante todo ese rato la fila de <code>stock</code> sigue bloqueada. El
+            identificador de la transacción lo elige el coordinador, que además tiene que
+            recordarlo de forma durable: si lo pierde, esa transacción preparada se queda
+            colgada en el gestor hasta que alguien la resuelva a mano con
+            <code>XA RECOVER</code>.
+          </p>
+
+          <p>
+            Y funciona. El protocolo es correcto: si todos votan sí, todos confirman; si alguno
+            vota no, todos abortan. El problema no está en la lógica, está en lo que pasa cuando
+            algo se cae en el peor momento.
+          </p>
+
+          <h2 id="por-que-no">
+            Por qué casi nadie lo usa
+            <a href="#por-que-no" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El fallo mortal: el coordinador muere entre las dos fases</p>
+              <p>
+                Todos votaron sí. Todos tienen los datos bloqueados esperando la orden. Y el
+                coordinador desaparece. Los participantes <b>no pueden decidir por su cuenta</b>
+                —uno podría confirmar y otro abortar—, así que se quedan bloqueados hasta que
+                vuelva. Con los registros bloqueados. Indefinidamente.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            A eso se le llama <em>bloqueo</em>, y es la razón de fondo. Encima:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Coste</th><th>Qué implica en la práctica</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><b>Bloqueos largos</b></td><td>Los datos quedan retenidos durante toda la ida y vuelta de red, no durante microsegundos</td></tr>
+                <tr><td><b>Disponibilidad multiplicada</b></td><td>Si un participante no responde, no confirma nadie. El sistema es tan disponible como su pieza peor</td></tr>
+                <tr><td><b>El coordinador es único</b></td><td>Un punto central del que dependen todas las transacciones, con su propia durabilidad que garantizar</td></tr>
+                <tr><td><b>Soporte irregular</b></td><td>Necesita XA en todos los participantes: las colas modernas y muchas APIs HTTP simplemente no lo tienen</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            Ese último punto es a menudo el que zanja la discusión: puedes hacer 2PC entre dos
+            MySQL, pero no entre tu base de datos y la API de Stripe. Y la mayoría de las
+            operaciones que te preocupan cruzan justo esa frontera.
+          </p>
+
+          <h2 id="alternativa">
+            Lo que se usa en su lugar
+            <a href="#alternativa" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La salida es renunciar a la atomicidad estricta y quedarse con algo más débil pero
+            operable: <strong>consistencia eventual con compensación</strong>. En vez de «todo o
+            nada a la vez», cada paso se confirma por su cuenta y, si uno falla, se deshacen los
+            anteriores con operaciones de compensación. Eso es una <em>saga</em>, y es la
+            siguiente lección.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>2PC</h4>
+              <ul>
+                <li>Atomicidad real: nadie ve estados intermedios</li>
+                <li>Bloquea recursos hasta que todos deciden</li>
+                <li>Se para si el coordinador cae</li>
+                <li>Exige XA en todos los participantes</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Saga</h4>
+              <ul>
+                <li>Consistencia eventual: hay estados intermedios visibles</li>
+                <li>No bloquea: cada paso confirma y libera</li>
+                <li>Sigue avanzando aunque caiga una pieza</li>
+                <li>Funciona con cualquier API, incluso de terceros</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Antes de nada: ¿de verdad tienen que ser dos?</p>
+              <p>
+                Muchas transacciones distribuidas existen porque alguien partió mal los
+                servicios. Si dos datos cambian siempre juntos y nunca por separado, es señal de
+                que pertenecen al mismo agregado y quizá a la misma base de datos. La
+                transacción distribuida más barata es la que no necesitas: replantear la
+                frontera cuesta menos que orquestar compensaciones para siempre.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>2PC puede tener sentido cuando…</h4>
+              <ul>
+                <li>Todos los participantes son bases de datos con soporte XA</li>
+                <li>Están en la misma red, con latencia mínima y estable</li>
+                <li>Es un volumen bajo: cierres contables, procesos por lotes</li>
+                <li>La corrección estricta pesa más que la disponibilidad</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Busca una saga cuando…</h4>
+              <ul>
+                <li>Alguno de los participantes es una API externa</li>
+                <li>Los pasos tardan: un envío, una revisión manual</li>
+                <li>No te puedes permitir que un participante caído lo pare todo</li>
+                <li>Estás en el camino crítico de una petición de usuario</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>2PC separa «¿puedes?» de «hazlo»: votar sí es una promesa irrevocable, y por eso el protocolo es correcto.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Su fallo mortal no es la lógica: si el coordinador muere entre fases, todos quedan bloqueados con los datos retenidos, sin poder decidir.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Exige XA en todos los participantes: sirve entre dos bases de datos, no entre tu base de datos y una pasarela de pagos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La alternativa práctica es renunciar a la atomicidad estricta: pasos que confirman por su cuenta y compensaciones si algo falla.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Si dos datos cambian siempre juntos, quizá el problema es dónde pusiste la frontera entre servicios.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

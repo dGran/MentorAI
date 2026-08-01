@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Particionado y sharding: repartir los datos — MentorAI</title>
+    <meta name="description" content="Cuándo replicar deja de servir, cómo elegir la clave de particionado y qué se rompe el día que los datos dejan de estar en una sola máquina." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Sistemas distribuidos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Particionado y sharding: repartir los datos</h1>
+        <p class="tutorial-hero__lead">Replicar resuelve las lecturas. Cuando lo que no cabe es la escritura o el tamaño, no ayuda: cada réplica sigue teniendo que aplicarlo todo. Ahí toca partir.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#por-que">Lo que replicar no arregla</a></li>
+            <li><a href="#clave">Elegir la clave</a></li>
+            <li><a href="#estrategias">Rango, hash y directorio</a></li>
+            <li><a href="#dolor">Lo que se rompe al particionar</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Replicar resuelve las lecturas: todas las máquinas tienen todo. Cuando lo que no
+            cabe es el volumen de escritura o el propio tamaño de los datos, replicar no ayuda
+            —cada réplica sigue teniendo que aplicarlo todo—. Ahí toca partir: que cada máquina
+            se quede con un trozo.
+          </p>
+
+          <h2 id="por-que">
+            Lo que replicar no arregla
+            <a href="#por-que" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La distinción es sencilla y se confunde a menudo:
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Replicación</h4>
+              <ul>
+                <li>Todas las máquinas tienen <b>todos</b> los datos</li>
+                <li>Escala lecturas y da tolerancia a fallos</li>
+                <li><b>No</b> escala escrituras: el líder las hace todas</li>
+                <li><b>No</b> resuelve tamaño: todo cabe o no cabe</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Particionado (sharding)</h4>
+              <ul>
+                <li>Cada máquina tiene <b>un trozo</b> de los datos</li>
+                <li>Escala escrituras y tamaño</li>
+                <li>Complica todo lo que cruce particiones</li>
+                <li>Se combina con replicación: cada partición, replicada</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Es la decisión más difícil de revertir del curso</p>
+              <p>
+                Particionar mal se paga durante años: los <code>JOIN</code> dejan de funcionar,
+                las transacciones dejan de ser atómicas y cambiar de clave implica mover todos
+                los datos. Antes de llegar aquí, agota los índices, la caché, las réplicas de
+                lectura y el hardware. En serio.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="clave">
+            Elegir la clave: la decisión que lo determina todo
+            <a href="#clave" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La clave de particionado decide en qué máquina vive cada fila. Una buena clave
+            cumple tres cosas a la vez, y ahí está la dificultad:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Requisito</th><th>Por qué</th><th>Qué pasa si falla</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><b>Reparte uniforme</b></td><td>Ninguna partición debe recibir mucho más que las otras</td><td>Un nodo saturado mientras el resto duerme</td></tr>
+                <tr><td><b>Está en tus consultas</b></td><td>Para saber a qué partición ir sin preguntar a todas</td><td>Cada consulta va a todas: has multiplicado la carga</td></tr>
+                <tr><td><b>Agrupa lo que se lee junto</b></td><td>Para que una operación toque una sola partición</td><td>Transacciones y JOIN cruzando máquinas</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            En una tienda, particionar los pedidos por <code>id_cliente</code> suele cumplir las
+            tres: los clientes reparten bien, casi todas las consultas filtran por cliente, y el
+            historial de un cliente vive junto. Particionar por <code>fecha</code> falla en la
+            primera de forma espectacular: <strong>toda</strong> la escritura de hoy va a una
+            sola partición y el resto están ociosas.
+          </p>
+
+          <h2 id="estrategias">
+            Rango, hash y directorio
+            <a href="#estrategias" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            <strong>Por rango.</strong> «Clientes de la A a la F en la partición 1.» Las
+            consultas por rango son eficientes, pero es muy fácil desequilibrar: hay muchos más
+            apellidos por G que por X.
+          </p>
+
+          <p>
+            <strong>Por hash.</strong> Aplicas una función a la clave y el resultado decide la
+            partición. Reparte muy bien y pierdes las consultas por rango, que pasan a tocar
+            todas las particiones.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · ParticionPorHash.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class ParticionPorHash
+{
+    public function __construct(private readonly int $numeroDeParticiones)
+    {
+    }
+
+    public function para(string $clave): int
+    {
+        return crc32($clave) % $this-&gt;numeroDeParticiones;
+    }
+}</code></pre>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El módulo tiene un defecto grave</p>
+              <p>
+                Ese <code>% $numeroDeParticiones</code> parece inocente hasta que añades una
+                máquina: al pasar de 4 a 5 particiones cambia el destino de <b>casi todas</b> las
+                claves, y hay que mover casi todos los datos. La solución conocida es el
+                <em>hashing consistente</em>, que coloca claves y nodos en un anillo de forma
+                que añadir un nodo solo mueva la fracción que le toca.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            <strong>Por directorio.</strong> Una tabla que dice explícitamente dónde vive cada
+            clave. Es la más flexible —puedes mover una cuenta grande a su propia máquina— y
+            añade un salto extra y un servicio del que todo depende. Es lo que usan las
+            plataformas multi-cliente donde los clientes tienen tamaños muy dispares.
+          </p>
+
+          <h2 id="dolor">
+            Lo que se rompe al particionar
+            <a href="#dolor" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Esta es la parte que no sale en los diagramas bonitos. Al partir los datos pierdes
+            tres cosas que dabas por sentadas:
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Se acaban los JOIN</b><small>Si las tablas están en máquinas distintas, los une tu aplicación</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Se acaba la transacción</b><small>BEGIN no cruza particiones: hacen falta sagas</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Se acaba el AUTO_INCREMENT</b><small>Dos particiones generarían el mismo id: hacen falta UUID o similar</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Cada una de las tres tiene solución, y las tres son más trabajo del que parece.
+            </p>
+          </div>
+
+          <p>
+            A eso se suman los <strong>puntos calientes</strong>: por muy bien que reparta tu
+            función, si un cliente concentra el 40 % del tráfico, su partición sufre igual. Y
+            las consultas <em>de dispersión</em> —las que no llevan la clave y hay que mandar a
+            todas las particiones— tardan lo que tarde la más lenta.
+          </p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Empieza por particionado lógico</p>
+              <p>
+                Antes de repartir en varias máquinas, separa por tablas o por esquemas dentro de
+                la misma. Te obliga a quitar los <code>JOIN</code> que cruzarían y a arreglar las
+                transacciones, que es el 80 % del trabajo real, y lo haces con el sistema todavía
+                fácil de depurar. El día que muevas los esquemas a máquinas distintas, el código
+                ya está listo.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Particiona cuando…</h4>
+              <ul>
+                <li>El volumen de escritura no cabe en un solo líder</li>
+                <li>Los datos no caben en el disco de una máquina razonable</li>
+                <li>Tienes una clave natural que está en casi todas tus consultas</li>
+                <li>Ya agotaste índices, caché, réplicas de lectura y hardware</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No particiones cuando…</h4>
+              <ul>
+                <li>El problema son las lecturas: para eso están las réplicas</li>
+                <li>Lo lento son cuatro consultas: mira los índices primero</li>
+                <li>No hay clave que esté en la mayoría de accesos</li>
+                <li>Lo haces «para estar preparados»: te va a costar años de fricción</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Replicar escala lecturas; particionar escala escrituras y tamaño. Son problemas distintos y se confunden a menudo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La clave debe repartir uniforme, estar en tus consultas y agrupar lo que se lee junto. Particionar por fecha falla la primera de forma espectacular.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El módulo simple obliga a mover casi todos los datos al añadir una máquina. Para eso está el hashing consistente.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Al particionar pierdes JOIN, transacciones y AUTO_INCREMENT. Las tres tienen solución y las tres son más trabajo del que parece.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Separar por esquemas dentro de la misma máquina te da el 80 % del trabajo hecho con el sistema todavía fácil de depurar.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
