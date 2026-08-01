@@ -48,6 +48,7 @@ var SHELL_PATHS = [
   "assets/js/modules/tutorial-nav.js",
   "assets/js/modules/tutorial-feedback.js",
   "assets/js/modules/tutorial.js",
+  "assets/js/modules/checks.js",
   "assets/js/modules/quiz.js",
   "assets/js/modules/offline.js",
   "assets/js/modules/init.js",
@@ -59,6 +60,7 @@ var SHELL_PATHS = [
   "tutorials/courses.js",
   "tutorials/paths.js",
   "tutorials/quizzes.js",
+  "tutorials/checks.js",
   "manifest.webmanifest",
 ];
 
