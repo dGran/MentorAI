@@ -12,7 +12,7 @@
    navegadores que ya lo tienen cacheado se traigan lo nuevo.
    ============================================================ */
 
-var VERSION = "v4";
+var VERSION = "v5";
 var SHELL = "academia-shell-" + VERSION;
 var CONTENT = "academia-content-" + VERSION;
 
@@ -43,6 +43,7 @@ var SHELL_PATHS = [
   "assets/js/modules/courses.js",
   "assets/js/modules/exams.js",
   "assets/js/modules/paths.js",
+  "assets/js/modules/examen-ruta.js",
   "assets/js/modules/home.js",
   "assets/js/modules/syntax.js",
   "assets/js/modules/tutorial-audio.js",

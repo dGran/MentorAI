@@ -24,6 +24,8 @@
     MentorAI.Paths?.render();
     MentorAI.Paths?.renderHome();
 
+    MentorAI.ExamenRuta?.render();
+
     MentorAI.Repaso?.init();
     MentorAI.Repaso?.renderHome();
     MentorAI.Repaso?.renderPage();
