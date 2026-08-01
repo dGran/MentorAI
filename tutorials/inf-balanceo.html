@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Balanceo de carga y health checks — MentorAI</title>
+    <meta name="description" content="Capa 4 frente a capa 7, cómo se elige el servidor, por qué la sesión pegajosa es una tirita y por qué un health check demasiado completo tumba la flota entera." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Infraestructura</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Balanceo de carga y health checks</h1>
+        <p class="tutorial-hero__lead">Un balanceador reparte peticiones entre servidores. Tiene dos decisiones que se pagan caras si se toman mal, y la de los health checks es donde está casi todo el dolor.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#dos-capas">Capa 4 y capa 7</a></li>
+            <li><a href="#algoritmos">Cómo se elige el servidor</a></li>
+            <li><a href="#estado">La sesión pegajosa es una tirita</a></li>
+            <li><a href="#health">Los health checks</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Un balanceador reparte peticiones entre varios servidores. Suena trivial y tiene dos
+            decisiones que se pagan caras si se toman mal: cómo elige a quién mandar cada
+            petición, y cómo decide que un servidor está sano. La segunda es donde está casi todo
+            el dolor.
+          </p>
+
+          <h2 id="dos-capas">
+            Capa 4 y capa 7
+            <a href="#dos-capas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Capa 4 (transporte)</h4>
+              <ul>
+                <li>Reparte conexiones TCP sin mirar dentro</li>
+                <li>Rapidísimo y barato</li>
+                <li>No sabe de rutas, cabeceras ni cookies</li>
+                <li>No puede terminar TLS ni reintentar una petición</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Capa 7 (aplicación)</h4>
+              <ul>
+                <li>Entiende HTTP: rutas, cabeceras, métodos</li>
+                <li>Termina TLS, comprime, reescribe</li>
+                <li>Puede reintentar en otro servidor si uno falla</li>
+                <li>Cuesta más CPU y añade algo de latencia</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            Para tráfico web quieres capa 7 casi siempre: reintentar una petición fallida en otro
+            servidor y enrutar por ruta son cosas que solo se pueden hacer entendiendo HTTP.
+          </p>
+
+          <h2 id="algoritmos">
+            Cómo se elige el servidor
+            <a href="#algoritmos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Algoritmo</th><th>Cómo reparte</th><th>Cuándo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><b>Round robin</b></td><td>Por turnos</td><td>Servidores iguales y peticiones parecidas</td></tr>
+                <tr><td><b>Menos conexiones</b></td><td>Al que tenga menos abiertas</td><td>Peticiones de duración muy dispar. Suele ser la mejor opción</td></tr>
+                <tr><td><b>Hash de IP</b></td><td>Un cliente siempre al mismo servidor</td><td>Cuando hace falta sesión pegajosa. Reparte mal</td></tr>
+                <tr><td><b>Ponderado</b></td><td>Más a los servidores más grandes</td><td>Flota heterogénea</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Round robin castiga al servidor lento</p>
+              <p>
+                Si un servidor va lento pero responde, round robin le sigue mandando su turno
+                completo y las peticiones se acumulan allí. «Menos conexiones» lo evita sin
+                configurar nada: un servidor lento acumula conexiones abiertas y deja de recibir
+                automáticamente. Es un mecanismo de contrapresión gratis.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="estado">
+            La sesión pegajosa es una tirita
+            <a href="#estado" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Si tu aplicación guarda la sesión en el disco de cada servidor, un usuario que caiga
+            en otro pierde su sesión. La respuesta rápida es la sesión pegajosa: atar cada usuario
+            a un servidor. Funciona, y trae tres problemas:
+          </p>
+          <p>
+            El reparto se desequilibra —unos servidores acumulan más usuarios que otros—; al
+            quitar un servidor <strong>todos sus usuarios pierden la sesión</strong> aunque el
+            resto de la flota esté perfecta; y el autoescalado deja de servir de mucho, porque los
+            servidores nuevos solo reciben usuarios nuevos.
+          </p>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El arreglo de verdad: sacar el estado del servidor</p>
+              <p>
+                Sesiones en Redis o en base de datos, ficheros subidos en almacenamiento de
+                objetos, caché compartida. Con eso, cualquier servidor puede atender a cualquier
+                usuario y todo lo demás —balanceo, escalado, despliegues sin caída— se vuelve
+                trivial. La sesión pegajosa es lo que haces mientras tanto, no el destino.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="health">
+            Los health checks, que es donde está el problema
+            <a href="#health" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un balanceador solo es útil si sabe qué servidores están sanos. Y ahí hay dos errores
+            opuestos, los dos frecuentes.
+          </p>
+          <p>
+            <strong>Comprobar demasiado poco.</strong> Un check que solo mira que el puerto 443
+            acepta conexiones da por sano un servidor cuyo PHP está roto: nginx acepta, devuelve
+            502, y el balanceador sigue mandándole tráfico.
+          </p>
+          <p>
+            <strong>Comprobar demasiado.</strong> Un check que verifica la base de datos, Redis y
+            tres APIs externas es peor: cuando la base de datos parpadea, <em>todos</em> los
+            servidores fallan el check a la vez y el balanceador los saca a todos. Has convertido
+            una degradación en una caída total.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · dos endpoints, no uno</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class SaludController
+{
+    #[Route('/salud/vivo')]
+    public function vivo(): Response
+    {
+        return new JsonResponse(['estado' =&gt; 'ok']);
+    }
+
+    #[Route('/salud/listo')]
+    public function listo(): Response
+    {
+        if (!$this-&gt;baseDeDatos-&gt;responde()) {
+            return new JsonResponse(['estado' =&gt; 'no_listo'], 503);
+        }
+
+        return new JsonResponse(['estado' =&gt; 'listo']);
+    }
+}</code></pre>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Endpoint</th><th>Qué comprueba</th><th>Qué se hace si falla</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>/salud/vivo</code></td><td>Que el proceso responde. Nada más</td><td>Reiniciar el proceso: está colgado</td></tr>
+                <tr><td><code>/salud/listo</code></td><td>Que puede atender tráfico útil</td><td>Sacarlo del balanceo, sin reiniciarlo</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            La distinción es la que usan los orquestadores (<em>liveness</em> y
+            <em>readiness</em>) y resuelve el dilema anterior: la comprobación cara está en
+            «listo», y una caída de base de datos saca los servidores del balanceo sin
+            reiniciarlos en bucle. Cuando la base de datos vuelve, vuelven solos.
+          </p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Y el health check no debe autenticarse ni loguearse</p>
+              <p>
+                Un check cada dos segundos por cada servidor genera miles de líneas de log al día
+                que tapan lo que importa. Y si pide autenticación, el balanceador no puede
+                comprobarlo. Excluye esas rutas del log de acceso y déjalas abiertas — pero sin
+                revelar versiones ni estado interno a quien pregunte desde fuera.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Pon un balanceador cuando…</h4>
+              <ul>
+                <li>Tienes más de un servidor de aplicación</li>
+                <li>Quieres desplegar sin cortar el servicio</li>
+                <li>Necesitas sobrevivir a la caída de una máquina</li>
+                <li>Vas a escalar horizontalmente</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Aún no hace falta cuando…</h4>
+              <ul>
+                <li>Es un solo servidor y aguanta de sobra</li>
+                <li>El estado sigue atado a la máquina: arregla eso primero</li>
+                <li>Lo que buscas es rendimiento y el cuello es la base de datos</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Para tráfico web quieres capa 7: reintentar en otro servidor y enrutar por ruta exigen entender HTTP.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>«Menos conexiones» da contrapresión gratis: un servidor lento acumula conexiones y deja de recibir sin configurar nada.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La sesión pegajosa es una tirita: desequilibra el reparto y hace que quitar un servidor tire las sesiones de todos sus usuarios.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un health check que comprueba la base de datos saca <b>todos</b> los servidores a la vez cuando esta parpadea: conviertes una degradación en caída total.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Por eso hay dos endpoints: «vivo» decide si reiniciar el proceso, «listo» decide si mandarle tráfico.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

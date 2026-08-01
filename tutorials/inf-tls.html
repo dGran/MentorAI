@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TLS y certificados en la práctica — MentorAI</title>
+    <meta name="description" content="Qué prueba realmente un certificado, por qué falla desde cURL y no desde el navegador, renovación automática con Let's Encrypt y el peligro de HSTS." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Infraestructura</span>
+        </nav>
+        <h1 class="tutorial-hero__title">TLS y certificados en la práctica</h1>
+        <p class="tutorial-hero__lead">TLS resuelve tres problemas y solo se habla de uno. Cifra, sí, pero también autentica y da integridad. El segundo es el que hay que entender para no meter la pata.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#que-prueba">Qué prueba un certificado</a></li>
+            <li><a href="#lets-encrypt">Certificados que se renuevan solos</a></li>
+            <li><a href="#configurar">La configuración que importa</a></li>
+            <li><a href="#interno">Cifrar también dentro</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            TLS resuelve tres problemas a la vez y solo se habla de uno. Cifra —nadie lee lo que
+            pasa por el cable—, pero también <em>autentica</em> —hablas con quien crees— y da
+            <em>integridad</em> —nadie ha cambiado nada por el camino—. El segundo es el que hace
+            falta entender para no meter la pata al configurarlo.
+          </p>
+
+          <h2 id="que-prueba">
+            Qué prueba un certificado
+            <a href="#que-prueba" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un certificado no dice que un sitio sea de fiar. Dice una cosa mucho más concreta:
+            <strong>que quien lo presenta controla ese nombre de dominio</strong>. Nada más. Un
+            sitio fraudulento puede tener un certificado válido perfectamente; lo que no puede es
+            presentar el de <em>otro</em> dominio.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>El navegador confía en un puñado de raíces</b><small>Vienen en el sistema operativo</small></span>
+              </div>
+              <div class="flow__arrow" data-label="que firman a"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Certificados intermedios</b><small>De la autoridad certificadora</small></span>
+              </div>
+              <div class="flow__arrow" data-label="que firman"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>El tuyo, para ejemplo.com</b><small>Válido si la cadena entera verifica</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Si falta un intermedio, el navegador puede apañárselas y muchos clientes de API no:
+              es el fallo de configuración más común.
+            </p>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">«En el navegador va bien y desde cURL falla»</p>
+              <p>
+                Casi siempre es la cadena incompleta. Los navegadores traen un mecanismo para
+                buscar el intermedio que falta; <code>curl</code>, PHP y la mayoría de clientes de
+                API no. Se sirve el <b>fullchain</b>, no solo el certificado del dominio, y se
+                comprueba con <code>openssl s_client -connect ejemplo.com:443 -showcerts</code>.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="lets-encrypt">
+            Certificados que se renuevan solos
+            <a href="#lets-encrypt" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Let's Encrypt emite certificados de 90 días, gratis y automatizables. La duración
+            corta es deliberada: obliga a que la renovación esté automatizada, y una renovación
+            automatizada no se olvida.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · certbot con nginx</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">sudo certbot --nginx -d ejemplo.com -d www.ejemplo.com
+
+sudo certbot renew --dry-run
+
+systemctl list-timers | grep certbot</code></pre>
+          </div>
+
+          <p>
+            El <code>--dry-run</code> es el paso que separa «lo configuré» de «funciona»: ensaya
+            la renovación completa sin gastar cuota. Y el timer es lo que confirma que alguien lo
+            hará dentro de 60 días, cuando ya nadie se acuerde.
+          </p>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Renovar no es recargar</p>
+              <p>
+                Certbot escribe los ficheros nuevos, y nginx sigue sirviendo en memoria el
+                certificado viejo hasta que se le dice. Si el <em>hook</em> de recarga no está
+                puesto, el certificado caduca <b>con el nuevo ya en disco</b>: renovó bien y el
+                sitio da error igual. Es de los incidentes más frustrantes que existen.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="configurar">
+            La configuración que importa
+            <a href="#configurar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ini · lo esencial de TLS en nginx</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="ini">ssl_certificate = /etc/letsencrypt/live/ejemplo.com/fullchain.pem
+ssl_certificate_key = /etc/letsencrypt/live/ejemplo.com/privkey.pem
+ssl_protocols = TLSv1.2 TLSv1.3
+ssl_session_cache = shared:SSL:10m
+ssl_stapling = on
+add_header = Strict-Transport-Security "max-age=31536000; includeSubDomains"</code></pre>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Directiva</th><th>Qué aporta</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>ssl_protocols</code></td><td>Solo 1.2 y 1.3. Las versiones anteriores están rotas, no obsoletas</td></tr>
+                <tr><td><code>ssl_session_cache</code></td><td>Reanudar sesiones evita repetir el handshake completo: mucha latencia menos</td></tr>
+                <tr><td><code>ssl_stapling</code></td><td>El servidor adjunta la prueba de que el certificado no está revocado, y el cliente se ahorra una consulta</td></tr>
+                <tr><td><code>Strict-Transport-Security</code></td><td>El navegador recuerda que este dominio es solo HTTPS y no vuelve a intentar por HTTP</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">HSTS no se puede deshacer rápido</p>
+              <p>
+                Con <code>max-age=31536000</code> le estás diciendo al navegador que durante un
+                año no acepte HTTP para tu dominio, y esa instrucción vive <b>en el navegador del
+                usuario</b>. Si luego tienes un problema con el certificado, no puedes volver a
+                HTTP mientras lo arreglas: los visitantes recurrentes no podrán entrar. Empieza
+                con un <code>max-age</code> pequeño y súbelo cuando estés seguro.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="interno">
+            Cifrar también dentro
+            <a href="#interno" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            «Es tráfico interno» era una de las ocho falacias. Terminar TLS en el balanceador y
+            que el resto viaje en claro es aceptable dentro de una red que controlas de verdad, y
+            deja de serlo en cuanto hay varias zonas, varios equipos o una nube compartida.
+          </p>
+          <p>
+            Para tráfico entre servicios propios, la respuesta es <strong>TLS mutuo</strong>: no
+            solo el cliente verifica al servidor, también el servidor verifica al cliente con su
+            propio certificado. Eso convierte el certificado en la identidad del servicio y quita
+            de en medio las claves de API compartidas, que acaban en variables de entorno,
+            repositorios y capturas de pantalla.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>TLS obligatorio cuando…</h4>
+              <ul>
+                <li>Hay tráfico por internet, sin excepción</li>
+                <li>Viajan credenciales, cookies de sesión o datos personales</li>
+                <li>Cruza zonas o proveedores distintos</li>
+                <li>Quieres HTTP/2 o /3: en la práctica exigen TLS</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Puedes terminar en el borde cuando…</h4>
+              <ul>
+                <li>Detrás hay una red privada que controlas del todo</li>
+                <li>Los saltos internos son dentro de la misma máquina</li>
+                <li>Es desarrollo local</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un certificado no prueba que un sitio sea de fiar: prueba que quien lo presenta controla ese dominio.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>«En el navegador va y desde cURL falla» es casi siempre la cadena incompleta: se sirve el fullchain.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los 90 días de Let's Encrypt son deliberados: obligan a automatizar, y lo automatizado no se olvida.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Renovar no es recargar: sin el hook, el certificado caduca con el nuevo ya en disco.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>HSTS vive en el navegador del usuario y no se puede deshacer rápido: empieza con un max-age pequeño.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

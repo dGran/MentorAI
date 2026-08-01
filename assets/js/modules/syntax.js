@@ -39,7 +39,7 @@
         { cls: "string", src: "'(?:\\\\.|[^'\\\\])*'|\"(?:\\\\.|[^\"\\\\])*\"" },
         {
           cls: "function",
-          src: "\\b(?:sudo|php|systemctl|service|apt|docker|grep|cat|echo|cd|ls|curl|find|wc)\\b",
+          src: "\\b(?:sudo|php|systemctl|systemd-analyze|journalctl|service|apt|apt-get|dpkg|docker|docker-compose|kubectl|helm|terraform|ansible|ansible-playbook|git|composer|npm|node|make|grep|egrep|cat|tac|head|tail|echo|printf|cd|ls|pwd|mkdir|rm|cp|mv|ln|chmod|chown|curl|wget|find|xargs|wc|sort|uniq|awk|sed|cut|tr|tee|dig|nslookup|host|ping|traceroute|ss|netstat|nmap|ip|ifconfig|ufw|iptables|nft|ssh|ssh-keygen|scp|rsync|openssl|certbot|nginx|free|df|du|top|htop|ps|pgrep|pkill|kill|vmstat|iostat|uptime|lsof|strace|dmesg|mysql|mysqldump|psql|pg_dump|redis-cli|etcdctl|tar|gzip|zcat|jq|crontab|nproc|ulimit)\\b",
         },
         { cls: "attr", src: "--?[a-zA-Z][\\w-]*" },
         { cls: "variable", src: "\\$\\w+" },

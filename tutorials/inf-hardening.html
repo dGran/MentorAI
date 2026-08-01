@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Endurecer un servidor: SSH, cortafuegos y usuarios — MentorAI</title>
+    <meta name="description" content="Las tres decisiones que cortan el 95 % del ruido, por qué Docker se salta tu cortafuegos y por qué el proceso web no debe poder escribir en su propio código." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Infraestructura</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Endurecer un servidor: SSH, cortafuegos y usuarios</h1>
+        <p class="tutorial-hero__lead">Un servidor con IP pública recibe intentos de acceso a los minutos de encenderse. La buena noticia es que casi todo se corta con tres decisiones que se toman una vez.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#las-tres">Las tres decisiones que más rinden</a></li>
+            <li><a href="#ssh">SSH: quitar la contraseña</a></li>
+            <li><a href="#cortafuegos">Cortafuegos: denegar por defecto</a></li>
+            <li><a href="#usuarios">Ni la aplicación ni tú sois root</a></li>
+            <li><a href="#actualizaciones">Lo aburrido que evita los incidentes</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Un servidor con IP pública recibe intentos de acceso a los pocos minutos de
+            encenderse. No porque alguien te haya elegido: hay escáneres recorriendo el
+            direccionamiento entero todo el rato. La buena noticia es que el 95 % de eso se corta
+            con tres decisiones que se toman una vez.
+          </p>
+
+          <h2 id="las-tres">
+            Las tres decisiones que más rinden
+            <a href="#las-tres" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>SSH solo con clave</b><small>Sin contraseñas, no hay fuerza bruta que valga</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Cortafuegos que deniega por defecto</b><small>Solo se abre lo que hace falta</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Nada corre como root</b><small>Un fallo en la aplicación no es un fallo de la máquina</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              El resto —fail2ban, cambiar el puerto, endurecer el kernel— son mejoras marginales
+              sobre esta base.
+            </p>
+          </div>
+
+          <h2 id="ssh">
+            SSH: quitar la contraseña
+            <a href="#ssh" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Mientras exista autenticación por contraseña, hay un ataque posible que solo depende
+            de tiempo. Con claves, no: no hay nada que adivinar.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ini · /etc/ssh/sshd_config.d/endurecer.conf</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="ini">PasswordAuthentication = no
+KbdInteractiveAuthentication = no
+PermitRootLogin = no
+AllowUsers = despliegue admin
+MaxAuthTries = 3</code></pre>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Antes de recargar SSH, abre una segunda sesión</p>
+              <p>
+                Es el error que todo el mundo comete una vez: aplicar la configuración, cerrar la
+                terminal y descubrir que tu clave no estaba donde creías. Con una sesión abierta
+                en paralelo puedes deshacerlo; sin ella, necesitas la consola del proveedor —si
+                la hay—. Comprueba con <code>sshd -t</code> antes de recargar, y prueba a entrar
+                desde <b>otra</b> terminal antes de cerrar la que tienes.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            Cambiar el puerto 22 a otro reduce el <em>ruido</em> en los logs, no el riesgo: un
+            escaneo de puertos lo encuentra igual. Es cosmética útil, no seguridad. Lo que sí
+            aporta, si puedes, es limitar el acceso por IP de origen o entrar por una VPN, de
+            modo que SSH no esté expuesto en absoluto.
+          </p>
+
+          <h2 id="cortafuegos">
+            Cortafuegos: denegar por defecto
+            <a href="#cortafuegos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La regla es abrir lo que necesitas y cerrar todo lo demás, no al revés. Cuatro
+            comandos:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · ufw</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow 22/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable</code></pre>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Docker se salta tu cortafuegos</p>
+              <p>
+                Docker escribe sus propias reglas de <em>iptables</em> y las coloca <b>antes</b>
+                que las de ufw. Un <code>-p 3306:3306</code> publica MySQL a internet aunque ufw
+                diga que ese puerto está cerrado, y ufw te seguirá diciendo que está cerrado. La
+                defensa es publicar solo en la interfaz local
+                (<code>-p 127.0.0.1:3306:3306</code>) y comprobar desde fuera con
+                <code>nmap</code> qué se ve de verdad, no fiarte de lo que dice el cortafuegos.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="usuarios">
+            Ni la aplicación ni tú sois root
+            <a href="#usuarios" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El principio es el de mínimo privilegio, y en la práctica se traduce en unas pocas
+            reglas concretas:
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Cómo debería estar</h4>
+              <ul>
+                <li>Un usuario de sistema por servicio, sin shell de acceso</li>
+                <li>El código en propiedad de un usuario distinto al que lo ejecuta</li>
+                <li><code>sudo</code> nominal, con las órdenes concretas permitidas</li>
+                <li>Directorios de escritura contados: <code>var/</code>, <code>uploads/</code></li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Lo que se ve a menudo</h4>
+              <ul>
+                <li>Todo como <code>www-data</code>, incluidos los crons</li>
+                <li><code>chmod -R 777</code> «hasta que funcione»</li>
+                <li>Una clave SSH compartida por todo el equipo</li>
+                <li>El servidor web con permiso de escritura sobre el código</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            El último de la derecha es el que más se subestima: si el proceso que sirve la web
+            puede escribir en su propio código, una vulnerabilidad de subida de ficheros pasa de
+            ser molesta a ser ejecución remota de código. Que el código lo posea un usuario
+            distinto del que ejecuta, y en solo lectura, corta esa cadena entera.
+          </p>
+
+          <h2 id="actualizaciones">
+            Lo aburrido que evita la mayoría de los incidentes
+            <a href="#actualizaciones" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La gran mayoría de las intrusiones no usan un ataque nuevo: usan uno conocido contra
+            una versión sin actualizar. Las actualizaciones de seguridad desatendidas son de las
+            pocas cosas que se configuran una vez y siguen dando valor años:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · debian y derivadas</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">sudo apt install unattended-upgrades
+sudo dpkg-reconfigure --priority=low unattended-upgrades</code></pre>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Solo seguridad, y con reinicio decidido por ti</p>
+              <p>
+                Actualizar automáticamente <b>todo</b> puede meterte un cambio de versión mayor
+                sin avisar. Limítalo a los repositorios de seguridad. Y algunas actualizaciones
+                —del núcleo, sobre todo— no surten efecto hasta reiniciar: revisa
+                <code>/var/run/reboot-required</code> y elige tú el momento en vez de dejar
+                <code>Automatic-Reboot</code> puesto.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            Y la parte que no es del sistema operativo: tus dependencias. Un <code>composer
+            audit</code> en el pipeline avisa de vulnerabilidades conocidas en los paquetes, que
+            es exactamente el mismo problema una capa más arriba.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Haz esto siempre cuando…</h4>
+              <ul>
+                <li>La máquina tiene IP pública, sin excepción</li>
+                <li>Es el primer día del servidor: cuesta minutos y luego cuesta semanas</li>
+                <li>Hay datos de personas dentro</li>
+                <li>Varias personas tienen acceso</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Puedes relajarlo cuando…</h4>
+              <ul>
+                <li>Es una máquina de desarrollo local sin exposición</li>
+                <li>Vive en una red privada sin salida a internet</li>
+                <li>Es efímera: se crea y se destruye en el mismo pipeline</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Tres decisiones cubren el 95 %: SSH solo con clave, cortafuegos que deniega por defecto y nada corriendo como root.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Antes de recargar SSH, deja una segunda sesión abierta y verifica desde otra terminal. Es el error que se comete una vez.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Docker escribe reglas por delante de ufw: un puerto publicado se ve desde internet aunque el cortafuegos diga que está cerrado.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Si el proceso web puede escribir en su propio código, una subida de ficheros vulnerable pasa de molesta a ejecución remota.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Casi ninguna intrusión usa un ataque nuevo: usa uno conocido contra algo sin actualizar. Las actualizaciones de seguridad desatendidas se configuran una vez.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

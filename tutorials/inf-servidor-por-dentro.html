@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Qué hay en un servidor: CPU, memoria, disco y red — MentorAI</title>
+    <meta name="description" content="Los cuatro recursos que se agotan y cómo distinguirlos en un minuto, por qué la memoria libre no significa lo que parece y por qué dentro de un contenedor los números engañan." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Infraestructura</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Qué hay en un servidor: CPU, memoria, disco y red</h1>
+        <p class="tutorial-hero__lead">Un servidor no se queda sin recursos en abstracto: se queda sin uno concreto, y cuál sea cambia por completo qué tienes que hacer.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#cuatro-recursos">Cuatro recursos, cuatro síntomas</a></li>
+            <li><a href="#el-minuto">El primer minuto en una máquina que va mal</a></li>
+            <li><a href="#memoria">La memoria de Linux miente</a></li>
+            <li><a href="#descriptores">El límite que te encuentras sin buscarlo</a></li>
+            <li><a href="#contenedores">En contenedor, los números engañan</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Un servidor no se «queda sin recursos» en abstracto: se queda sin uno concreto, y
+            cuál sea cambia por completo qué tienes que hacer. Saber leer cuatro números en un
+            minuto es la diferencia entre diagnosticar y reiniciar a ver si se arregla.
+          </p>
+
+          <h2 id="cuatro-recursos">
+            Cuatro recursos, cuatro síntomas
+            <a href="#cuatro-recursos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Recurso</th><th>Cómo se agota</th><th>Qué ves</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><b>CPU</b></td><td>Trabajo que calcular de más</td><td>Uso alto y carga alta; todo va lento por igual</td></tr>
+                <tr><td><b>Memoria</b></td><td>Procesos que piden más de lo que hay</td><td>Swap, o el <em>OOM killer</em> matando procesos sin avisar</td></tr>
+                <tr><td><b>Disco</b></td><td>Espacio, o operaciones por segundo</td><td>Espera de E/S alta con la CPU ociosa</td></tr>
+                <tr><td><b>Red</b></td><td>Ancho de banda, o descriptores agotados</td><td>Timeouts intermitentes, conexiones rechazadas</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La carga media no es el porcentaje de CPU</p>
+              <p>
+                El <em>load average</em> cuenta procesos <b>ejecutables o esperando E/S
+                ininterrumpible</b>. Por eso una máquina con la CPU al 5 % puede tener una carga
+                de 40: no está calculando, está esperando al disco. Se interpreta dividiéndolo
+                entre el número de núcleos: carga 8 en 8 núcleos es plena ocupación; en 2
+                núcleos es un atasco.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="el-minuto">
+            El primer minuto en una máquina que va mal
+            <a href="#el-minuto" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Hay un orden que funciona y evita irse por las ramas. Cuatro comandos:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · en este orden</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">uptime
+
+vmstat 1 5
+
+df -h && df -i
+
+ss -s</code></pre>
+          </div>
+
+          <p>
+            <code>uptime</code> te da las tres cargas —1, 5 y 15 minutos— y la tendencia: si la
+            de 1 minuto es mucho mayor que la de 15, el problema acaba de empezar; al revés, ya
+            está pasando.
+          </p>
+          <p>
+            <code>vmstat 1 5</code> es el más informativo de los cuatro. Las columnas que
+            importan son <code>r</code> (procesos esperando CPU), <code>si</code>/<code>so</code>
+            (swap entrando y saliendo, que debería ser cero) y <code>wa</code> (porcentaje de
+            tiempo esperando al disco).
+          </p>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title"><code>df -i</code>, no solo <code>df -h</code></p>
+              <p>
+                Un disco puede tener espacio libre y estar lleno igualmente: si te quedas sin
+                <em>inodos</em>, no puedes crear ni un fichero más. Pasa con directorios que
+                acumulan millones de ficheros diminutos —sesiones de PHP, caché, colas en
+                fichero— y el error que da el sistema es «no queda espacio», que te manda a
+                mirar el sitio equivocado.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="memoria">
+            La memoria de Linux miente (a propósito)
+            <a href="#memoria" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            «Solo queda un 4 % de memoria libre» es la falsa alarma más repetida. Linux usa toda
+            la RAM que sobra como caché de disco, porque memoria libre es memoria desperdiciada;
+            esa caché se libera al instante en cuanto un proceso pide memoria.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · la columna que importa</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">free -h
+
+              total  usado  libre  compartido  buff/cache  disponible
+Mem:            16G    11G   400M        1,2G         4,6G        4,1G</code></pre>
+          </div>
+
+          <p>
+            La columna a mirar es <strong>disponible</strong>, no <em>libre</em>: es lo que un
+            proceso nuevo puede pedir contando con lo que se liberaría de la caché. Ahí hay 4,1 G
+            de margen, no 400 M.
+          </p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que sí es una alarma: el <em>OOM killer</em></p>
+              <p>
+                Cuando de verdad no queda memoria, el núcleo elige un proceso y lo mata sin
+                contemplaciones. No hay excepción ni log de la aplicación: el proceso simplemente
+                desaparece. Si un servicio «se cae solo» sin dejar rastro, búscalo con
+                <code>dmesg -T | grep -i oom</code> o <code>journalctl -k | grep -i oom</code>.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="descriptores">
+            El límite que te encuentras sin buscarlo
+            <a href="#descriptores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En Linux casi todo es un fichero: los ficheros, los sockets, las tuberías. Y hay un
+            límite de descriptores abiertos por proceso que en muchas distribuciones sigue en
+            1024 por defecto. Un servidor con dos mil conexiones simultáneas se lo come sin
+            despeinarse, y el error que da —<em>too many open files</em>— no dice «sube el
+            límite», dice algo que parece un problema de ficheros.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · mirarlo y subirlo</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">ulimit -n
+
+cat /proc/$(pgrep -f php-fpm | head -1)/limits | grep 'open files'
+
+ls /proc/$(pgrep -f php-fpm | head -1)/fd | wc -l</code></pre>
+          </div>
+
+          <p>
+            El límite real de un servicio no es el de tu sesión: es el que tiene su proceso, y
+            en un sistema con systemd lo fija <code>LimitNOFILE</code> en la unidad, que es lo
+            que verás en la lección siguiente. Cambiar <code>/etc/security/limits.conf</code> y
+            que no pase nada es un clásico por esa razón.
+          </p>
+
+          <h2 id="contenedores">
+            En contenedor, los números engañan
+            <a href="#contenedores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un contenedor comparte núcleo con el anfitrión, así que las herramientas de dentro
+            ven <strong>la máquina entera</strong>, no su cuota. <code>free</code> dentro de un
+            contenedor con 512 MB de límite puede decirte que hay 16 G disponibles, y tu proceso
+            morirá al llegar a 512.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Lo que ves desde dentro</h4>
+              <ul>
+                <li><code>free</code>: la RAM del anfitrión</li>
+                <li><code>nproc</code>: todos los núcleos del anfitrión</li>
+                <li>Y una aplicación que dimensiona sus workers con eso, se pasa por mucho</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Dónde está la verdad</h4>
+              <ul>
+                <li><code>/sys/fs/cgroup/memory.max</code></li>
+                <li><code>/sys/fs/cgroup/cpu.max</code></li>
+                <li><code>docker stats</code> desde el anfitrión</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            Es la causa de un fallo muy común: un runtime que decide cuántos hilos arrancar
+            leyendo el número de núcleos, en un contenedor limitado a medio núcleo. Arranca
+            treinta y dos hilos para una cuota de 0,5 y se pasa la vida en cambios de contexto.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Mira la máquina cuando…</h4>
+              <ul>
+                <li>Todo va lento a la vez, no un endpoint concreto</li>
+                <li>Un servicio se cae solo sin dejar rastro en sus logs</li>
+                <li>La lentitud aparece a ciertas horas y no depende del código</li>
+                <li>Vas a dimensionar workers o límites de un contenedor</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Mira la aplicación cuando…</h4>
+              <ul>
+                <li>Solo un endpoint es lento y el resto va bien</li>
+                <li>La lentitud escala con el volumen de datos</li>
+                <li>Empezó justo tras un despliegue</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La carga media cuenta también los procesos esperando al disco: una máquina con la CPU al 5 % puede tener carga 40.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un disco con espacio libre puede estar lleno de inodos, y el error que da te manda a mirar el sitio equivocado.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En memoria se mira «disponible», no «libre»: Linux usa la RAM que sobra como caché y la libera al instante.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Si un servicio desaparece sin dejar excepción, busca al OOM killer en el log del núcleo: no avisa a la aplicación.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Dentro de un contenedor, <code>free</code> y <code>nproc</code> ven la máquina entera: la cuota real está en los ficheros de cgroup.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

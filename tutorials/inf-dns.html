@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DNS: registros, TTL y por qué tarda en propagar — MentorAI</title>
+    <meta name="description" content="Los registros que vas a usar, por qué no hay CNAME en la raíz, cómo se planifica una migración con el TTL y por qué «la propagación» no existe." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Infraestructura</span>
+        </nav>
+        <h1 class="tutorial-hero__title">DNS: registros, TTL y por qué tarda en propagar</h1>
+        <p class="tutorial-hero__lead">El DNS es la pieza que más gente toca sin entender y la que peor perdona los errores: un cambio mal hecho tarda horas en revertirse porque hay copias de tu respuesta por medio mundo.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#registros">Los registros que vas a usar</a></li>
+            <li><a href="#ttl">El TTL manda sobre todo lo demás</a></li>
+            <li><a href="#propagacion">«La propagación» no existe</a></li>
+            <li><a href="#correo">Los tres TXT del correo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            El DNS es la pieza de infraestructura que más gente toca sin entender, y la que peor
+            perdona los errores: un cambio mal hecho tarda horas en revertirse porque hay copias
+            de tu respuesta repartidas por medio mundo. Entender el TTL es entender el 80 % del
+            DNS operativo.
+          </p>
+
+          <h2 id="registros">
+            Los registros que vas a usar
+            <a href="#registros" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Tipo</th><th>Para qué</th><th>Nota</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><b>A</b> / <b>AAAA</b></td><td>Nombre → dirección IPv4 / IPv6</td><td>Lo más básico</td></tr>
+                <tr><td><b>CNAME</b></td><td>Nombre → otro nombre</td><td><b>No puede convivir</b> con otros registros del mismo nombre</td></tr>
+                <tr><td><b>MX</b></td><td>A qué servidor va el correo</td><td>Con prioridad; el menor gana</td></tr>
+                <tr><td><b>TXT</b></td><td>Texto libre</td><td>SPF, DKIM, verificaciones de propiedad</td></tr>
+                <tr><td><b>NS</b></td><td>Quién manda en esta zona</td><td>Cambiarlos es mover el dominio de proveedor</td></tr>
+                <tr><td><b>CAA</b></td><td>Qué autoridades pueden emitir certificados para ti</td><td>Barato de poner, evita emisiones no autorizadas</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">CNAME en la raíz del dominio: no se puede</p>
+              <p>
+                <code>ejemplo.com</code> necesita registros NS y SOA obligatoriamente, y un CNAME
+                no admite convivir con nadie. Por eso puedes apuntar
+                <code>www.ejemplo.com</code> a un CNAME y no <code>ejemplo.com</code>. Los
+                proveedores lo resuelven con extensiones propias —ALIAS, ANAME, «CNAME
+                flattening»—, que no son estándar: si cambias de proveedor, eso hay que rehacerlo.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="ttl">
+            El TTL manda sobre todo lo demás
+            <a href="#ttl" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cada respuesta DNS lleva un tiempo de vida, y cualquier resolutor del mundo puede
+            guardarla ese rato. Cuando cambias un registro, <strong>tu cambio no llega a nadie
+            que tenga la respuesta anterior cacheada</strong> hasta que caduque.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Tu registro tiene TTL de 24 horas</b><small>Y decides migrar el servidor</small></span>
+              </div>
+              <div class="flow__arrow" data-label="cambias la IP"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Los resolutores siguen con la vieja</b><small>Hasta 24 h después, cada uno según cuándo la pidió</small></span>
+              </div>
+              <div class="flow__arrow" data-label="durante todo ese rato"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Los dos servidores reciben tráfico</b><small>Y tienes que mantener los dos vivos y consistentes</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              De ahí la regla de oro: bajar el TTL <b>antes</b> de necesitarlo, no cuando ya
+              estás migrando.
+            </p>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El procedimiento de una migración</p>
+              <p>
+                <b>48 h antes:</b> bajar el TTL a 300 s y esperar a que expire el TTL antiguo.
+                <b>El día:</b> cambiar el registro; en cinco minutos casi todo el mundo lo ve.
+                <b>Días después,</b> con todo estable: subir el TTL otra vez a 3600 s o más, para
+                no pagar una consulta DNS en cada visita.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="propagacion">
+            «La propagación» no existe
+            <a href="#propagacion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Se dice que un cambio de DNS «está propagando», como si viajara. No viaja nada: tus
+            servidores autoritativos tienen el valor nuevo desde el primer segundo. Lo que pasa es
+            que cada resolutor del mundo <em>sigue usando lo que cacheó</em> hasta que caduque.
+          </p>
+          <p>
+            La diferencia importa porque cambia el diagnóstico: si alguien ve lo viejo, no hay
+            nada que empujar ni acelerar. Solo se puede comprobar qué está sirviendo cada capa:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · preguntar en cada nivel</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">dig ejemplo.com A +noall +answer
+
+dig @1.1.1.1 ejemplo.com A
+
+dig +trace ejemplo.com
+
+dig @ns1.tuproveedor.com ejemplo.com A</code></pre>
+          </div>
+
+          <p>
+            La última es la definitiva: pregunta directamente al servidor autoritativo, saltándose
+            todas las cachés. Si ahí sale el valor nuevo, tu trabajo está hecho y lo que queda es
+            esperar. Si ahí sale el viejo, el cambio no se guardó.
+          </p>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Y hay una caché más, dentro de tu proceso</p>
+              <p>
+                La JVM cachea resoluciones DNS en memoria, a veces para siempre según la
+                configuración. Los clientes HTTP con <em>keep-alive</em> mantienen la conexión
+                abierta a la IP vieja aunque el DNS haya cambiado. Un servicio que «no se entera»
+                del cambio horas después de que todo lo demás lo vea, suele ser esto — y se
+                arregla reiniciándolo, que es la razón por la que reiniciar «funciona» tantas
+                veces.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="correo">
+            Los tres TXT del correo
+            <a href="#correo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Si tu aplicación manda correos —confirmaciones, recuperación de contraseña—, sin estos
+            tres registros van a spam, y no es un problema del contenido:
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Qué hace cada uno</h4>
+              <ul>
+                <li><b>SPF</b> — qué servidores pueden enviar en tu nombre</li>
+                <li><b>DKIM</b> — firma criptográfica de cada mensaje</li>
+                <li><b>DMARC</b> — qué hacer si SPF o DKIM fallan, y a dónde reportarlo</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Errores típicos</h4>
+              <ul>
+                <li>Dos registros SPF: solo puede haber uno, o falla todo</li>
+                <li>Olvidar añadir el proveedor nuevo al cambiar de servicio</li>
+                <li>DMARC en <code>p=reject</code> desde el día uno</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            El último merece una nota: DMARC se despliega en tres pasos —<code>p=none</code> para
+            recibir informes sin bloquear nada, luego <code>p=quarantine</code>, y solo al final
+            <code>p=reject</code>—. Ponerlo en <code>reject</code> de entrada rebota correo
+            legítimo que sale de sistemas que ni recordabas: la herramienta de facturación, el
+            CRM, el formulario de la web vieja.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Baja el TTL antes cuando…</h4>
+              <ul>
+                <li>Vas a migrar de servidor o de proveedor</li>
+                <li>Vas a cambiar de CDN o de balanceador</li>
+                <li>Preparas un plan de contingencia que implique repuntar</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Deja el TTL alto cuando…</h4>
+              <ul>
+                <li>El registro es estable y no vas a tocarlo</li>
+                <li>Quieres menos consultas y menos latencia por visita</li>
+                <li>Es un registro de infraestructura que no cambia nunca</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>No se puede poner un CNAME en la raíz del dominio: lo que ofrecen los proveedores para eso son extensiones propias, no estándar.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El TTL se baja <b>antes</b> de la migración, no durante: cuando ya estás migrando, el TTL que manda es el viejo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La propagación no existe: nada viaja. Cada resolutor usa lo que cacheó hasta que caduca, y no hay forma de empujarlo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Preguntar al servidor autoritativo con <code>dig @ns1…</code> te dice si tu cambio se guardó o si solo estás viendo caché.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Hay cachés dentro de tus propios procesos: un servicio que no se entera del cambio horas después suele ser keep-alive o la caché del runtime.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
