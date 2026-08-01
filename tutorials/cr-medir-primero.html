@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Medir antes de optimizar: percentiles, no medias — MentorAI</title>
+    <meta name="description" content="Por qué la media describe a un usuario que no existe, por qué los percentiles no se promedian y cómo el punto de medición cambia lo que ves." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Caché y rendimiento</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Medir antes de optimizar: percentiles, no medias</h1>
+        <p class="tutorial-hero__lead">«Va lenta» no es un dato, y la media tampoco: es el número que hace que un sistema donde uno de cada veinte espera ocho segundos parezca que responde en trescientos milisegundos.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#la-media-miente">Por qué la media miente</a></li>
+            <li><a href="#no-se-promedian">Los percentiles no se promedian</a></li>
+            <li><a href="#donde-medir">Dónde medir cambia lo que ves</a></li>
+            <li><a href="#carga">Medir bajo carga, no en reposo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            «La aplicación va lenta» no es un dato, es una sensación. Y la media tampoco: es el
+            número que hace que un sistema donde uno de cada veinte usuarios espera ocho
+            segundos parezca que responde en trescientos milisegundos. Antes de tocar una línea
+            hay que saber medir, y medir bien es casi siempre medir percentiles.
+          </p>
+
+          <h2 id="la-media-miente">
+            Por qué la media miente
+            <a href="#la-media-miente" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Imagina cien peticiones: noventa y cinco tardan 100 ms y cinco tardan 8 s. La media
+            sale 495 ms, un número que no describe a <em>nadie</em>: ni al que espera un décimo
+            de segundo ni al que espera ocho. Y como en un panel se ve una línea plana y
+            razonable, nadie investiga.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Métrica</th><th>Qué te dice</th><th>Para qué sirve</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><b>Media</b></td><td>Un número que no le pasa a casi nadie</td><td>Capacidad agregada, poco más</td></tr>
+                <tr><td><b>p50 (mediana)</b></td><td>La experiencia típica</td><td>«¿Va bien en general?»</td></tr>
+                <tr><td><b>p95</b></td><td>Lo que sufre 1 de cada 20</td><td>El objetivo habitual de un SLO</td></tr>
+                <tr><td><b>p99</b></td><td>Lo que sufre 1 de cada 100</td><td>Donde viven los timeouts y los abandonos</td></tr>
+                <tr><td><b>máximo</b></td><td>El peor caso absoluto</td><td>Detectar lo patológico, no fijar objetivos</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El p99 le toca a más gente de la que crees</p>
+              <p>
+                Si cargar una página hace 20 peticiones internas, la probabilidad de que
+                <b>ninguna</b> caiga en el p99 es 0,99²⁰ ≈ 82 %. Es decir: casi una de cada cinco
+                cargas toca al menos una petición del percentil 99. La cola de la distribución no
+                es un caso raro, es la experiencia habitual de tus usuarios más activos.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="no-se-promedian">
+            Los percentiles no se promedian
+            <a href="#no-se-promedian" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Es el error de medición más común y el más silencioso. Si tienes el p95 de cada uno
+            de tus cuatro servidores, la media de esos cuatro números <strong>no es</strong> el
+            p95 del conjunto. Tampoco puedes promediar el p95 de cada minuto para sacar el de la
+            hora.
+          </p>
+          <p>
+            La razón es que un percentil es una posición dentro de una distribución, no una
+            cantidad que se pueda sumar. Para agregar bien hacen falta histogramas: se suman los
+            <em>cubos</em>, y el percentil se calcula al final sobre el histograma agregado. Es
+            justo lo que hace Prometheus con <code>histogram_quantile</code>, y por eso las
+            métricas de latencia se instrumentan como histograma y no como <em>gauge</em>.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · instrumentar bien</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$inicio = hrtime(true);
+
+$respuesta = $this-&gt;manejador-&gt;manejar($peticion);
+
+$this-&gt;metricas-&gt;histograma(
+    'http_duracion_segundos',
+    (hrtime(true) - $inicio) / 1e9,
+    ['ruta' =&gt; $peticion-&gt;nombreDeRuta(), 'metodo' =&gt; $peticion-&gt;metodo()]
+);</code></pre>
+          </div>
+
+          <p>
+            Dos detalles de ese bloque que importan más de lo que parecen: el reloj es
+            monotónico —el de pared puede saltar y darte duraciones negativas— y la etiqueta es
+            el <em>nombre</em> de la ruta, no la URL concreta. Etiquetar con
+            <code>/pedidos/4871</code> crea una serie temporal por pedido y revienta la base de
+            datos de métricas; se etiqueta con <code>/pedidos/{id}</code>.
+          </p>
+
+          <h2 id="donde-medir">
+            Dónde medir cambia lo que ves
+            <a href="#donde-medir" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un mismo sistema da números muy distintos según desde dónde mires, y los tres puntos
+            de vista se contradicen sin que ninguno esté mal:
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>En tu código</b><small>«El controlador tarda 40 ms». Cierto y poco útil.</small></span>
+              </div>
+              <div class="flow__arrow" data-label="pero delante hay una cola"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>En nginx</b><small>«La petición tarda 900 ms». Incluye la espera por un worker libre.</small></span>
+              </div>
+              <div class="flow__arrow" data-label="y más allá"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>En el navegador</b><small>«La página tarda 4 s». Incluye DNS, TLS, JS y render.</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Optimizar el paso 1 cuando el problema está en el 2 es la forma más común de
+              perder una semana.
+            </p>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El tiempo en cola es invisible desde dentro</p>
+              <p>
+                Cuando el pool de workers de PHP-FPM se agota, las peticiones esperan turno
+                <b>antes</b> de que tu código empiece. Tu métrica interna sigue diciendo 40 ms
+                mientras el usuario espera un segundo. Si tus números internos están bien y los
+                usuarios se quejan, mira ahí: <code>listen.backlog</code> y las métricas de FPM
+                te lo cuentan.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="carga">
+            Medir bajo carga, no en reposo
+            <a href="#carga" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una medición con el sistema tranquilo no predice nada: los problemas de rendimiento
+            que importan aparecen por contención —bloqueos, pools agotados, caché fría— y esa no
+            existe cuando eres el único usuario. Probar en local con un dataset de cien filas es
+            la forma clásica de dar por bueno lo que se caerá con un millón.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Medición que engaña</h4>
+              <ul>
+                <li>Una petición suelta en local</li>
+                <li>Base de datos con datos de juguete</li>
+                <li>Caché caliente de haberlo probado ya</li>
+                <li>Sin concurrencia: tú solo</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Medición que sirve</h4>
+              <ul>
+                <li>Producción real, o una copia con volumen parecido</li>
+                <li>Concurrencia similar a la de un día normal</li>
+                <li>Distinguiendo caché fría de caliente a propósito</li>
+                <li>Percentiles sobre miles de peticiones, no una</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Mide antes cuando…</h4>
+              <ul>
+                <li>Vas a optimizar cualquier cosa: sin número previo no sabrás si mejoró</li>
+                <li>Alguien reporta lentitud sin poder concretar dónde</li>
+                <li>Vas a fijar un objetivo de servicio o negociar un SLA</li>
+                <li>Sospechas de algo: la sospecha se confirma o se descarta, no se asume</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Puedes ir directo cuando…</h4>
+              <ul>
+                <li>Es un error evidente: una consulta dentro de un bucle a la vista</li>
+                <li>El arreglo es trivial y no arriesga nada</li>
+                <li>Es un script interno que corre una vez al mes</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La media describe a un usuario que no existe. Los percentiles describen a los que sí: p50 para lo típico, p95 y p99 para el daño real.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Con 20 peticiones por página, una de cada cinco cargas toca el p99. La cola de la distribución no es un caso raro.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los percentiles no se promedian entre servidores ni entre minutos: se agregan histogramas y se calcula al final.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El tiempo en cola es invisible desde dentro de tu código: si tus números están bien y los usuarios se quejan, mira delante.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Sin contención no hay problema de rendimiento que valga: medir en reposo y con datos de juguete no predice nada.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

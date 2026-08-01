@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Paginación que no se degrada — MentorAI</title>
+    <meta name="description" content="Por qué OFFSET lee y descarta en vez de saltar, cómo funciona la paginación por clave y qué hacer con el COUNT total." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Caché y rendimiento</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Paginación que no se degrada</h1>
+        <p class="tutorial-hero__lead">LIMIT 20 OFFSET 0 es instantáneo y LIMIT 20 OFFSET 200000 tarda tres segundos sobre la misma tabla. No es un bug: es que OFFSET hace lo que su nombre no sugiere.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#por-que-degrada">Lo que hace OFFSET de verdad</a></li>
+            <li><a href="#keyset">Paginación por clave</a></li>
+            <li><a href="#php">El cursor, en la API</a></li>
+            <li><a href="#contar">El COUNT también es un problema</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            <code>LIMIT 20 OFFSET 0</code> es instantáneo. <code>LIMIT 20 OFFSET 200000</code>
+            tarda tres segundos sobre la misma tabla y el mismo índice. No es un bug del motor:
+            es que <code>OFFSET</code> hace exactamente lo que su nombre no sugiere.
+          </p>
+
+          <h2 id="por-que-degrada">
+            Lo que hace <code>OFFSET</code> de verdad
+            <a href="#por-que-degrada" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            No salta a la fila 200.000. <strong>Lee 200.020 filas y descarta 200.000.</strong> El
+            motor no tiene forma de saltar sin contar, así que el coste crece linealmente con la
+            página: la primera es gratis, la mil es carísima.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Página 1</b><small>Lee 20 filas. 2 ms.</small></span>
+              </div>
+              <div class="flow__arrow" data-label="misma consulta"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Página 100</b><small>Lee 2.020 y tira 2.000. 30 ms.</small></span>
+              </div>
+              <div class="flow__arrow" data-label="misma consulta"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Página 10.000</b><small>Lee 200.020 y tira 200.000. 3 s.</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Y si además hay un <code>ORDER BY</code> sin índice, el motor ordena las 200.020
+              antes de tirar las primeras.
+            </p>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Y el problema no es solo la lentitud</p>
+              <p>
+                Con <code>OFFSET</code> también <b>se saltan y se repiten filas</b>. Si mientras
+                el usuario pasa de la página 3 a la 4 alguien inserta un pedido nuevo que va al
+                principio, todo se desplaza una posición: la última fila de la página 3 vuelve a
+                salir en la 4. En un listado da igual; en un proceso que recorre todo para
+                exportar, has duplicado un registro y saltado otro.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="keyset">
+            Paginación por clave
+            <a href="#keyset" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La alternativa es no contar desde el principio, sino decir «dame los 20 siguientes
+            <em>a partir de este</em>». En vez de un número de página, el cliente recibe un
+            cursor con la posición de la última fila que vio:
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Por desplazamiento</h4>
+              <ul>
+                <li><code>ORDER BY creado_en DESC LIMIT 20 OFFSET 200000</code></li>
+                <li>Coste creciente con la página</li>
+                <li>Salta y repite filas si hay escrituras</li>
+                <li>Permite «ir a la página 500»</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Por clave (<em>keyset</em>)</h4>
+              <ul>
+                <li><code>WHERE (creado_en, id) &lt; (?, ?) ORDER BY … LIMIT 20</code></li>
+                <li>Coste constante, sea la página que sea</li>
+                <li>Estable frente a inserciones</li>
+                <li>Solo permite anterior y siguiente</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · la comparación por tuplas</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">SELECT id, total, creado_en
+FROM pedidos
+WHERE id_cliente = 4871
+  AND (creado_en, id) &lt; ('2026-07-14 10:32:00', 88213)
+ORDER BY creado_en DESC, id DESC
+LIMIT 20;</code></pre>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El desempate es obligatorio</p>
+              <p>
+                Fíjate en que se ordena por <code>creado_en</code> <b>y por <code>id</code></b>. Si
+                dos pedidos comparten fecha exacta y solo ordenas por fecha, el orden entre ellos
+                no está definido: pueden salir los dos en una página, o ninguno. La clave del
+                cursor tiene que ser <b>única</b>, y la forma barata de conseguirlo es añadir la
+                clave primaria al final.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="php">
+            El cursor, en la API
+            <a href="#php" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El cliente no debería tener que saber qué columnas forman el cursor. Se codifica en
+            una cadena opaca y se devuelve junto a los resultados:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Cursor.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class Cursor
+{
+    public function __construct(
+        public readonly string $creadoEn,
+        public readonly int $id,
+    ) {
+    }
+
+    public static function desdeCadena(string $codificado): self
+    {
+        $partes = json_decode(base64_decode($codificado, true), true);
+
+        if (!is_array($partes) || !isset($partes['f'], $partes['i'])) {
+            throw new CursorInvalido($codificado);
+        }
+
+        return new self((string) $partes['f'], (int) $partes['i']);
+    }
+
+    public function aCadena(): string
+    {
+        return base64_encode(json_encode(['f' =&gt; $this-&gt;creadoEn, 'i' =&gt; $this-&gt;id]));
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            Opaca no es lo mismo que segura: <code>base64</code> se lee en un segundo. Si el
+            cursor no debe poder manipularse —porque una fila que no le toca al usuario podría
+            colarse— hay que firmarlo, no ocultarlo.
+          </p>
+
+          <h2 id="contar">
+            El <code>COUNT</code> también es un problema
+            <a href="#contar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Aunque arregles la paginación, queda el «mostrando 20 de 1.482.303». Ese
+            <code>COUNT(*)</code> con los mismos filtros recorre toda la tabla, y muchas veces
+            tarda más que la consulta de datos.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Opción</th><th>Cuándo encaja</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><b>No contar</b></td><td>Pedir 21 filas para saber si hay página siguiente. Suficiente para un scroll infinito</td></tr>
+                <tr><td><b>Contar aproximado</b></td><td>«Más de 1.000 resultados». Con un <code>LIMIT</code> alto en la subconsulta</td></tr>
+                <tr><td><b>Contador mantenido</b></td><td>Una tabla de contadores que se actualiza al escribir. Exacto y barato de leer</td></tr>
+                <tr><td><b>Contar de verdad</b></td><td>Solo si el filtro es muy selectivo o la tabla es pequeña</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            La primera fila es la que más veces resuelve el problema y la que menos se plantea:
+            casi ningún usuario necesita saber que hay 1.482.303 resultados. Necesita saber si
+            hay más.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Pagina por clave cuando…</h4>
+              <ul>
+                <li>Es un scroll infinito o un «cargar más»</li>
+                <li>Un proceso recorre toda la tabla: exportar, migrar, reindexar</li>
+                <li>Los datos cambian mientras se pagina</li>
+                <li>La tabla es grande y crece</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4><code>OFFSET</code> está bien cuando…</h4>
+              <ul>
+                <li>El usuario necesita saltar a una página concreta</li>
+                <li>El total de filas es pequeño y no va a crecer</li>
+                <li>Es un panel interno donde nadie pasa de la página 3</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>OFFSET</code> no salta filas: las lee y las descarta. El coste crece con el número de página.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Además salta y repite filas cuando hay escrituras concurrentes. En un listado da igual; en una exportación has duplicado registros.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La paginación por clave tiene coste constante y es estable, a cambio de perder el «ir a la página 500».</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La clave del cursor tiene que ser única: añade la clave primaria al final del <code>ORDER BY</code> o el orden entre empates no está definido.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El <code>COUNT</code> total suele costar más que los datos. Pedir una fila de más para saber si hay página siguiente resuelve casi todos los casos.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

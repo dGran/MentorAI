@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Índices compuestos, de cobertura y los que sobran — MentorAI</title>
+    <meta name="description" content="La regla del prefijo por la izquierda, en qué orden poner las columnas, cuándo compensa un índice de cobertura y cómo detectar los que solo cuestan." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Caché y rendimiento</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Índices compuestos, de cobertura y los que sobran</h1>
+        <p class="tutorial-hero__lead">Lo que separa a quien sabe la teoría de quien arregla una consulta lenta es saber en qué orden poner las columnas de un índice compuesto, y tener el estómago de borrar los que sobran.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#prefijo">La regla del prefijo por la izquierda</a></li>
+            <li><a href="#orden">Cómo se elige el orden</a></li>
+            <li><a href="#cobertura">Índices de cobertura</a></li>
+            <li><a href="#los-que-sobran">Los índices que sobran cuestan</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Sabes qué es un B-tree y para qué sirve un índice. Lo que separa a quien sabe la
+            teoría de quien arregla una consulta lenta es saber <em>en qué orden</em> poner las
+            columnas de un índice compuesto, y tener el estómago de borrar los que sobran.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Esto da por leído lo básico</p>
+              <p>
+                Cómo funciona un B-tree por dentro y por qué una consulta sin índice es lenta
+                está en <a href="indices-btree.html">Índices y B-tree</a>, del curso de
+                Fundamentos. Aquí vamos a las decisiones que se toman con la consulta delante.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="prefijo">
+            La regla del prefijo por la izquierda
+            <a href="#prefijo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un índice compuesto sobre <code>(a, b, c)</code> está ordenado primero por
+            <code>a</code>, luego por <code>b</code> dentro de cada <code>a</code>, y así. Es
+            exactamente como una guía telefónica ordenada por apellido, luego nombre: puedes
+            buscar por apellido, o por apellido y nombre, pero <strong>no puedes buscar por
+            nombre solo</strong>.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Consulta</th><th>¿Usa el índice <code>(id_cliente, estado, creado_en)</code>?</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>WHERE id_cliente = 5</code></td><td>Sí, la primera columna</td></tr>
+                <tr><td><code>WHERE id_cliente = 5 AND estado = 'ok'</code></td><td>Sí, las dos primeras</td></tr>
+                <tr><td><code>WHERE id_cliente = 5 ORDER BY creado_en</code></td><td>Sí, y además se ahorra el <em>filesort</em></td></tr>
+                <tr><td><code>WHERE estado = 'ok'</code></td><td><b>No.</b> Falta la primera columna</td></tr>
+                <tr><td><code>WHERE id_cliente = 5 AND creado_en &gt; …</code></td><td>Parcialmente: usa la primera y salta la tercera</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Un rango corta el índice ahí mismo</p>
+              <p>
+                Las columnas que van <b>después</b> de una comparación por rango
+                (<code>&gt;</code>, <code>&lt;</code>, <code>BETWEEN</code>, <code>LIKE 'x%'</code>)
+                ya no se pueden usar para filtrar. Por eso el orden correcto es: primero las
+                columnas de igualdad, luego la de ordenación, y el rango al final.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="orden">
+            Cómo se elige el orden
+            <a href="#orden" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Con la regla anterior, el orden sale casi solo:
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Columnas de igualdad</b><small>Las del <code>WHERE x = ?</code>. Entre ellas, primero la más selectiva</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>La columna del ORDER BY</b><small>Así el motor lee ya ordenado y se ahorra el filesort</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>La columna del rango</b><small>Al final, porque corta lo que venga detrás</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              «Más selectiva» = la que descarta más filas. <code>id_cliente</code> descarta más
+              que <code>estado</code>, que solo tiene cuatro valores.
+            </p>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · el índice para la consulta anterior</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">CREATE INDEX idx_pedidos_cliente_estado_fecha
+    ON pedidos (id_cliente, estado, creado_en);</code></pre>
+          </div>
+
+          <p>
+            Con ese índice, la consulta del ejemplo —filtrar por cliente y estado, ordenar por
+            fecha descendente, quedarse con 20— se resuelve leyendo veinte entradas contiguas
+            del índice. Sin él, el motor recorre todos los pedidos del cliente, los ordena en
+            memoria y tira el resto.
+          </p>
+
+          <h2 id="cobertura">
+            Índices de cobertura
+            <a href="#cobertura" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Normalmente el motor usa el índice para localizar las filas y después va a la tabla a
+            leer las columnas que le pides. Ese segundo salto cuesta, y se puede evitar: si
+            <strong>todas</strong> las columnas que la consulta necesita están en el índice, no
+            hace falta tocar la tabla.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · cubrir la consulta entera</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">CREATE INDEX idx_pedidos_cobertura
+    ON pedidos (id_cliente, estado, creado_en, total);
+
+SELECT total, creado_en FROM pedidos
+WHERE id_cliente = 4871 AND estado = 'confirmado';</code></pre>
+          </div>
+
+          <p>
+            En el <code>EXPLAIN</code> aparece como <code>Using index</code>, y la mejora es real
+            porque desaparecen las lecturas aleatorias de la tabla. El precio es que el índice
+            engorda: cada columna añadida se copia en cada entrada. Se hace para consultas
+            concretas y muy usadas, no por norma.
+          </p>
+
+          <h2 id="los-que-sobran">
+            Los índices que sobran cuestan
+            <a href="#los-que-sobran" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Se habla mucho de los índices que faltan y poco de los que sobran, y estos también
+            se pagan:
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Lo que cuesta un índice de más</h4>
+              <ul>
+                <li>Cada <code>INSERT</code>, <code>UPDATE</code> y <code>DELETE</code> tiene que actualizarlo</li>
+                <li>Ocupa disco y, peor, memoria del <em>buffer pool</em></li>
+                <li>Confunde al optimizador, que a veces elige el peor</li>
+                <li>Alarga las migraciones y los <em>backups</em></li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Candidatos a borrar</h4>
+              <ul>
+                <li>Los redundantes: <code>(a)</code> sobra si existe <code>(a, b)</code></li>
+                <li>Los que el motor dice que no usa nunca</li>
+                <li>Los de columnas con dos valores distintos</li>
+                <li>Los creados «por si acaso» hace tres años</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            El primero de la lista de la derecha es el más común y el más fácil de justificar:
+            por la regla del prefijo, cualquier consulta que pueda usar <code>(a)</code> puede
+            usar <code>(a, b)</code>. Tener los dos es pagar dos veces por lo mismo.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · qué índices no se usan (MySQL 8)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">SELECT object_schema, object_name, index_name
+FROM performance_schema.table_io_waits_summary_by_index_usage
+WHERE index_name IS NOT NULL
+  AND count_star = 0
+  AND object_schema NOT IN ('mysql', 'performance_schema')
+ORDER BY object_schema, object_name;</code></pre>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Los contadores se reinician con el servidor</p>
+              <p>
+                Un <code>count_star = 0</code> en una instancia que arrancó anteayer no prueba
+                nada: puede ser el índice del informe mensual. Mira el <em>uptime</em> antes de
+                borrar, y asegúrate de que ha pasado al menos un ciclo completo de negocio —un
+                mes, si hay procesos mensuales—.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Añade un índice cuando…</h4>
+              <ul>
+                <li>El <code>EXPLAIN</code> examina muchas más filas de las que devuelve</li>
+                <li>Aparece <code>Using filesort</code> en una consulta frecuente</li>
+                <li>La consulta es frecuente: los índices se pagan con uso</li>
+                <li>Has comprobado que ninguno existente la cubre ya</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No lo añadas cuando…</h4>
+              <ul>
+                <li>Es una tabla con muchísima escritura y poca lectura</li>
+                <li>La columna tiene dos o tres valores distintos</li>
+                <li>Es una consulta de un informe que corre una vez al mes</li>
+                <li>El problema real es que estás pidiendo datos que no necesitas</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un índice compuesto es una guía telefónica: puedes buscar por apellido, o por apellido y nombre, pero no por nombre solo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El orden correcto es igualdades primero, luego la columna del ORDER BY y el rango al final, porque un rango corta el índice ahí.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un índice de cobertura evita el salto a la tabla, a cambio de engordar. Se hace para consultas concretas y muy usadas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los índices que sobran se pagan en cada escritura, en memoria y confundiendo al optimizador. <code>(a)</code> sobra si existe <code>(a, b)</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Antes de borrar un índice sin uso, mira el uptime: los contadores se reinician y puede ser el del informe mensual.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
