@@ -6,187 +6,13 @@
 (function () {
   "use strict";
 
-  var MentorAI = (window.MentorAI = window.MentorAI || {});
+  const MentorAI = (window.MentorAI = window.MentorAI || {});
 
-  /* ---------- Tema claro / oscuro (persistente) ---------- */
   const THEME_KEY = "academia-theme";
+  const SAVE_EVERY_MS = 600;
 
-  function getPreferredTheme() {
-    const stored = localStorage.getItem(THEME_KEY);
+  /* ---------- Iconos ---------- */
 
-    if (stored) {
-      return stored;
-    }
-
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-
-    return prefersDark ? "dark" : "light";
-  }
-
-  function applyTheme(theme) {
-    const root = document.documentElement;
-
-    root.classList.add("theme-switching");
-    root.setAttribute("data-theme", theme);
-    localStorage.setItem(THEME_KEY, theme);
-
-    window.requestAnimationFrame(function () {
-      window.requestAnimationFrame(function () {
-        root.classList.remove("theme-switching");
-      });
-    });
-  }
-
-  function initTheme() {
-    applyTheme(getPreferredTheme());
-
-    const toggle = document.querySelector(".theme-toggle");
-
-    if (!toggle) {
-      return;
-    }
-
-    toggle.addEventListener("click", function () {
-      const current = document.documentElement.getAttribute("data-theme");
-      applyTheme(current === "dark" ? "light" : "dark");
-    });
-  }
-
-  /* ---------- Barra de progreso de lectura ---------- */
-  function initReadingProgress() {
-    const bar = document.querySelector(".reading-progress");
-
-    if (!bar) {
-      return;
-    }
-
-    const slug = MentorAI.currentTutorialSlug();
-    let lastSaved = 0;
-
-    function update() {
-      const scrollTop = window.scrollY;
-      const height =
-        document.documentElement.scrollHeight - window.innerHeight;
-      const progress = height > 0 ? (scrollTop / height) * 100 : 0;
-      bar.style.width = progress + "%";
-
-      const now = Date.now();
-
-      if (now - lastSaved > 600) {
-        MentorAI.Reading.save(slug, progress);
-        lastSaved = now;
-      }
-    }
-
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    update();
-  }
-
-  /* ---------- Scrollspy del índice (TOC) ---------- */
-  function initScrollSpy() {
-    const tocLinks = Array.from(document.querySelectorAll(".toc__list a"));
-
-    if (tocLinks.length === 0) {
-      return;
-    }
-
-    const sections = tocLinks
-      .map(function (link) {
-        const id = link.getAttribute("href").slice(1);
-        return document.getElementById(id);
-      })
-      .filter(Boolean);
-
-    const observer = new IntersectionObserver(
-      function (entries) {
-        entries.forEach(function (entry) {
-          if (!entry.isIntersecting) {
-            return;
-          }
-
-          tocLinks.forEach(function (link) {
-            link.classList.toggle(
-              "is-active",
-              link.getAttribute("href") === "#" + entry.target.id
-            );
-          });
-        });
-      },
-      { rootMargin: "-80px 0px -70% 0px", threshold: 0 }
-    );
-
-    sections.forEach(function (section) {
-      observer.observe(section);
-    });
-  }
-
-  /* ---------- Botones de copiar código ---------- */
-  function initCopyButtons() {
-    document.querySelectorAll(".copy-btn").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        const block = btn.closest(".code-block");
-        const code = block ? block.querySelector("code") : null;
-
-        if (!code) {
-          return;
-        }
-
-        const text = code.innerText;
-        const label = btn.querySelector(".copy-btn__label");
-
-        const done = function () {
-          btn.classList.add("is-copied");
-
-          if (label) {
-            label.textContent = "Copiado";
-          }
-
-          setTimeout(function () {
-            btn.classList.remove("is-copied");
-            if (label) {
-              label.textContent = "Copiar";
-            }
-          }, 1800);
-        };
-
-        const fallbackCopy = function () {
-          const area = document.createElement("textarea");
-          area.value = text;
-          area.style.position = "fixed";
-          area.style.opacity = "0";
-          document.body.appendChild(area);
-          area.select();
-
-          try {
-            document.execCommand("copy");
-            done();
-          } catch (error) {
-            /* el navegador no permitió copiar */
-          }
-
-          document.body.removeChild(area);
-        };
-
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(text).then(done).catch(fallbackCopy);
-        } else {
-          fallbackCopy();
-        }
-      });
-    });
-  }
-
-  /* ---------- Año del footer ---------- */
-  function initYear() {
-    const el = document.querySelector("[data-year]");
-
-    if (el) {
-      el.textContent = new Date().getFullYear();
-    }
-  }
-
-  /* ---------- Hamburger + nav drawer (mobile) ---------- */
   const BURGER_SVG =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>';
   const CLOSE_NAV_SVG =
@@ -196,26 +22,205 @@
   const SUN_SVG =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
 
-  function drawerThemeIcon() {
-    return document.documentElement.getAttribute("data-theme") === "dark"
-      ? SUN_SVG
-      : MOON_SVG;
+  /* ---------- Tema claro / oscuro ----------
+     El <head> de cada página ya aplica el tema antes de pintar para evitar
+     el parpadeo; aquí se reaplica y se cablea el interruptor. */
+
+  function preferredTheme() {
+    try {
+      const stored = localStorage.getItem(THEME_KEY);
+
+      if (stored) return stored;
+    } catch {
+      /* modo privado: caemos a la preferencia del sistema */
+    }
+
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   }
+
+  function applyTheme(theme) {
+    const root = document.documentElement;
+
+    root.classList.add("theme-switching");
+    root.setAttribute("data-theme", theme);
+
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch {
+      /* el tema no se recordará, pero la página funciona */
+    }
+
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => root.classList.remove("theme-switching"))
+    );
+  }
+
+  const currentTheme = () => document.documentElement.getAttribute("data-theme");
+  const toggleTheme = () => applyTheme(currentTheme() === "dark" ? "light" : "dark");
+
+  function initTheme() {
+    applyTheme(preferredTheme());
+    document.querySelector(".theme-toggle")?.addEventListener("click", toggleTheme);
+  }
+
+  /* ---------- Barra de progreso de lectura ---------- */
+
+  function initReadingProgress() {
+    const bar = document.querySelector(".reading-progress");
+
+    if (!bar) return;
+
+    const slug = MentorAI.currentTutorialSlug();
+    let lastSaved = 0;
+
+    const update = () => {
+      const height = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = height > 0 ? (window.scrollY / height) * 100 : 0;
+
+      bar.style.width = `${progress}%`;
+
+      const now = Date.now();
+
+      if (now - lastSaved > SAVE_EVERY_MS) {
+        MentorAI.Reading.save(slug, progress);
+        lastSaved = now;
+      }
+    };
+
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    update();
+  }
+
+  /* ---------- Scrollspy del índice ---------- */
+
+  function initScrollSpy() {
+    const links = [...document.querySelectorAll(".toc__list a")];
+
+    if (links.length === 0) return;
+
+    const sections = links
+      .map((link) => document.getElementById(link.getAttribute("href").slice(1)))
+      .filter(Boolean);
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+
+          for (const link of links) {
+            link.classList.toggle("is-active", link.getAttribute("href") === `#${entry.target.id}`);
+          }
+        }
+      },
+      { rootMargin: "-80px 0px -70% 0px", threshold: 0 }
+    );
+
+    for (const section of sections) {
+      observer.observe(section);
+    }
+  }
+
+  /* ---------- Copiar bloques de código ---------- */
+
+  function copyToClipboard(text) {
+    if (navigator.clipboard?.writeText) {
+      return navigator.clipboard.writeText(text);
+    }
+
+    return Promise.reject(new Error("sin clipboard API"));
+  }
+
+  /* El portapapeles moderno exige contexto seguro, y por file:// no lo hay:
+     de ahí el camino alternativo con execCommand. */
+  function copyLegacy(text) {
+    const area = document.createElement("textarea");
+
+    area.value = text;
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.appendChild(area);
+    area.select();
+
+    try {
+      document.execCommand("copy");
+    } finally {
+      area.remove();
+    }
+  }
+
+  function initCopyButtons() {
+    for (const button of document.querySelectorAll(".copy-btn")) {
+      button.addEventListener("click", () => {
+        const code = button.closest(".code-block")?.querySelector("code");
+
+        if (!code) return;
+
+        const label = button.querySelector(".copy-btn__label");
+        const text = code.innerText;
+
+        const feedback = () => {
+          button.classList.add("is-copied");
+
+          if (label) label.textContent = "Copiado";
+
+          setTimeout(() => {
+            button.classList.remove("is-copied");
+
+            if (label) label.textContent = "Copiar";
+          }, 1800);
+        };
+
+        copyToClipboard(text)
+          .then(feedback)
+          .catch(() => {
+            try {
+              copyLegacy(text);
+              feedback();
+            } catch {
+              /* el navegador no permitió copiar */
+            }
+          });
+      });
+    }
+  }
+
+  /* ---------- Año del footer ---------- */
+
+  function initYear() {
+    const el = document.querySelector("[data-year]");
+
+    if (el) el.textContent = new Date().getFullYear();
+  }
+
+  /* ---------- Menú lateral en móvil ---------- */
+
+  const PAGES = [
+    { id: "index", label: "Inicio" },
+    { id: "rutas", label: "Rutas" },
+    { id: "cursos", label: "Cursos" },
+    { id: "articulos", label: "Artículos" },
+    { id: "repaso", label: "Repaso" },
+    { id: "offline", label: "Sin conexión" },
+  ];
+
+  const drawerThemeIcon = () => (currentTheme() === "dark" ? SUN_SVG : MOON_SVG);
 
   function initMobileNav() {
     const navActions = document.querySelector(".nav__actions");
 
-    if (!navActions) {
-      return;
-    }
+    if (!navActions) return;
 
-    const path = window.location.pathname;
-    const page = path.substring(path.lastIndexOf("/") + 1).replace(/\.html$/, "");
-    const isRoot = path.endsWith("/") || path.endsWith("/index.html") || page === "" || page === "index";
+    const { pathname } = window.location;
+    const page = pathname.slice(pathname.lastIndexOf("/") + 1).replace(/\.html$/, "");
+    const isRoot = page === "" || page === "index";
+    const prefix = pathname.includes("/tutorials/") ? "../" : "";
 
-    function activeClass(id) {
-      return (page === id || (isRoot && id === "index")) ? " is-active" : "";
-    }
+    const enlaces = PAGES.map(({ id, label }) => {
+      const activa = id === page || (isRoot && id === "index") ? " is-active" : "";
+
+      return `<a class="nav-drawer__link${activa}" href="${prefix}${id}.html">${label}</a>`;
+    }).join("");
 
     const burger = document.createElement("button");
     burger.className = "icon-btn nav__burger";
@@ -225,58 +230,48 @@
 
     const backdrop = document.createElement("div");
     backdrop.className = "nav-drawer-backdrop";
-    document.body.appendChild(backdrop);
 
-    const prefix = path.includes("/tutorials/") ? "../" : "";
     const drawer = document.createElement("div");
     drawer.className = "nav-drawer";
-    drawer.innerHTML =
-      '<div class="nav-drawer__head">' +
-      '<span class="nav-drawer__title">MentorAI</span>' +
-      '<div class="nav-drawer__head-actions">' +
-      '<button class="icon-btn nav-drawer__theme-toggle" aria-label="Cambiar tema">' +
-      drawerThemeIcon() +
-      "</button>" +
-      '<button class="icon-btn nav-drawer__close" aria-label="Cerrar">' + CLOSE_NAV_SVG + "</button>" +
-      "</div>" +
-      "</div>" +
-      '<nav class="nav-drawer__links">' +
-      '<a class="nav-drawer__link' + activeClass("index") + '" href="' + prefix + 'index.html">Inicio</a>' +
-      '<a class="nav-drawer__link' + activeClass("cursos") + '" href="' + prefix + 'cursos.html">Cursos</a>' +
-      '<a class="nav-drawer__link' + activeClass("articulos") + '" href="' + prefix + 'articulos.html">Artículos</a>' +
-      "</nav>";
-    document.body.appendChild(drawer);
+    drawer.innerHTML = `<div class="nav-drawer__head">
+        <span class="nav-drawer__title">MentorAI</span>
+        <div class="nav-drawer__head-actions">
+          <button class="icon-btn nav-drawer__theme-toggle" aria-label="Cambiar tema">${drawerThemeIcon()}</button>
+          <button class="icon-btn nav-drawer__close" aria-label="Cerrar">${CLOSE_NAV_SVG}</button>
+        </div>
+      </div>
+      <nav class="nav-drawer__links">${enlaces}</nav>`;
 
-    const closeDrawer = function () {
-      drawer.classList.remove("is-open");
-      backdrop.classList.remove("is-open");
-      document.body.style.overflow = "";
+    document.body.append(backdrop, drawer);
+
+    const setOpen = (isOpen) => {
+      drawer.classList.toggle("is-open", isOpen);
+      backdrop.classList.toggle("is-open", isOpen);
+      document.body.style.overflow = isOpen ? "hidden" : "";
     };
 
-    const openDrawer = function () {
-      drawer.classList.add("is-open");
-      backdrop.classList.add("is-open");
-      document.body.style.overflow = "hidden";
-    };
-
-    burger.addEventListener("click", openDrawer);
-    backdrop.addEventListener("click", closeDrawer);
-    drawer.querySelector(".nav-drawer__close").addEventListener("click", closeDrawer);
+    burger.addEventListener("click", () => setOpen(true));
+    backdrop.addEventListener("click", () => setOpen(false));
+    drawer.querySelector(".nav-drawer__close").addEventListener("click", () => setOpen(false));
 
     const themeToggle = drawer.querySelector(".nav-drawer__theme-toggle");
-    themeToggle.addEventListener("click", function () {
-      const current = document.documentElement.getAttribute("data-theme");
-      applyTheme(current === "dark" ? "light" : "dark");
+
+    themeToggle.addEventListener("click", () => {
+      toggleTheme();
       themeToggle.innerHTML = drawerThemeIcon();
     });
   }
 
-  MentorAI.initTheme = initTheme;
-  MentorAI.initReadingProgress = initReadingProgress;
-  MentorAI.initScrollSpy = initScrollSpy;
-  MentorAI.initCopyButtons = initCopyButtons;
-  MentorAI.initYear = initYear;
-  MentorAI.initMobileNav = initMobileNav;
+  /* ---------- API pública ---------- */
 
-  applyTheme(getPreferredTheme());
+  Object.assign(MentorAI, {
+    initTheme,
+    initReadingProgress,
+    initScrollSpy,
+    initCopyButtons,
+    initYear,
+    initMobileNav,
+  });
+
+  applyTheme(preferredTheme());
 })();
