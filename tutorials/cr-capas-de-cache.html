@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Las capas de caché: del navegador a la base de datos — MentorAI</title>
+    <meta name="description" content="Los cinco sitios donde puede vivir el mismo dato, qué evita cada uno y a cambio de qué, y cómo se diseña una clave que no filtre datos." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Caché y rendimiento</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Las capas de caché: del navegador a la base de datos</h1>
+        <p class="tutorial-hero__lead">«Vamos a cachearlo» suele significar «vamos a meterlo en Redis», que es una de cinco capas y normalmente la más cara de operar.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            12 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#las-capas">Cinco sitios donde guardar lo mismo</a></li>
+            <li><a href="#antes-de-cachear">Antes de cachear, la pregunta incómoda</a></li>
+            <li><a href="#que-cachear">Qué merece la pena</a></li>
+            <li><a href="#clave">La clave es parte del diseño</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            «Vamos a cachearlo» casi siempre significa «vamos a meterlo en Redis», y eso es una
+            de las cinco capas posibles, normalmente la más cara de operar. Antes de elegir hay
+            que saber que un dato puede guardarse en cinco sitios distintos, y que la capa
+            correcta suele ser la más cercana al usuario.
+          </p>
+
+          <h2 id="las-capas">
+            Cinco sitios donde guardar lo mismo
+            <a href="#las-capas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Capa</th><th>Qué evita</th><th>A cambio de</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><b>Navegador</b></td><td>La petición entera. Ni sale de la máquina</td><td>No poder invalidar: está en un ordenador ajeno</td></tr>
+                <tr><td><b>CDN</b></td><td>Llegar a tu servidor. Sirve desde cerca del usuario</td><td>Purgar cuesta y tarda; solo vale para contenido compartido</td></tr>
+                <tr><td><b>Proxy inverso</b></td><td>Ejecutar PHP. nginx devuelve la respuesta ya hecha</td><td>Solo respuestas completas; poca granularidad</td></tr>
+                <tr><td><b>Aplicación</b></td><td>Recalcular o volver a consultar</td><td>Un servicio más que operar; tú invalidas</td></tr>
+                <tr><td><b>Base de datos</b></td><td>Leer del disco</td><td>Casi nada: viene de serie y no la controlas</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La regla que ordena la tabla</p>
+              <p>
+                <b>Cuanto más cerca del usuario, más te ahorras y menos control tienes.</b> Una
+                respuesta cacheada en el navegador cuesta cero y no la puedes borrar; una en tu
+                aplicación cuesta una petición completa y la invalidas cuando quieras. Elegir capa
+                es elegir en qué punto de ese eje te colocas.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="antes-de-cachear">
+            Antes de cachear, la pregunta incómoda
+            <a href="#antes-de-cachear" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cachear es añadir una copia del dato, y toda copia se puede quedar vieja. Antes de
+            aceptar ese coste permanente conviene descartar las dos alternativas que no lo tienen:
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>¿Se puede no hacer?</b><small>Ese dato que calculas y nadie mira, la relación que cargas «por si acaso»</small></span>
+              </div>
+              <div class="flow__arrow" data-label="si no"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>¿Se puede hacer rápido?</b><small>Un índice bien puesto suele batir a una caché, y no se queda viejo</small></span>
+              </div>
+              <div class="flow__arrow" data-label="si tampoco"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Ahora sí, cachea</b><small>Y asume que tendrás que invalidarlo</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Una caché puesta encima de una consulta mal indexada esconde el problema hasta que
+              la caché falla, y entonces se cae todo a la vez.
+            </p>
+          </div>
+
+          <h2 id="que-cachear">
+            Qué merece la pena
+            <a href="#que-cachear" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El buen candidato cumple tres cosas: se lee mucho más de lo que se escribe, cuesta
+            caro producirlo, y tolera estar un poco desactualizado. Si falla la tercera, no es un
+            problema de caché sino de diseño.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Cachea bien</h4>
+              <ul>
+                <li>El catálogo de productos y sus categorías</li>
+                <li>La configuración y las traducciones</li>
+                <li>Resultados de agregaciones y de informes</li>
+                <li>Respuestas de APIs externas lentas</li>
+                <li>Permisos de un rol, plantillas compiladas</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Cachea mal</h4>
+              <ul>
+                <li>El saldo de una cuenta</li>
+                <li>El stock justo antes de vender</li>
+                <li>Lo que solo lee su propio dueño una vez</li>
+                <li>Datos que cambian a cada escritura</li>
+                <li>Cualquier cosa sobre la que decidas de forma irreversible</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La tasa de acierto lo decide todo</p>
+              <p>
+                Una caché con un 30 % de aciertos no acelera: <b>ralentiza</b>. En el 70 % de los
+                casos pagas la consulta a Redis, el fallo, la consulta original y la escritura de
+                vuelta. Si el dato lo lee un solo usuario una sola vez, cachearlo es puro coste.
+                Mide la tasa de acierto antes de dar por buena una caché.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="clave">
+            La clave es parte del diseño
+            <a href="#clave" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Casi todos los bugs de caché que parecen misteriosos son claves mal pensadas: dos
+            cosas distintas que comparten clave, o la misma que se guarda con dos claves.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · ClaveDeCache.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class ClaveDeCache
+{
+    private const VERSION = 'v3';
+
+    public static function paraCatalogo(int $idCategoria, string $idioma, int $pagina): string
+    {
+        return sprintf('%s:catalogo:%d:%s:%d', self::VERSION, $idCategoria, $idioma, $pagina);
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            Tres decisiones metidas en una línea. La <strong>versión</strong> al principio permite
+            invalidar todo un tipo de entrada cambiando una constante, sin borrar nada: las viejas
+            caducan solas. Los <strong>parámetros que cambian el resultado</strong> —idioma,
+            página— están todos, y ese es el fallo más común: cachear una lista sin el idioma y
+            servir el catálogo en inglés a media España. Y el <strong>prefijo por tipo</strong>
+            permite mirar qué hay dentro sin adivinar.
+          </p>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Si el dato depende del usuario, el usuario va en la clave</p>
+              <p>
+                Es la fuga de datos más habitual con cachés: guardar «el panel» sin el
+                identificador de quien lo pidió y servírselo al siguiente. Y si el dato es
+                personal, revisa también que no esté cacheado en una capa compartida: una CDN no
+                debe guardar nunca una respuesta con datos de una persona.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Cachea cuando…</h4>
+              <ul>
+                <li>Se lee mucho más de lo que se escribe</li>
+                <li>Producir el dato cuesta de verdad, medido</li>
+                <li>Un dato de hace un minuto sirve igual</li>
+                <li>Ya descartaste no hacerlo y hacerlo rápido</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No caches cuando…</h4>
+              <ul>
+                <li>La tasa de acierto va a ser baja: cada lector es único</li>
+                <li>El dato tiene que ser exacto para decidir sobre él</li>
+                <li>Estaría tapando una consulta mal indexada</li>
+                <li>No tienes claro quién va a invalidarlo ni cuándo</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Hay cinco capas donde cachear, y Redis es solo una. Cuanto más cerca del usuario, más ahorras y menos control tienes.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Antes de cachear, descarta no hacerlo y hacerlo rápido: una caché sobre una consulta mal indexada esconde el problema hasta que falla.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una caché con baja tasa de acierto ralentiza: pagas el fallo más la consulta más la escritura de vuelta.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La clave lleva versión, prefijo por tipo y <b>todos</b> los parámetros que cambian el resultado. Olvidar el idioma es el clásico.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Si el dato depende del usuario, el usuario va en la clave, y nunca en una capa compartida como la CDN.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

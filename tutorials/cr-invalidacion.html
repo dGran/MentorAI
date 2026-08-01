@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Invalidación: el problema difícil de verdad — MentorAI</title>
+    <meta name="description" content="Por qué invalidar es difícil, por qué el TTL gana casi siempre, y las tres técnicas de invalidación explícita: por clave, por etiqueta y por versión." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Caché y rendimiento</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Invalidación: el problema difícil de verdad</h1>
+        <p class="tutorial-hero__lead">Guardar un dato es trivial; saber cuándo deja de ser válido exige conocer todas las razones por las que puede cambiar, y esa lista crece con cada funcionalidad.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#por-que-es-dificil">Por qué es difícil de verdad</a></li>
+            <li><a href="#ttl">La estrategia aburrida que casi siempre gana</a></li>
+            <li><a href="#por-clave">Invalidación explícita, cuando hace falta</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Hay una frase de Phil Karlton que se repite tanto que ya suena a chiste: solo hay dos
+            cosas difíciles en informática, invalidar cachés y nombrar cosas. Es un chiste porque
+            es verdad. Guardar un dato es trivial; saber <em>cuándo</em> deja de ser válido
+            requiere conocer todas las razones por las que puede cambiar, y esa lista crece con
+            cada funcionalidad.
+          </p>
+
+          <h2 id="por-que-es-dificil">
+            Por qué es difícil de verdad
+            <a href="#por-que-es-dificil" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            No es un problema de API: <code>delete()</code> lo tienen todas. El problema es
+            saber <strong>qué borrar</strong>, y hay tres razones acumulativas:
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Una escritura afecta a muchas entradas</b><small>Cambiar el precio de un producto invalida su ficha, su categoría, la búsqueda, el carrito de 800 personas…</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Quien escribe no sabe quién cacheó</b><small>El caso de uso de precios no conoce las diez vistas que muestran ese precio</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>El dato cambia sin que tú escribas</b><small>Otro servicio, un cron, una migración, alguien tocando la base de datos a mano</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              El tercero es el que rompe cualquier estrategia basada solo en invalidar al
+              escribir.
+            </p>
+          </div>
+
+          <h2 id="ttl">
+            La estrategia aburrida que casi siempre gana
+            <a href="#ttl" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El TTL —dejar que la entrada caduque sola— no tiene glamour y resuelve la mayoría de
+            los casos. Su virtud es que es <strong>correcto por construcción</strong>: no depende
+            de que alguien se acuerde de invalidar, ni de conocer todas las dependencias, ni de
+            que el que escribe sea tu código.
+          </p>
+          <p>
+            La pregunta no es «¿cuánto puede vivir?» sino «<strong>¿cuánto tiempo puedo servir un
+            dato viejo sin que pase nada malo?</strong>». Y esa respuesta la da el negocio, no la
+            infraestructura:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Dato</th><th>TTL razonable</th><th>Por qué</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Traducciones, configuración</td><td>Horas</td><td>Cambian con un despliegue, no solas</td></tr>
+                <tr><td>Ficha de producto</td><td>5-15 min</td><td>Un precio viejo unos minutos es tolerable si se valida al pagar</td></tr>
+                <tr><td>Listado de categoría</td><td>1-5 min</td><td>Que un producto nuevo tarde un minuto en salir no molesta</td></tr>
+                <tr><td>Contador de «lo están viendo 12 personas»</td><td>30 s</td><td>Es aproximado por definición</td></tr>
+                <tr><td>Stock, saldo</td><td>No cachear para decidir</td><td>Aquí un dato viejo tiene coste real</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">TTL con aleatoriedad</p>
+              <p>
+                Si mil entradas se crean a la vez con el mismo TTL, caducan a la vez y provocan
+                una avalancha de fallos simultáneos. Un pequeño factor aleatorio —600 s más un
+                margen de hasta un 10 %— las desincroniza. Es el mismo jitter de los reintentos,
+                aplicado a la caducidad.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="por-clave">
+            Invalidación explícita, cuando hace falta
+            <a href="#por-clave" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cuando el TTL no basta porque el cambio tiene que verse ya, hay tres técnicas, de
+            menos a más ambiciosa:
+          </p>
+
+          <p>
+            <strong>1. Borrar por clave.</strong> Funciona cuando la relación es uno a uno:
+            cambias el producto 42, borras <code>producto:42</code>. Simple y frágil ante el
+            problema 1 de arriba.
+          </p>
+
+          <p>
+            <strong>2. Etiquetas.</strong> Marcas cada entrada con etiquetas —<em>producto-42</em>,
+            <em>categoria-7</em>— e invalidas por etiqueta, sin saber qué claves concretas la
+            llevan. Symfony Cache lo soporta de serie y es lo que resuelve el «una escritura,
+            muchas entradas»:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · invalidar por etiqueta</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+$productos = $this-&gt;cache-&gt;get($clave, function (ItemInterface $item) use ($idCategoria) {
+    $item-&gt;expiresAfter(600);
+    $item-&gt;tag(['categoria-' . $idCategoria, 'catalogo']);
+
+    return $this-&gt;origen-&gt;porCategoria($idCategoria);
+});
+
+$this-&gt;cache-&gt;invalidateTags(['categoria-7']);</code></pre>
+          </div>
+
+          <p>
+            <strong>3. Clave versionada.</strong> En vez de borrar, cambias la clave. Guardas un
+            contador de versión por entidad y lo incluyes en la clave: al escribir, incrementas el
+            contador y todas las entradas viejas quedan huérfanas, caducando solas.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · la clave lleva la versión</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class ClaveVersionada
+{
+    public function paraCategoria(int $idCategoria): string
+    {
+        $version = $this-&gt;cache-&gt;get('version:categoria:' . $idCategoria) ?? 1;
+
+        return sprintf('categoria:%d:v%d', $idCategoria, $version);
+    }
+
+    public function invalidarCategoria(int $idCategoria): void
+    {
+        $this-&gt;cache-&gt;increment('version:categoria:' . $idCategoria);
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            Tiene una propiedad muy útil: la invalidación es <strong>atómica e instantánea</strong>
+            —un <code>INCR</code>— sin recorrer ni borrar nada, aunque hubiera diez mil entradas
+            afectadas. El coste es una lectura extra para obtener la versión, y que las entradas
+            viejas ocupan memoria hasta caducar.
+          </p>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Nunca <code>KEYS producto:*</code> en producción</p>
+              <p>
+                Es la solución que se le ocurre a todo el mundo para borrar por patrón, y
+                <b>bloquea Redis</b> mientras recorre el espacio de claves entero: con millones de
+                claves, segundos con el servidor entero parado. Si de verdad necesitas recorrer,
+                se usa <code>SCAN</code>, que va por lotes. Y si necesitas <code>SCAN</code> para
+                invalidar, probablemente lo que necesitabas eran etiquetas o versiones.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Con TTL basta cuando…</h4>
+              <ul>
+                <li>Servir un dato de hace unos minutos no rompe nada</li>
+                <li>El dato puede cambiar desde fuera de tu código</li>
+                <li>Las dependencias son demasiadas para enumerarlas</li>
+                <li>Quieres algo correcto por construcción y sin mantenimiento</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Invalida explícitamente cuando…</h4>
+              <ul>
+                <li>El usuario edita algo y tiene que verlo al instante</li>
+                <li>Un dato viejo sería visiblemente incorrecto</li>
+                <li>El TTL que necesitarías es tan corto que la caché no rentaría</li>
+                <li>→ Etiquetas si una escritura afecta a muchas entradas; versión si son muchísimas</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Invalidar no es difícil por la API: es difícil porque una escritura afecta a muchas entradas y el dato puede cambiar sin que tú escribas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El TTL es correcto por construcción: no depende de que alguien se acuerde ni de conocer todas las dependencias. Empieza siempre ahí.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La pregunta del TTL no es cuánto vive el dato, sino cuánto puedes servirlo viejo sin que pase nada malo. La responde el negocio.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Las etiquetas resuelven «una escritura, muchas entradas»; la clave versionada invalida diez mil entradas con un <code>INCR</code> atómico.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>KEYS</code> bloquea Redis entero mientras recorre. Si crees que lo necesitas, lo que necesitabas eran etiquetas o versiones.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

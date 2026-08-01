@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cache-aside, write-through y read-through — MentorAI</title>
+    <meta name="description" content="Los tres patrones de escritura y lectura en caché, por qué al escribir se borra en vez de actualizar y en qué orden, y cómo hacer que un fallo de caché degrade en vez de romper." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Caché y rendimiento</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Cache-aside, write-through y read-through</h1>
+        <p class="tutorial-hero__lead">Hay tres formas de que un dato acabe en la caché, y la diferencia no es de estilo: cambia quién paga el primer acceso, qué pasa si la caché cae y si puedes perder una escritura.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#cache-aside">Cache-aside: el que usas ya</a></li>
+            <li><a href="#los-otros-dos">Write-through y read-through</a></li>
+            <li><a href="#actualizar-o-borrar">¿Actualizas la caché o la borras?</a></li>
+            <li><a href="#fallos">Qué pasa cuando la caché falla</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Hay tres formas de que un dato acabe en la caché, y la diferencia entre ellas no es
+            de estilo: cambia quién sufre el primer acceso, qué pasa si la caché se cae y si
+            puedes perder una escritura. Elegir por costumbre es cómo se acaba con una caché que
+            devuelve datos que ya no existen.
+          </p>
+
+          <h2 id="cache-aside">
+            Cache-aside: el que usas ya
+            <a href="#cache-aside" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La aplicación consulta la caché; si no está, va a la fuente y guarda el resultado. Es
+            el 90 % de lo que se ve en producción, y con razón: es simple y la caché es
+            prescindible.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · CatalogoCacheado.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class CatalogoCacheado implements Catalogo
+{
+    private const TTL_SEGUNDOS = 600;
+
+    public function porCategoria(int $idCategoria, string $idioma): array
+    {
+        $clave = ClaveDeCache::paraCatalogo($idCategoria, $idioma, 1);
+        $enCache = $this-&gt;cache-&gt;get($clave);
+
+        if ($enCache !== null) {
+            return $enCache;
+        }
+
+        $productos = $this-&gt;origen-&gt;porCategoria($idCategoria, $idioma);
+
+        $this-&gt;cache-&gt;set($clave, $productos, self::TTL_SEGUNDOS);
+
+        return $productos;
+    }
+}</code></pre>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Fíjate en que implementa la misma interfaz</p>
+              <p>
+                Ese decorador es la forma limpia de cachear: quien usa <code>Catalogo</code> no
+                sabe que hay caché, y quitarla es cambiar un cableado en el contenedor. La
+                alternativa —meter los <code>if</code> de caché dentro del repositorio— mezcla
+                dos responsabilidades y hace imposible testear una sin la otra.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="los-otros-dos">
+            Write-through y read-through
+            <a href="#los-otros-dos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Los otros dos mueven la responsabilidad de sitio:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Patrón</th><th>Cómo funciona</th><th>Lo que gana y lo que arriesga</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><b>Cache-aside</b></td>
+                  <td>La aplicación mira, falla y rellena</td>
+                  <td>Simple; la caché puede caerse sin romper nada. El primer lector paga</td>
+                </tr>
+                <tr>
+                  <td><b>Read-through</b></td>
+                  <td>La propia caché sabe ir a buscar el dato</td>
+                  <td>La aplicación no ve la caché. Necesita una capa que lo soporte</td>
+                </tr>
+                <tr>
+                  <td><b>Write-through</b></td>
+                  <td>Al escribir, se actualizan fuente y caché a la vez</td>
+                  <td>Nunca sirve datos viejos; cada escritura cuesta más y son dos sistemas</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Write-behind: el que casi nunca compensa</p>
+              <p>
+                Existe un cuarto: escribir solo en la caché y volcar a la base de datos después,
+                en segundo plano. Es rapidísimo y significa que <b>una caída de Redis pierde
+                escrituras confirmadas</b>. Solo tiene sentido para datos que puedes permitirte
+                perder —contadores de visitas, telemetría—, nunca para nada que el usuario crea
+                guardado.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="actualizar-o-borrar">
+            Al escribir: ¿actualizas la caché o la borras?
+            <a href="#actualizar-o-borrar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Esta pregunta parece menor y es donde vive la carrera de datos más común de todas.
+            La respuesta corta es <strong>borrar</strong>, y conviene ver por qué.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>A lee el dato y falla en caché</b><small>Va a la base de datos y obtiene «precio = 10»</small></span>
+              </div>
+              <div class="flow__arrow" data-label="mientras tanto"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>B escribe «precio = 12» y actualiza la caché</b><small>La caché queda con el valor 12: correcto</small></span>
+              </div>
+              <div class="flow__arrow" data-label="y entonces"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>A escribe en caché lo que leyó: 10</b><small>La caché queda con el valor viejo. Y sin caducar.</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              El dato incorrecto se queda hasta que expire el TTL. Si el TTL era una hora,
+              una hora sirviendo un precio que no existe.
+            </p>
+          </div>
+
+          <p>
+            Borrar en vez de actualizar no elimina la carrera del todo, pero reduce muchísimo la
+            ventana: el siguiente lector encuentra vacío y va a la fuente. Y el orden importa —se
+            escribe en la base de datos <em>primero</em> y se borra la caché después—: al revés,
+            un lector puede rellenar la caché con el valor viejo entre el borrado y el
+            <code>COMMIT</code>.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · escribir y luego invalidar</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class ActualizarPrecio
+{
+    public function __invoke(int $idProducto, int $precioEnCentimos): void
+    {
+        $this-&gt;conexion-&gt;transactional(function () use ($idProducto, $precioEnCentimos): void {
+            $this-&gt;productos-&gt;actualizarPrecio($idProducto, $precioEnCentimos);
+        });
+
+        $this-&gt;cache-&gt;delete(ClaveDeCache::paraProducto($idProducto));
+    }
+}</code></pre>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El borrado va fuera de la transacción</p>
+              <p>
+                Si borras dentro y la transacción hace <em>rollback</em>, has invalidado una
+                caché que era correcta —molesto pero inofensivo—. Peor es lo contrario: borrar
+                antes del <code>COMMIT</code> deja una ventana en la que un lector rellena la
+                caché con el valor viejo, que sí es un dato incorrecto persistente.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="fallos">
+            Qué pasa cuando la caché falla
+            <a href="#fallos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una caché es una optimización, así que su caída debería degradar el rendimiento, no
+            tumbar la aplicación. En la práctica hace falta escribirlo explícitamente:
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Caché como optimización</h4>
+              <ul>
+                <li>Un error al leer se traga y se va a la fuente</li>
+                <li>Timeout corto: 50-100 ms, no segundos</li>
+                <li>Un cortacircuitos delante evita insistir si está caída</li>
+                <li>Se registra, pero no se propaga al usuario</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Caché como dependencia dura</h4>
+              <ul>
+                <li>La excepción de Redis sube hasta el controlador</li>
+                <li>Sin timeout: cada petición espera lo que haga falta</li>
+                <li>Redis se cae y la web devuelve 500</li>
+                <li>Has convertido una mejora en un punto único de fallo</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            Cuidado, eso sí, con el otro extremo: si tu base de datos solo aguanta porque la
+            caché absorbe el 95 % de las lecturas, «degradar» significa que toda esa carga cae de
+            golpe sobre ella. Esa situación no se arregla tragando excepciones; se arregla
+            sabiendo que existe y teniendo un plan, que es de lo que va la lección de la
+            estampida.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Cache-aside cuando…</h4>
+              <ul>
+                <li>Es el caso normal: empieza siempre aquí</li>
+                <li>Quieres poder quitar la caché sin tocar el dominio</li>
+                <li>Toleras que el primer lector pague el fallo</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Write-through cuando…</h4>
+              <ul>
+                <li>Servir un dato viejo es inaceptable aunque sea un segundo</li>
+                <li>Las escrituras son pocas y las lecturas muchísimas</li>
+                <li>Asumes que la escritura falla si falla la caché</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Cache-aside es el patrón por defecto, y un decorador sobre la misma interfaz lo mantiene fuera del dominio.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Al escribir se <b>borra</b> la entrada, no se actualiza: actualizar deja una carrera que puede fijar el valor viejo hasta que expire el TTL.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Primero el COMMIT, después el borrado: al revés, un lector rellena la caché con el dato viejo en la ventana intermedia.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Write-behind pierde escrituras confirmadas si la caché cae: solo para datos que puedes permitirte perder.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un fallo de caché debe degradar, no romper: timeout corto, error tragado y registrado. Si no, has creado un punto único de fallo.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

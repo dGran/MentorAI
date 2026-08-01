@@ -18,6 +18,143 @@
 
 window.MENTORAI_CHECKS = {
 
+  /* ================= Curso: Caché y rendimiento ================= */
+
+  "cr-medir-primero": [
+    { q: "Si una página hace 20 peticiones internas, ¿qué probabilidad hay de que alguna caiga en el p99?",
+      o: ["Alrededor del 18 %, casi una de cada cinco cargas", "Casi ninguna: es 1 de cada 100", "Exactamente un 1 %"], a: 0,
+      w: "0,99²⁰ ≈ 82 % de que ninguna lo toque. La cola de la distribución no es un caso raro: es la experiencia habitual de tus usuarios más activos." },
+    { q: "Tus métricas internas dicen 40 ms y los usuarios se quejan. ¿Dónde miras?",
+      o: ["En la base de datos", "Delante: el tiempo en cola esperando un worker es invisible desde tu código", "En el navegador del usuario"], a: 1,
+      w: "Cuando el pool de FPM se agota, las peticiones esperan turno antes de que tu código empiece. Tu métrica interna sigue diciendo la verdad mientras el usuario espera un segundo." },
+  ],
+
+  "cr-perfilado": [
+    { q: "¿Qué columna del perfil te dice qué arreglar?",
+      o: ["El tiempo total (inclusive)", "El número de llamadas", "El tiempo propio (self)"], a: 2,
+      w: "El total sirve para navegar el árbol hacia abajo; el propio identifica al culpable. Tu controlador siempre tendrá el 100 % del total y casi nada de propio." },
+    { q: "¿Cuál de los cuatro hallazgos típicos es el más rentable?",
+      o: ["El trabajo que no hacía falta hacer en esa petición", "La función con más tiempo propio", "La consulta más lenta"], a: 0,
+      w: "Es el que menos se busca: no optimizar algo, sino descubrir que se ejecutaba y se descartaba, o que no hacía falta en ese caso." },
+  ],
+
+  "cr-presupuesto": [
+    { q: "¿Qué le falta a «la búsqueda responde en 300 ms»?",
+      o: ["El número de usuarios concurrentes", "El percentil sobre el que se mide", "El servidor donde se mide"], a: 1,
+      w: "Sin percentil no se puede verificar, no se puede alertar y cada persona entiende una cosa distinta. La versión útil es «el p95 está por debajo de 300 ms»." },
+    { q: "El presupuesto no cuadra. ¿Cuál es la primera pregunta?",
+      o: ["¿Compramos más máquinas?", "¿Podemos subir el objetivo?", "¿Por qué está en serie?"], a: 2,
+      w: "Tres llamadas independientes de 200 ms cuestan 600 ms encadenadas y 200 ms lanzadas a la vez. En paralelo el coste pasa de la suma al máximo." },
+  ],
+
+  "cr-consultas-lentas": [
+    { q: "¿Qué indicador de un EXPLAIN dice más que ninguna columna suelta?",
+      o: ["La relación entre filas examinadas y filas devueltas", "El valor de la columna `type`", "El nombre del índice elegido"], a: 0,
+      w: "Recorrer 400.000 para devolver 20 significa que el índice no hace su trabajo, aunque el motor diga que usa uno." },
+    { q: "¿Por qué hay que probar con los parámetros reales del log?",
+      o: ["Porque los parámetros de ejemplo no compilan", "Porque el plan cambia según cuántas filas crea el optimizador que va a tocar", "Porque el log los guarda cifrados"], a: 1,
+      w: "La misma consulta con un estado que cubre el 90 % de la tabla y con otro que cubre el 0,3 % puede tener planes distintos. Probar con el valor raro es cómo se despliega una consulta que arrasa." },
+  ],
+
+  "cr-indices-en-practica": [
+    { q: "¿Dónde va la columna del rango en un índice compuesto?",
+      o: ["La primera, porque filtra más", "Da igual el orden", "Al final, porque corta el índice para lo que venga detrás"], a: 2,
+      w: "Las columnas que van después de una comparación por rango ya no se pueden usar para filtrar. El orden es: igualdades, luego el ORDER BY, y el rango al final." },
+    { q: "Un índice sin uso según `count_star = 0`. ¿Lo borras?",
+      o: ["Solo tras comprobar el uptime y que ha pasado un ciclo completo de negocio", "Sí, inmediatamente", "Nunca se borran índices"], a: 0,
+      w: "Los contadores se reinician con el servidor. Un cero en una instancia que arrancó anteayer puede ser el índice del informe mensual." },
+  ],
+
+  "cr-paginacion": [
+    { q: "Además de lenta, ¿qué otro problema tiene la paginación por OFFSET?",
+      o: ["Que no funciona con ORDER BY", "Que salta y repite filas cuando hay escrituras concurrentes", "Que consume más memoria en el cliente"], a: 1,
+      w: "En un listado da igual. En un proceso que recorre todo para exportar, has duplicado un registro y saltado otro sin que nadie se entere." },
+    { q: "¿Qué se hace con el «mostrando 20 de 1.482.303»?",
+      o: ["Cachearlo con un TTL largo", "Contarlo en cada petición: es barato", "Pedir 21 filas para saber si hay siguiente, y no contar"], a: 2,
+      w: "Casi ningún usuario necesita saber que hay 1.482.303 resultados: necesita saber si hay más. Ese COUNT suele costar más que la consulta de datos." },
+  ],
+
+  "cr-conexiones-y-pool": [
+    { q: "¿Qué pasa si subes `max_connections` ante un error de «demasiadas conexiones»?",
+      o: ["Tratas el síntoma: pasado el punto de saturación, más conexiones bajan el rendimiento", "Se resuelve el problema de raíz", "Mejora la latencia de las consultas"], a: 0,
+      w: "Más conexiones son más cambios de contexto, más competencia por los bloqueos y más memoria reservada. El rendimiento sube hasta un punto y baja después." },
+    { q: "¿Qué regla evita ocupar una conexión de más?",
+      o: ["Cerrar la conexión tras cada consulta", "Ninguna llamada de red dentro de una transacción", "Usar siempre conexiones persistentes"], a: 1,
+      w: "Una transacción abierta mientras esperas a la pasarela de pagos mantiene bloqueos y ocupa una conexión durante todo lo que tarde el tercero." },
+  ],
+
+  "cr-capas-de-cache": [
+    { q: "¿Qué regla ordena las cinco capas de caché?",
+      o: ["Cuanto más lejos, más rápido", "Todas cuestan lo mismo", "Cuanto más cerca del usuario, más ahorras y menos control tienes"], a: 2,
+      w: "Una respuesta cacheada en el navegador cuesta cero y no la puedes borrar; una en tu aplicación cuesta una petición completa y la invalidas cuando quieras." },
+    { q: "¿Qué se descarta antes de decidir cachear?",
+      o: ["No hacer el trabajo, y hacerlo rápido", "Nada: cachear siempre ayuda", "Comprar más memoria"], a: 0,
+      w: "Una caché sobre una consulta mal indexada esconde el problema hasta que la caché falla, y entonces se cae todo a la vez." },
+  ],
+
+  "cr-patrones-de-cache": [
+    { q: "¿Cuál es la forma limpia de añadir caché a un repositorio?",
+      o: ["Meter los if de caché dentro del repositorio", "Un decorador que implementa la misma interfaz", "Una clase estática global"], a: 1,
+      w: "Quien lo usa no sabe que hay caché, y quitarla es cambiar un cableado en el contenedor. Meterla dentro mezcla dos responsabilidades y hace imposible testear una sin la otra." },
+    { q: "¿Qué riesgo tiene write-behind (escribir solo en caché y volcar después)?",
+      o: ["Que es más lento al escribir", "Que no funciona con Redis", "Que una caída de la caché pierde escrituras ya confirmadas"], a: 2,
+      w: "Solo tiene sentido para datos que puedes permitirte perder —contadores de visitas, telemetría—, nunca para nada que el usuario crea guardado." },
+  ],
+
+  "cr-invalidacion": [
+    { q: "¿Cuál es la pregunta correcta al elegir un TTL?",
+      o: ["¿Cuánto puedo servirlo viejo sin que pase nada malo?", "¿Cuánto tarda en cambiar el dato?", "¿Cuánta memoria tengo?"], a: 0,
+      w: "Y esa respuesta la da el negocio, no la infraestructura. Un precio viejo unos minutos es tolerable si se valida al pagar; un stock viejo al vender, no." },
+    { q: "¿Qué ventaja tiene una clave versionada frente a borrar entradas?",
+      o: ["Ocupa menos memoria", "La invalidación es un INCR atómico e instantáneo, aunque afecte a diez mil entradas", "Evita tener que usar TTL"], a: 1,
+      w: "No hay que recorrer ni borrar nada: las entradas viejas quedan huérfanas y caducan solas. El coste es una lectura extra para obtener la versión." },
+  ],
+
+  "cr-estampida": [
+    { q: "¿Qué diferencia hay entre estampida y avalancha?",
+      o: ["Son sinónimos", "La estampida solo pasa en Redis", "La estampida es sobre la misma clave; la avalancha es sobre muchas claves a la vez"], a: 2,
+      w: "La estampida se arregla con bloqueo o expiración temprana; la avalancha, con TTL aleatorizado para que lo que se creó junto no caduque junto." },
+    { q: "¿Qué consigue la expiración temprana probabilística?",
+      o: ["Que nunca haya un instante sin valor servible en caché", "Reducir la memoria usada", "Que las claves caduquen antes y se ahorre espacio"], a: 0,
+      w: "Conforme se acerca la caducidad, cada lector tiene más probabilidad de refrescar. Una sola petición paga el coste y la entrada se renueva antes de vaciarse." },
+  ],
+
+  "cr-http-cache": [
+    { q: "¿Qué diferencia hay entre frescura y validación?",
+      o: ["Son lo mismo con nombres distintos", "La frescura ahorra la petición entera; la validación solo ahorra el cuerpo", "La validación es más rápida siempre"], a: 1,
+      w: "Con max-age el navegador no sale de la máquina. Con ETag hace la petición igual, pero recibe un 304 vacío: ahorras ancho de banda y serialización, no latencia." },
+    { q: "Tu respuesta depende del idioma que manda el cliente en `Accept-Language`. ¿Qué falta?",
+      o: ["Poner `no-store`", "Meter el idioma en el ETag", "Declarar `Vary: Accept-Language`"], a: 2,
+      w: "Una caché indexa por URL. Si la respuesta depende de algo que no está en la URL y no lo declaras, servirá la versión equivocada a todo el mundo." },
+  ],
+
+  "cr-payload-y-serializacion": [
+    { q: "¿Cuántas veces se paga un `SELECT *`?",
+      o: ["Tres: leyendo columnas de más, moviéndolas y construyendo objetos con ellas", "Una: en la red", "Ninguna si hay índice de cobertura"], a: 0,
+      w: "Y las columnas TEXT gordas que no usas se leen igual. Pedir las columnas concretas es de las optimizaciones que además dejan el código más claro." },
+    { q: "¿Por qué el N+1 de red es más peligroso que el de base de datos?",
+      o: ["Porque los ORM no lo soportan", "Porque cada salto son milisegundos y no hay contador de consultas que lo delate", "Porque consume más memoria"], a: 1,
+      w: "Veinte llamadas HTTP de 200 ms en un bucle son cuatro segundos que ninguna herramienta te va a señalar automáticamente." },
+  ],
+
+  "cr-fuera-del-camino-critico": [
+    { q: "¿Qué técnica para sacar trabajo de la petición se olvida más a menudo?",
+      o: ["Encolar en un worker", "Precalcular al escribir", "Diferir al cliente con una segunda petición"], a: 2,
+      w: "Si la página muestra el pedido y abajo unas recomendaciones lentas y prescindibles, no hace falta que retrasen la parte que importa: se pintan aparte." },
+    { q: "¿Qué necesita un precálculo denormalizado para ser fiable?",
+      o: ["Un proceso que recalcule desde cero y compare, aunque sea semanal", "Un TTL corto", "Una réplica de solo lectura"], a: 0,
+      w: "Una caché desactualizada se arregla borrándola. Un contador desviado se queda mal para siempre, y nadie se entera hasta que un cliente dice que las cuentas no cuadran." },
+  ],
+
+  "cr-cuando-parar": [
+    { q: "¿Qué optimizaciones hay que agotar antes de las que añaden complejidad?",
+      o: ["Las que más porcentaje ganan sobre el papel", "Las que dejan el código igual o más claro: un índice, quitar un N+1, pedir las columnas que usas", "Las que se pueden hacer en un día"], a: 1,
+      w: "Solo cuando esa lista está vacía tiene sentido pagar el coste permanente de una caché más que invalidar o un precálculo que se puede desviar." },
+    { q: "¿Qué decía Knuth realmente sobre la optimización prematura?",
+      o: ["Que nunca hay que pensar en rendimiento hasta que falle", "Que hay que optimizarlo todo desde el principio", "Que hay que olvidarse de las *pequeñas* eficiencias, sin dejar pasar el 3 % crítico"], a: 2,
+      w: "Micro-optimizar sin medir es el mal. Elegir el modelo de datos, la clave de particionado o si una API pagina no es optimización prematura: es diseño que después cuesta una migración." },
+  ],
+
   /* ================= Curso: Sistemas distribuidos ================= */
 
   "sd-falacias": [

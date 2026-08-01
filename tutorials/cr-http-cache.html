@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Caché HTTP: ETag, Cache-Control y CDN — MentorAI</title>
+    <meta name="description" content="Frescura frente a validación, qué directiva poner en cada tipo de respuesta, por qué Vary se olvida siempre y qué cambia con una CDN delante." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Caché y rendimiento</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Caché HTTP: ETag, Cache-Control y CDN</h1>
+        <p class="tutorial-hero__lead">La caché más rápida es la petición que no se hace. HTTP trae desde 1997 un sistema completo que todos implementan y que la mayoría desaprovecha por poner mal cuatro cabeceras.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#dos-preguntas">Frescura y validación</a></li>
+            <li><a href="#directivas">Las directivas que de verdad usas</a></li>
+            <li><a href="#vary">Vary: la cabecera que se olvida</a></li>
+            <li><a href="#cdn">Lo que cambia con una CDN delante</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            La caché más rápida es la petición que no se hace. HTTP lleva desde 1997 con un
+            sistema de caché completo y estandarizado que todos los navegadores y todas las CDN
+            implementan, y que la mayoría de las aplicaciones desaprovecha por poner mal cuatro
+            cabeceras.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Esto amplía, no repite</p>
+              <p>
+                Los fundamentos del protocolo están en <a href="http-a-fondo.html">HTTP a
+                fondo</a>. Aquí interesa el uso práctico: qué directiva pones en cada tipo de
+                respuesta y por qué una CDN se comporta distinto que un navegador.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="dos-preguntas">
+            Frescura y validación
+            <a href="#dos-preguntas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El modelo de HTTP responde a dos preguntas distintas, y confundirlas es la fuente de
+            casi todos los errores:
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Frescura: ¿puedo usarlo sin preguntar?</h4>
+              <ul>
+                <li><code>Cache-Control: max-age=3600</code></li>
+                <li>Ahorra la petición <b>entera</b></li>
+                <li>Cero latencia: no sale de la máquina</li>
+                <li>El precio: no puedes cambiar de opinión</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Validación: ¿sigue siendo válido?</h4>
+              <ul>
+                <li><code>ETag</code> y <code>If-None-Match</code></li>
+                <li>Ahorra el <b>cuerpo</b>, no la petición</li>
+                <li>Una ida y vuelta, pero un 304 vacío</li>
+                <li>Siempre correcto: preguntas cada vez</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · responder con ETag</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+$respuesta = new JsonResponse($producto);
+
+$respuesta-&gt;setEtag(md5($producto-&gt;actualizadoEn()-&gt;format('U') . $producto-&gt;version()));
+$respuesta-&gt;setPublic();
+$respuesta-&gt;setMaxAge(60);
+
+if ($respuesta-&gt;isNotModified($peticion)) {
+    return $respuesta;
+}
+
+return $respuesta;</code></pre>
+          </div>
+
+          <p>
+            <code>isNotModified()</code> compara el <code>ETag</code> con el
+            <code>If-None-Match</code> que mandó el cliente y, si coinciden, vacía el cuerpo y
+            devuelve un 304. El ahorro es de ancho de banda y de serialización, no de latencia:
+            la petición se hace igual.
+          </p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El ETag no debe calcularse sobre el cuerpo</p>
+              <p>
+                Si haces <code>md5($json)</code> tienes que <b>producir el JSON entero</b> para
+                saber si hace falta enviarlo: te ahorras el ancho de banda y no el trabajo.
+                Calcúlalo sobre algo barato que cambie con el dato —la fecha de actualización, un
+                número de versión— y podrás devolver el 304 sin tocar la base de datos.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="directivas">
+            Las directivas que de verdad usas
+            <a href="#directivas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Directiva</th><th>Qué dice</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>public</code></td><td>Cualquier caché puede guardarlo, incluida la CDN</td></tr>
+                <tr><td><code>private</code></td><td>Solo el navegador del usuario. <b>Obligatorio si hay datos personales</b></td></tr>
+                <tr><td><code>no-store</code></td><td>No guardar en ningún sitio. Para lo sensible de verdad</td></tr>
+                <tr><td><code>no-cache</code></td><td>Guardar sí, pero revalidar siempre antes de usar. El nombre engaña</td></tr>
+                <tr><td><code>max-age=N</code></td><td>Segundos que es fresco para el navegador</td></tr>
+                <tr><td><code>s-maxage=N</code></td><td>Lo mismo, pero para cachés compartidas. Gana sobre <code>max-age</code> en la CDN</td></tr>
+                <tr><td><code>stale-while-revalidate=N</code></td><td>Sirve viejo hasta N segundos mientras refresca por detrás</td></tr>
+                <tr><td><code>immutable</code></td><td>No revalides nunca. Para ficheros con hash en el nombre</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title"><code>no-cache</code> no significa «no caches»</p>
+              <p>
+                Significa «guárdalo, pero pregúntame antes de servirlo». El que no guarda nada es
+                <code>no-store</code>. Confundirlos en una respuesta con datos bancarios es un
+                incidente de seguridad, no una errata: la respuesta acaba en el disco del
+                navegador y en cualquier proxy del camino.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            La combinación que resuelve la mayoría de las APIs de lectura pública es corta:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · la cabecera que quieres</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">Cache-Control: public, max-age=60, s-maxage=600, stale-while-revalidate=86400</code></pre>
+          </div>
+
+          <p>
+            El navegador lo considera fresco un minuto; la CDN, diez. Y durante un día entero
+            después de caducar, la CDN puede seguir sirviendo lo viejo mientras refresca por
+            detrás: si tu servidor se cae, los usuarios no se enteran.
+          </p>
+
+          <h2 id="vary">
+            <code>Vary</code>: la cabecera que se olvida
+            <a href="#vary" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una caché indexa por URL. Si tu respuesta depende de algo <em>que no está en la
+            URL</em> —el idioma en <code>Accept-Language</code>, el formato en
+            <code>Accept</code>, si el usuario ha iniciado sesión— tienes que declararlo, o la
+            caché servirá la versión equivocada a todo el mundo.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · declarar de qué depende</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">Vary: Accept-Language, Accept-Encoding</code></pre>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Nunca <code>Vary: User-Agent</code></p>
+              <p>
+                Hay millones de cadenas de <em>user agent</em> distintas, así que estarías creando
+                una entrada de caché por navegador y versión: la tasa de acierto se desploma a
+                casi cero y la CDN deja de servirte para nada. Si necesitas variar por
+                dispositivo, normaliza a dos o tres valores en el borde, no varíes por la cadena
+                completa.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="cdn">
+            Lo que cambia con una CDN delante
+            <a href="#cdn" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una CDN es una caché compartida repartida por el mundo. Eso trae dos ventajas y una
+            responsabilidad:
+          </p>
+          <p>
+            Las ventajas son la <strong>cercanía</strong> —servir desde 20 ms en vez de 150— y la
+            <strong>agregación</strong>: mil usuarios pidiendo lo mismo se convierten en una sola
+            petición a tu servidor. Con <code>s-maxage</code> alto, tu origen atiende una fracción
+            minúscula del tráfico real.
+          </p>
+          <p>
+            La responsabilidad es que <strong>es compartida</strong>. Cualquier respuesta marcada
+            <code>public</code> que contenga algo de un usuario concreto se le servirá al
+            siguiente. La regla es simple y no admite excepciones: si la respuesta depende de quién
+            pregunta, va <code>private</code>, y si es sensible, <code>no-store</code>.
+          </p>
+
+          <p>
+            Y una última nota operativa: <strong>purgar no es instantáneo</strong>. Una purga
+            tarda en propagarse a todos los nodos, así que no puedes contar con ella para
+            corregir un error inmediatamente. Para contenido que cambia, la alternativa fiable es
+            no purgar nunca: poner un hash en el nombre del fichero y cambiar la URL, que
+            invalida por construcción.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Caché HTTP cuando…</h4>
+              <ul>
+                <li>La respuesta es igual para muchos usuarios</li>
+                <li>Son activos estáticos: ahí es obligatorio, con hash e <code>immutable</code></li>
+                <li>Es una API de lectura pública: catálogo, precios, contenidos</li>
+                <li>Quieres que un pico no llegue a tu origen</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4><code>private</code> o <code>no-store</code> cuando…</h4>
+              <ul>
+                <li>La respuesta lleva datos de una persona concreta</li>
+                <li>Es información financiera o de salud</li>
+                <li>Es una respuesta a una escritura</li>
+                <li>Ante la duda: el fallo por defecto debe ser no cachear</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Frescura ahorra la petición entera; validación con ETag ahorra solo el cuerpo. Son cosas distintas y se combinan.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Calcula el ETag sobre algo barato, no sobre el cuerpo: si tienes que generar el JSON para saber si enviarlo, no has ahorrado trabajo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>no-cache</code> guarda y revalida; el que no guarda es <code>no-store</code>. Confundirlos con datos sensibles es un incidente.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Si la respuesta depende de algo que no está en la URL, decláralo en <code>Vary</code>. Nunca por <code>User-Agent</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Purgar una CDN no es instantáneo: para contenido que cambia, poner un hash en la URL invalida por construcción.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
