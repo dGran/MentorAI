@@ -1,6 +1,54 @@
 # Plan — Buscador full-text (fase 2)
 
-Estado: **pendiente**. Hoy el buscador (`#catalog-search`) filtra solo por
+Estado: **CERRADO 2026-08-01. Implementado y verificado en navegador.**
+
+El plan estuvo bloqueado un año por una razón que dejó de existir: decía que el
+índice «lo genera el puente», y el puente se borró el 2026-07-31. Lo genera
+`scripts/generar-indice.js`, igual que `scripts/validar.js` valida el catálogo.
+
+## Lo que se hizo, y en qué se desvió del plan
+
+- **Generador**: `scripts/generar-indice.js` escribe `tutorials/search-index.js`
+  (`window.MENTORAI_SEARCH`, no `ACADEMIA_SEARCH`: se sigue el prefijo de los
+  globales nuevos). 257 tutoriales, **1,6 MB**.
+- **Sí se indexa el código**, al contrario de lo que sugería el plan. Buscar
+  `hash_equals` o `X-Accel-Buffering` es justo lo que se hace cuando te topas con
+  el problema en el trabajo.
+- **Carga perezosa, que el plan no contemplaba**: 1,6 MB en cada visita era
+  demasiado para algo que se usa de vez en cuando. `assets/js/modules/search.js`
+  inyecta el `<script>` la primera vez que escribes en un buscador — y sí,
+  **inyectar un `<script>` funciona por `file://`**, a diferencia de `fetch`.
+  Verificado antes de construir nada sobre esa suposición.
+- **Fragmento con la coincidencia resaltada** en los resultados del inicio
+  (`.mini-card__desc--match` con `<mark>`). El texto indexado va normalizado, así
+  que el fragmento sale sin acentos: es un extracto para ubicarte, no el texto.
+- **Las dos superficies lo usan**: el buscador del inicio (`home.js`) y el filtro
+  del catálogo (`catalog-filters.js`), a través de `MentorAI.Search`.
+- **Offline**: `search.js` va al shell del service worker (VERSION → v6) y el
+  índice entra en «descargar toda la academia», para poder buscar sin red.
+- **El riesgo que anotaba el plan —índice desincronizado— lo cubre el
+  validador**: `generar-indice.js --comprobar` sale con 1 si está desfasado, y
+  `validar.js` lo llama. Verificado tocando el índice y tocando un tutorial.
+
+## Comprobado en Chrome headless
+
+- Visitar el inicio **no** carga el índice (`MENTORAI_SEARCH` sigue sin definir).
+- Buscar «manada atronadora» lo carga y devuelve 3 tutoriales con su fragmento.
+- En Artículos, «opcodes» y «sapi» encuentran artículos por su cuerpo; «token de
+  barrera» devuelve 0, que es correcto: esa lección es de curso y no está en ese
+  catálogo.
+
+## Lo que queda si algún día crece
+
+Hoy la búsqueda es `includes()` sobre 1,6 MB, que en un portátil es instantáneo.
+Si el catálogo se dobla, tocaría índice invertido o partirlo por tutorial. No
+antes: medir primero.
+
+---
+
+## Plan original (para referencia)
+
+Hoy el buscador (`#catalog-search`) filtra solo por
 metadatos (`data-search` = title + description + tags + topic + categories +
 level). Esto cubre el "no encuentro el tutorial de X". El full-text busca
 **dentro del cuerpo** de cada tutorial.

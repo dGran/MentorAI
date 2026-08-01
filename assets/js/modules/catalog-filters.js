@@ -55,12 +55,20 @@
     return CATEGORY_LABELS[category] ?? category[0].toUpperCase() + category.slice(1);
   }
 
-  /* ---------- Coincidencias ---------- */
+  /* ---------- Coincidencias ----------
+     Primero los metadatos, que están en el dataset y no cuestan nada;
+     el contenido solo si el índice ya se cargó. */
+
+  function coincideConLaBusqueda(dataset) {
+    if (dataset.search.includes(state.query)) return true;
+
+    return MentorAI.Search.coincide(dataset.slug, state.query);
+  }
 
   function matches(card) {
     const { dataset } = card;
 
-    if (state.query && !dataset.search.includes(state.query)) return false;
+    if (state.query && !coincideConLaBusqueda(dataset)) return false;
 
     if (state.category === SAVED && !MentorAI.Bookmarks.has(dataset.slug)) return false;
 
@@ -198,6 +206,8 @@
       state.query = MentorAI.normalize(input.value.trim());
       apply();
     });
+
+    MentorAI.Search.alBuscar(input, apply);
   }
 
   function wireBookmarks(filtersEl) {

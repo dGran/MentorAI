@@ -64,10 +64,14 @@ Profundo pero entendible: del "por qué" antes que del "cómo".
 
 ## Antes de dar por bueno el trabajo
 
+**`node scripts/generar-indice.js`** regenera el índice de búsqueda full-text a
+partir de los `.html`. Hay que ejecutarlo al crear o editar cualquier tutorial;
+si se olvida, `validar.js` lo detecta y falla.
+
 `node scripts/validar.js` valida el catálogo entero: slugs, `href`, ficheros que
 faltan, referencias rotas de cursos y rutas, `<` sin escapar dentro de
-`<code data-lang>` y el sesgo de posición de las respuestas correctas. Tiene que
-salir **sin errores**. Corre igual en CI (`.github/workflows/validar.yml`).
+`<code data-lang>`, el sesgo de posición de las respuestas correctas y que el
+índice de búsqueda esté al día. Tiene que salir **sin errores**. Corre igual en CI (`.github/workflows/validar.yml`).
 
 ## Secciones obligatorias
 

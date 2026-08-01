@@ -67,7 +67,9 @@
       .filter((tutorial) => tutorial.status !== "soon")
       .map((tutorial) => `tutorials/${tutorial.slug}.html`);
 
-    return [...SHELL_PAGES, ...tutoriales].map(absolute);
+    /* El índice de búsqueda pesa ~1,6 MB y normalmente se carga bajo demanda;
+       aquí entra a propósito, para poder buscar dentro del contenido sin red. */
+    return [...SHELL_PAGES, "tutorials/search-index.js", ...tutoriales].map(absolute);
   }
 
   /* ---------- Diálogo con el service worker ----------

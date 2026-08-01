@@ -313,6 +313,28 @@ function validarCss() {
 
 /* ---------- Ejecución ---------- */
 
+/* ---------- 8. Índice de búsqueda ----------
+   Se genera a partir de los .html, así que se desincroniza en cuanto se
+   edita un tutorial y nadie lo regenera. Es el riesgo que anotaba el plan. */
+
+function validarIndiceDeBusqueda() {
+  if (!existe("tutorials/search-index.js")) {
+    error("falta tutorials/search-index.js. Ejecuta: node scripts/generar-indice.js");
+    return;
+  }
+
+  try {
+    execFileSync("node", [path.join(ROOT, "scripts/generar-indice.js"), "--comprobar"], {
+      stdio: "pipe",
+    });
+  } catch {
+    error(
+      "el índice de búsqueda está desfasado respecto a los tutoriales. " +
+        "Ejecuta: node scripts/generar-indice.js"
+    );
+  }
+}
+
 validarSintaxis();
 validarManifest();
 validarCursosYRutas();
@@ -339,6 +361,7 @@ validarTutoriales();
 validarScripts();
 validarShell();
 validarCss();
+validarIndiceDeBusqueda();
 
 console.log(`\n  Catálogo: ${manifest.length} tutoriales · ${cursos.length} cursos · ${rutas.length} rutas`);
 console.log(

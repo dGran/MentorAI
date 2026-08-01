@@ -15,8 +15,10 @@ global del agente y no se duplican aquí.
 - **`file://` manda.** Nada de `fetch` de ficheros `.json`: CORS lo bloquea al
   abrir por `file://`. Los datos se cargan como `.js` que asignan a un global
   (`tutorials/manifest.js` → `window.ACADEMIA_TUTORIALS`). Cualquier dato nuevo
-  (p. ej. un índice de búsqueda) sigue ese patrón: un `.js` que setea `window.X`,
-  incluido con `<script>` antes de los módulos de `assets/js/modules/`.
+  sigue ese patrón: un `.js` que setea `window.X`, incluido con `<script>` antes
+  de los módulos de `assets/js/modules/`. Si un dato pesa demasiado para cargarlo
+  siempre —el índice de búsqueda son 1,6 MB— se **inyecta el `<script>` bajo
+  demanda**, que sí funciona por `file://` (ver `assets/js/modules/search.js`).
 - **Una vista = una página.** Inicio (`index.html`), Rutas (`rutas.html`), Cursos
   (`cursos.html`) y Artículos (`articulos.html`) son páginas HTML reales con
   navegación por `<a href>`, **no** pestañas conmutadas por JS sobre una sola
@@ -135,7 +137,8 @@ Pendiente de verdad, por orden de peso:
   navegador real contra la URL de Pages (headless no activa el service worker).
   Checklist al final de `plan-offline-real.md`.
 
-Fase 2 (infraestructura, sin tocar):
-- `plan-buscador-fulltext.md` — búsqueda dentro del contenido (índice por el puente).
+Fase 2 (infraestructura):
+- `plan-buscador-fulltext.md` — **CERRADO 2026-08-01**: índice generado por
+  `scripts/generar-indice.js`, carga perezosa al escribir en un buscador.
 - `plan-resaltado-texto.md` — subrayar texto dentro de los tutoriales.
 - `plan-autocategorizacion.md` — que la IA proponga las categorías al generar.

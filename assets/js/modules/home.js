@@ -39,13 +39,17 @@
     }${escapeHtml(tutorial.level)}</span>`;
   }
 
-  function miniCardHtml(tutorial) {
+  function miniCardHtml(tutorial, fragmento) {
     const { escapeHtml, Icons } = MentorAI;
+
+    const cuerpo = fragmento
+      ? `<p class="mini-card__desc mini-card__desc--match">${fragmento}</p>`
+      : `<p class="mini-card__desc">${escapeHtml(tutorial.description)}</p>`;
 
     return `<a class="mini-card" href="${escapeHtml(tutorial.href)}">
       <span class="mini-card__icon">${Icons.for(tutorial.icon)}</span>
       <h4 class="mini-card__title">${escapeHtml(tutorial.title)}</h4>
-      <p class="mini-card__desc">${escapeHtml(tutorial.description)}</p>
+      ${cuerpo}
       <div class="mini-card__meta">${metaHtml(tutorial)}</div>
     </a>`;
   }
@@ -236,31 +240,54 @@
       hideShelf(id);
     }
 
-    const matches = publishedTutorials().filter((tutorial) => haystack(tutorial).includes(query));
+    const Search = MentorAI.Search;
+    const enMetadatos = publishedTutorials().filter((tutorial) =>
+      haystack(tutorial).includes(query)
+    );
+    const yaEncontrados = new Set(enMetadatos.map((tutorial) => tutorial.slug));
+    const enContenido = publishedTutorials().filter(
+      (tutorial) => !yaEncontrados.has(tutorial.slug) && Search.coincide(tutorial.slug, query)
+    );
+
+    const matches = [...enMetadatos, ...enContenido];
 
     host.hidden = false;
 
     if (matches.length === 0) {
+      const buscando = !Search.estaListo();
+
       host.innerHTML = `<header class="shelf__head"><div>
-          <h3 class="shelf__title">Sin resultados</h3>
-          <p class="shelf__sub">Nada coincide con “${escapeHtml(
-            term
-          )}”. Prueba con otra palabra.</p>
+          <h3 class="shelf__title">${buscando ? "Buscando dentro del contenido…" : "Sin resultados"}</h3>
+          <p class="shelf__sub">${
+            buscando
+              ? "Nada en los títulos. Mirando dentro de los tutoriales."
+              : `Nada coincide con “${escapeHtml(term)}”. Prueba con otra palabra.`
+          }</p>
         </div></header>`;
       return;
     }
+
+    const resultados = [
+      ...enMetadatos.map(miniCardHtml),
+      ...enContenido.map((tutorial) => miniCardHtml(tutorial, Search.fragmento(tutorial.slug, query))),
+    ].join("");
 
     host.innerHTML = `<header class="shelf__head"><div>
         <h3 class="shelf__title">Resultados</h3>
         <p class="shelf__sub">${matches.length} ${
           matches.length === 1 ? "coincidencia" : "coincidencias"
-        } para “${escapeHtml(term)}”</p>
+        } para “${escapeHtml(term)}”${
+          enContenido.length ? ` · ${enContenido.length} dentro del contenido` : ""
+        }</p>
       </div></header>
-      <div class="rail">${matches.map(miniCardHtml).join("")}</div>`;
+      <div class="rail">${resultados}</div>`;
   }
 
   function initSearch() {
-    document.getElementById("home-search")?.addEventListener("input", applySearch);
+    const input = document.getElementById("home-search");
+
+    input?.addEventListener("input", applySearch);
+    MentorAI.Search.alBuscar(input, applySearch);
   }
 
   /* ---------- Contadores del hero ----------
