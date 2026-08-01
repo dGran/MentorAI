@@ -12,7 +12,7 @@
    navegadores que ya lo tienen cacheado se traigan lo nuevo.
    ============================================================ */
 
-var VERSION = "v2";
+var VERSION = "v3";
 var SHELL = "academia-shell-" + VERSION;
 var CONTENT = "academia-content-" + VERSION;
 
@@ -34,6 +34,10 @@ var SHELL_PATHS = [
   "assets/fonts/jetbrains-mono-600-latin.woff2",
   "assets/js/modules/core.js",
   "assets/js/modules/storage.js",
+  "assets/js/modules/ui-text.js",
+  "assets/js/modules/ui-icons.js",
+  "assets/js/modules/catalog-card.js",
+  "assets/js/modules/catalog-filters.js",
   "assets/js/modules/catalog.js",
   "assets/js/modules/courses.js",
   "assets/js/modules/exams.js",

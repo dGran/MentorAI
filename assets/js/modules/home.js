@@ -44,10 +44,10 @@
     function metaLine(tutorial) {
       return (
         "<span>" +
-        MentorAI.Catalog.clockSvg +
+        MentorAI.Icons.clock +
         escapeHtml(tutorial.minutes) +
         " min</span><span>" +
-        MentorAI.Catalog.levelSvg +
+        MentorAI.Icons.level +
         escapeHtml(tutorial.level) +
         "</span>"
       );
@@ -58,7 +58,7 @@
         '<a class="mini-card" href="' +
         escapeHtml(tutorial.href) +
         '"><span class="mini-card__icon">' +
-        MentorAI.Catalog.iconFor(tutorial.icon) +
+        MentorAI.Icons.for(tutorial.icon) +
         '</span><h4 class="mini-card__title">' +
         escapeHtml(tutorial.title) +
         '</h4><p class="mini-card__desc">' +
@@ -74,7 +74,7 @@
         '<a class="continue-card" href="' +
         escapeHtml(tutorial.href) +
         '"><div class="continue-card__top"><span class="mini-card__icon">' +
-        MentorAI.Catalog.iconFor(tutorial.icon) +
+        MentorAI.Icons.for(tutorial.icon) +
         '</span><span class="continue-card__percent">' +
         percent +
         '%</span></div><h4 class="mini-card__title">' +

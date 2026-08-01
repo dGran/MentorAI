@@ -176,7 +176,7 @@
 
     function buildCourseCard(course, manifest) {
       const stats = progressOf(course, manifest);
-      const icon = MentorAI.Catalog.iconFor(course.icon);
+      const icon = MentorAI.Icons.for(course.icon);
       const lessonsLabel =
         stats.published === stats.total
           ? stats.total + " lecciones"

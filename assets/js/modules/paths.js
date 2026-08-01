@@ -118,7 +118,7 @@
         return MentorAI.Progress.has(slug);
       }).length;
       const allDone = lessons.length > 0 && completed === lessons.length;
-      const icon = MentorAI.Catalog.iconFor(course.icon);
+      const icon = MentorAI.Icons.for(course.icon);
 
       const marker = allDone
         ? '<span class="step__marker step__marker--done">' + CHECK_SVG + "</span>"
@@ -187,7 +187,7 @@
 
     function buildPath(path, manifest) {
       const stats = pathProgress(path, manifest);
-      const icon = MentorAI.Catalog.iconFor(path.icon);
+      const icon = MentorAI.Icons.for(path.icon);
 
       const steps = (path.steps || [])
         .map(function (step, index) {
@@ -229,7 +229,7 @@
 
     function buildPathCard(path, manifest) {
       const stats = pathProgress(path, manifest);
-      const icon = MentorAI.Catalog.iconFor(path.icon);
+      const icon = MentorAI.Icons.for(path.icon);
 
       return (
         '<a class="path-card" href="rutas.html#ruta-' +
