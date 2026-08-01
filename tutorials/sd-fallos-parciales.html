@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fallos parciales: la respuesta que nunca llega — MentorAI</title>
+    <meta name="description" content="El tercer desenlace que solo existe cuando la llamada cruza la red, y cómo modelar el «no sé» en vez de fingir que no está." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Sistemas distribuidos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Fallos parciales: la respuesta que nunca llega</h1>
+        <p class="tutorial-hero__lead">Una llamada local se hace o no se hace. Una remota tiene un tercer final sin nombre en ningún lenguaje: no sé. Diseñar para él separa los sistemas que se recuperan solos de los que necesitan a alguien mirando la base de datos un domingo.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#dos-mundos">Dos desenlaces frente a tres</a></li>
+            <li><a href="#la-duda">Los cuatro sitios donde se rompe</a></li>
+            <li><a href="#tres-estrategias">Las tres respuestas posibles</a></li>
+            <li><a href="#php">El estado intermedio, en código</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            En un monolito, una operación se hace o no se hace. En un sistema distribuido
+            aparece un tercer estado que no tiene nombre en ningún lenguaje de programación:
+            <em>no sé</em>. Aprender a diseñar para ese tercer estado es la diferencia entre un
+            sistema que se recupera solo y uno que necesita a alguien mirando la base de datos
+            un domingo por la noche.
+          </p>
+
+          <h2 id="dos-mundos">
+            Dos desenlaces frente a tres
+            <a href="#dos-mundos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cuando llamas a un método de tu propio proceso, el resultado es binario: o devuelve
+            un valor o lanza una excepción. No hay más opciones, porque la llamada y su
+            resultado viven en la misma memoria. Si el proceso muere, mueren los dos juntos.
+          </p>
+          <p>
+            Cuando la llamada cruza la red, la petición y la respuesta viajan por separado, y
+            cada una puede perderse por su cuenta. Eso abre un desenlace nuevo:
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Llamada local</h4>
+              <ul>
+                <li><b>Éxito:</b> devuelve un valor. Se hizo.</li>
+                <li><b>Excepción:</b> lanza. No se hizo.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Llamada remota</h4>
+              <ul>
+                <li><b>Éxito:</b> respuesta 200. Se hizo.</li>
+                <li><b>Rechazo explícito:</b> un 400 o un 409. No se hizo.</li>
+                <li><b>Silencio:</b> timeout, conexión cortada, 502. <b>No sé.</b></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El error más caro del código distribuido</p>
+              <p>
+                Tratar el silencio como si fuera un rechazo. <code>catch (TimeoutException)</code>
+                seguido de «marca el pedido como fallido» es cómo se cobra dos veces a un
+                cliente, o cómo se le dice que su pago falló mientras el dinero ya salió de su
+                cuenta.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="la-duda">
+            Los cuatro sitios donde se rompe
+            <a href="#la-duda" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un timeout no te dice <em>dónde</em> se rompió. Y los cuatro puntos posibles se
+            reparten en dos grupos con consecuencias opuestas:
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">A</span>
+                <span><b>La petición no llegó</b><small>Se perdió en la red. El trabajo NO se hizo.</small></span>
+              </div>
+              <div class="flow__arrow" data-label="o bien"></div>
+              <div class="flow__node">
+                <span class="flow__num">B</span>
+                <span><b>Llegó y el servidor murió antes de procesarla</b><small>El trabajo NO se hizo.</small></span>
+              </div>
+              <div class="flow__arrow" data-label="o bien"></div>
+              <div class="flow__node">
+                <span class="flow__num">C</span>
+                <span><b>Se procesó y el servidor murió al responder</b><small>El trabajo SÍ se hizo.</small></span>
+              </div>
+              <div class="flow__arrow" data-label="o bien"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">D</span>
+                <span><b>Se procesó y la respuesta se perdió</b><small>El trabajo SÍ se hizo.</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Desde el cliente, los cuatro casos son idénticos: un timeout. Y en dos de ellos el
+              trabajo está hecho.
+            </p>
+          </div>
+
+          <p>
+            Nada en el protocolo te permite distinguirlos. Ni un timeout más largo, ni un
+            <em>health check</em>, ni mirar los logs del otro servicio en ese instante: en el
+            momento de decidir qué haces, la información no existe. Este es el resultado que
+            hay que interiorizar, porque no se arregla con más ingeniería en el cliente.
+          </p>
+
+          <h2 id="tres-estrategias">
+            Las tres respuestas posibles
+            <a href="#tres-estrategias" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Si no puedes saber qué pasó, solo te quedan tres caminos, y cada uno traslada el
+            coste a un sitio distinto:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Estrategia</th><th>Qué haces</th><th>Qué te cuesta</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><b>Reintentar</b></td>
+                  <td>Repites la operación hasta tener una respuesta clara</td>
+                  <td>Puedes ejecutarla dos veces, salvo que sea idempotente</td>
+                </tr>
+                <tr>
+                  <td><b>Preguntar</b></td>
+                  <td>Consultas al otro servicio si la operación consta</td>
+                  <td>Necesitas un identificador tuyo y un endpoint de consulta</td>
+                </tr>
+                <tr>
+                  <td><b>Aplazar</b></td>
+                  <td>Dejas la operación «en curso» y la resuelves después</td>
+                  <td>El usuario espera y tú mantienes un proceso de conciliación</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            En la práctica se combinan: reintentas con una clave de idempotencia, y si tras N
+            intentos sigues sin respuesta, dejas la operación en un estado intermedio y la
+            resuelve un proceso aparte. Lo que <strong>nunca</strong> es una opción es decidir
+            a ciegas.
+          </p>
+
+          <h2 id="php">
+            El estado intermedio, en código
+            <a href="#php" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El error de diseño de fondo suele estar en el modelo de datos, no en el cliente
+            HTTP: un pedido con un booleano <code>pagado</code> no tiene dónde guardar «no sé».
+            Un enum con un estado explícito, sí.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · EstadoPago.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+enum EstadoPago: string
+{
+    case Pendiente = 'pendiente';
+    case Confirmado = 'confirmado';
+    case Rechazado = 'rechazado';
+    case Incierto = 'incierto';
+
+    public function necesitaConciliacion(): bool
+    {
+        return $this === self::Incierto;
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            Con ese estado, el cliente puede ser honesto sobre lo que sabe y lo que no:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · CobrarPedido.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class CobrarPedido
+{
+    public function __invoke(Pedido $pedido): EstadoPago
+    {
+        try {
+            $this-&gt;pagos-&gt;cobrar($pedido-&gt;id(), $pedido-&gt;importeEnCentimos());
+
+            return EstadoPago::Confirmado;
+        } catch (PagoRechazado $rechazo) {
+            return EstadoPago::Rechazado;
+        } catch (RespuestaNoRecibida $silencio) {
+            $this-&gt;registro-&gt;warning('Cobro sin respuesta, queda para conciliar', [
+                'pedido' =&gt; $pedido-&gt;id(),
+            ]);
+
+            return EstadoPago::Incierto;
+        }
+    }
+}</code></pre>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Dos excepciones, no una</p>
+              <p>
+                Lo importante del bloque anterior no es el <code>try</code>: es que
+                <code>PagoRechazado</code> y <code>RespuestaNoRecibida</code> son tipos
+                distintos. Si tu cliente HTTP lanza la misma excepción para un 400 y para un
+                timeout, la información que necesitas para decidir se pierde antes de llegar
+                al caso de uso, y ya no hay forma de recuperarla.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            El estado <code>Incierto</code> no es una derrota: es una promesa de que alguien lo
+            va a mirar. Esa promesa la cumple un proceso de conciliación que recorre los pagos
+            inciertos con cierta antigüedad, pregunta al proveedor por el identificador del
+            pedido y los cierra en un sentido o en otro. Sin ese proceso, el estado nuevo solo
+            es una forma más elegante de perder dinero.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Modela el «no sé» cuando…</h4>
+              <ul>
+                <li>La operación mueve dinero, inventario o algo que no se puede deshacer solo</li>
+                <li>Ejecutarla dos veces tiene consecuencias visibles para el usuario</li>
+                <li>El otro extremo es un proveedor externo que no controlas</li>
+                <li>Ya tienes una tarea recurrente donde meter la conciliación</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Basta con reintentar cuando…</h4>
+              <ul>
+                <li>La operación es idempotente por naturaleza: un <code>PUT</code>, un borrado</li>
+                <li>Es una lectura: repetirla no tiene efectos</li>
+                <li>El coste de equivocarse es un correo de más, no un cobro de más</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La llamada remota tiene un tercer desenlace que no existe en local: el silencio. No es un fallo, es falta de información.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un timeout es indistinguible en cuatro escenarios, y en dos de ellos el trabajo ya está hecho. Tratarlo como fallo es cómo se cobra dos veces.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Solo hay tres respuestas posibles: reintentar, preguntar o aplazar. Decidir a ciegas no está entre ellas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El fallo suele estar en el modelo de datos: un booleano <code>pagado</code> no tiene dónde guardar «no sé». Un enum con estado incierto, sí.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un estado incierto sin proceso de conciliación que lo cierre es solo una forma más elegante de perder dinero.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

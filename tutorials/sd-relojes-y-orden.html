@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Relojes, orden y causalidad — MentorAI</title>
+    <meta name="description" content="Por qué el reloj de cada máquina es una opinión y no un hecho, y cómo ordenar eventos sin depender de la hora." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Sistemas distribuidos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Relojes, orden y causalidad</h1>
+        <p class="tutorial-hero__lead">«Ordena los eventos por fecha» hunde más sistemas distribuidos de los que parece. Dos servidores del mismo rack pueden discrepar lo suficiente como para que la causa aparezca después del efecto.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#dos-relojes">Todo ordenador tiene dos relojes</a></li>
+            <li><a href="#deriva">Por qué los relojes discrepan</a></li>
+            <li><a href="#ordenar">El timestamp no ordena</a></li>
+            <li><a href="#logicos">Relojes lógicos: ordenar sin tiempo</a></li>
+            <li><a href="#php">Qué cambiar mañana</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            «Ordena los eventos por fecha» es la frase que hunde más sistemas distribuidos de
+            los que parece. El reloj de cada máquina es una opinión, no un hecho, y dos
+            servidores en el mismo rack pueden discrepar lo suficiente como para que la causa
+            aparezca después del efecto.
+          </p>
+
+          <h2 id="dos-relojes">
+            Todo ordenador tiene dos relojes
+            <a href="#dos-relojes" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Y sirven para cosas distintas. Confundirlos es el bug más silencioso de esta
+            lección, porque no falla nunca en local:
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Reloj de pared (<em>wall clock</em>)</h4>
+              <ul>
+                <li>Dice qué hora es: <code>time()</code>, <code>new DateTime()</code></li>
+                <li>Lo corrige NTP contra un servidor externo</li>
+                <li><b>Puede saltar hacia atrás</b></li>
+                <li>Úsalo para: mostrar fechas, guardar cuándo pasó algo</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Reloj monotónico</h4>
+              <ul>
+                <li>Dice cuánto ha pasado: <code>hrtime()</code>, <code>microtime()</code> en algunos usos</li>
+                <li>Cuenta desde un origen arbitrario, normalmente el arranque</li>
+                <li><b>Nunca retrocede</b></li>
+                <li>Úsalo para: medir duraciones, timeouts, reintentos</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Duraciones negativas</p>
+              <p>
+                Si mides cuánto tarda una operación restando dos <code>time()</code> y NTP
+                ajusta el reloj hacia atrás en medio, obtienes una duración negativa. Un
+                timeout calculado así no expira nunca; un <em>rate limiter</em> calculado así
+                deja pasar todo. Ninguno de los dos falla en tu portátil.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="deriva">
+            Por qué los relojes discrepan
+            <a href="#deriva" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El cristal de cuarzo de cada máquina oscila a una frecuencia ligeramente distinta,
+            y esa diferencia varía con la temperatura. Una máquina sin corrección deriva del
+            orden de decenas de milisegundos al día, a veces bastante más en una máquina
+            virtual con el <em>host</em> saturado.
+          </p>
+          <p>
+            NTP corrige esa deriva de dos formas: <em>slewing</em>, acelerando o frenando el
+            reloj poco a poco para converger sin saltos, y <em>stepping</em>, pegando un salto
+            de golpe cuando la diferencia es demasiado grande. El segundo es el peligroso:
+            durante ese salto, el tiempo de tu proceso puede retroceder varios segundos.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La cota realista</p>
+              <p>
+                Con NTP bien configurado dentro de un mismo datacenter, la diferencia entre dos
+                máquinas suele estar por debajo del milisegundo, pero <b>no hay garantía</b>: un
+                servidor NTP mal configurado, una máquina virtual congelada o una red saturada
+                la disparan a decenas de milisegundos sin avisar a nadie. Diseñar contando con
+                una cota que nadie te garantiza es exactamente el tipo de suposición que este
+                curso intenta desmontar.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="ordenar">
+            El timestamp no ordena
+            <a href="#ordenar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Este es el resultado incómodo: si dos eventos ocurren en máquinas distintas con
+            pocos milisegundos de diferencia, sus <em>timestamps</em> pueden decirte lo
+            contrario de lo que pasó.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Servidor A escribe «pedido creado»</b><small>Su reloj marca 10:00:00.100 — va 5 ms adelantado</small></span>
+              </div>
+              <div class="flow__arrow" data-label="2 ms después, de verdad"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">2</span>
+                <span><b>Servidor B escribe «pedido pagado»</b><small>Su reloj marca 10:00:00.097 — va 3 ms atrasado</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Ordenados por timestamp, el pedido se pagó antes de existir. Y ninguna de las dos
+              máquinas está «mal»: las dos creen su propio reloj.
+            </p>
+          </div>
+
+          <p>
+            Dónde te muerde esto en la práctica: informes que no cuadran, un
+            <em>last-write-wins</em> que descarta la escritura buena, una caché que se invalida
+            con un evento «anterior» al que la llenó, y depuraciones imposibles cruzando logs
+            de dos servicios.
+          </p>
+
+          <h2 id="logicos">
+            Relojes lógicos: ordenar sin tiempo
+            <a href="#logicos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La salida no es sincronizar mejor, es dejar de necesitar la hora. Un
+            <strong>reloj de Lamport</strong> es un contador entero por nodo con dos reglas:
+            súmale uno en cada evento local, y al recibir un mensaje quédate con el máximo
+            entre tu contador y el que viene, más uno.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · RelojLamport.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class RelojLamport
+{
+    private int $contador = 0;
+
+    public function alGenerarEvento(): int
+    {
+        return ++$this-&gt;contador;
+    }
+
+    public function alRecibirMensaje(int $contadorRemoto): int
+    {
+        $this-&gt;contador = max($this-&gt;contador, $contadorRemoto) + 1;
+
+        return $this-&gt;contador;
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            Eso te da una garantía concreta y limitada: <strong>si A causó B, el contador de A
+            es menor que el de B</strong>. La implicación no vale al revés — dos contadores
+            distintos no prueban que uno causara el otro, pueden ser eventos concurrentes sin
+            relación—. Para distinguir «concurrente» de «anterior» hacen falta relojes
+            vectoriales, que guardan un contador por nodo en vez de uno solo, a cambio de que
+            los metadatos crezcan con el número de nodos.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Mecanismo</th><th>Qué te garantiza</th><th>Coste</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><b>Timestamp NTP</b></td><td>Nada, formalmente. Aproximación útil para humanos</td><td>Cero</td></tr>
+                <tr><td><b>Lamport</b></td><td>Si A causó B, contador(A) &lt; contador(B)</td><td>Un entero por mensaje</td></tr>
+                <tr><td><b>Vectorial</b></td><td>Además, detecta eventos concurrentes</td><td>Un entero por nodo, por mensaje</td></tr>
+                <tr><td><b>Secuencia en BD</b></td><td>Orden total real, si todo pasa por ella</td><td>Un punto central y su cuello de botella</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="php">
+            Qué cambiar mañana
+            <a href="#php" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            No hace falta montar relojes vectoriales para llevarse el 90 % del valor. Con dos
+            hábitos basta para esquivar casi todos los bugs de esta lección:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · MedirDuracion.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$inicio = hrtime(true);
+
+$resultado = $this-&gt;pagos-&gt;cobrar($pedido);
+
+$duracionEnMilisegundos = (hrtime(true) - $inicio) / 1_000_000;
+
+$this-&gt;metricas-&gt;histograma('cobro.duracion_ms', $duracionEnMilisegundos);</code></pre>
+          </div>
+
+          <p>
+            <code>hrtime(true)</code> devuelve nanosegundos de un reloj monotónico: NTP no lo
+            toca, así que la resta nunca sale negativa. El segundo hábito es que la fecha que
+            <em>ordena</em> y la fecha que se <em>muestra</em> no tienen por qué ser la misma
+            columna: si el orden importa, que lo fije un único sitio —la secuencia de la base de
+            datos, el <em>offset</em> de la cola— y deja el <em>timestamp</em> para que un
+            humano lea el log.
+          </p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Y siempre en UTC</p>
+              <p>
+                Guardar fechas en hora local añade un segundo eje de ambigüedad encima del
+                anterior: dos veces al año hay una hora que ocurre dos veces. Se guarda en UTC
+                y se convierte al presentar, sin excepciones.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Desconfía del reloj cuando…</h4>
+              <ul>
+                <li>Ordenas eventos que vienen de máquinas distintas</li>
+                <li>Resuelves conflictos con <em>last-write-wins</em></li>
+                <li>Mides duraciones, timeouts o ventanas de <em>rate limiting</em></li>
+                <li>Un informe cruza datos de dos servicios y «no cuadra por poco»</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>El timestamp basta cuando…</h4>
+              <ul>
+                <li>Solo se lo enseñas a una persona: «creado hace 3 minutos»</li>
+                <li>Todos los eventos los sella la misma máquina o la misma base de datos</li>
+                <li>La granularidad que te importa son minutos, no milisegundos</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Hay dos relojes: el de pared dice qué hora es y puede saltar hacia atrás; el monotónico dice cuánto ha pasado y nunca retrocede.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Medir duraciones con <code>time()</code> puede dar valores negativos cuando NTP ajusta. Usa <code>hrtime(true)</code> para todo lo que sea un intervalo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Dos eventos en máquinas distintas pueden llevar timestamps que contradicen el orden real. Ninguna de las dos máquinas está estropeada.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Lamport garantiza que si A causó B, contador(A) es menor. No garantiza lo contrario: para detectar concurrencia hacen falta relojes vectoriales.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La fecha que ordena y la que se muestra no tienen por qué ser la misma columna: que el orden lo fije un único sitio, y todo en UTC.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

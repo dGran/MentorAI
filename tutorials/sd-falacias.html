@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Las ocho falacias del cómputo distribuido — MentorAI</title>
+    <meta name="description" content="Las suposiciones que todo programador hace la primera vez que su código habla con otra máquina, y por qué siguen colándose treinta años después." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Sistemas distribuidos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Las ocho falacias del cómputo distribuido</h1>
+        <p class="tutorial-hero__lead">La red es fiable, la latencia es cero, el ancho de banda es infinito. Ocho frases que son verdad dentro de un proceso y mentira en cuanto sales de él.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#origen">Ocho mentiras que todos nos creemos</a></li>
+            <li><a href="#fallos">Las que mienten sobre los fallos</a></li>
+            <li><a href="#coste">Las que mienten sobre el coste</a></li>
+            <li><a href="#entorno">Las que mienten sobre el entorno</a></li>
+            <li><a href="#php">Cómo se cuelan en tu código</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            En 1994, en Sun Microsystems, Peter Deutsch escribió una lista de suposiciones
+            que todo programador hace la primera vez que su código habla con otra máquina.
+            Treinta años después seguimos haciéndolas. No porque seamos torpes: las hacemos
+            porque en un monolito <em>son ciertas</em>, y nadie te avisa del día en que dejan de serlo.
+          </p>
+
+          <h2 id="origen">
+            Ocho mentiras que todos nos creemos
+            <a href="#origen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una llamada a un método de tu propio proceso no falla a medias. Tarda nanosegundos.
+            No cuesta dinero. No la puede leer nadie por el camino. Y siempre está el mismo
+            equipo detrás. Cuando ese método se convierte en una llamada HTTP a otro servicio,
+            las cinco cosas dejan de ser verdad <strong>a la vez</strong>, y tu código sigue
+            escrito como si nada.
+          </p>
+          <p>
+            Las falacias no son errores conceptuales que se corrijan leyéndolas una vez. Son
+            el <em>estado por defecto</em> de cualquier código que no ha sido escrito
+            explícitamente en su contra. Por eso este curso empieza aquí: el resto del temario
+            —reintentos, circuit breakers, sagas, outbox— no es más que la respuesta
+            sistemática a estas ocho frases.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La lista original</p>
+              <p>
+                La red es fiable · La latencia es cero · El ancho de banda es infinito ·
+                La red es segura · La topología no cambia · Hay un solo administrador ·
+                El coste de transporte es cero · La red es homogénea.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="fallos">
+            Las que mienten sobre los fallos
+            <a href="#fallos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <h3>1. «La red es fiable»</h3>
+          <p>
+            La reina de todas. Un paquete se pierde, un switch se reinicia, un despliegue
+            rueda mientras tu petición está en vuelo. Lo grave no es que falle: es
+            <strong>cómo</strong> falla. Una llamada local tiene dos desenlaces —devuelve o
+            lanza—. Una llamada remota tiene tres, y el tercero es el que arruina las tardes:
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Envías la petición</b><small>«Cobra 50 € a esta tarjeta»</small></span>
+              </div>
+              <div class="flow__arrow" data-label="la red"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>El servidor la procesa</b><small>Cobra los 50 € correctamente</small></span>
+              </div>
+              <div class="flow__arrow" data-label="la red, otra vez"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>La respuesta se pierde</b><small>Tú ves un timeout. ¿Cobró o no cobró?</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              El fallo parcial: no sabes si el trabajo se hizo. Es el tema de la lección siguiente.
+            </p>
+          </div>
+
+          <h3>5. «La topología no cambia»</h3>
+          <p>
+            Escribes la IP del servicio de pagos en un fichero de configuración porque hoy es
+            esa. Mañana el contenedor se recrea con otra IP, el balanceador mete una réplica
+            nueva, o el equipo de infra mueve el servicio de región. En un mundo con
+            contenedores y autoescalado, la topología cambia <em>varias veces al día</em>: por
+            eso existen el descubrimiento de servicios y el DNS con TTL corto, y por eso
+            cachear una IP resuelta «para ir más rápido» es una bomba de relojería.
+          </p>
+
+          <h3>6. «Hay un solo administrador»</h3>
+          <p>
+            Tu servicio depende de otro que mantiene otro equipo, con su propio calendario de
+            despliegues, su propia ventana de mantenimiento y su propia idea de qué es un
+            cambio incompatible. Nadie te va a avisar de que el martes a las 11 apagan el
+            servicio cinco minutos. La respuesta técnica a esta falacia es un contrato
+            explícito: versionado de la API, <em>deprecations</em> anunciadas y un SLA por
+            escrito.
+          </p>
+
+          <h2 id="coste">
+            Las que mienten sobre el coste
+            <a href="#coste" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <h3>2. «La latencia es cero»</h3>
+          <p>
+            Aquí es donde más dinero se pierde, porque el código «funciona» en local y se cae
+            en producción. Los órdenes de magnitud importan más que las cifras exactas:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Operación</th><th>Orden de magnitud</th><th>Comparado con una llamada a método</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Llamada a un método en memoria</td><td>~1 ns</td><td>×1</td></tr>
+                <tr><td>Lectura de RAM</td><td>~100 ns</td><td>×100</td></tr>
+                <tr><td>SSD (una lectura)</td><td>~100 µs</td><td>×100.000</td></tr>
+                <tr><td>Ida y vuelta dentro del mismo datacenter</td><td>~0,5 ms</td><td>×500.000</td></tr>
+                <tr><td>Ida y vuelta Madrid → Virginia</td><td>~90 ms</td><td>×90.000.000</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            La consecuencia práctica: <strong>el número de saltos importa más que el tamaño de
+            cada uno</strong>. Un bucle que hace 200 llamadas de 2 ms tarda 400 ms aunque
+            muevas cuatro bytes en cada una. Es el N+1 de toda la vida, pero sobre la red en
+            vez de sobre la base de datos, y sin un <em>profiler</em> de SQL que te lo cante.
+          </p>
+
+          <h3>3. «El ancho de banda es infinito»</h3>
+          <p>
+            Devolver el objeto entero «por si acaso» es gratis en memoria y carísimo por la
+            red. Un endpoint que serializa el pedido con sus 300 líneas, el cliente completo y
+            el historial de envíos mueve medio mega por llamada; con 100 peticiones por segundo
+            son 50 MB/s de tráfico interno para que el consumidor use tres campos.
+          </p>
+
+          <h3>7. «El coste de transporte es cero»</h3>
+          <p>
+            Serializar y deserializar cuesta CPU, y en la nube el tráfico entre zonas de
+            disponibilidad <strong>se factura</strong>. Una arquitectura chismosa no solo es
+            lenta: sale en la factura a final de mes, en una línea que nadie sabe atribuir a
+            ningún servicio concreto.
+          </p>
+
+          <h2 id="entorno">
+            Las que mienten sobre el entorno
+            <a href="#entorno" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <h3>4. «La red es segura»</h3>
+          <p>
+            «Es tráfico interno, va por la VPC» es la frase con la que empieza la mitad de las
+            brechas de datos. La red interna es exactamente igual de hostil que internet en
+            cuanto alguien entra en un solo contenedor: desde ahí ve todo lo que viaje en
+            claro. TLS entre servicios y autenticación servicio a servicio no son paranoia,
+            son el mínimo.
+          </p>
+
+          <h3>8. «La red es homogénea»</h3>
+          <p>
+            Tu servicio en PHP 8.3 habla con uno en Go, otro en Java heredado y una pasarela
+            de un proveedor externo. Cada uno serializa las fechas a su manera, redondea los
+            decimales distinto y tiene su propia idea de qué es un entero grande. Los
+            <em>float</em> para dinero y las fechas sin zona horaria explícita son los dos
+            clásicos que revientan en la frontera entre lenguajes.
+          </p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El JSON no te salva</p>
+              <p>
+                JSON no tiene tipo decimal. <code>0.1 + 0.2</code> no es <code>0.3</code> en
+                ningún lenguaje que use coma flotante, así que un importe que viaja como
+                número puede volver con un céntimo de menos. El dinero viaja como entero de
+                céntimos o como cadena; nunca como <code>float</code>.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="php">
+            Cómo se cuelan en tu código
+            <a href="#php" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Este cliente es correcto en el sentido de que compila, pasa los tests y funciona en
+            local. Y comete cinco de las ocho falacias:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · ClientePagosIngenuo.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class ClientePagosIngenuo
+{
+    private const URL_BASE = 'http://10.0.1.47:8080';
+
+    public function cobrar(string $idPedido, float $importe): string
+    {
+        $respuesta = $this-&gt;http-&gt;post(self::URL_BASE . '/cobros', [
+            'pedido' =&gt; $idPedido,
+            'importe' =&gt; $importe,
+        ]);
+
+        return $respuesta['id_transaccion'];
+    }
+}</code></pre>
+          </div>
+
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Lo que da por hecho</h4>
+              <ul>
+                <li><b>IP fija en el código</b> — la topología no cambia (5)</li>
+                <li><b>Sin timeout</b> — la latencia es cero (2)</li>
+                <li><b>Sin reintento ni idempotencia</b> — la red es fiable (1)</li>
+                <li><b><code>http://</code> en claro</b> — la red es segura (4)</li>
+                <li><b><code>float</code> para dinero</b> — la red es homogénea (8)</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Lo que hace la versión de al lado</h4>
+              <ul>
+                <li>Host por configuración, resuelto por DNS en cada llamada</li>
+                <li>Timeout de conexión y de lectura, distintos y explícitos</li>
+                <li>Clave de idempotencia para que reintentar sea seguro</li>
+                <li><code>https://</code> y credencial de servicio</li>
+                <li>Importe en céntimos como <code>int</code></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · ClientePagos.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class ClientePagos
+{
+    private const TIMEOUT_CONEXION = 1.0;
+    private const TIMEOUT_LECTURA = 3.0;
+
+    public function __construct(
+        private readonly ClientInterface $http,
+        private readonly string $urlBase,
+        private readonly string $tokenServicio,
+    ) {
+    }
+
+    public function cobrar(string $idPedido, int $importeEnCentimos): string
+    {
+        $respuesta = $this-&gt;http-&gt;request('POST', $this-&gt;urlBase . '/cobros', [
+            'connect_timeout' =&gt; self::TIMEOUT_CONEXION,
+            'timeout' =&gt; self::TIMEOUT_LECTURA,
+            'headers' =&gt; [
+                'Authorization' =&gt; 'Bearer ' . $this-&gt;tokenServicio,
+                'Idempotency-Key' =&gt; $idPedido,
+            ],
+            'json' =&gt; [
+                'pedido' =&gt; $idPedido,
+                'importe_centimos' =&gt; $importeEnCentimos,
+            ],
+        ]);
+
+        return $this-&gt;decodificar($respuesta)['id_transaccion'];
+    }
+}</code></pre>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Dos timeouts, no uno</p>
+              <p>
+                El de <em>conexión</em> dice cuánto esperas a que la otra máquina descuelgue:
+                si tarda, está caída o saturada, y un segundo sobra. El de <em>lectura</em>
+                dice cuánto esperas la respuesta ya conectado, y depende de lo que haga esa
+                operación. Ponerlos juntos en un solo número te obliga a elegir entre detectar
+                caídas rápido o dejar trabajar a las operaciones lentas.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Repasa las ocho cuando…</h4>
+              <ul>
+                <li>Escribes o revisas cualquier cliente HTTP hacia otro servicio</li>
+                <li>Sacas una funcionalidad del monolito a un servicio aparte</li>
+                <li>Integras una pasarela externa: pagos, envíos, facturación</li>
+                <li>Haces la <em>post mortem</em> de una caída y buscas por dónde empezar</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No te obsesiones cuando…</h4>
+              <ul>
+                <li>Todo corre en un proceso: ahí las ocho suposiciones son ciertas</li>
+                <li>Es un script interno que puedes relanzar a mano sin consecuencias</li>
+                <li>Estás prototipando para tirar el código el viernes</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Las ocho falacias no son errores que se corrigen leyéndolas: son el estado por defecto de todo código que no se escribió explícitamente en su contra.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una llamada local tiene dos desenlaces; una remota tiene tres. El tercero —no sé si se hizo— es el que define el resto del curso.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En latencia, el número de saltos pesa más que el tamaño de cada uno: es el N+1 de siempre, pero sobre la red y sin profiler que te avise.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un cliente HTTP sin timeout explícito, sin clave de idempotencia y con la IP en el código comete cinco falacias en veinte líneas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Timeout de conexión y de lectura son dos decisiones distintas: juntarlas te obliga a elegir entre detectar caídas rápido y dejar trabajar a las operaciones lentas.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

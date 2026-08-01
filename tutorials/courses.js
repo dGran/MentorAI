@@ -22,6 +22,61 @@
 
 window.MENTORAI_COURSES = [
   {
+    slug: "sistemas-distribuidos",
+    title: "Sistemas distribuidos",
+    summary:
+      "Lo que pasa cuando tu código deja de correr en una sola máquina: fallos parciales, relojes que mienten, datos repartidos y transacciones que ya no caben en un BEGIN. Da por leído el módulo de distribuidos de Fundamentos y va a la parte dura, con ejemplos en PHP. Cierra con la pregunta que casi nadie hace: cuándo NO distribuir.",
+    level: "Avanzado",
+    icon: "signal",
+    modules: [
+      {
+        title: "Por qué esto es difícil",
+        summary: "El modelo mental: qué deja de ser cierto en cuanto sales de un proceso.",
+        lessons: ["sd-falacias", "sd-fallos-parciales", "sd-relojes-y-orden"],
+      },
+      {
+        title: "Cómo se hablan los servicios",
+        summary: "Síncrono o asíncrono, qué garantiza cada entrega y cómo no perder eventos.",
+        lessons: [
+          "sd-sincrono-vs-asincrono",
+          "sd-garantias-de-entrega",
+          "sd-outbox",
+          "sd-colas-y-topicos",
+        ],
+      },
+      {
+        title: "Datos repartidos",
+        summary: "Replicación, particionado y las transacciones que cruzan servicios.",
+        lessons: [
+          "sd-replicacion",
+          "sd-particionado",
+          "sd-transacciones-distribuidas",
+          "sd-sagas",
+        ],
+      },
+      {
+        title: "Sobrevivir al fallo",
+        summary: "El repertorio de resiliencia: timeouts, reintentos, cortacircuitos y colas de muertos.",
+        lessons: [
+          "sd-timeouts-y-reintentos",
+          "sd-circuit-breaker",
+          "sd-dlq-y-reproceso",
+          "sd-backpressure",
+        ],
+      },
+      {
+        title: "Coordinación y operación",
+        summary: "Ponerse de acuerdo entre nodos, y saber qué pasa cuando ya está en marcha.",
+        lessons: [
+          "sd-consenso",
+          "sd-locks-distribuidos",
+          "sd-trazas-distribuidas",
+          "sd-cuando-no-distribuir",
+        ],
+      },
+    ],
+  },
+  {
     slug: "go",
     title: "Go desde cero",
     summary:

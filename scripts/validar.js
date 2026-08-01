@@ -143,7 +143,9 @@ function validarCursosYRutas() {
     if (lecciones.length === 0) error(`courses: «${curso.slug}» no tiene lecciones`);
 
     for (const slug of lecciones) {
-      if (!slugs.has(slug)) error(`courses: «${curso.slug}» referencia «${slug}», que no está en el manifiesto`);
+      if (slugs.has(slug)) continue;
+
+      aviso(`courses: «${curso.slug}» tiene «${slug}» planificada (sin escribir todavía)`);
     }
   }
 

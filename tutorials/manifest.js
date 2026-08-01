@@ -25,6 +25,51 @@
 
 window.ACADEMIA_TUTORIALS = [
   {
+    slug: "sd-fallos-parciales",
+    title: "Fallos parciales: la respuesta que nunca llega",
+    description:
+      "El tercer desenlace que solo aparece cuando la llamada cruza la red: ni éxito ni fallo, sino «no sé». Los cuatro escenarios que un timeout no distingue y cómo modelar el estado incierto en vez de fingir que no está.",
+    href: "tutorials/sd-fallos-parciales.html",
+    categories: ["distribuidos"],
+    topic: "Sistemas distribuidos",
+    tags: ["Fallos parciales", "Timeouts", "Conciliación"],
+    level: "Avanzado",
+    minutes: 13,
+    icon: "signal",
+    status: "published",
+    date: "2026-08-01",
+  },
+  {
+    slug: "sd-relojes-y-orden",
+    title: "Relojes, orden y causalidad",
+    description:
+      "El reloj de cada máquina es una opinión, no un hecho: deriva, saltos de NTP y por qué ordenar eventos por timestamp puede poner el efecto antes que la causa. Relojes monotónicos para medir y relojes de Lamport para ordenar.",
+    href: "tutorials/sd-relojes-y-orden.html",
+    categories: ["distribuidos"],
+    topic: "Sistemas distribuidos",
+    tags: ["Relojes", "NTP", "Lamport", "Causalidad"],
+    level: "Avanzado",
+    minutes: 14,
+    icon: "signal",
+    status: "published",
+    date: "2026-08-01",
+  },
+  {
+    slug: "sd-falacias",
+    title: "Las ocho falacias del cómputo distribuido",
+    description:
+      "Las suposiciones que todo programador hace la primera vez que su código habla con otra máquina: la red es fiable, la latencia es cero, el ancho de banda es infinito. Por qué siguen colándose treinta años después y cómo se ven en un cliente HTTP en PHP.",
+    href: "tutorials/sd-falacias.html",
+    categories: ["distribuidos"],
+    topic: "Sistemas distribuidos",
+    tags: ["Falacias", "Red", "Latencia", "Timeouts"],
+    level: "Avanzado",
+    minutes: 14,
+    icon: "signal",
+    status: "published",
+    date: "2026-08-01",
+  },
+  {
     slug: "python-a-produccion",
     featured: true,
     date: "2026-07-06",
