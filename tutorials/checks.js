@@ -931,4 +931,206 @@ window.MENTORAI_CHECKS = {
       w: "No hay indicador de confianza en el texto, así que la verificación tiene que venir de fuera: tests, documentación, ejecutarlo." },
   ],
 
+
+  "bits-y-bytes": [
+    { q: "Un contador de un byte sin signo llega a 255 y sumas uno más.",
+      o: ["Da 256 y ocupa dos bytes","Vuelve a 0: es el desbordamiento, y 8 bits solo dan 256 combinaciones","Lanza un error"], a: 1,
+      w: "De ahí salen los rangos que ves por todas partes: 0-255 sin signo, -128 a 127 con signo." },
+    { q: "¿Por qué 1 KB no siempre son 1000 bytes?",
+      o: ["Por errores de redondeo","Porque depende del sistema de ficheros","Porque en informática se usa la potencia de 2: 1024, aunque los fabricantes de discos usen 1000"], a: 2,
+      w: "Es la razón de que un disco de 1 TB muestre unos 931 GB en el sistema: no falta nada, se está midiendo distinto." },
+  ],
+
+  "texto-unicode": [
+    { q: "Guardas «ñ» en una base latin1 y lo lees como UTF-8. ¿Qué ves?",
+      o: ["Caracteres raros: los mismos bytes interpretados con otra tabla","Un carácter vacío","Un error de la base de datos"], a: 0,
+      w: "El texto siempre son bytes más una convención para leerlos. La «ñ» ocupa 1 byte en latin1 y 2 en UTF-8." },
+    { q: "`strlen(\"añil\")` en PHP devuelve 5 en vez de 4.",
+      o: ["Hay un espacio de más","`strlen` cuenta bytes y la «ñ» ocupa dos en UTF-8; para caracteres es `mb_strlen`","PHP incluye el terminador nulo"], a: 1,
+      w: "Es la fuente clásica de textos cortados a mitad de carácter cuando se trunca por bytes." },
+  ],
+
+  "numeros-flotantes": [
+    { q: "¿Por qué `0.1 + 0.2 !== 0.3`?",
+      o: ["Por un bug histórico de los lenguajes","Porque falta redondear a dos decimales","Porque 0,1 en binario es periódico y no cabe exacto, como 1/3 en decimal"], a: 2,
+      w: "No es del lenguaje, es de IEEE-754: pasa igual en PHP, JS, Python y Java." },
+    { q: "¿Cómo se guarda dinero entonces?",
+      o: ["En enteros de céntimos o en un tipo decimal exacto","En float con dos decimales","En string y se convierte al operar"], a: 0,
+      w: "Con float, sumar mil importes va acumulando error hasta que el arqueo no cuadra por unos céntimos." },
+  ],
+
+  "big-o": [
+    { q: "Duplicas los datos y tu algoritmo solo tarda un poco más, no el doble.",
+      o: ["Es O(n)","Suena a O(log n): divide el problema a la mitad en cada paso","Es O(1)"], a: 1,
+      w: "Buscar en un millón de elementos ordenados son unas 20 comparaciones; en dos millones, 21." },
+    { q: "Un bucle dentro de otro sobre la misma colección.",
+      o: ["O(n log n)","O(2n), que es lo mismo que O(n)","O(n²): con 1.000 elementos son un millón de iteraciones"], a: 2,
+      w: "Es el patrón que funciona en desarrollo con 20 registros y tumba producción con 20.000." },
+  ],
+
+  "estructuras-datos": [
+    { q: "Necesitas comprobar muchas veces si un elemento está en una colección grande.",
+      o: ["Un hashmap o un set: búsqueda O(1) en promedio","Un array, recorriéndolo","Una lista enlazada"], a: 0,
+      w: "El «en promedio» importa: con muchas colisiones degenera a O(n), y por eso la función hash y el factor de carga no son un detalle." },
+    { q: "¿Qué gana una lista enlazada frente a un array?",
+      o: ["Búsqueda más rápida","Insertar y borrar en medio sin desplazar el resto","Menos memoria"], a: 1,
+      w: "A cambio pierde el acceso por índice y la localidad de caché, que en la práctica hace que el array gane más veces de las que parece." },
+  ],
+
+  "hashing": [
+    { q: "¿Cómo encuentra un hashmap una clave sin recorrer nada?",
+      o: ["Mantiene las claves ordenadas","Usa un índice B-tree interno","La función hash calcula directamente la posición donde mirar"], a: 2,
+      w: "Por eso la clave tiene que ser hasheable e inmutable: si cambia después de insertarla, el mapa ya no la encuentra." },
+    { q: "¿Qué es una colisión y por qué importa?",
+      o: ["Dos claves distintas con el mismo hash: hay que resolverlas, y muchas degradan la búsqueda a O(n)","Dos claves iguales; se sobrescribe","Un error de la función hash"], a: 0,
+      w: "Es inevitable (hay infinitas claves y finitas posiciones); lo que importa es que la función reparta bien." },
+  ],
+
+  "indices-btree": [
+    { q: "Tienes un índice en `(apellido, nombre)` y filtras solo por `nombre`.",
+      o: ["El índice se usa igual","No sirve: solo se aprovecha por el prefijo izquierdo del índice","Hay que reconstruirlo"], a: 1,
+      w: "Es como buscar en la guía telefónica por nombre de pila: el orden no te ayuda si no empiezas por el primer campo." },
+    { q: "¿Por qué no se indexan todas las columnas por si acaso?",
+      o: ["Ocupan mucho espacio","Confunden al planificador","Cada índice hay que mantenerlo en cada INSERT, UPDATE y DELETE: aceleran leer y frenan escribir"], a: 2,
+      w: "Un índice es una apuesta: pagas en escritura para cobrar en lectura. Sin consultas que lo usen, es solo coste." },
+  ],
+
+  "transacciones-acid": [
+    { q: "Restas de una cuenta y falla la suma en la otra. ¿Qué letra de ACID te salva?",
+      o: ["Atomicidad: o se hace todo o no se hace nada","Consistencia","Durabilidad"], a: 0,
+      w: "Sin ella podrías dejar el dinero desaparecido, que es el ejemplo con el que se explica desde siempre." },
+    { q: "Lees un dato de una transacción que luego se revierte.",
+      o: ["Es una lectura no repetible","Es una lectura sucia; READ COMMITTED la evita","Es una lectura fantasma"], a: 1,
+      w: "Has decidido sobre datos que nunca existieron. Los niveles superiores atacan otras anomalías: no repetibles y fantasmas." },
+  ],
+
+  "modelado-relacional": [
+    { q: "¿Cuándo tiene sentido desnormalizar a propósito?",
+      o: ["Nunca: rompe la integridad","Siempre que la tabla tenga muchos JOINs","Cuando una consulta crítica lo pide y asumes el coste de mantener la copia sincronizada"], a: 2,
+      w: "Normalizar es el punto de partida sensato; desnormalizar es una decisión con precio, no un atajo." },
+    { q: "¿Qué problema evita la tercera forma normal?",
+      o: ["Los datos duplicados que pueden quedar incoherentes al actualizar solo una copia","Las consultas lentas","Los NULL"], a: 0,
+      w: "El objetivo de normalizar es que cada hecho esté guardado en un solo sitio, para que no pueda contradecirse consigo mismo." },
+  ],
+
+  "procesos-hilos": [
+    { q: "Dos hilos del mismo proceso escriben en la misma variable sin sincronizar.",
+      o: ["El sistema los serializa automáticamente","Es una condición de carrera: comparten memoria","Cada uno tiene su copia, no pasa nada"], a: 1,
+      w: "Compartir memoria es lo que hace a los hilos baratos y peligrosos: comunicarse es gratis, coordinarse es tu problema." },
+    { q: "¿Por qué PHP-FPM usa procesos y no hilos?",
+      o: ["Porque PHP no soporta hilos","Porque los procesos son más rápidos","Por el modelo shared-nothing: cada petición arranca con estado limpio y un fallo no arrastra a las demás"], a: 2,
+      w: "Es lo que hace que PHP perdone tantos errores de estado global, y también lo que hay que replantearse al pasar a workers." },
+  ],
+
+  "concurrencia": [
+    { q: "Un bug solo aparece en producción bajo carga y no hay forma de reproducirlo en local.",
+      o: ["Huele a condición de carrera: depende de cómo se intercalen las operaciones","Es un problema de memoria","Es un bug del framework"], a: 0,
+      w: "Por eso se resuelven con diseño (locks, operaciones atómicas) y no depurando: no puedes provocar el intercalado a voluntad." },
+    { q: "Lees un contador, le sumas uno y lo guardas. ¿Qué falla con concurrencia?",
+      o: ["Nada si la operación es rápida","Dos procesos pueden leer el mismo valor y perder un incremento","El valor se corrompe"], a: 1,
+      w: "La solución no es ir más rápido: es hacer la operación atómica (un `UPDATE ... SET n = n + 1`, o un incremento atómico)." },
+  ],
+
+  "async-event-loop": [
+    { q: "En un event loop haces una llamada síncrona que tarda 5 segundos.",
+      o: ["Solo se pausa esa tarea","El runtime la mueve a otro hilo","Se bloquea el bucle entero y nada más avanza"], a: 2,
+      w: "El bucle es un solo hilo. Es el error más común al empezar con async, y por eso existen las versiones asíncronas de todo." },
+    { q: "¿Para qué tipo de carga brilla el event loop?",
+      o: ["Muchas conexiones esperando I/O: red, disco, base de datos","Cálculo intensivo","Procesamiento de imágenes"], a: 0,
+      w: "Mientras se espera, el hilo atiende a otro. Con CPU pura no hay espera que aprovechar y el modelo se hunde." },
+  ],
+
+  "memoria": [
+    { q: "¿Qué distingue al stack del heap?",
+      o: ["El stack es más grande","El stack se libera solo al salir de la función; el heap lo gestionas tú o el recolector","El heap es más rápido"], a: 1,
+      w: "El stack es rápido justo porque su gestión es trivial: crece y decrece con las llamadas. Por eso es también limitado." },
+    { q: "¿Por qué recorrer un array es más rápido que recorrer una lista enlazada del mismo tamaño?",
+      o: ["Porque tiene menos elementos","Porque la lista usa punteros de 64 bits","Por la caché: el array está contiguo en memoria y se trae de golpe"], a: 2,
+      w: "La localidad de referencia explica muchas diferencias de rendimiento que el Big-O no captura." },
+  ],
+
+  "url-a-fondo": [
+    { q: "Escribes una URL y el navegador no encuentra la página, pero la IP directa sí funciona.",
+      o: ["Problema de DNS: la resolución del nombre","El servidor está caído","El certificado ha caducado"], a: 0,
+      w: "Muchos incidentes de «la web no va» son en realidad de DNS, con su caché y su TTL complicando el diagnóstico." },
+    { q: "¿Qué parte de la URL NO llega al servidor?",
+      o: ["La query string","El fragmento tras la almohadilla (`#seccion`)","El puerto"], a: 1,
+      w: "El fragmento lo resuelve el navegador. Por eso las SPA que lo usaban para rutas no aparecían en los logs del servidor." },
+  ],
+
+  "http-a-fondo": [
+    { q: "¿Qué hace que una respuesta sea cacheable por un proxy intermedio?",
+      o: ["Que sea un GET","Que el cuerpo sea JSON","Las cabeceras de caché (`Cache-Control`, `ETag`) junto con un método seguro"], a: 2,
+      w: "Ser GET es condición necesaria pero no suficiente: sin cabeceras, cada proxy decide por su cuenta o no cachea." },
+    { q: "¿Qué significa que GET sea «seguro» en HTTP?",
+      o: ["Que no debe cambiar el estado del servidor","Que va cifrado","Que no se puede interceptar"], a: 0,
+      w: "Es una promesa semántica, no una garantía técnica. Romperla es lo que hace que un rastreador borre datos al seguir enlaces." },
+  ],
+
+  "tcp-ip": [
+    { q: "¿Qué te da TCP que UDP no?",
+      o: ["Menos latencia","Entrega ordenada y fiable: retransmite lo perdido y reordena","Cifrado"], a: 1,
+      w: "El cifrado lo pone TLS por encima. Y esa fiabilidad cuesta latencia, que es justo por lo que UDP existe." },
+    { q: "En una conexión HTTPS, ¿qué añade el certificado sobre el cifrado?",
+      o: ["Nada, es parte del cifrado","Compresión de la conexión","La identidad: acredita que hablas con quien crees"], a: 2,
+      w: "Sin lo segundo, cifrarías perfectamente con un impostor. Son dos cosas distintas y las dos importan." },
+  ],
+
+  "idempotencia": [
+    { q: "No sabes si tu petición llegó porque se cortó la conexión.",
+      o: ["Si la operación es idempotente, puedes reintentar sin miedo","Hay que consultar antes de reintentar siempre","Hay que asumir que llegó"], a: 0,
+      w: "Es lo que hace viables los reintentos automáticos en redes poco fiables, y por eso importa tanto en sistemas distribuidos." },
+    { q: "¿Qué métodos HTTP deberían ser idempotentes?",
+      o: ["Todos","GET, PUT y DELETE; POST no, y por eso existen las claves de idempotencia","Solo GET"], a: 1,
+      w: "DELETE lo es aunque el segundo intento devuelva 404: el efecto final es el mismo, el recurso no está." },
+  ],
+
+  "cap-consistencia": [
+    { q: "¿Es cierto que CAP te hace elegir dos de tres?",
+      o: ["Sí, es la formulación original","No, siempre puedes tener las tres","Es engañoso: las particiones no se eligen, ocurren. La decisión llega cuando la red se parte"], a: 2,
+      w: "En ese momento eliges entre responder con datos posiblemente viejos o no responder. El resto del tiempo la disyuntiva no existe." },
+    { q: "¿Cuándo es aceptable la consistencia eventual?",
+      o: ["Cuando un desfase temporal no causa daño: un contador de «me gusta» sí, un saldo bancario no","Siempre, es lo moderno","Solo en sistemas de solo lectura"], a: 0,
+      w: "La pregunta nunca es sobre la tecnología: es sobre qué dato es y qué pasa si dos nodos discrepan un rato." },
+  ],
+
+  "redis-cache": [
+    { q: "Cacheas el resultado de una consulta y los usuarios ven datos viejos tras una edición.",
+      o: ["Hay que bajar el TTL a cero","Falta invalidar al escribir: la caché es fácil, invalidarla es el problema","Redis no sirve para eso"], a: 1,
+      w: "TTL cero es no cachear. Las estrategias son invalidar al escribir, escribir a la vez, o aceptar el desfase del TTL a sabiendas." },
+    { q: "¿Qué es una estampida de caché?",
+      o: ["Escribir demasiado rápido en Redis","Que la caché se llena y desaloja todo","Que expira una clave muy usada y mil peticiones van a la vez a recalcularla"], a: 2,
+      w: "Se mitiga con un lock al recalcular, o expirando con algo de aleatoriedad para que no caduquen todas a la vez." },
+  ],
+
+  "hashing-vs-cifrado": [
+    { q: "Necesitas poder recuperar el dato original más adelante.",
+      o: ["Cifrado: el hashing es unidireccional a propósito","Hashing con sal","Codificación base64"], a: 0,
+      w: "Base64 no protege nada, es codificación. Y si puedes recuperar una contraseña de tu base, algo va mal en el diseño." },
+    { q: "¿Por qué no vale SHA-256 para contraseñas?",
+      o: ["Porque tiene colisiones","Porque es rápido a propósito, y eso permite probar miles de millones por segundo","Porque no acepta sal"], a: 1,
+      w: "Los algoritmos de contraseñas (bcrypt, argon2) son lentos deliberadamente y llevan sal, para que cada intento cueste." },
+  ],
+
+  "autenticacion": [
+    { q: "¿Qué diferencia práctica hay entre una sesión y un JWT?",
+      o: ["El JWT es más seguro","La sesión no funciona con APIs","La sesión vive en el servidor y se puede revocar al instante; el JWT es autocontenido y vale hasta que caduca"], a: 2,
+      w: "Esa revocación es el punto que más se subestima: invalidar un JWT antes de tiempo exige una lista negra, o sea, estado en el servidor." },
+    { q: "¿Qué resuelve OAuth?",
+      o: ["Delegar el acceso a un tercero sin darle tu contraseña","Guardar contraseñas de forma segura","Cifrar el tráfico"], a: 0,
+      w: "Es autorización, no autenticación: para lo segundo está OIDC, que se construye encima y es lo que usa «entrar con Google»." },
+  ],
+
+  "owasp": [
+    { q: "¿Qué tienen en común la inyección SQL y el XSS?",
+      o: ["Que ambos requieren acceso al servidor","Que mezclan datos con instrucciones: el dato acaba interpretándose como código","Que se previenen con HTTPS"], a: 1,
+      w: "La solución es la misma en el fondo: separar ambos mundos. Consultas parametrizadas en un caso, escapado por contexto en el otro." },
+    { q: "¿Por qué escapar a mano es peor que usar consultas parametrizadas?",
+      o: ["Porque es más lento","Porque no funciona con MySQL","Porque un solo caso olvidado abre el agujero, y el motor ya sabe hacerlo bien"], a: 2,
+      w: "Con parámetros, el motor recibe la estructura por un lado y los valores por otro: un valor no puede convertirse en sintaxis." },
+    { q: "¿Qué ataque previene un token CSRF?",
+      o: ["Que otra web haga que el navegador del usuario envíe una petición con su sesión sin que él lo sepa","Que roben la sesión del usuario","Que inyecten JavaScript"], a: 0,
+      w: "El navegador manda las cookies solas; el token demuestra que la petición salió de tu propia página y no de una ajena." },
+  ],
+
 };
