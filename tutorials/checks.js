@@ -174,4 +174,182 @@ window.MENTORAI_CHECKS = {
       w: "Sin esa red, cada refactor es una apuesta; y como no se puede comprobar, el miedo acaba congelando el código." },
   ],
 
+
+  "solid-introduccion": [
+    { q: "¿Qué dos métricas resumen hacia dónde empujan los cinco principios?",
+      o: ["Cohesión alta y acoplamiento bajo","Cobertura y complejidad ciclomática","Líneas por método y número de clases"], a: 0,
+      w: "Cohesión mide si lo que está junto tiene que estarlo; acoplamiento, de cuánto ajeno dependes. Casi todo SOLID va de mover esas dos." },
+    { q: "¿Para qué sirven realmente los principios SOLID?",
+      o: ["Para reducir el número de líneas de código","Para que el código aguante el cambio sin romperse por sitios inesperados","Para cumplir con los estándares PSR"], a: 1,
+      w: "Si el código no va a cambiar, SOLID no te devuelve nada. El criterio siempre es el cambio esperado." },
+  ],
+
+  "srp-responsabilidad-unica": [
+    { q: "Una clase calcula facturas, las guarda en BD y las imprime en PDF. ¿Cuántas razones para cambiar tiene?",
+      o: ["Una: todo va sobre facturas","Dos: cálculo y presentación","Tres, y cada una viene de un actor distinto: negocio, infraestructura y diseño"], a: 2,
+      w: "«Razón para cambiar» significa actor, no tema. Tres departamentos que pueden pedirte cambios son tres razones." },
+    { q: "¿Cómo detectas en la práctica que una clase viola SRP?",
+      o: ["Cuando distintas personas o áreas te piden cambios en ella por motivos que no tienen que ver entre sí","Cuando supera las 200 líneas","Cuando tiene más de cinco métodos públicos"], a: 0,
+      w: "La longitud es un síntoma, no la definición. Hay clases largas y cohesionadas, y clases cortas que sirven a dos amos." },
+  ],
+
+  "ocp-abierto-cerrado": [
+    { q: "Cada método de pago nuevo te obliga a añadir un `case` al mismo switch. ¿Qué principio se está violando?",
+      o: ["Single Responsibility","Open/Closed: deberías poder extender sin modificar lo que ya funciona","Interface Segregation"], a: 1,
+      w: "Cada edición de código probado es una oportunidad de romperlo. Con una interfaz, el caso nuevo es una clase nueva." },
+    { q: "¿Qué mecanismo concreto permite cumplir Open/Closed?",
+      o: ["Marcar las clases como final","Usar traits para compartir el código común","El polimorfismo tras una interfaz, que es lo que hace Strategy"], a: 2,
+      w: "Los patrones GoF no son un tema aparte: la mayoría son formas concretas de aplicar estos principios." },
+  ],
+
+  "lsp-sustitucion-liskov": [
+    { q: "Una subclase lanza una excepción en un método que el padre nunca lanzaba. ¿Es válido?",
+      o: ["No: quien la usa a través del tipo padre no puede saberlo y romperá","Sí, mientras la firma coincida","Sí, si se documenta en el PHPDoc"], a: 0,
+      w: "Liskov va de cumplir el contrato, no solo la firma. También lo violan endurecer precondiciones o debilitar postcondiciones." },
+    { q: "¿Por qué `Cuadrado extends Rectangulo` es el ejemplo clásico de violación?",
+      o: ["Porque un cuadrado no es matemáticamente un rectángulo","Porque el rectángulo mutable promete que ancho y alto son independientes, y el cuadrado rompe esa promesa","Porque duplica código entre las dos clases"], a: 1,
+      w: "Matemáticamente sí lo es. Enseña que la herencia debe seguir al comportamiento, no a la taxonomía." },
+  ],
+
+  "isp-segregacion-interfaces": [
+    { q: "Una interfaz `Dispositivo` obliga a la impresora a implementar `faxear()`. ¿Cuál es el problema real?",
+      o: ["Que escribe más código del necesario","Que el nombre de la interfaz es demasiado genérico","Que acaba lanzando excepciones o devolviendo vacío, lo que además rompe Liskov"], a: 2,
+      w: "La solución es partirla por roles y que cada dispositivo implemente solo lo que de verdad cumple." },
+    { q: "¿Por qué te acopla un método de una interfaz que nunca llamas?",
+      o: ["Porque si cambia su firma te toca reajustar igualmente","No te acopla si no lo usas","Porque consume memoria en tiempo de ejecución"], a: 0,
+      w: "Interfaces pequeñas y por rol reducen esa superficie de contacto." },
+  ],
+
+  "dip-inversion-dependencias": [
+    { q: "Un servicio de dominio importa directamente un repositorio MySQL. ¿Qué falla?",
+      o: ["Nada, si el repositorio implementa una interfaz","Que el dominio depende de infraestructura: la flecha apunta al revés","Que falta inyectarlo por constructor"], a: 1,
+      w: "Inyectarlo por constructor no arregla nada si lo que inyectas sigue siendo la clase concreta." },
+    { q: "Según DIP, ¿quién define la interfaz del repositorio?",
+      o: ["La capa de infraestructura, que sabe cómo se guarda","Da igual, mientras exista la interfaz","El módulo de alto nivel que la consume, según lo que necesita"], a: 2,
+      w: "Este es el detalle que casi todo el mundo se salta: si la interfaz vive con la implementación, no has invertido nada." },
+  ],
+
+  "solid-en-conjunto": [
+    { q: "¿Cuándo NO merece la pena aplicar SOLID?",
+      o: ["En scripts de una vez, migraciones puntuales o código de pegamento","Nunca: siempre compensa","En proyectos con menos de tres desarrolladores"], a: 0,
+      w: "Donde no se espera cambio, la abstracción es coste sin retorno. El criterio es el cambio esperado, no la pureza." },
+    { q: "¿Por qué se dice que los cinco principios se refuerzan entre sí?",
+      o: ["Porque los definió la misma persona","Porque extender sin modificar necesita abstracciones bien cortadas, y que los sustitutos cumplan el contrato","Porque todos hablan de clases"], a: 1,
+      w: "No son cinco reglas sueltas: OCP se apoya en ISP y LSP, y todos ellos en que las dependencias apunten a interfaces." },
+  ],
+
+  "inyeccion-dependencias": [
+    { q: "¿Por qué se prefiere inyectar por constructor antes que por setter?",
+      o: ["Porque se escribe menos código","Porque los setters son más lentos","Porque si el objeto existe, está completo: sus dependencias son obligatorias y visibles en la firma"], a: 2,
+      w: "Con setters puedes tener un objeto a medio montar, y el fallo aparece al usarlo, lejos de donde se creó." },
+    { q: "¿Inyectar dependencias garantiza cumplir DIP?",
+      o: ["No: si lo que inyectas son clases concretas de infraestructura, sigues violándolo","Sí, es lo mismo con otro nombre","Sí, siempre que uses un contenedor"], a: 0,
+      w: "DIP es el principio (depender de abstracciones); la inyección es solo la técnica de entrega." },
+  ],
+
+  "contenedor-di": [
+    { q: "Una clase pide sus dependencias llamando al contenedor desde dentro. ¿Cómo se llama eso?",
+      o: ["Autowiring","Service locator, y se considera antipatrón porque su firma miente sobre lo que necesita","Lazy loading"], a: 1,
+      w: "Parece que no depende de nada y en realidad depende de todo. Además ata el código al contenedor." },
+    { q: "Tu app pasa de PHP-FPM a un worker que vive horas. ¿Qué servicios se vuelven peligrosos?",
+      o: ["Los que hacen consultas a base de datos","Los que se declaran lazy","Los compartidos que guardan estado: pueden servírselo al siguiente usuario"], a: 2,
+      w: "Es un fallo de seguridad, no de rendimiento. En FPM cada petición arrancaba limpia y eso lo tapaba." },
+    { q: "¿Por qué Symfony compila el contenedor?",
+      o: ["Para generar PHP con las llamadas `new` ya escritas y no pagar reflexión en cada petición","Para validar la configuración antes de desplegar","Para reducir el tamaño de la caché"], a: 0,
+      w: "En producción, resolver un servicio acaba costando lo mismo que instanciarlo a mano." },
+  ],
+
+  "tdd-ciclo": [
+    { q: "Escribes el test y pasa a la primera. ¿Qué significa?",
+      o: ["Que el código ya estaba bien, sigue adelante","Que o ya estaba implementado, o el test no comprueba lo que crees","Que el ciclo TDD se ha completado"], a: 1,
+      w: "Por eso el rojo es un paso y no un accidente: demuestra que el test puede fallar, o sea que mide algo." },
+    { q: "¿Cuándo tiene sentido escribir el test después del código?",
+      o: ["Nunca, rompe TDD","Cuando el equipo va con prisa","Cuando exploras una solución desconocida, o caracterizas código legado antes de tocarlo"], a: 2,
+      w: "TDD guía el diseño cuando ya sabes qué quieres; explorando, el test se convierte en lastre porque cambia con cada idea." },
+  ],
+
+  "tipos-de-test": [
+    { q: "¿Por qué la pirámide propone pocos tests E2E y muchos unitarios?",
+      o: ["Por economía: los de arriba dan más confianza pero cuestan minutos y se rompen por cualquier cosa","Porque los E2E son menos fiables técnicamente","Porque los unitarios detectan más bugs"], a: 0,
+      w: "Muchos unitarios te dan diagnóstico rápido; unos pocos E2E confirman que el conjunto encaja." },
+    { q: "¿Qué distingue de verdad a un test unitario de uno de integración?",
+      o: ["El número de líneas que ejecuta","Qué partes son reales: el unitario aísla con dobles, el de integración deja colaborar piezas reales","El framework con el que se escribe"], a: 1,
+      w: "El unitario aísla para que un fallo señale un culpable exacto; el de integración acepta lentitud a cambio de comprobar que encajan." },
+  ],
+
+  "test-doubles": [
+    { q: "¿Cuándo eliges un mock en vez de un stub?",
+      o: ["Siempre que la dependencia sea externa","Cuando necesitas devolver un valor concreto","Cuando el efecto que quieres verificar ES la llamada, como enviar un correo"], a: 2,
+      w: "Verificar la llamada acopla el test a cómo lo hace tu código. Para lo demás, un stub dice mejor lo que pretendes." },
+    { q: "Un stub que además verifica cuántas veces fue llamado, ¿sigue siendo un stub?",
+      o: ["No: en cuanto verifica comportamiento es un mock","Sí, el nombre es indiferente","Solo si lo verifica al final del test"], a: 0,
+      w: "El stub controla el estado (qué devuelve); el mock también el comportamiento (cómo fue llamado)." },
+  ],
+
+  "tests-que-no-estorban": [
+    { q: "Un test se rompe cada vez que refactorizas, aunque el comportamiento externo no cambie.",
+      o: ["Es normal, hay que actualizarlo","Está probando detalles de implementación: te cobra dos veces sin darte seguridad","Falta añadir más aserciones"], a: 1,
+      w: "Prueba lo observable desde fuera y el test seguirá valiendo cuando reescribas las tripas." },
+    { q: "¿Qué hace que un test sea flaky y por qué importa tanto?",
+      o: ["Que tarda mucho; ralentiza el pipeline","Que depende de otro test; basta con reordenarlos","Que su resultado varía entre ejecuciones, y enseña al equipo a ignorar el rojo"], a: 2,
+      w: "Un test inestable es peor que ninguno: a partir de ahí, el fallo real pasa desapercibido." },
+    { q: "Un test que no puede fallar nunca se llama tautológico. ¿De dónde suele salir?",
+      o: ["De aserciones vacías o de mockear tanto que no queda código real ejecutándose","De usar data providers","De probar métodos privados"], a: 0,
+      w: "Da una seguridad falsa, que es peor que no tener test. Si no falla al romper el comportamiento, sobra." },
+  ],
+
+  "phpunit-primeros-pasos": [
+    { q: "¿Qué ordena el patrón AAA dentro de un test?",
+      o: ["Assert, Act, Arrange","Arrange, Act, Assert: preparar, ejecutar y comprobar","Act, Arrange, Assert"], a: 1,
+      w: "Separarlas hace el test legible de un vistazo. Cuando cuesta separarlas, suele ser que prueba varias cosas a la vez." },
+    { q: "¿Qué nombre le pones a un test?",
+      o: ["El del método que prueba, como `testCalcular`","`test1`, `test2`… numerados por orden","Uno que describa el comportamiento esperado y el caso"], a: 2,
+      w: "Cuando falla en CI, el nombre es lo único que ves: debería contarte qué se rompió sin abrir el fichero." },
+  ],
+
+  "phpunit-data-providers": [
+    { q: "Tienes el mismo test copiado cinco veces cambiando solo el valor de entrada.",
+      o: ["Un data provider los convierte en datos y deja la lógica una sola vez","Es correcto: cada caso merece su test","Habría que meterlos en un bucle dentro del test"], a: 0,
+      w: "Con el bucle, un fallo detiene el resto y ves un único test en rojo. El provider los reporta por separado." },
+    { q: "¿Qué ventaja tiene el provider frente a un bucle dentro del test?",
+      o: ["Se ejecuta más rápido","Cada caso aparece por separado en la salida, así que sabes exactamente cuál falla","Permite usar mocks"], a: 1,
+      w: "Y nombrando las claves del array, el informe dice el nombre del caso en vez de un índice." },
+  ],
+
+  "phpunit-fixtures": [
+    { q: "¿Cada cuánto se ejecuta `setUp()`?",
+      o: ["Una vez por clase de test","Solo antes del primero","Antes de cada método de test"], a: 2,
+      w: "Es lo que garantiza el aislamiento: ningún test hereda lo que dejó el anterior, y por eso pueden correr en cualquier orden." },
+    { q: "¿Qué riesgo tiene poner cosas en `setUpBeforeClass()`?",
+      o: ["Que lo que dejes ahí lo comparten todos los tests, y por ahí se cuelan las dependencias de orden","Que es más lento","Que no funciona con data providers"], a: 0,
+      w: "Sirve para lo caro y compartido, como abrir una conexión. Para estado mutable, mejor `setUp()`." },
+  ],
+
+  "phpunit-mocks": [
+    { q: "Quieres comprobar que tu código reacciona bien cuando la dependencia revienta.",
+      o: ["Hay que provocar el fallo real en un test de integración","`->willThrowException(...)` en el doble, y compruebas la reacción","No se puede probar sin tocar el código de producción"], a: 1,
+      w: "Probar los caminos de error suele ser más valioso que el camino feliz, y con dobles sale barato." },
+    { q: "No vas a verificar cómo se llamó a la dependencia, solo qué devuelve. ¿Qué usas?",
+      o: ["`createMock()`, que es lo estándar","Una clase anónima escrita a mano","`createStub()`, que expresa mejor la intención y no rompe al refactorizar"], a: 2,
+      w: "`createMock()` genera verificaciones automáticas que no necesitas, y esas verificaciones se rompen al reorganizar el código." },
+  ],
+
+  "phpunit-excepciones-cobertura": [
+    { q: "¿Dónde va `$this->expectException(...)` respecto a la llamada que lanza?",
+      o: ["Antes: si va detrás, la excepción escapa y el test falla","Después, como una aserción normal","Da igual, PHPUnit lo detecta"], a: 0,
+      w: "Y conviene ser específico con la clase: esperar `Exception` a secas hace pasar el test aunque falle por otro motivo." },
+    { q: "Tienes 100 % de cobertura. ¿Qué te garantiza?",
+      o: ["Que no hay bugs en las líneas cubiertas","Que todas las líneas se ejecutan, no que se compruebe nada","Que los tests son de buena calidad"], a: 1,
+      w: "Un test sin una sola aserción da cobertura. Es útil al revés: la cobertura baja sí señala zonas sin probar." },
+  ],
+
+  "phpunit-integracion-bbdd": [
+    { q: "¿Por qué no se lanzan los tests de integración contra la BD de desarrollo?",
+      o: ["Por rendimiento","Porque no tiene el esquema actualizado","Porque el test falla cuando alguien cambia un dato, y además ensucia lo que estabas mirando"], a: 2,
+      w: "Con una base propia y controlada, el resultado depende solo del código." },
+    { q: "¿Qué estrategia deja cada test empezando con un estado conocido?",
+      o: ["Envolver cada test en una transacción y revertirla al terminar","Borrar todas las tablas en `tearDown()`","Ejecutar los tests siempre en el mismo orden"], a: 0,
+      w: "Es rápido y deja la base como estaba pase lo que pase. Su límite: si el código bajo prueba hace su propio commit, deja de servir." },
+  ],
+
 };
