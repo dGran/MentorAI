@@ -1446,13 +1446,26 @@ distribución de la respuesta correcta estable (66/78/65/66).
 - **Descargar toda la academia** (`02ed701`) con `storage.persist()`.
 - **paths.js e init.js modernizados** (`8c321fa`).
 
+### Sexta tanda: modernización completa (2026-08-01)
+Los 5 módulos que quedaban en estilo antiguo (`core`, `courses`, `home`,
+`offline`, `syntax`) reescritos. **Ya no queda ninguno.** Dos hallazgos de paso:
+- **El menú móvil solo listaba Inicio, Cursos y Artículos**: Rutas, Repaso y Sin
+  conexión no se podían alcanzar desde el teléfono. La lista de páginas es ahora
+  datos, no markup.
+- **`offline.js` duplicaba el diálogo con el service worker** entre guardar un
+  curso y descargar todo; ambos pasan por un `cacheUrls()` con promesa.
+
+`syntax.js` se tocó con red: se capturó su salida antes y después sobre php,
+bash, ini, sql y un lenguaje desconocido, y es **idéntica byte a byte**. Sus
+tablas de lenguajes no se han tocado.
+
 ### Pendiente al cerrar
-- **Modernizar los módulos restantes**: core, courses, home, paths, offline,
-  syntax, init. Criterio acordado: al tocarlos, no en un big-bang.
-- Del plan de evaluaciones: **checks para las 97 lecciones restantes**,
-  detalle del intento del examen por pregunta, repaso espaciado, examen de
-  ruta, y el chequeo de sesgo en el validador.
-- De offline: «Descargar toda la academia», guardar por ruta, `storage.persist()`.
+
+- Del plan de evaluaciones: solo queda el detalle del intento del examen de
+  curso por pregunta (el repaso ya guarda ese detalle por su cuenta).
+- De offline: guardar por ruta, e **indicador de estado en la nav**. Y la
+  **comprobación manual en un navegador real**: headless no activa el service
+  worker, así que la descarga masiva no se ha ejercitado de punta a punta.
 
 ## Pendiente de la primera tanda
 - ~~Sin commitear~~ → commiteado (5 commits, `a5362e7`..`7431425`).
