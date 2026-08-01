@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Despliegues sin caída: azul/verde, canario y rolling — MentorAI</title>
+    <meta name="description" content="Las tres estrategias y qué cuesta cada una, por qué el problema real son las dos versiones conviviendo, y la disciplina de expandir y contraer en las migraciones." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Infraestructura</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Despliegues sin caída: azul/verde, canario y rolling</h1>
+        <p class="tutorial-hero__lead">Un despliegue sin caída no es un truco de infraestructura: es una propiedad que se gana en el código. El mejor rolling update del mundo tira el servicio si la migración borró una columna.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#las-estrategias">Las tres estrategias</a></li>
+            <li><a href="#el-verdadero-problema">El problema son las dos versiones</a></li>
+            <li><a href="#expandir-contraer">Expandir y contraer</a></li>
+            <li><a href="#volver-atras">Revertir tiene que ser aburrido</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Un despliegue sin caída no es un truco de infraestructura: es una propiedad que se
+            gana en el código. Puedes tener el mejor <em>rolling update</em> del mundo y tirar el
+            servicio igual, porque durante unos minutos conviven dos versiones y la migración que
+            lanzaste borró una columna que la vieja todavía usa.
+          </p>
+
+          <h2 id="las-estrategias">
+            Las tres estrategias
+            <a href="#las-estrategias" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Estrategia</th><th>Cómo</th><th>Revertir</th><th>Coste</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><b>Rolling</b></td>
+                  <td>Sustituye instancias poco a poco</td>
+                  <td>Otro rolling hacia atrás: minutos</td>
+                  <td>Barato. Conviven las dos versiones</td>
+                </tr>
+                <tr>
+                  <td><b>Azul/verde</b></td>
+                  <td>Levanta el entorno nuevo entero y cambia el tráfico de golpe</td>
+                  <td>Instantáneo: se vuelve a apuntar</td>
+                  <td>El doble de recursos durante el cambio</td>
+                </tr>
+                <tr>
+                  <td><b>Canario</b></td>
+                  <td>Manda un 1 % del tráfico a la versión nueva y sube si va bien</td>
+                  <td>Rápido: se corta el 1 %</td>
+                  <td>Necesita métricas por versión y enrutado fino</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La ventaja del canario no es desplegar: es enterarte</p>
+              <p>
+                Con azul/verde, un fallo que solo aparece con tráfico real lo sufren todos tus
+                usuarios a la vez. Con canario lo sufre el 1 % y tú lo ves en las métricas antes
+                de seguir. Exige métricas separadas por versión — sin eso, un canario es un
+                despliegue lento y nada más.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="el-verdadero-problema">
+            El problema no es el despliegue: son las dos versiones
+            <a href="#el-verdadero-problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En cualquiera de las tres estrategias hay un rato en que la versión vieja y la nueva
+            atienden tráfico a la vez, contra <strong>la misma base de datos</strong>. Todo lo
+            que rompa esa convivencia tira el servicio aunque el despliegue sea perfecto:
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>La migración renombra <code>nombre</code> a <code>nombre_completo</code></b><small>Se ejecuta antes de arrancar la versión nueva</small></span>
+              </div>
+              <div class="flow__arrow" data-label="y mientras rueda el despliegue"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Las instancias viejas siguen pidiendo <code>nombre</code></b><small>Columna que ya no existe</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>500 en la mitad del tráfico</b><small>Durante los minutos que dure el despliegue</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              El despliegue funcionó exactamente como debía. El problema estaba en la migración.
+            </p>
+          </div>
+
+          <h2 id="expandir-contraer">
+            Expandir y contraer
+            <a href="#expandir-contraer" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La disciplina que resuelve lo anterior: <strong>todo cambio de esquema destructivo se
+            parte en dos despliegues</strong>, con la fase de limpieza separada en el tiempo.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Expandir (despliegue 1)</h4>
+              <ul>
+                <li>Añadir <code>nombre_completo</code>, sin tocar <code>nombre</code></li>
+                <li>Copiar los datos existentes</li>
+                <li>Que el código escriba en las dos y lea de la nueva</li>
+                <li><b>Compatible con la versión anterior</b></li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Contraer (despliegue 2, días después)</h4>
+              <ul>
+                <li>Quitar la escritura doble del código</li>
+                <li>Y solo entonces, borrar <code>nombre</code></li>
+                <li>Con la certeza de que nadie la usa</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · las dos migraciones, separadas en el tiempo</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">-- Migración 1, con el despliegue de hoy
+ALTER TABLE clientes ADD COLUMN nombre_completo VARCHAR(255) NULL;
+UPDATE clientes SET nombre_completo = nombre WHERE nombre_completo IS NULL;
+
+-- Migración 2, dentro de unos días y con otro despliegue
+ALTER TABLE clientes DROP COLUMN nombre;</code></pre>
+          </div>
+
+          <p>
+            Entre las dos hay un despliegue intermedio cuyo único cometido es dejar de escribir
+            en <code>nombre</code>. Sin ese paso en medio, la segunda migración vuelve a romper a
+            quien todavía la use.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Cambio</th><th>¿Compatible con la versión anterior?</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Añadir una columna que admite nulos</td><td>Sí</td></tr>
+                <tr><td>Añadir una tabla o un índice</td><td>Sí</td></tr>
+                <tr><td>Añadir una columna <code>NOT NULL</code> sin valor por defecto</td><td><b>No:</b> los INSERT de la versión vieja fallan</td></tr>
+                <tr><td>Renombrar o borrar una columna</td><td><b>No</b></td></tr>
+                <tr><td>Cambiar el tipo de una columna</td><td><b>Normalmente no</b></td></tr>
+                <tr><td>Añadir una restricción única</td><td><b>No</b> si la versión vieja puede insertar duplicados</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Y una migración puede bloquear la tabla</p>
+              <p>
+                Añadir una columna a una tabla de veinte millones de filas puede bloquear
+                escrituras durante minutos según el motor y la versión. Eso no es un despliegue
+                sin caída: es una caída con otro nombre. Para tablas grandes se usan herramientas
+                de cambio en línea, o se hace en una ventana pactada.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="volver-atras">
+            Revertir tiene que ser aburrido
+            <a href="#volver-atras" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La pregunta que revela si un despliegue está bien montado no es «¿cómo despliegas?»
+            sino «<strong>¿cuánto tardas en volver atrás y quién puede hacerlo?</strong>». Si la
+            respuesta incluye «depende» o el nombre de una sola persona, hay trabajo pendiente.
+          </p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Las migraciones casi nunca se revierten</p>
+              <p>
+                El código vuelve atrás en un minuto; los datos, no. Una migración que borró una
+                columna no se deshace con un <code>down()</code>: los datos ya no están. Por eso
+                expandir/contraer no es una buena práctica opcional — es lo que hace que revertir
+                el código sea seguro.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            La otra pieza es separar <strong>desplegar</strong> de <strong>activar</strong>. Con
+            un interruptor de funcionalidad, el código nuevo llega a producción apagado, se
+            enciende cuando toca y se apaga en segundos si va mal, sin desplegar nada. Eso
+            convierte la mayoría de las reversiones en un cambio de configuración, que es
+            justamente lo aburrido que quieres.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Necesitas esto cuando…</h4>
+              <ul>
+                <li>Hay usuarios a cualquier hora y no hay ventana buena</li>
+                <li>Despliegas a menudo: el coste por despliegue se multiplica</li>
+                <li>Un corte tiene coste comercial directo</li>
+                <li>Vas a tocar el esquema de una tabla con tráfico</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Una ventana de mantenimiento vale cuando…</h4>
+              <ul>
+                <li>Es una herramienta interna con horario conocido</li>
+                <li>La migración es masiva y no se puede partir</li>
+                <li>Dos minutos de corte de madrugada no molestan a nadie</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un despliegue sin caída no es un truco de infraestructura: es una propiedad que se gana en el código y en las migraciones.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La ventaja del canario no es desplegar mejor: es que un fallo lo sufra el 1 % y tú te enteres antes de seguir.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Durante el despliegue conviven dos versiones contra la misma base de datos: todo cambio destructivo se parte en expandir y contraer.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El código vuelve atrás en un minuto y los datos no: una migración que borró una columna no se deshace.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Separar desplegar de activar con un interruptor convierte la mayoría de las reversiones en un cambio de configuración.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

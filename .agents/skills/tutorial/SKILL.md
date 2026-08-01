@@ -40,7 +40,7 @@ Profundo pero entendible: del "por qué" antes que del "cómo".
 - **IDs del TOC:** cada `<h2 id="x">` tiene su enlace `#x` en `.toc__list`. Sin
   esto, scrollspy y resaltado del índice no funcionan.
 - **Lenguajes soportados:** el resaltador conoce `php`, `bash`, `ini`, `sql`,
-  `rust`, `go` y `redis`. Si usas otro, o lo añades a `LANGUAGES` en
+  `yaml`, `rust`, `go` y `redis`. Si usas otro, o lo añades a `LANGUAGES` en
   `assets/js/modules/syntax.js`, o lo dejas sin `data-lang`. No lo dejes mal
   resaltado.
 - **Entrada en manifest coherente:** `slug` = nombre del fichero; `href`

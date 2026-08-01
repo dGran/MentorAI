@@ -18,6 +18,143 @@
 
 window.MENTORAI_CHECKS = {
 
+  /* ================= Curso: Infraestructura ================= */
+
+  "inf-servidor-por-dentro": [
+    { q: "Un servicio desaparece sin dejar ninguna excepción en sus logs. ¿Dónde miras?",
+      o: ["En el log del núcleo, buscando al OOM killer", "En el log de nginx", "En el journal del servicio"], a: 0,
+      w: "Cuando no queda memoria, el núcleo mata un proceso sin avisar a la aplicación. `dmesg -T | grep -i oom` lo confirma." },
+    { q: "Dentro de un contenedor con 512 MB de límite, ¿qué dice `free`?",
+      o: ["512 MB", "La memoria del anfitrión entero", "Cero"], a: 1,
+      w: "El contenedor comparte núcleo, así que las herramientas ven la máquina completa. La cuota real está en los ficheros de cgroup." },
+  ],
+
+  "inf-systemd": [
+    { q: "Editas una unidad y el cambio no surte efecto. ¿Qué falta?",
+      o: ["Reiniciar la máquina", "Volver a hacer `enable`", "`systemctl daemon-reload`"], a: 2,
+      w: "Sin recargar, systemd sigue usando la versión anterior del fichero en memoria y te vuelves loco viendo que tu cambio no hace nada." },
+    { q: "¿Por qué se pone `--time-limit` a un worker de PHP?",
+      o: ["Porque los procesos de larga vida acumulan memoria: se recicla y systemd lo relanza", "Para que no procese mensajes muy largos", "Para limitar el número de mensajes"], a: 0,
+      w: "Es reciclaje preventivo, no una limitación: el proceso sale limpiamente y arranca otro fresco sin que nadie note nada." },
+  ],
+
+  "inf-hardening": [
+    { q: "¿Qué haces antes de recargar SSH tras endurecer su configuración?",
+      o: ["Reiniciar la máquina", "Dejar una segunda sesión abierta y verificar el acceso desde otra terminal", "Hacer una copia del fichero"], a: 1,
+      w: "Es el error que todo el mundo comete una vez: aplicar, cerrar la terminal y descubrir que tu clave no estaba donde creías." },
+    { q: "¿Qué aporta cambiar el puerto de SSH del 22 a otro?",
+      o: ["Impide los ataques de fuerza bruta", "Cifra mejor la conexión", "Reduce el ruido en los logs, no el riesgo"], a: 2,
+      w: "Un escaneo de puertos lo encuentra igual. Es cosmética útil; lo que sí aporta es limitar por IP de origen o entrar por VPN." },
+  ],
+
+  "inf-nginx": [
+    { q: "¿A qué debe apuntar el `root` de nginx en un proyecto PHP moderno?",
+      o: ["Al directorio `public/`", "A la raíz del proyecto", "Al directorio del framework"], a: 0,
+      w: "Si apunta a la raíz, cualquiera puede pedir `/.env` o los ficheros de configuración por HTTP: todo el repositorio es público." },
+    { q: "¿Por qué limitar la tasa en nginx y no solo en la aplicación?",
+      o: ["Porque nginx es más preciso", "Porque rechazar ahí cuesta microsegundos, y en PHP cuesta un worker, una conexión y el arranque del framework", "Porque la aplicación no puede hacerlo"], a: 1,
+      w: "Son defensas complementarias: la de la aplicación sabe de usuarios, la de nginx aguanta cuando llegan diez mil peticiones por segundo." },
+  ],
+
+  "inf-tls": [
+    { q: "¿Qué prueba exactamente un certificado TLS válido?",
+      o: ["Que el sitio es de fiar", "Que la empresa está registrada", "Que quien lo presenta controla ese nombre de dominio"], a: 2,
+      w: "Un sitio fraudulento puede tener un certificado válido perfectamente. Lo que no puede es presentar el de otro dominio." },
+    { q: "¿Qué riesgo tiene poner HSTS con `max-age` de un año desde el primer día?",
+      o: ["Que si tienes un problema con el certificado no puedes volver a HTTP mientras lo arreglas", "Ninguno: es lo recomendado", "Que ralentiza la primera visita"], a: 0,
+      w: "Esa instrucción vive en el navegador del usuario y no se puede retirar rápido. Se empieza con un valor pequeño y se sube cuando estás seguro." },
+  ],
+
+  "inf-dns": [
+    { q: "¿Por qué no se puede poner un CNAME en la raíz del dominio?",
+      o: ["Porque los navegadores no lo soportan", "Porque la raíz necesita registros NS y SOA, y un CNAME no admite convivir con nadie", "Porque el TTL sería demasiado alto"], a: 1,
+      w: "Los proveedores lo resuelven con ALIAS o ANAME, que son extensiones propias: si cambias de proveedor, eso hay que rehacerlo." },
+    { q: "¿Cómo compruebas si tu cambio de DNS se guardó de verdad?",
+      o: ["Esperando 48 horas", "Vaciando la caché del navegador", "Preguntando al servidor autoritativo con `dig @ns1...`"], a: 2,
+      w: "Saltarse las cachés intermedias es la única forma de distinguir «no se guardó» de «se guardó y aún no ha caducado la respuesta vieja»." },
+  ],
+
+  "inf-balanceo": [
+    { q: "¿Qué decide el endpoint «vivo» frente al endpoint «listo»?",
+      o: ["«Vivo» decide si reiniciar el proceso; «listo» decide si mandarle tráfico", "«Vivo» es para el balanceador y «listo» para el monitoreo", "Son equivalentes"], a: 0,
+      w: "La comprobación cara —base de datos, dependencias— va en «listo», para que una caída de la base de datos saque servidores del balanceo sin reiniciarlos en bucle." },
+    { q: "¿Por qué la sesión pegajosa es una solución temporal?",
+      o: ["Porque es lenta", "Porque desequilibra el reparto y quitar un servidor tira las sesiones de todos sus usuarios", "Porque no funciona con HTTPS"], a: 1,
+      w: "El arreglo de verdad es sacar el estado del servidor: sesiones en Redis, ficheros en almacenamiento de objetos. Entonces todo lo demás se vuelve trivial." },
+  ],
+
+  "inf-vm-contenedor-funcion": [
+    { q: "¿Qué debe hacer un worker al recibir SIGTERM?",
+      o: ["Salir inmediatamente", "Ignorarlo", "Marcar una bandera, terminar el mensaje en curso y salir por su propio pie"], a: 2,
+      w: "Salir dentro del manejador de la señal es justo el fallo que intentas evitar: dejas el trabajo a medias que querías proteger." },
+    { q: "¿Qué disciplina hace barato cambiar entre máquina, contenedor y función?",
+      o: ["Config por variables, logs a stdout, sin estado local y parada limpia", "Usar el mismo lenguaje en todas", "Tener tests unitarios"], a: 0,
+      w: "No seguirla te ata a la opción que elegiste primero, aunque técnicamente pudieras moverte." },
+  ],
+
+  "inf-orquestacion": [
+    { q: "¿Qué significa que un orquestador sea declarativo?",
+      o: ["Que la configuración va en YAML", "Que declaras el estado deseado y él trabaja continuamente para que la realidad se le parezca", "Que hay que declarar los recursos antes de usarlos"], a: 1,
+      w: "Esa diferencia es la que hace que la infraestructura se recupere sola en vez de esperar a que alguien ejecute algo." },
+    { q: "¿Qué te quita un clúster gestionado por el proveedor?",
+      o: ["Todo el coste operativo", "Solo el coste de las máquinas", "La parte más difícil —el plano de control—, dejándote la red, los recursos y la depuración"], a: 2,
+      w: "Es la diferencia entre un coste alto y uno medio, no entre alto y cero." },
+  ],
+
+  "inf-despliegues-sin-caida": [
+    { q: "¿Cuál es la ventaja real de un despliegue canario?",
+      o: ["Que un fallo que solo aparece con tráfico real lo sufre el 1 % y tú lo ves antes de seguir", "Que es más rápido", "Que no necesita health checks"], a: 0,
+      w: "Y exige métricas separadas por versión: sin eso, un canario es un despliegue lento y nada más." },
+    { q: "¿Qué hace un interruptor de funcionalidad por tus reversiones?",
+      o: ["Las acelera un 50 %", "Las convierte en un cambio de configuración, sin desplegar", "Permite revertir migraciones"], a: 1,
+      w: "Separar desplegar de activar es lo que hace que revertir sea aburrido, que es exactamente lo que quieres que sea." },
+  ],
+
+  "inf-configuracion-y-secretos": [
+    { q: "¿Cómo distingues configuración de código?",
+      o: ["Por el formato del fichero", "Si está en el repositorio es código", "Si cambia entre entornos es configuración; si es igual en todos es código"], a: 2,
+      w: "Las rutas y el cableado del contenedor son código aunque estén en un YAML. Y un valor que no has cambiado en dos años es una constante, no flexibilidad." },
+    { q: "¿Están cifrados los Secrets de Kubernetes por defecto?",
+      o: ["No: van en base64, que es codificación y no cifrado", "Sí, con AES", "Solo los de tipo TLS"], a: 0,
+      w: "Cualquiera con permiso de lectura sobre ese objeto los ve en claro. Hay que activar el cifrado en reposo del almacén o integrar un gestor externo." },
+  ],
+
+  "inf-iac": [
+    { q: "¿Qué capa cubre Terraform y cuál Ansible?",
+      o: ["Son intercambiables", "Terraform los recursos del proveedor; Ansible lo de dentro de la máquina", "Terraform la aplicación; Ansible la red"], a: 1,
+      w: "Se comparan como si compitieran y en realidad se complementan: uno crea la máquina y el otro la configura." },
+    { q: "¿Qué te dice `terraform plan` que hay que leer entero?",
+      o: ["El tiempo estimado", "El coste mensual", "Qué va a crear, cambiar y sobre todo destruir"], a: 2,
+      w: "Un cambio aparentemente inocente como renombrar un recurso puede traducirse en «destruir la base de datos y crear otra»." },
+  ],
+
+  "inf-backups": [
+    { q: "¿Qué mide el RTO?",
+      o: ["Cuánto puedes estar caído, contando localizar, descargar, importar y verificar", "Cuántos datos puedes perder", "Cada cuánto se hace la copia"], a: 0,
+      w: "Si nunca has cronometrado una restauración completa, tu RTO es un número inventado." },
+    { q: "¿Qué protege el «1» de la regla 3-2-1?",
+      o: ["De que la copia esté corrupta", "De que el desastre se lleve la instalación entera: incendio, borrado de cuenta, ransomware", "De un fallo del tipo de almacenamiento"], a: 1,
+      w: "Por eso las copias deben ser inmutables o estar en una cuenta separada: si las credenciales del servidor pueden borrarlas, no tienes copias." },
+  ],
+
+  "inf-capacidad": [
+    { q: "¿Qué pasa con el rendimiento total pasado el punto de saturación?",
+      o: ["Se mantiene y solo sube la latencia", "Sube más despacio", "Baja: los recursos se van en gestionar la contención"], a: 2,
+      w: "Cambios de contexto, competencia por bloqueos y reintentos de clientes impacientes: el sistema atiende menos peticiones por segundo que cuando estaba al 80 %." },
+    { q: "¿Qué mide golpear diez mil veces el mismo endpoint con el mismo parámetro?",
+      o: ["Tu caché", "La capacidad real del sistema", "La latencia de red"], a: 0,
+      w: "Una prueba útil recorre un escenario con datos variados: entrar, buscar, ver fichas distintas, añadir al carrito." },
+  ],
+
+  "inf-guardias-y-postmortem": [
+    { q: "¿Cuál es la prueba de que un runbook sirve?",
+      o: ["Que esté actualizado", "Que alguien que no lo escribió lo siga entero sin preguntar", "Que lo haya revisado el equipo"], a: 1,
+      w: "Se escriben en frío y dan por hechas cosas que no lo son: rutas que cambiaron, permisos que no tienes, comandos que ya no existen." },
+    { q: "Durante un incidente, ¿qué va primero?",
+      o: ["Encontrar la causa raíz", "Escribir el post mortem", "Mitigar y restaurar el servicio"], a: 2,
+      w: "Si revertir el despliegue devuelve el servicio, se revierte y luego se investiga con calma. La tentación de entender primero cuesta minutos de caída." },
+  ],
+
   /* ================= Curso: Caché y rendimiento ================= */
 
   "cr-medir-primero": [

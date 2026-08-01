@@ -51,6 +51,14 @@
         { cls: "keyword", src: "\\b(?:On|Off|true|false)\\b" },
         { cls: "number", src: "\\b\\d+[MKG]?\\b" },
       ],
+      yaml: [
+        { cls: "comment", src: "#[^\\n]*" },
+        { cls: "string", src: "'(?:''|[^'])*'|\"(?:\\\\.|[^\"\\\\])*\"" },
+        { cls: "property", src: "^\\s*-?\\s*[\\w.\\/-]+(?=\\s*:)" },
+        { cls: "keyword", src: "\\b(?:true|false|null|yes|no|on|off)\\b" },
+        { cls: "number", src: "\\b\\d+(?:\\.\\d+)?[A-Za-z]{0,2}\\b" },
+        { cls: "variable", src: "\\$\\{[^}]+\\}|\\$[A-Z_]\\w*" },
+      ],
       sql: [
         { cls: "comment", src: "--[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/" },
         { cls: "string", src: "'(?:\\\\.|[^'\\\\])*'" },
