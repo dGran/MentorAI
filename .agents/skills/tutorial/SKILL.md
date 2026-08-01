@@ -68,6 +68,10 @@ Profundo pero entendible: del "por qué" antes que del "cómo".
 partir de los `.html`. Hay que ejecutarlo al crear o editar cualquier tutorial;
 si se olvida, `validar.js` lo detecta y falla.
 
+`node scripts/verificar-offline.js` comprueba el modo offline completo con el
+servidor apagado. No hace falta en cada tutorial; sí al tocar `sw.js` o los
+módulos del shell.
+
 `node scripts/validar.js` valida el catálogo entero: slugs, `href`, ficheros que
 faltan, referencias rotas de cursos y rutas, `<` sin escapar dentro de
 `<code data-lang>`, el sesgo de posición de las respuestas correctas y que el

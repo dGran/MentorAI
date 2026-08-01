@@ -1,5 +1,42 @@
 # Plan — Modo offline realmente operativo (2026-07-31)
 
+## Estado
+
+**CERRADO 2026-08-01. Verificado de extremo a extremo con el servidor apagado.**
+
+La verificación manual que quedaba pendiente ya no hace falta: está automatizada
+en **`node scripts/verificar-offline.js`**, que monta el sitio bajo `/MentorAI/`
+como hace Pages, lo sirve, conduce Chrome por CDP, descarga toda la academia,
+**mata el servidor** y comprueba que todo sigue funcionando.
+
+Resultado con el service worker en v7 y 257 tutoriales:
+
+```
+✓ service worker bajo el subdirectorio   http://127.0.0.1:8899/MentorAI/
+✓ academia descargada                    314 entradas
+✓ servidor apagado                       no responde
+✓ inicio / tutorial / curso.html?slug= / rutas / repaso   sin servidor
+✓ tutorial íntegro y con estilos         7 secciones, estilos aplicados
+✓ buscador full-text sin servidor        indice=SI resultados=2
+✓ fallback de página no cacheada         Sin conexión
+```
+
+### El error de método que casi da un falso verde
+
+El primer intento usó `Network.emulateNetworkConditions` de CDP con
+`offline: true` y **dio TODO VERDE sin probar nada**: esa emulación afecta a las
+peticiones de la página, **no a las del service worker**, que seguía llegando al
+servidor tranquilamente.
+
+Se detectó porque el fallback de una página inexistente devolvía «Error
+response… 404 File not found», que es el 404 de `python -m http.server`: si de
+verdad no hubiera red, no habría 404 que devolver.
+
+**El único offline honesto es apagar el servidor.** Está anotado en la cabecera
+del script para que nadie lo reintroduzca.
+
+---
+
 Surge de: *"¿el modo offline es totalmente operativo para hacer un curso en un
 vuelo sin conexión?"*
 

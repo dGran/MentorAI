@@ -133,9 +133,10 @@ Pendiente de verdad, por orden de peso:
 - **Decisión abierta**: el **tutor por lección** con IA (estudio, no autoría) de
   `plan-ia-en-la-app.md`, condicionado al hábito real de lectura. Si se hace,
   proxy fino en Vercel, nunca la clave en el navegador.
-- **Verificación manual pendiente**: el flujo «Descargar toda la academia» en un
-  navegador real contra la URL de Pages (headless no activa el service worker).
-  Checklist al final de `plan-offline-real.md`.
+- ~~Verificación manual del offline~~ — **hecha y automatizada**:
+  `node scripts/verificar-offline.js` monta el sitio bajo `/MentorAI/`, descarga
+  todo, **apaga el servidor** y comprueba que sigue funcionando. Ojo: emular
+  «offline» con CDP no vale, porque esa emulación no afecta al service worker.
 
 Fase 2 — **CERRADA ENTERA el 2026-08-01**:
 - `plan-buscador-fulltext.md` — hecho: índice generado por
