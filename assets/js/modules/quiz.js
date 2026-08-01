@@ -268,6 +268,12 @@
         gradeQuestion(questionEl, index, form)
       );
 
+      outcomes.forEach((wasCorrect, index) => {
+        if (wasCorrect === null) return;
+
+        MentorAI.Repaso?.record(`q:${entry.course.slug}:${index}`, wasCorrect);
+      });
+
       if (outcomes.includes(null)) {
         resultEl.innerHTML =
           '<p class="quiz__warning">Responde todas las preguntas antes de comprobar.</p>';

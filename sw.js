@@ -12,7 +12,7 @@
    navegadores que ya lo tienen cacheado se traigan lo nuevo.
    ============================================================ */
 
-var VERSION = "v3";
+var VERSION = "v4";
 var SHELL = "academia-shell-" + VERSION;
 var CONTENT = "academia-content-" + VERSION;
 
@@ -22,6 +22,7 @@ var SHELL_PATHS = [
   "rutas.html",
   "articulos.html",
   "offline.html",
+  "repaso.html",
   "curso.html",
   "assets/css/styles.css",
   "assets/fonts/inter-400-latin.woff2",
@@ -49,6 +50,7 @@ var SHELL_PATHS = [
   "assets/js/modules/tutorial-feedback.js",
   "assets/js/modules/tutorial.js",
   "assets/js/modules/checks.js",
+  "assets/js/modules/repaso.js",
   "assets/js/modules/quiz.js",
   "assets/js/modules/offline.js",
   "assets/js/modules/init.js",

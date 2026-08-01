@@ -23,6 +23,12 @@
       MentorAI.Paths.renderHome();
     }
 
+    if (MentorAI.Repaso) {
+      MentorAI.Repaso.init();
+      MentorAI.Repaso.renderHome();
+      MentorAI.Repaso.renderPage();
+    }
+
     if (MentorAI.Exams) {
       MentorAI.Exams.renderHome();
     }

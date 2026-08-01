@@ -130,6 +130,8 @@
       item.classList.add("is-answered");
       results[index] = chosen === correct;
 
+      MentorAI.Repaso?.record(`c:${slug}:${index}`, chosen === correct);
+
       if (!results.includes(null)) {
         saveResult(slug, results);
       }
