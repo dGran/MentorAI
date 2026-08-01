@@ -231,6 +231,110 @@
     setbtnState(btn, "idle");
   }
 
+  /* ---------- Descargar todo ----------
+     El catálogo entero pesa unos 5 MB, menos que una foto del móvil. Antes
+     de un vuelo, «me lo llevo todo» es más útil que ir eligiendo cursos. */
+
+  var ALL_KEY = "academia-offline-todo";
+
+  function urlsForEverything() {
+    var paginas = ["index.html", "cursos.html", "rutas.html", "articulos.html", "curso.html", "repaso.html"];
+    var tutoriales = (window.ACADEMIA_TUTORIALS || [])
+      .filter(function (t) {
+        return t.status !== "soon";
+      })
+      .map(function (t) {
+        return "tutorials/" + t.slug + ".html";
+      });
+
+    return paginas.concat(tutoriales).map(function (ruta) {
+      return new URL(ruta, baseUrl()).href;
+    });
+  }
+
+  function pedirPersistencia() {
+    if (!navigator.storage || !navigator.storage.persist) return;
+
+    navigator.storage.persisted().then(function (yaEs) {
+      if (!yaEs) navigator.storage.persist();
+    });
+  }
+
+  function tamanoEstimado() {
+    if (!navigator.storage || !navigator.storage.estimate) return Promise.resolve(null);
+
+    return navigator.storage.estimate().then(function (info) {
+      return info.usage ? Math.round(info.usage / 1024 / 1024) : null;
+    });
+  }
+
+  function initDownloadAll() {
+    var host = document.getElementById("offline-todo");
+
+    if (!host || !isSupported()) return;
+
+    var guardado = localStorage.getItem(ALL_KEY) === "1";
+    var total = urlsForEverything().length;
+
+    host.innerHTML =
+      '<div class="offline-all">' +
+      '<div class="offline-all__body">' +
+      '<h2 class="offline-all__title">Toda la academia</h2>' +
+      '<p class="offline-all__copy">' +
+      (guardado
+        ? "Ya la tienes entera. Vuelve a descargar si has actualizado el contenido."
+        : "Son " + total + " páginas, unos 5 MB. Antes de un vuelo suele salir más a cuenta que ir curso por curso.") +
+      "</p>" +
+      '<p class="offline-all__size" id="offline-size"></p>' +
+      "</div>" +
+      '<button class="btn btn--primary" id="offline-all-btn">' +
+      (guardado ? "Volver a descargar" : "Descargar todo") +
+      "</button>" +
+      "</div>";
+
+    var boton = document.getElementById("offline-all-btn");
+    var copia = host.querySelector(".offline-all__copy");
+
+    tamanoEstimado().then(function (mb) {
+      var el = document.getElementById("offline-size");
+
+      if (el && mb) el.textContent = "Ocupado ahora mismo: unos " + mb + " MB.";
+    });
+
+    boton.addEventListener("click", function () {
+      if (boton.disabled) return;
+
+      boton.disabled = true;
+      pedirPersistencia();
+      sendToSW({ type: "SAVE_COURSE", slug: "__todo__", urls: urlsForEverything() });
+
+      function onMessage(event) {
+        var data = event.data || {};
+
+        if (data.slug !== "__todo__") return;
+
+        if (data.type === "SAVE_PROGRESS") {
+          copia.textContent = "Descargando " + data.done + " de " + data.total + "…";
+        }
+
+        if (data.type === "SAVE_DONE") {
+          navigator.serviceWorker.removeEventListener("message", onMessage);
+          localStorage.setItem(ALL_KEY, "1");
+          copia.textContent = "Listo. Puedes desconectarte y seguir estudiando.";
+          boton.textContent = "Volver a descargar";
+          boton.disabled = false;
+          tamanoEstimado().then(function (mb) {
+            var el = document.getElementById("offline-size");
+
+            if (el && mb) el.textContent = "Ocupado ahora mismo: unos " + mb + " MB.";
+          });
+        }
+      }
+
+      navigator.serviceWorker.addEventListener("message", onMessage);
+    });
+  }
+
   /* ---------- Página offline.html ---------- */
   function initOfflinePage() {
     var host = document.getElementById("offline-content");
@@ -334,6 +438,7 @@
     },
 
     initOfflinePage: function () {
+      initDownloadAll();
       initOfflinePage();
     },
   };
