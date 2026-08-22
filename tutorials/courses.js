@@ -98,6 +98,20 @@ window.MENTORAI_COURSES = [
     ],
   },
   {
+    slug: "k8s-para-devs",
+    title: "Kubernetes para desarrolladores",
+    summary:
+      "Del concepto (que ya cuenta el curso de Infraestructura) al manejo real, en un clúster local con kind: el modelo de objetos y el bucle de reconciliación, kubectl y los manifiestos del día a día, config, secrets y health probes, y desplegar tu aplicación PHP de principio a fin con rollout y rollback.",
+    level: "Intermedio",
+    icon: "shield",
+    lessons: [
+      "k8s-objetos",
+      "k8s-kubectl-y-manifiestos",
+      "k8s-config-y-salud",
+      "k8s-desplegar-tu-app",
+    ],
+  },
+  {
     slug: "protocolos-y-tiempo-real",
     title: "Protocolos y tiempo real",
     summary:
@@ -465,6 +479,21 @@ window.MENTORAI_COURSES = [
         summary: "Cierra el círculo: usa hashing, TLS e inyección.",
         lessons: ["hashing-vs-cifrado", "autenticacion", "owasp"],
       },
+    ],
+  },
+  {
+    slug: "la-maquina",
+    title: "La máquina por dentro",
+    summary:
+      "La asignatura que le da suelo a todo lo demás: cómo ejecuta una CPU y por qué la caché domina el rendimiento, qué pasa entre tu fichero fuente y algo que corre (compilar, interpretar, bytecode), el kernel y las syscalls que cruza cada echo, el scheduler repartiendo núcleos, y los sockets y el I/O como la API que tu backend usa sin mirarla.",
+    level: "Intermedio",
+    icon: "bolt",
+    lessons: [
+      "maq-cpu",
+      "maq-de-codigo-a-programa",
+      "maq-kernel-y-syscalls",
+      "maq-scheduler",
+      "maq-sockets-e-io",
     ],
   },
   {

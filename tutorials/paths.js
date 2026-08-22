@@ -58,6 +58,7 @@ window.MENTORAI_PATHS = [
     icon: "signal",
     steps: [
       { type: "course", ref: "fundamentos" },
+      { type: "course", ref: "la-maquina" },
       { type: "course", ref: "terminal-linux" },
       { type: "course", ref: "oop" },
       { type: "course", ref: "solid" },
@@ -75,6 +76,7 @@ window.MENTORAI_PATHS = [
       { type: "course", ref: "docker" },
       { type: "course", ref: "ci-cd" },
       { type: "course", ref: "infraestructura" },
+      { type: "course", ref: "k8s-para-devs" },
       { type: "course", ref: "observabilidad" },
       { type: "course", ref: "cache-y-rendimiento" },
       { type: "course", ref: "sistemas-distribuidos" },
@@ -99,6 +101,7 @@ window.MENTORAI_PATHS = [
       { type: "article", ref: "config-y-entornos" },
       { type: "course", ref: "ci-cd" },
       { type: "course", ref: "infraestructura" },
+      { type: "course", ref: "k8s-para-devs" },
       { type: "course", ref: "observabilidad" },
     ],
   },
