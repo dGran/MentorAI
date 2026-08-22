@@ -219,6 +219,12 @@
       ].join(" ")
     );
 
+  function announce(mensaje) {
+    const status = document.getElementById("home-search-status");
+
+    if (status) status.textContent = mensaje;
+  }
+
   function applySearch() {
     const input = document.getElementById("home-search");
     const host = document.getElementById("home-results");
@@ -232,6 +238,7 @@
     if (query.length === 0) {
       host.hidden = true;
       host.innerHTML = "";
+      announce("");
       render();
       return;
     }
@@ -256,6 +263,7 @@
     if (matches.length === 0) {
       const buscando = !Search.estaListo();
 
+      announce(buscando ? "Buscando dentro del contenido…" : `Sin resultados para ${term}`);
       host.innerHTML = `<header class="shelf__head"><div>
           <h3 class="shelf__title">${buscando ? "Buscando dentro del contenido…" : "Sin resultados"}</h3>
           <p class="shelf__sub">${
@@ -266,6 +274,10 @@
         </div></header>`;
       return;
     }
+
+    announce(
+      `${matches.length} ${matches.length === 1 ? "coincidencia" : "coincidencias"} para ${term}`
+    );
 
     const resultados = [
       ...enMetadatos.map(miniCardHtml),
@@ -285,6 +297,15 @@
 
   function initSearch() {
     const input = document.getElementById("home-search");
+
+    if (input && !document.getElementById("home-search-status")) {
+      const status = document.createElement("p");
+
+      status.id = "home-search-status";
+      status.className = "visually-hidden";
+      status.setAttribute("role", "status");
+      input.closest("form")?.insertAdjacentElement("afterend", status);
+    }
 
     input?.addEventListener("input", applySearch);
     MentorAI.Search.alBuscar(input, applySearch);

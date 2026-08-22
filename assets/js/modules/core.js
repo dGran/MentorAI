@@ -262,6 +262,27 @@
     });
   }
 
+  /* ---------- Saltar al contenido ----------
+     Se inyecta desde aquí, como el enlace de "Repaso" en la navegación,
+     para no tener que tocar los 200 HTML del catálogo. */
+
+  function initSkipLink() {
+    const destino = document.querySelector("main") ?? document.querySelector("header.nav + *");
+
+    if (!destino || document.querySelector(".skip-link")) return;
+
+    if (!destino.id) destino.id = "contenido";
+
+    destino.setAttribute("tabindex", "-1");
+
+    const enlace = document.createElement("a");
+
+    enlace.className = "skip-link";
+    enlace.href = `#${destino.id}`;
+    enlace.textContent = "Saltar al contenido";
+    document.body.prepend(enlace);
+  }
+
   /* ---------- API pública ---------- */
 
   Object.assign(MentorAI, {
@@ -271,6 +292,7 @@
     initCopyButtons,
     initYear,
     initMobileNav,
+    initSkipLink,
   });
 
   applyTheme(preferredTheme());

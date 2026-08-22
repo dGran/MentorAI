@@ -12,6 +12,7 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     MentorAI.initTheme();
+    MentorAI.initSkipLink();
     MentorAI.initMobileNav();
     MentorAI.initReadingProgress();
     MentorAI.initScrollSpy();
