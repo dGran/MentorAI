@@ -180,7 +180,14 @@ async function main() {
     { stdio: "ignore" }
   );
 
-  const limpiar = () => {
+  const limpiar = async () => {
+    const chromeMuerto = new Promise((fin) => {
+      if (chrome.exitCode !== null) return fin();
+
+      chrome.once("exit", fin);
+      setTimeout(fin, 5000);
+    });
+
     try {
       chrome.kill();
     } catch {
@@ -193,7 +200,11 @@ async function main() {
       /* ya estaba */
     }
 
-    fs.rmSync(raizServida, { recursive: true, force: true });
+    await chromeMuerto;
+
+    /* Chrome escribe en su perfil mientras muere: sin reintentos, el borrado
+       pierde la carrera con ENOTEMPTY (pasó en CI con los 11 checks en verde). */
+    fs.rmSync(raizServida, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 });
   };
 
   try {
@@ -311,7 +322,7 @@ async function main() {
 
     anotar("fallback de página no cacheada", fallback, /sin conexi/i.test(fallback));
   } finally {
-    limpiar();
+    await limpiar();
   }
 
   const fallos = resultados.filter((r) => !r.bien);
