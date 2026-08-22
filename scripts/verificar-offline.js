@@ -252,7 +252,7 @@ async function main() {
         "-e",
         `const fs=require("fs"),vm=require("vm");const s={window:{}};` +
           `vm.runInNewContext(fs.readFileSync(${JSON.stringify(path.join(ROOT, "tutorials/manifest.js"))},"utf8"),s);` +
-          `console.log(s.window.ACADEMIA_TUTORIALS.filter(t=>t.status!=="soon").length)`,
+          `process.stdout.write(String(s.window.ACADEMIA_TUTORIALS.filter(t=>t.status!=="soon").length))`,
       ]).toString()
     );
 
