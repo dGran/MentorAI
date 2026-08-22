@@ -251,9 +251,9 @@ function validarPreguntas(nombre, entradas, contexto) {
   avisarSiHaySesgo(nombre, posiciones, total, true);
 }
 
-/* ---------- 4b. Ponlo en práctica ---------- */
-
-const LENGUAJES_RESALTADOS = new Set(["php", "bash", "ini"]);
+/* ---------- 4b. Ponlo en práctica ----------
+   El lang de un bloque no se restringe: syntax.js escapa sin colorear los
+   lenguajes que no conoce, así que sql o go son etiquetas válidas. */
 
 function validarPractica() {
   for (const [cursoSlug, retos] of Object.entries(practica)) {
@@ -276,9 +276,7 @@ function validarPractica() {
 
         if (!bloque) continue;
         if (!bloque.source) error(`${donde}: ${campo} sin source`);
-        if (!LENGUAJES_RESALTADOS.has(bloque.lang)) {
-          error(`${donde}: ${campo} usa el lenguaje «${bloque.lang}», que syntax.js no resalta`);
-        }
+        if (!bloque.lang) error(`${donde}: ${campo} sin lang`);
       }
     });
   }
