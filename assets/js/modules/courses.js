@@ -192,7 +192,10 @@
       host.innerHTML =
         courseHeroHtml(course, stats) +
         `<div class="course-modules">${modules}</div>` +
-        (MentorAI.Exams?.panelHtml(course) ?? "");
+        (MentorAI.Exams?.panelHtml(course) ?? "") +
+        (MentorAI.Practica?.panelHtml(course) ?? "");
+
+      MentorAI.Practica?.bind(host, course);
 
       host.querySelector(".course-hero__reset")?.addEventListener("click", () => {
         const slugs = lessonSlugsOf(course);
