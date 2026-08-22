@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Streaming y latencia — MentorAI</title>
+    <meta name="description" content="Por qué las respuestas de un LLM se sirven en streaming: latencia percibida vs total, el flujo de eventos de la API desde PHP, el puente SSE hasta el navegador, y cuándo el streaming sobra — trabajos de fondo y salidas estructuradas." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Construir con IA</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Streaming y latencia</h1>
+        <p class="tutorial-hero__lead">
+          Una respuesta de veinte segundos es inaceptable… servida de golpe. La
+          misma respuesta apareciendo palabra a palabra desde el primer segundo
+          se siente rápida. El streaming no reduce la latencia real — reduce la
+          que importa para la experiencia: el tiempo hasta que algo pasa.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Construir con IA
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">La latencia que importa</a></li>
+            <li><a href="#como">Cómo llega: un flujo de eventos</a></li>
+            <li><a href="#php">Consumirlo desde PHP</a></li>
+            <li><a href="#puente">El puente hasta el navegador</a></li>
+            <li><a href="#gotchas">Los detalles que muerden</a></li>
+            <li><a href="#no-streaming">Cuándo el streaming sobra</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Ya tienes las piezas de cursos anteriores: SSE del curso de
+            protocolos, percentiles del de rendimiento. Esta lección las junta
+            para el caso concreto que domina los productos con IA: enseñar la
+            respuesta del modelo mientras se genera.
+          </p>
+
+          <h2 id="idea">
+            La latencia que importa
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En una respuesta generativa hay dos números: el <strong>tiempo
+            hasta el primer token</strong> (uno o dos segundos, normalmente) y
+            el <strong>tiempo hasta el último</strong> (que crece con la
+            longitud: decenas de segundos para una respuesta larga). Sin
+            streaming, el usuario espera el segundo número mirando un spinner —
+            y un spinner de veinte segundos es un usuario que se ha ido. Con
+            streaming, percibe el primero, y la lectura va en paralelo con la
+            generación: para cuando el modelo termina, el usuario ya iba por la
+            mitad.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">También es cuestión de timeouts</p>
+              <p>
+                Hay una razón técnica además de la perceptiva: una conexión que
+                calla durante un minuto entero es carne de timeout — del cliente
+                HTTP, del proxy, del balanceador. El goteo constante del
+                streaming mantiene la conexión viva. Para respuestas largas, los
+                SDK directamente lo exigen.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="como">
+            Cómo llega: un flujo de eventos
+            <a href="#como" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Con streaming activado, la API no devuelve un JSON al final: emite
+            <strong>eventos</strong> sobre la misma conexión HTTP (el formato
+            SSE que ya conoces) — el arranque del mensaje, el inicio de cada
+            bloque, un goteo de <em>deltas</em> con fragmentos de texto, y el
+            cierre con los totales de uso. Tu trabajo es consumir deltas y
+            reenviarlos hacia quien pinta.
+          </p>
+
+          <h2 id="php">
+            Consumirlo desde PHP
+            <a href="#php" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · consumir el stream y reemitirlo como SSE</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+use Anthropic\Messages\RawContentBlockDeltaEvent;
+use Anthropic\Messages\TextDelta;
+
+header("Content-Type: text/event-stream");
+header("Cache-Control: no-cache");
+header("X-Accel-Buffering: no");
+
+$stream = $client-&gt;messages-&gt;createStream(
+    model: "claude-opus-5",
+    maxTokens: 64000,
+    system: $instrucciones,
+    messages: $historial,
+);
+
+$respuestaCompleta = "";
+
+foreach ($stream as $event) {
+    if ($event instanceof RawContentBlockDeltaEvent &amp;&amp; $event-&gt;delta instanceof TextDelta) {
+        $respuestaCompleta .= $event-&gt;delta-&gt;text;
+
+        echo "data: " . json_encode(["texto" =&gt; $event-&gt;delta-&gt;text]) . "\n\n";
+        flush();
+    }
+}
+
+$this-&gt;guardarEnHistorial($respuestaCompleta);</code></pre>
+          </div>
+
+          <p>
+            Tres decisiones dentro de ese código. Uno: el backend
+            <strong>acumula la respuesta completa</strong> mientras la reenvía —
+            el historial de la conversación (lección 1) se guarda en el
+            servidor, no se reconstruye desde el navegador. Dos: la cabecera
+            <code>X-Accel-Buffering: no</code> le dice a nginx que no haga
+            buffering — sin ella, el proxy acumula el goteo y lo entrega de
+            golpe, matando el streaming en silencio. Tres: los deltas se
+            reempaquetan como JSON propio — el cliente no consume el formato
+            crudo del proveedor, igual que no expones las filas de tu base de
+            datos.
+          </p>
+
+          <h2 id="puente">
+            El puente hasta el navegador
+            <a href="#puente" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La arquitectura completa es una tubería de tres tramos: la API
+            transmite a tu backend; tu backend reemite como SSE (el endpoint de
+            arriba, que es exactamente el patrón de la lección de
+            <a href="pr-sse.html">Server-Sent Events</a>); el navegador consume
+            con <code>EventSource</code> y va pintando. El backend en medio no
+            es burocracia: ahí viven la clave de la API (que jamás baja al
+            navegador), el guardado del historial, los límites por usuario y el
+            recorte de lo que no quieres exponer.
+          </p>
+
+          <h2 id="gotchas">
+            Los detalles que muerden
+            <a href="#gotchas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <ul>
+            <li>
+              <strong>Un worker ocupado por conversación.</strong> El endpoint
+              de streaming retiene un proceso PHP-FPM durante toda la
+              generación. Con tráfico real, dimensiona el pool (curso de
+              rendimiento) o mueve el streaming a infraestructura hecha para
+              conexiones largas.
+            </li>
+            <li>
+              <strong>El corte a mitad.</strong> El usuario cierra la pestaña o
+              la red se cae a medio stream: decide qué pasa con la mitad
+              generada (¿se guarda en el historial? ¿se descarta?) y hazlo
+              deliberadamente, no por accidente.
+            </li>
+            <li>
+              <strong>Markdown a medio cocer.</strong> Los deltas cortan por
+              donde quieren — un bloque de código abierto y sin cerrar pinta
+              raro. Los frontends serios renderizan con un parser tolerante o
+              re-renderizan el acumulado en cada delta.
+            </li>
+          </ul>
+
+          <h2 id="no-streaming">
+            Cuándo el streaming sobra
+            <a href="#no-streaming" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El streaming es para <strong>ojos humanos esperando</strong>. El
+            clasificador de tickets de las lecciones anteriores corre en un
+            worker de cola: nadie mira, y el JSON estructurado se consume
+            entero o no se consume — ahí el streaming solo añade complejidad.
+            La matriz es simple: humano esperando una respuesta larga →
+            streaming; trabajo de fondo o salida estructurada → llamada normal
+            en cola; y mucho volumen sin prisa → procesos por lotes, que la
+            siguiente lección conecta con el coste.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Streaming cuando…</h4>
+              <ul>
+                <li>Un humano espera una respuesta generativa larga (chat, redacción)</li>
+                <li>La respuesta puede superar el minuto: la conexión debe seguir viva</li>
+                <li>Quieres feedback inmediato aunque el total tarde</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Llamada normal cuando…</h4>
+              <ul>
+                <li>Es un trabajo de fondo: nadie mira el goteo</li>
+                <li>La salida es estructurada y se consume entera</li>
+                <li>La respuesta es corta: el primer token y el último casi coinciden</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El streaming no acelera la generación: convierte la latencia total en latencia hasta el primer token, que es la que se percibe.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La API emite eventos con deltas; tu backend los consume, acumula la respuesta completa para el historial y reemite como SSE propio.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El backend en medio guarda la clave, el historial y los límites: el navegador nunca habla directo con el proveedor.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los que muerden: el buffering del proxy, el worker retenido por conversación, y el corte a mitad sin política decidida.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Streaming para ojos humanos esperando; para trabajos de fondo y salida estructurada, llamada normal en cola.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="ia-structured-output.html">
+              <small>← Anterior</small>
+              <b>Salida estructurada</b>
+            </a>
+            <a href="ia-coste-y-evaluacion.html" class="next">
+              <small>Siguiente →</small>
+              <b>Coste y evaluación</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../tutorials/practica.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

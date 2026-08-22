@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Coste y evaluación — MentorAI</title>
+    <meta name="description" content="Operar un LLM en producción con números: el modelo de coste por tokens, elegir tamaño de modelo por tarea, las tres palancas de ahorro (caché de prompts, lotes, prompts justos) y el eval mínimo que te deja cambiar prompts y modelos sin miedo." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Construir con IA</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Coste y evaluación</h1>
+        <p class="tutorial-hero__lead">
+          La feature con IA funciona en la demo. Las dos preguntas que deciden
+          si sobrevive en producción son otras: cuánto cuesta a escala, y cómo
+          sabes que sigue funcionando cuando cambies el prompt o el modelo.
+          Esta lección cierra el curso con las dos respuestas.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Construir con IA
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">El coste se diseña</a></li>
+            <li><a href="#tokens">La aritmética de los tokens</a></li>
+            <li><a href="#modelo">Elegir tamaño de modelo por tarea</a></li>
+            <li><a href="#palancas">Las tres palancas de ahorro</a></li>
+            <li><a href="#evals">El eval mínimo que necesitas</a></li>
+            <li><a href="#produccion">Vigilarlo en producción</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            El hilo de todo el curso era que un LLM es una dependencia de coste
+            variable y comportamiento no determinista. Esta lección da los dos
+            instrumentos de control: el contador (medir y reducir el coste) y
+            el termómetro (medir la calidad de forma repetible).
+          </p>
+
+          <h2 id="idea">
+            El coste se diseña
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            A diferencia de un servidor — coste fijo que amortizas — la factura
+            de un LLM es puro variable: crece linealmente con el uso, y cada
+            decisión de diseño (cuánto historial reenvías, qué modelo eliges,
+            cuán largo es tu system prompt) tiene un precio por unidad
+            multiplicado por tu tráfico. La buena noticia: por lo mismo, cada
+            optimización también escala. El coste no se «recorta» al final: se
+            diseña desde el principio.
+          </p>
+
+          <h2 id="tokens">
+            La aritmética de los tokens
+            <a href="#tokens" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Se factura por token, con tres reglas que orientan todo lo demás:
+            los tokens de <strong>entrada y salida tienen precio distinto</strong>
+            (la salida cuesta varias veces más); en una conversación
+            <strong>el historial completo se re-factura como entrada en cada
+            turno</strong> (lección 1: la conversación larga es cara por
+            diseño); y el razonamiento interno del modelo también son tokens de
+            salida. La respuesta de cada llamada trae el desglose — y esos
+            números son tu materia prima:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · el contador viene en cada respuesta</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">$usage = $message-&gt;usage;
+
+$this-&gt;metricas-&gt;registra("llm.tokens", [
+    "entrada" =&gt; $usage-&gt;inputTokens,
+    "salida" =&gt; $usage-&gt;outputTokens,
+    "cache_leida" =&gt; $usage-&gt;cacheReadInputTokens,
+    "caso_de_uso" =&gt; "clasificar-ticket",
+]);</code></pre>
+          </div>
+
+          <p>
+            La etiqueta <code>caso_de_uso</code> es la parte importante: sin
+            ella tienes una factura global; con ella sabes qué feature se come
+            el presupuesto — el equivalente LLM de las métricas por endpoint
+            del curso de observabilidad.
+          </p>
+
+          <h2 id="modelo">
+            Elegir tamaño de modelo por tarea
+            <a href="#modelo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Los proveedores ofrecen familias por tamaño: modelos punteros
+            (máxima capacidad, precio alto), medios (el caballo de batalla) y
+            pequeños (rápidos y baratos, a menudo 5-10 veces menos que el
+            puntero). El error típico es elegir por identidad («queremos lo
+            mejor») en vez de por tarea: clasificar tickets en cuatro
+            categorías no necesita el modelo que resuelve problemas de
+            arquitectura, y a un millón de tickets al mes la diferencia es una
+            cifra con muchos ceros.
+          </p>
+          <p>
+            El método honesto: <strong>empieza con un modelo capaz y baja
+            después</strong>. Primero haces que la feature funcione bien; luego
+            pruebas el modelo pequeño <em>contra tu eval</em> (ahora llegamos) y
+            solo bajas si los números aguantan. Bajar a ciegas para ahorrar es
+            cambiar un coste medible por un deterioro invisible.
+          </p>
+
+          <h2 id="palancas">
+            Las tres palancas de ahorro
+            <a href="#palancas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <ul>
+            <li>
+              <strong>Caché de prompts.</strong> Si todas tus llamadas comparten
+              el mismo system prompt largo (instrucciones, ejemplos, catálogo),
+              el proveedor puede cachear ese prefijo y cobrarte una fracción
+              por releerlo. Exige disciplina de diseño: lo estable primero, lo
+              variable al final — un timestamp en medio del system prompt
+              invalida la caché en silencio. El campo
+              <code>cacheReadInputTokens</code> del usage te dice si de verdad
+              está acertando.
+            </li>
+            <li>
+              <strong>Lotes para lo que puede esperar.</strong> Los proveedores
+              ofrecen procesamiento por lotes (respuesta en horas, no segundos)
+              a mitad de precio. Re-clasificar el archivo entero, generar
+              resúmenes nocturnos: si nadie espera mirando, el 50% de descuento
+              es gratis.
+            </li>
+            <li>
+              <strong>Prompts y salidas justos.</strong> Cada instrucción del
+              system prompt se paga en cada llamada (¿te suena de las rules?);
+              cada token de salida que no necesitas — cortesías, explicaciones
+              no pedidas — se paga al precio caro. Pedir exactamente lo que
+              consumes, con salida estructurada, es la palanca más aburrida y
+              la más constante.
+            </li>
+          </ul>
+
+          <h2 id="evals">
+            El eval mínimo que necesitas
+            <a href="#evals" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Y llegamos al termómetro. Cambias una frase del prompt, o el
+            proveedor saca un modelo más barato: ¿mejora o empeora tu
+            clasificador? Sin evaluación, la respuesta es una intuición
+            alimentada por tres pruebas a mano. Un <strong>eval</strong> es la
+            respuesta con método — y su versión mínima es deliberadamente poco
+            sofisticada:
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Golden set</b><small>50-200 casos reales con su respuesta correcta decidida por ti. Incluye los raros y los que fallaron una vez.</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Runner</b><small>Un script que pasa cada caso por el prompt + modelo candidatos y compara con lo esperado.</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Puntuación comparable</b><small>«Prompt v2 con el modelo pequeño: 94% (v1: 91%)». Ahora la decisión es un número.</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Es la suite de tests del comportamiento del modelo: se corre antes
+              de cambiar nada, igual que los tests antes de un merge.
+            </p>
+          </div>
+
+          <p>
+            Para salidas estructuradas, comparar es trivial (¿coincide la
+            categoría?). Para texto libre, la comparación exacta no existe y se
+            usa un segundo modelo como juez («¿este resumen es fiel al
+            original?») — útil, pero con su propia trampa: el juez también se
+            equivoca, así que calibra sus veredictos contra un puñado de casos
+            que evalúes tú a mano antes de fiarte de él.
+          </p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Sin eval no hay migración</p>
+              <p>
+                La situación que lo justifica todo: el proveedor anuncia que tu
+                modelo se retira en tres meses. Con eval, migrar es correr el
+                golden set contra el modelo nuevo y leer el número. Sin eval, es
+                cruzar los dedos con tu feature en producción. Los modelos se
+                retiran cada año — no es un escenario hipotético.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="produccion">
+            Vigilarlo en producción
+            <a href="#produccion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Lo último es cerrar el lazo con lo que ya sabes de observabilidad:
+            métricas de tokens y coste <strong>por caso de uso</strong> (el
+            código de arriba), latencia con percentiles como cualquier otra
+            dependencia, tasa de errores por familia (429 distintos de 400) y —
+            específico de LLMs — señales de calidad continuas: el porcentaje de
+            respuestas que caen en tu categoría de escape
+            (<code>requiereHumano</code>, <code>otro</code>) es un termómetro
+            barato de deriva. Y una alerta de presupuesto: el gasto diario que
+            se sale de banda avisa antes de que la factura sorprenda a fin de
+            mes.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Desde el día uno…</h4>
+              <ul>
+                <li>Registrar usage por caso de uso: es una línea, y sin ella vas a ciegas</li>
+                <li>Un golden set aunque sea de 30 casos: crece con cada fallo real</li>
+                <li>System prompt estable al principio, variable al final (la caché lo premia)</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Todavía no (hasta que duela)…</h4>
+              <ul>
+                <li>Plataformas enteras de evaluación para una feature con cien llamadas al día</li>
+                <li>Optimizar céntimos antes de que la feature demuestre valor</li>
+                <li>Bajar de modelo sin eval que lo respalde</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El coste es variable puro y se diseña: entrada y salida a precio distinto, y el historial se re-factura entero en cada turno.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Modelo por tarea, no por identidad: empieza capaz, baja después — y solo con un eval que respalde la bajada.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Tres palancas: caché de prompts (estable primero, verificado con cacheReadInputTokens), lotes a mitad de precio, y prompts/salidas justos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El eval mínimo — golden set + runner + puntuación — convierte «¿mejoró?» en un número, y es tu seguro ante retiradas de modelos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En producción: usage por caso de uso, percentiles, errores por familia, la tasa de la categoría de escape y una alerta de presupuesto.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="ia-streaming.html">
+              <small>← Anterior</small>
+              <b>Streaming y latencia</b>
+            </a>
+            <a href="../curso.html?slug=construir-con-ia" class="next">
+              <small>Fin del curso →</small>
+              <b>Construir con IA</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../tutorials/practica.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
