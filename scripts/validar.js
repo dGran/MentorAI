@@ -47,7 +47,7 @@ function htmlDelCatalogo() {
 
 const datos = { window: {} };
 
-for (const fichero of ["manifest", "courses", "paths", "quizzes", "checks"]) {
+for (const fichero of ["manifest", "courses", "paths", "quizzes", "checks", "practica"]) {
   try {
     vm.runInNewContext(leer(`tutorials/${fichero}.js`), datos);
   } catch (fallo) {
@@ -60,6 +60,7 @@ const cursos = datos.window.MENTORAI_COURSES ?? [];
 const rutas = datos.window.MENTORAI_PATHS ?? [];
 const examenes = datos.window.MENTORAI_QUIZZES ?? {};
 const checks = datos.window.MENTORAI_CHECKS ?? {};
+const practica = datos.window.MENTORAI_PRACTICE ?? {};
 
 const slugs = new Set(manifest.map((t) => t.slug));
 const slugsDeCurso = new Set(cursos.map((c) => c.slug));
@@ -250,6 +251,45 @@ function validarPreguntas(nombre, entradas, contexto) {
   avisarSiHaySesgo(nombre, posiciones, total, true);
 }
 
+/* ---------- 4b. Ponlo en práctica ---------- */
+
+const LENGUAJES_RESALTADOS = new Set(["php", "bash", "ini"]);
+
+function validarPractica() {
+  for (const [cursoSlug, retos] of Object.entries(practica)) {
+    if (!slugsDeCurso.has(cursoSlug)) error(`practica: «${cursoSlug}» no corresponde a un curso`);
+
+    if (!Array.isArray(retos) || retos.length === 0) {
+      error(`practica: «${cursoSlug}» sin retos`);
+      continue;
+    }
+
+    retos.forEach((reto, indice) => {
+      const donde = `practica «${cursoSlug}» #${indice}`;
+
+      for (const campo of ["title", "statement", "solution"]) {
+        if (!reto[campo]) error(`${donde}: sin ${campo}`);
+      }
+
+      for (const campo of ["code", "solutionCode"]) {
+        const bloque = reto[campo];
+
+        if (!bloque) continue;
+        if (!bloque.source) error(`${donde}: ${campo} sin source`);
+        if (!LENGUAJES_RESALTADOS.has(bloque.lang)) {
+          error(`${donde}: ${campo} usa el lenguaje «${bloque.lang}», que syntax.js no resalta`);
+        }
+      }
+    });
+  }
+
+  for (const curso of cursos) {
+    if (practica[curso.slug]) continue;
+
+    aviso(`practica: el curso «${curso.slug}» aún no tiene retos de «Ponlo en práctica»`);
+  }
+}
+
 /* ---------- 5. TOC, anclas y escapado en los tutoriales ---------- */
 
 function validarTutoriales() {
@@ -264,6 +304,12 @@ function validarTutoriales() {
       if (!ids.includes(ancla)) error(`${fichero}: el índice enlaza a #${ancla}, que no tiene <h2 id>`);
     }
 
+    for (const enlace of html.matchAll(/href="([a-z0-9-]+\.html)(?:#[^"]*)?"/g)) {
+      if (!existe(`tutorials/${enlace[1]}`)) {
+        error(`${fichero}: enlaza a ${enlace[1]}, que no existe en tutorials/`);
+      }
+    }
+
     /* Solo el < rompe el renderizado (abre una etiqueta). El > literal es
        válido en HTML y aparece constantemente en ->, >> y =>, así que
        marcarlo sería ruido que acabaría haciendo ignorar al validador. */
@@ -274,6 +320,22 @@ function validarTutoriales() {
         error(`${fichero}: hay un < sin escapar dentro de un <code data-lang>`);
         break;
       }
+    }
+  }
+}
+
+/* ---------- 5b. Ids duplicados ----------
+   Un id repetido rompe en silencio lo que ancla sobre él: el TOC, el
+   scrollspy y los enlaces con #. */
+
+function validarIdsDuplicados() {
+  for (const fichero of htmlDelCatalogo()) {
+    const vistos = new Set();
+
+    for (const [, id] of leer(fichero).matchAll(/\sid="([^"]+)"/g)) {
+      if (vistos.has(id)) error(`${fichero}: el id «${id}» está repetido`);
+
+      vistos.add(id);
     }
   }
 }
@@ -312,6 +374,14 @@ function validarShell() {
   for (const modulo of modulos) {
     if (!rutas.includes(`assets/js/modules/${modulo}`)) {
       error(`sw.js: el módulo ${modulo} no está en el shell (no funcionaría sin conexión)`);
+    }
+  }
+
+  const paginasRaiz = fs.readdirSync(ROOT).filter((f) => f.endsWith(".html"));
+
+  for (const pagina of paginasRaiz) {
+    if (!rutas.includes(pagina)) {
+      error(`sw.js: la página ${pagina} no está en el shell (no funcionaría sin conexión)`);
     }
   }
 }
@@ -379,7 +449,9 @@ validarPreguntas("checks", checks, {
   que: "un tutorial",
   agrupaEn: (s) => cursoDeLeccion[s] ?? "artículos sueltos",
 });
+validarPractica();
 validarTutoriales();
+validarIdsDuplicados();
 validarScripts();
 validarShell();
 validarCss();
@@ -388,7 +460,8 @@ validarIndiceDeBusqueda();
 console.log(`\n  Catálogo: ${manifest.length} tutoriales · ${cursos.length} cursos · ${rutas.length} rutas`);
 console.log(
   `  Preguntas: ${Object.values(examenes).reduce((n, q) => n + q.questions.length, 0)} de examen · ` +
-    `${Object.values(checks).flat().length} de comprobación\n`
+    `${Object.values(checks).flat().length} de comprobación · ` +
+    `${Object.values(practica).flat().length} retos\n`
 );
 
 for (const mensaje of avisos) console.log(`  aviso  ${mensaje}`);
