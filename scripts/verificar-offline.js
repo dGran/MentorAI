@@ -14,8 +14,8 @@
    el test pasa sin probar nada.
 
    Requiere google-chrome y Node 22+ (por el WebSocket nativo). No añade
-   dependencias al proyecto: no se ejecuta en CI, es una comprobación
-   manual reproducible.
+   dependencias al proyecto. Corre en CI (los runners ubuntu-latest traen
+   Chrome de serie) y también a mano, que fue su primer uso.
    ============================================================ */
 
 "use strict";
