@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>El scheduler — MentorAI</title>
+    <meta name="description" content="Cómo comparten 200 procesos 8 núcleos: el scheduler y sus rodajas de tiempo, el context switch y su coste, la diferencia entre esperar CPU y esperar I/O, y cómo leer el load average sin engañarte." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>La máquina</span>
+        </nav>
+        <h1 class="tutorial-hero__title">El scheduler</h1>
+        <p class="tutorial-hero__lead">
+          En tu servidor hay 200 procesos y 8 núcleos, y sin embargo todos
+          «corren a la vez». El truco es un reparto vertiginoso de rodajas de
+          tiempo que orquesta el kernel — y entenderlo convierte el load
+          average, el %CPU y los procesos «lentos sin motivo» en cosas que
+          sabes leer.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            La máquina
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">La ilusión de la simultaneidad</a></li>
+            <li><a href="#estados">Los estados de un proceso</a></li>
+            <li><a href="#switch">El context switch y su coste</a></li>
+            <li><a href="#espera">Esperar CPU no es esperar I/O</a></li>
+            <li><a href="#load">Leer el load average sin engañarte</a></li>
+            <li><a href="#backend">Lo que explica de tu stack</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Fundamentos te dio procesos e hilos como conceptos; el curso de
+            Linux te enseñó a listarlos. Falta el director de orquesta: quién
+            decide cuál corre, cuándo, y qué cuesta cada cambio de turno.
+          </p>
+
+          <h2 id="idea">
+            La ilusión de la simultaneidad
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un núcleo ejecuta <strong>un solo hilo a la vez</strong>. La
+            simultaneidad que ves es un reparto: el <strong>scheduler</strong>
+            del kernel da a cada hilo listo para correr una rodaja de tiempo
+            (del orden de milisegundos), lo pausa, guarda su estado, y pone al
+            siguiente. A miles de turnos por segundo, la película parece
+            continua — como los fotogramas del cine. Con 8 núcleos hay 8
+            asientos, y una cola de aspirantes rotando por ellos según
+            prioridad y justicia (el reparto «completamente justo» del que el
+            scheduler de Linux toma su nombre).
+          </p>
+
+          <h2 id="estados">
+            Los estados de un proceso
+            <a href="#estados" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Para el scheduler, cada hilo está en uno de estos sitios — y la
+            columna <code>STAT</code> de <code>ps aux</code> te lo dice:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Estado</th>
+                  <th>ps lo pinta</th>
+                  <th>Significa</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Ejecutando</strong></td>
+                  <td><code>R</code></td>
+                  <td>Tiene un núcleo ahora mismo (o está en la cola listo para ello)</td>
+                </tr>
+                <tr>
+                  <td><strong>Durmiendo (interrumpible)</strong></td>
+                  <td><code>S</code></td>
+                  <td>Espera algo — datos de un socket, un timer. El estado normal del 95% de tus procesos</td>
+                </tr>
+                <tr>
+                  <td><strong>Durmiendo (no interrumpible)</strong></td>
+                  <td><code>D</code></td>
+                  <td>Espera I/O de disco que no puede cancelarse. Muchos D = disco sufriendo</td>
+                </tr>
+                <tr>
+                  <td><strong>Zombi</strong></td>
+                  <td><code>Z</code></td>
+                  <td>Terminó pero su padre aún no recogió su resultado</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            La revelación útil: <strong>casi todo duerme casi siempre</strong>.
+            Un servidor «ocupado» con 200 procesos suele tener 2-3 en
+            <code>R</code> y el resto en <code>S</code>, esperando red o
+            timers. La CPU no se gasta por tener procesos: se gasta por
+            tenerlos <em>corriendo</em>.
+          </p>
+
+          <h2 id="switch">
+            El context switch y su coste
+            <a href="#switch" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cada cambio de turno — el <strong>context switch</strong> — obliga
+            a guardar los registros del hilo saliente, cargar los del entrante,
+            y (si son procesos distintos) cambiar de espacio de memoria virtual.
+            El coste directo son microsegundos; el indirecto es más traicionero:
+            <strong>las cachés L1/L2 de la lección 1 quedan llenas de los datos
+            del anterior</strong>, y el recién llegado empieza fallando caché
+            hasta recalentarla. Por eso «más hilos» no es gratis: con 10.000
+            hilos, el sistema puede pasar más tiempo cambiando de turno y
+            recalentando cachés que trabajando — el <em>thrashing</em> que
+            explica por qué el pool de PHP-FPM tiene un tamaño y no es
+            «infinito».
+          </p>
+
+          <h2 id="espera">
+            Esperar CPU no es esperar I/O
+            <a href="#espera" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La distinción más rentable de la lección. Un proceso puede ir lento
+            por dos motivos opuestos:
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Ligado a CPU (CPU-bound)</h4>
+              <ul>
+                <li>Está en R, quiere núcleo y compite por él</li>
+                <li>%CPU alto; añadir núcleos ayuda</li>
+                <li>Ejemplos: hashear contraseñas, redimensionar imágenes, parsear gigas de JSON</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Ligado a I/O (I/O-bound)</h4>
+              <ul>
+                <li>Está en S/D, durmiendo a la espera de disco o red</li>
+                <li>%CPU bajo aunque la petición tarde segundos; más núcleos NO ayudan</li>
+                <li>Ejemplos: tu CRUD típico — el 95% del tiempo espera a MySQL o a otra API</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            Diagnosticar cuál de los dos es tu caso cambia la solución entera:
+            al CPU-bound se le dan núcleos o mejor algoritmo; al I/O-bound se le
+            da concurrencia (más workers esperando en paralelo) o menos espera
+            (caché, índices — el curso de rendimiento entero). Confundirlos es
+            comprar servidores para un problema de índices.
+          </p>
+
+          <h2 id="load">
+            Leer el load average sin engañarte
+            <a href="#load" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Los tres números de <code>uptime</code> (1, 5 y 15 minutos) son la
+            media de hilos <strong>en R esperando núcleo o en D esperando
+            disco</strong>. La regla de lectura: compáralo con tus núcleos
+            (<code>nproc</code>). Load 8 con 8 núcleos = asientos justos; load
+            24 con 8 núcleos = una cola de 2 esperando por cada uno corriendo.
+            Y el matiz que casi nadie sabe: como el load incluye a los
+            <code>D</code>, <strong>un load altísimo con CPU ociosa grita
+            «disco», no «CPU»</strong> — es el patrón clásico de un NFS caído o
+            un disco moribundo.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · el diagnóstico en tres comandos</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">uptime                      # load: 1, 5 y 15 min — comparalo con nproc
+ps aux | awk '$8 ~ /R|D/'   # quien esta corriendo o clavado en disco
+vmstat 1                    # cs = context switches/seg; wa = % esperando I/O</code></pre>
+          </div>
+
+          <h2 id="backend">
+            Lo que explica de tu stack
+            <a href="#backend" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Con este modelo, piezas de cursos anteriores encajan con un clic.
+            El <strong>pool de PHP-FPM</strong>: cada worker ocupado esperando
+            a MySQL es un proceso en S — no gasta CPU, pero sí memoria y un
+            hueco del pool; por eso el pool se dimensiona contra el I/O, no
+            contra los núcleos. El <strong>event loop</strong> (nginx, Node):
+            en vez de un hilo dormido por conexión, un solo hilo pregunta al
+            kernel «¿cuál de estos 10.000 sockets tiene datos?» — elimina miles
+            de hilos dormidos y sus context switches; es la otra respuesta al
+            mismo problema. Y las <strong>goroutines de Go</strong>: un
+            scheduler <em>en user space</em> que reparte miles de goroutines
+            sobre pocos hilos del kernel — la lección entera, reimplementada un
+            piso más arriba.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Piensa en el scheduler cuando…</h4>
+              <ul>
+                <li>Algo va lento: primero decide si espera CPU o espera I/O</li>
+                <li>El load está alto: ¿R (CPU) o D (disco)? La respuesta cambia todo</li>
+                <li>Dimensiones pools de workers o eliges hilos vs event loop</li>
+                <li>Un benchmark local no cuadra con producción: comparte los núcleos con más gente</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Errores clásicos a evitar</h4>
+              <ul>
+                <li>«Load 10 = comprar CPU» sin mirar si eran procesos en D</li>
+                <li>«Más hilos = más rápido» en cargas I/O-bound ya saturadas de otra cosa</li>
+                <li>Leer %CPU de un proceso I/O-bound y concluir que «no es el problema» — tarda por esperar, no por computar</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La simultaneidad es reparto: rodajas de milisegundos por hilo, miles de turnos por segundo, un hilo por núcleo a la vez.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Casi todo duerme casi siempre (estado S): los procesos no gastan CPU por existir, sino por correr.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El context switch cuesta µs directos y cachés frías indirectas: por eso «más hilos» tiene un techo y los pools tienen tamaño.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>CPU-bound vs I/O-bound es EL diagnóstico: a uno se le dan núcleos, al otro concurrencia o menos espera. Confundirlos sale caro.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El load average cuenta R + D: load alto con CPU ociosa grita disco. Compáralo siempre con nproc.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="maq-kernel-y-syscalls.html">
+              <small>← Anterior</small>
+              <b>El kernel y las syscalls</b>
+            </a>
+            <a href="maq-sockets-e-io.html" class="next">
+              <small>Siguiente →</small>
+              <b>Sockets e I/O</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../tutorials/practica.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cómo ejecuta una CPU — MentorAI</title>
+    <meta name="description" content="La máquina que ejecuta tus bits: registros, el ciclo de instrucción, qué es de verdad una instrucción, y por qué la jerarquía de caché (L1, L2, L3, RAM) decide más sobre el rendimiento de tu código que casi cualquier otra cosa — con un experimento que puedes correr." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>La máquina</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Cómo ejecuta una CPU</h1>
+        <p class="tutorial-hero__lead">
+          El curso de Fundamentos te contó qué son los bits; esta lección te
+          presenta la máquina que los muele: un procesador que solo sabe hacer
+          cosas diminutas, millones de veces por milisegundo, y una jerarquía de
+          memoria que decide — más que tu algoritmo, a veces — lo rápido que va
+          tu código.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            16 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            La máquina
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">Una máquina de cosas diminutas</a></li>
+            <li><a href="#instrucciones">Qué es una instrucción</a></li>
+            <li><a href="#ciclo">El ciclo: fetch, decode, execute</a></li>
+            <li><a href="#registros">Registros: la mano de la CPU</a></li>
+            <li><a href="#cache">La jerarquía de caché</a></li>
+            <li><a href="#experimento">El experimento que lo demuestra</a></li>
+            <li><a href="#backend">Qué cambia para un backend</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            No hace falta saber ensamblador para ser backend. Sí hace falta el
+            modelo mental de qué hace el silicio con tu código — porque explica
+            fenómenos que ves cada semana: por qué recorrer un array vuela y
+            perseguir punteros se arrastra, por qué «más rápido» casi siempre
+            significa «menos viajes a memoria».
+          </p>
+
+          <h2 id="idea">
+            Una máquina de cosas diminutas
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una CPU moderna es decepcionantemente simple en su contrato:
+            ejecuta, una tras otra, operaciones minúsculas — «suma estos dos
+            números», «copia este valor a memoria», «si esto es cero, salta a
+            otra instrucción». Lo asombroso es el ritmo: a 3 GHz, el reloj late
+            <strong>tres mil millones de veces por segundo</strong>. Todo lo que
+            tu backend hace — parsear JSON, comparar contraseñas, servir HTML —
+            se descompone al final en miles de millones de esas piezas
+            diminutas.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La escala que hay que interiorizar</p>
+              <p>
+                Un ciclo de reloj son ~0,3 nanosegundos. En ese tiempo la luz
+                recorre <strong>10 centímetros</strong>. Esa es la razón física
+                de todo lo que viene después: a esas velocidades, ir a buscar un
+                dato «lejos» (la RAM está a centímetros del procesador) es una
+                eternidad relativa.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="instrucciones">
+            Qué es una instrucción
+            <a href="#instrucciones" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una instrucción es un número — bits, como todo — cuyo patrón la CPU
+            reconoce: unos bits dicen la operación (sumar, mover, comparar,
+            saltar) y otros los operandos (qué registros, qué dirección de
+            memoria). El conjunto de patrones que un procesador entiende es su
+            <strong>ISA</strong> (x86-64 en tu PC, ARM en tu móvil) — y por eso
+            un binario de una arquitectura no corre en la otra: son idiomas
+            distintos de bits. Cuando veas «suma» piensa en algo así:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">la misma idea en tres alturas</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>PHP:          $total = $precio + $iva;
+
+ensamblador:  mov  rax, [precio]   ; trae precio a un registro
+              add  rax, [iva]      ; sumale iva
+              mov  [total], rax    ; guarda el resultado
+
+bits:         01001000 10001011 ...  (lo unico que la CPU ve)</code></pre>
+          </div>
+
+          <p>
+            Entre tu línea de PHP y esos bits hay varias capas de traducción —
+            la siguiente lección va exactamente de ese viaje. Lo que importa
+            aquí: <strong>al final del embudo siempre hay esto</strong>, y sus
+            costes son los costes reales de tu programa.
+          </p>
+
+          <h2 id="ciclo">
+            El ciclo: fetch, decode, execute
+            <a href="#ciclo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Fetch</b><small>Trae de memoria la siguiente instrucción (un registro especial, el program counter, apunta a ella).</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Decode</b><small>Reconoce el patrón de bits: qué operación es y con qué operandos.</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Execute</b><small>La ejecuta y avanza el program counter — salvo que la instrucción fuera un salto.</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              El bucle eterno. Las CPUs modernas lo hacen en cadena (pipeline):
+              mientras ejecutan una instrucción ya están trayendo y decodificando
+              las siguientes — como una cadena de montaje.
+            </p>
+          </div>
+
+          <p>
+            El pipeline explica un fenómeno curioso: los <strong>saltos</strong>
+            (los <code>if</code>) incomodan a la CPU, porque no sabe qué
+            instrucciones traer hasta conocer el resultado. Su apuesta — la
+            predicción de saltos — acierta casi siempre; cuando falla, vacía la
+            cadena y pierde ciclos. Es anécdota para tu día a día, pero explica
+            por qué el código predecible (bucles regulares, datos ordenados) va
+            más fino que el impredecible.
+          </p>
+
+          <h2 id="registros">
+            Registros: la mano de la CPU
+            <a href="#registros" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La CPU no opera sobre la memoria directamente: opera sobre
+            <strong>registros</strong> — un puñado (unas decenas) de huecos de
+            64 bits dentro del propio silicio, a velocidad de reloj. Todo dato
+            hace el mismo viaje: de la memoria a un registro, se opera, y
+            vuelta. Los registros son la «mano» de la CPU: caben pocas cosas,
+            pero lo que está en la mano se usa gratis.
+          </p>
+
+          <h2 id="cache">
+            La jerarquía de caché
+            <a href="#cache" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Y aquí llega la parte con más consecuencias prácticas. Como la RAM
+            está «lejos» (en tiempo de CPU), entre ella y los registros hay una
+            escalera de memorias cada vez más pequeñas y rápidas:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nivel</th>
+                  <th>Tamaño típico</th>
+                  <th>Coste de acceso</th>
+                  <th>En términos humanos</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Registros</strong></td>
+                  <td>bytes</td>
+                  <td>0-1 ciclos</td>
+                  <td>lo que tienes en la mano</td>
+                </tr>
+                <tr>
+                  <td><strong>Caché L1</strong></td>
+                  <td>~64 KB</td>
+                  <td>~4 ciclos</td>
+                  <td>tu escritorio</td>
+                </tr>
+                <tr>
+                  <td><strong>Caché L2</strong></td>
+                  <td>~1 MB</td>
+                  <td>~12 ciclos</td>
+                  <td>la estantería de al lado</td>
+                </tr>
+                <tr>
+                  <td><strong>Caché L3</strong></td>
+                  <td>~32 MB</td>
+                  <td>~40 ciclos</td>
+                  <td>el archivador del pasillo</td>
+                </tr>
+                <tr>
+                  <td><strong>RAM</strong></td>
+                  <td>GB</td>
+                  <td>~200-300 ciclos</td>
+                  <td>el almacén del sótano</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            Lee la última columna dos veces: <strong>ir a RAM cuesta ~100 veces
+            más que ir a L1</strong>. La caché funciona por cercanía: cuando
+            pides un byte, se trae la línea entera (64 bytes contiguos)
+            apostando a que pedirás los vecinos. De ahí la regla de oro:
+            <strong>los datos contiguos son rápidos; los datos dispersos son
+            lentos</strong> — aunque el algoritmo sea el mismo.
+          </p>
+
+          <h2 id="experimento">
+            El experimento que lo demuestra
+            <a href="#experimento" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            No te lo creas: mídelo. Recorrer una matriz por filas (memoria
+            contigua) contra recorrerla por columnas (saltos de línea en línea)
+            hace el mismo número de operaciones — y tarda distinto:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · filas contra columnas</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+$n = 2000;
+$matriz = array_fill(0, $n, array_fill(0, $n, 1));
+
+$inicio = hrtime(true);
+$suma = 0;
+
+for ($fila = 0; $fila &lt; $n; $fila++) {
+    for ($col = 0; $col &lt; $n; $col++) {
+        $suma += $matriz[$fila][$col];   // por filas: contiguo
+    }
+}
+
+echo "por filas:    " . intdiv(hrtime(true) - $inicio, 1_000_000) . " ms\n";
+
+$inicio = hrtime(true);
+$suma = 0;
+
+for ($col = 0; $col &lt; $n; $col++) {
+    for ($fila = 0; $fila &lt; $n; $fila++) {
+        $suma += $matriz[$fila][$col];   // por columnas: saltos
+    }
+}
+
+echo "por columnas: " . intdiv(hrtime(true) - $inicio, 1_000_000) . " ms\n";</code></pre>
+          </div>
+
+          <p>
+            En PHP la diferencia queda amortiguada por las capas del intérprete
+            (verás quizá un 20-50%); en C o Rust puede ser 5-10x. El fenómeno es
+            el mismo: el segundo bucle falla la caché una y otra vez. Mismo Big
+            O, distinta física.
+          </p>
+
+          <h2 id="backend">
+            Qué cambia para un backend
+            <a href="#backend" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Tres traducciones directas de esta lección a tu trabajo. Primera:
+            la escalera de cachés es <strong>el mismo patrón</strong> que ya
+            conoces a otra escala — Redis delante de MySQL, el navegador delante
+            de tu API: siempre «pequeño y rápido delante de grande y lento», y
+            siempre apostando por la localidad. Segunda: cuando un profiler te
+            diga que una función «lenta» solo mueve datos, ya sabes dónde mirar
+            — no son las operaciones, son los viajes a memoria. Tercera: los
+            números de la tabla son la razón última de que «hacer menos» gane a
+            «hacer más rápido»: el curso de rendimiento entero es esta tabla
+            aplicada a capas cada vez más altas.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Este modelo mental te sirve cuando…</h4>
+              <ul>
+                <li>Un profiler señala código que «solo» recorre o copia datos</li>
+                <li>Eliges estructura de datos: contiguo (array) vs disperso (objetos enlazados)</li>
+                <li>Lees benchmarks y quieres entender por qué C aplasta a PHP en bucles</li>
+                <li>Diseñas cachés a cualquier escala: es la misma lógica</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No te obsesiones con…</h4>
+              <ul>
+                <li>Micro-optimizar PHP a nivel de caché: el intérprete domina el coste</li>
+                <li>Contar ciclos: en backend, la red y la BD son órdenes de magnitud más caras</li>
+                <li>El ensamblador: el modelo basta; el detalle es para otros oficios</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una CPU ejecuta instrucciones diminutas (números con patrón, definidos por su ISA) en el bucle fetch-decode-execute, encadenado en pipeline.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Opera solo sobre registros: todo dato viaja memoria → registro → memoria. Lo que está «en la mano» es gratis.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La jerarquía L1→L2→L3→RAM va de 4 a ~300 ciclos: ir a RAM cuesta ~100 veces más que a L1, y la caché trae líneas de 64 bytes apostando por la cercanía.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Datos contiguos rápidos, dispersos lentos: mismo Big O, distinta física — y lo puedes medir con el experimento de filas vs columnas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Redis delante de MySQL es esta misma tabla a otra escala: pequeño y rápido delante de grande y lento, apostando por la localidad.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../curso.html?slug=la-maquina">
+              <small>← Curso</small>
+              <b>La máquina por dentro</b>
+            </a>
+            <a href="maq-de-codigo-a-programa.html" class="next">
+              <small>Siguiente →</small>
+              <b>De código a programa</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../tutorials/practica.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

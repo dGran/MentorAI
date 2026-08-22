@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>De código a programa — MentorAI</title>
+    <meta name="description" content="El viaje entre tu fichero fuente y algo que corre: compilar a binario (C, Go, Rust), interpretar, y el camino intermedio del bytecode con máquina virtual (PHP y OPcache, la JVM) más el JIT. Qué es un ejecutable y por qué cada estrategia rinde distinto." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>La máquina</span>
+        </nav>
+        <h1 class="tutorial-hero__title">De código a programa</h1>
+        <p class="tutorial-hero__lead">
+          Tu fichero PHP es texto. La CPU solo entiende los patrones de bits de
+          la lección anterior. Entre lo uno y lo otro hay un viaje con tres
+          rutas posibles — compilar, interpretar, o el camino intermedio del
+          bytecode — y saber cuál toma cada lenguaje explica sus rendimientos,
+          sus despliegues y sus errores.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            La máquina
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">Tres rutas al mismo destino</a></li>
+            <li><a href="#compilar">Compilar: la traducción por adelantado</a></li>
+            <li><a href="#binario">Qué hay dentro de un ejecutable</a></li>
+            <li><a href="#interpretar">Interpretar: la traducción en vivo</a></li>
+            <li><a href="#bytecode">Bytecode: el camino intermedio (PHP vive aquí)</a></li>
+            <li><a href="#jit">JIT: lo mejor de ambos, con condiciones</a></li>
+            <li><a href="#consecuencias">Las consecuencias que ya conocías sin saberlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Esta lección responde preguntas que llevas años esquivando: ¿qué es
+            exactamente «un binario»? ¿Por qué Go entrega un fichero y PHP
+            entrega una carpeta? ¿Qué hace OPcache de verdad? ¿Y por qué Rust
+            tarda en compilar lo que PHP ni compila?
+          </p>
+
+          <h2 id="idea">
+            Tres rutas al mismo destino
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El destino es siempre el mismo: instrucciones de máquina
+            ejecutándose en el ciclo fetch-decode-execute. Lo que varía es
+            <strong>cuándo y dónde se hace la traducción</strong> desde tu
+            texto fuente. Por adelantado y en tu máquina de build (compilar);
+            frase a frase mientras corre (interpretar); o en dos etapas — a un
+            idioma intermedio primero, ejecutado por una máquina virtual después
+            (bytecode). Cada lenguaje que usas eligió una ruta, y esa elección
+            marca su carácter.
+          </p>
+
+          <h2 id="compilar">
+            Compilar: la traducción por adelantado
+            <a href="#compilar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            C, Go y Rust traducen <strong>todo el programa antes de
+            ejecutarlo</strong>: el compilador parsea el fuente, lo optimiza con
+            calma (puede permitirse minutos: solo ocurre una vez) y emite
+            instrucciones nativas para una arquitectura concreta. El resultado
+            es el <strong>ejecutable</strong> — y de ahí sus rasgos: velocidad
+            máxima en ejecución (la CPU come directamente), errores de tipos
+            cazados antes de arrancar, y el precio en el otro lado: compilar
+            tarda, y el binario de tu portátil x86 no sirve para un servidor
+            ARM.
+          </p>
+
+          <h2 id="binario">
+            Qué hay dentro de un ejecutable
+            <a href="#binario" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un «binario» no es un chorro amorfo de bits: es un fichero con
+            formato (ELF en Linux) que el sistema operativo sabe leer. Dentro
+            hay secciones: el <strong>código</strong> (las instrucciones), los
+            <strong>datos</strong> (constantes, strings literales), y metadatos
+            — entre ellos, qué <strong>librerías dinámicas</strong> necesita
+            (ldd te las enseña). Cuando ejecutas, el SO carga las secciones en
+            memoria (el «text» y «data» que viste en la lección de memoria de
+            Fundamentos), resuelve las librerías y salta a la primera
+            instrucción. Puedes espiarlo todo:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · un binario por dentro</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">file /usr/bin/ls        # "ELF 64-bit ... x86-64": formato y arquitectura
+ldd /usr/bin/ls         # las librerias dinamicas que necesita
+strings /usr/bin/ls | head   # los textos literales incrustados</code></pre>
+          </div>
+
+          <p>
+            La distinción <strong>estático vs dinámico</strong> que ves en Go
+            contra C cobra sentido aquí: Go mete (casi) todo dentro del binario
+            — por eso su despliegue es «copia un fichero» y sus imágenes Docker
+            caben en <code>scratch</code>, como viste en el curso de Docker.
+          </p>
+
+          <h2 id="interpretar">
+            Interpretar: la traducción en vivo
+            <a href="#interpretar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El extremo opuesto: un <strong>intérprete</strong> es un programa
+            (compilado, él sí) que lee tu fuente y va haciendo lo que dice,
+            pieza a pieza. No existe binario tuyo: existe el intérprete
+            ejecutándose, con tu código como datos. Ventajas: arrancar al
+            instante, cambiar una línea y recargar, el mismo fuente corre en
+            cualquier máquina que tenga el intérprete. Precio: cada operación
+            paga el peaje de la maquinaria intermedia — por eso el bucle de la
+            lección anterior es 10-50x más lento en puro intérprete que en
+            nativo.
+          </p>
+
+          <h2 id="bytecode">
+            Bytecode: el camino intermedio (PHP vive aquí)
+            <a href="#bytecode" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Casi ningún lenguaje «interpretado» moderno interpreta el texto
+            directamente. PHP, Python y Java compilan tu fuente a
+            <strong>bytecode</strong>: instrucciones para una máquina que no
+            existe en silicio — una <strong>máquina virtual</strong> (la Zend VM
+            en PHP, la JVM en Java) que sí sabe ejecutarlas rápido. Es una ISA
+            inventada, diseñada para el lenguaje.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>factura.php</b><small>Tu texto fuente.</small></span>
+              </div>
+              <div class="flow__arrow" data-label="parseo + compilación (por petición… o no)"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Opcodes (bytecode Zend)</b><small>Instrucciones de la máquina virtual de PHP. OPcache los guarda en memoria compartida.</small></span>
+              </div>
+              <div class="flow__arrow" data-label="ejecuta la Zend VM"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Instrucciones nativas</b><small>La VM (un programa en C) las produce al ejecutar cada opcode.</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              OPcache, visto desde esta lección: elimina el paso 1→2 de cada
+              petición guardando los opcodes ya compilados. No acelera la
+              ejecución — elimina la re-traducción.
+            </p>
+          </div>
+
+          <p>
+            Si hiciste el artículo de <a href="opcache.html">OPcache</a>, esta
+            es su base teórica: aquello que cacheaba eran exactamente estos
+            opcodes. Y puedes verlos con tus ojos — el paquete
+            <code>vld</code> o un playground de opcodes te enseñan el bytecode
+            de cualquier función PHP.
+          </p>
+
+          <h2 id="jit">
+            JIT: lo mejor de ambos, con condiciones
+            <a href="#jit" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La cuarta vía moderna: la VM ejecuta bytecode y, mientras tanto,
+            <strong>observa</strong>. Cuando un fragmento se ejecuta miles de
+            veces (un bucle caliente), lo compila a instrucciones nativas
+            <em>en ese momento</em> — just in time — y las reutiliza. La JVM y
+            V8 (JavaScript) viven de esto; PHP lo incorporó en 8.0. El matiz
+            honesto para ti: en una app web PHP típica, dominada por I/O y por
+            llamadas cortas, el JIT apenas mueve la aguja — brilla en cómputo
+            puro y sostenido. Saber esto te vacuna contra el hype de los
+            benchmarks.
+          </p>
+
+          <h2 id="consecuencias">
+            Las consecuencias que ya conocías sin saberlo
+            <a href="#consecuencias" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fenómeno que ya viste</th>
+                  <th>Su explicación en esta lección</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Go despliega un fichero; PHP, una carpeta con vendor/</td>
+                  <td>Compilado estático vs fuente + intérprete + dependencias</td>
+                </tr>
+                <tr>
+                  <td>La imagen Docker de Go cabe en scratch; la de PHP no</td>
+                  <td>El binario se basta; PHP necesita su runtime entero dentro</td>
+                </tr>
+                <tr>
+                  <td>Rust caza errores al compilar que PHP da en producción</td>
+                  <td>Traducción por adelantado = análisis por adelantado</td>
+                </tr>
+                <tr>
+                  <td>OPcache es lo primero que se activa en producción</td>
+                  <td>Sin él, cada petición re-compila el fuente a opcodes</td>
+                </tr>
+                <tr>
+                  <td>Un binario de tu PC no corre en un servidor ARM</td>
+                  <td>Las instrucciones son de una ISA concreta; el bytecode, en cambio, viaja</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Este mapa te orienta cuando…</h4>
+              <ul>
+                <li>Eliges lenguaje para una pieza: ¿arranque rápido o ejecución rápida?</li>
+                <li>Preparas imágenes Docker y entiendes por qué pesan lo que pesan</li>
+                <li>Lees benchmarks y separas el lenguaje de su estrategia de ejecución</li>
+                <li>Configuras OPcache/JIT sabiendo qué optimiza cada uno</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No lo conviertas en…</h4>
+              <ul>
+                <li>Una guerra de lenguajes: la estrategia de ejecución rara vez es tu cuello de botella real</li>
+                <li>Una razón para activar el JIT de PHP «porque sí»: mide antes, como siempre</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Toda ejecución acaba en instrucciones nativas; lo que varía es cuándo se traduce: antes (compilar), en vivo (interpretar) o en dos etapas (bytecode + VM).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un binario es un fichero con formato (ELF): código, datos y metadatos como sus librerías dinámicas — file, ldd y strings te lo abren.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>PHP compila a opcodes de la Zend VM: OPcache guarda esa traducción entre peticiones — elimina re-compilar, no acelera ejecutar.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El JIT compila en caliente lo que se repite: transformador en cómputo sostenido, casi irrelevante en una web PHP dominada por I/O.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Despliegues, tamaños de imagen y errores en compilación vs producción: todo baja de qué ruta eligió cada lenguaje.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="maq-cpu.html">
+              <small>← Anterior</small>
+              <b>Cómo ejecuta una CPU</b>
+            </a>
+            <a href="maq-kernel-y-syscalls.html" class="next">
+              <small>Siguiente →</small>
+              <b>El kernel y las syscalls</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../tutorials/practica.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
