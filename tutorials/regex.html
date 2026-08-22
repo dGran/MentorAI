@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Regex con fundamento — MentorAI</title>
+    <meta name="description" content="La herramienta que usas cada semana y nadie enseña con base: cómo funciona el motor por dentro (y por qué el backtracking explota), las piezas con criterio, greedy contra lazy, el ReDoS que tumba servicios, y cuándo un regex es la herramienta equivocada." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Herramientas</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Regex con fundamento</h1>
+        <p class="tutorial-hero__lead">
+          Las expresiones regulares se aprenden a golpes: copias una de Stack
+          Overflow, funciona, y rezas. Este artículo te da lo que falta — cómo
+          piensa el motor, las cinco piezas que son el 90% del uso, y las dos
+          trampas (una de corrección, otra de seguridad) que separan al que
+          copia del que sabe.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            16 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Herramientas
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">Un mini-lenguaje de patrones</a></li>
+            <li><a href="#piezas">Las cinco piezas del 90%</a></li>
+            <li><a href="#motor">Cómo piensa el motor</a></li>
+            <li><a href="#greedy">Greedy contra lazy: la trampa de corrección</a></li>
+            <li><a href="#redos">ReDoS: la trampa de seguridad</a></li>
+            <li><a href="#php">En PHP: preg con higiene</a></li>
+            <li><a href="#no-regex">Cuándo un regex es la herramienta equivocada</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Un regex es un programa diminuto escrito en un lenguaje de una
+            línea. Como con todo lenguaje, se puede escribir a ciegas o
+            entendiendo la máquina que lo ejecuta — y la diferencia aparece el
+            día que el patrón falla raro o tumba el servicio.
+          </p>
+
+          <h2 id="idea">
+            Un mini-lenguaje de patrones
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una expresión regular describe un <strong>conjunto de
+            cadenas</strong>: <code>/^\d{5}$/</code> es «exactamente cinco
+            dígitos» — el conjunto de todos los códigos postales posibles. El
+            motor responde a una pregunta: ¿esta cadena concreta pertenece al
+            conjunto (y qué parte casa)? Todo lo demás — validar, extraer,
+            sustituir — son variaciones de esa pregunta. Vienen de la teoría de
+            autómatas (los «lenguajes regulares» de la carrera), y esa raíz
+            explica tanto su potencia como su límite famoso, que veremos al
+            final.
+          </p>
+
+          <h2 id="piezas">
+            Las cinco piezas del 90%
+            <a href="#piezas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Pieza</th>
+                  <th>Sintaxis</th>
+                  <th>La lectura correcta</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Clases</strong></td>
+                  <td><code>\d \w \s [a-f0-9] [^,]</code></td>
+                  <td>«Un carácter de este conjunto». <code>[^,]</code> = uno que NO sea coma — más preciso que el comodín <code>.</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Cuantificadores</strong></td>
+                  <td><code>* + ? {2,5}</code></td>
+                  <td>«El anterior, repetido»: 0+, 1+, 0-1, entre 2 y 5. Se pegan a UNA pieza, no a todo lo anterior</td>
+                </tr>
+                <tr>
+                  <td><strong>Anclas</strong></td>
+                  <td><code>^ $ \b</code></td>
+                  <td>No consumen caracteres: exigen posición (inicio, fin, frontera de palabra). Un validador sin <code>^...$</code> acepta basura alrededor</td>
+                </tr>
+                <tr>
+                  <td><strong>Grupos</strong></td>
+                  <td><code>(ab)+ (?:ab) (?&lt;year&gt;\d{4})</code></td>
+                  <td>Agrupar para cuantificar y/o capturar. <code>(?:)</code> agrupa sin capturar; los grupos con nombre se leen solos</td>
+                </tr>
+                <tr>
+                  <td><strong>Alternancia</strong></td>
+                  <td><code>gato|perro</code></td>
+                  <td>«O». Con paréntesis para acotarla: <code>^(gato|perro)$</code> — sin ellos, <code>^gato|perro$</code> significa otra cosa</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            Con esas cinco piezas se lee casi cualquier patrón real. Ejemplo
+            completo, leído pieza a pieza:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">un patrón real, desmontado</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>/^(?&lt;fecha&gt;\d{4}-\d{2}-\d{2})\s+(?&lt;nivel&gt;ERROR|WARN)\s+(?&lt;msg&gt;.+)$/
+
+^                    ancla: desde el principio
+(?&lt;fecha&gt;...)        grupo con nombre: 2026-08-23
+\d{4}-\d{2}-\d{2}    cuatro digitos, guion, dos, guion, dos
+\s+                  uno o mas espacios/tabs
+(?&lt;nivel&gt;ERROR|WARN) alternancia acotada por el grupo
+.+$                  el resto de la linea, hasta el final</code></pre>
+          </div>
+
+          <h2 id="motor">
+            Cómo piensa el motor
+            <a href="#motor" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El motor de PHP (PCRE, como el de casi todos los lenguajes) es de
+            <strong>backtracking</strong>: recorre tu patrón contra la cadena
+            probando posibilidades y, cuando un camino falla,
+            <strong>retrocede</strong> al último punto de decisión y prueba el
+            siguiente. Un cuantificador es un punto de decisión («¿cuántas
+            repeticiones tomo?»); una alternancia, otro. Esta estrategia es la
+            que da superpoderes (referencias hacia atrás, lookarounds) — y la
+            que puede explotar: si el patrón tiene decisiones anidadas
+            ambiguas, los caminos a probar crecen <strong>exponencialmente</strong>
+            con la longitud de la entrada. Guarda esa frase: es la bomba de la
+            sección de seguridad.
+          </p>
+
+          <h2 id="greedy">
+            Greedy contra lazy: la trampa de corrección
+            <a href="#greedy" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Los cuantificadores son <strong>codiciosos</strong> por defecto:
+            toman lo máximo posible y solo devuelven si el resto del patrón no
+            casa. El clásico donde muerde:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · el .* que se comió la línea</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">$html = '&lt;b&gt;uno&lt;/b&gt; y &lt;b&gt;dos&lt;/b&gt;';
+
+preg_match('/&lt;b&gt;(.*)&lt;\/b&gt;/', $html, $m);
+// $m[1] = "uno&lt;/b&gt; y &lt;b&gt;dos"  &#8592; greedy: tomo TODO y retrocedi lo minimo
+
+preg_match('/&lt;b&gt;(.*?)&lt;\/b&gt;/', $html, $m);
+// $m[1] = "uno"               &#8592; lazy (*?): toma lo minimo que case
+
+preg_match('/&lt;b&gt;([^&lt;]*)&lt;\/b&gt;/', $html, $m);
+// $m[1] = "uno"               &#8592; la mejor: clase negada, sin ambiguedad</code></pre>
+          </div>
+
+          <p>
+            La tercera forma es la lección de estilo: <strong>la clase negada
+            (<code>[^&lt;]*</code>) gana al lazy</strong> — dice exactamente qué
+            puede haber dentro, no deja decisiones al motor (más rápida, cero
+            backtracking) y documenta la intención. Regla general: cuanto menos
+            ambiguo el patrón, más rápido y más correcto.
+          </p>
+
+          <h2 id="redos">
+            ReDoS: la trampa de seguridad
+            <a href="#redos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La explosión exponencial del backtracking tiene nombre de ataque:
+            <strong>ReDoS</strong> (Regular expression Denial of Service). El
+            patrón vulnerable típico anida cuantificadores ambiguos —
+            <code>/^(\w+\s?)+$/</code> — y funciona perfecto… hasta que un
+            atacante (o un dato raro) envía una cadena larga <em>que casi casa
+            pero falla al final</em>: el motor prueba millones de reparticiones
+            posibles antes de rendirse, y tu worker PHP se queda clavado al
+            100% de CPU. Con varios workers así, el servicio entero cae — un
+            regex de validación como vector de denegación de servicio.
+          </p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Las tres defensas</p>
+              <p>
+                1) <strong>Patrones sin ambigüedad anidada</strong>: si dos
+                cuantificadores pueden repartirse los mismos caracteres
+                (<code>(\w+\s?)+</code>), reescribe. 2) <strong>Los límites de
+                PCRE</strong>: PHP corta en <code>pcre.backtrack_limit</code> y
+                <code>preg_match</code> devuelve <code>false</code> — comprueba
+                ese false, es tu airbag. 3) <strong>Nunca un regex complejo
+                sobre entrada de usuario sin límite de longitud</strong>: un
+                <code>strlen</code> antes del preg es la defensa más barata del
+                mundo.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="php">
+            En PHP: preg con higiene
+            <a href="#php" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · los hábitos que evitan sustos</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">// 1. preg_quote SIEMPRE que interpoles datos en un patron:
+$patron = '/^' . preg_quote($busqueda, '/') . '/i';
+// sin el, un "." o un "(" del usuario cambia el significado del regex
+
+// 2. el resultado false es un error del motor, no un "no casa":
+$resultado = preg_match($patron, $entrada);
+
+if ($resultado === false) {
+    throw new PatronInvalidoException(preg_last_error_msg());
+}
+
+// 3. la bandera /u para UTF-8 (sin ella, \w no conoce la ñ ni acentos):
+preg_match('/^\w+$/u', 'año');   // casa; sin /u, no
+
+// 4. grupos con nombre: el codigo se lee solo
+preg_match('/(?&lt;dia&gt;\d{2})\/(?&lt;mes&gt;\d{2})/', $fecha, $m);
+$dia = $m['dia'];</code></pre>
+          </div>
+
+          <h2 id="no-regex">
+            Cuándo un regex es la herramienta equivocada
+            <a href="#no-regex" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El límite teórico tiene consecuencia práctica famosa: los lenguajes
+            regulares <strong>no pueden contar anidamientos</strong> — y por
+            eso <strong>parsear HTML/XML/JSON con regex está condenado</strong>:
+            esos formatos anidan sin límite, y el regex que «funciona» hoy
+            falla con el primer atributo raro o etiqueta anidada. Para
+            estructura, parsers (<code>DOMDocument</code>,
+            <code>json_decode</code>); el regex, como mucho, para trocear
+            <em>dentro</em> de un valor ya extraído. Otras señales de
+            herramienta equivocada: si el patrón supera las ~2 líneas
+            mentales, un parser a mano de 20 líneas se lee, se testea y se
+            mantiene mejor; y para buscar un literal, <code>str_contains</code>
+            es más claro y más rápido. La madurez con regex no es escribir los
+            más largos: es saber cuándo no escribirlos.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>El regex brilla en…</h4>
+              <ul>
+                <li>Validar formatos planos: códigos, fechas, slugs, identificadores</li>
+                <li>Extraer campos de texto semiestructurado: logs, cabeceras</li>
+                <li>Búsquedas y sustituciones con forma (grep -E, sed, tu editor)</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Y es la herramienta equivocada para…</h4>
+              <ul>
+                <li>HTML, XML, JSON: estructuras anidadas → parser, siempre</li>
+                <li>Literales simples: str_contains / str_starts_with</li>
+                <li>Entrada de usuario sin límite de longitud con patrones ambiguos (ReDoS)</li>
+                <li>Lógica que ya no cabe en dos líneas mentales: parser a mano</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Cinco piezas leen el 90% de los patrones: clases, cuantificadores, anclas, grupos y alternancia — y las anclas son lo primero que falta en un validador roto.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El motor hace backtracking: prueba caminos y retrocede. Cada ambigüedad del patrón son caminos extra — y anidadas, explosión exponencial.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Greedy por defecto; lazy con ?; y la clase negada gana a ambos — precisa, rápida y sin decisiones para el motor.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>ReDoS es real: cuantificadores anidados + entrada larga que casi casa = worker al 100%. preg_quote, comprobar el false, /u y limitar longitud son la higiene.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los regex no cuentan anidamientos: HTML/JSON van al parser. La madurez es saber cuándo no usarlos.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../tutorials/practica.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

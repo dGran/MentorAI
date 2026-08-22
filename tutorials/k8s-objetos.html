@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>El modelo de Kubernetes — MentorAI</title>
+    <meta name="description" content="Los objetos con los que piensa Kubernetes y la idea que lo gobierna todo: tú declaras el estado deseado y un bucle de reconciliación lo persigue. Pod, Deployment, Service e Ingress — la cadena que va de tu contenedor al tráfico real." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Kubernetes</span>
+        </nav>
+        <h1 class="tutorial-hero__title">El modelo de Kubernetes</h1>
+        <p class="tutorial-hero__lead">
+          El curso de Infraestructura te contó qué resuelve Kubernetes y qué
+          cobra. Este curso te enseña a manejarlo — y todo empieza por una idea
+          que, una vez encaja, hace obvio el resto: tú no le das órdenes al
+          clúster; le describes un estado, y él lo persigue para siempre.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Kubernetes
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">Declarar, no ordenar</a></li>
+            <li><a href="#bucle">El bucle de reconciliación</a></li>
+            <li><a href="#pod">Pod: la unidad mínima</a></li>
+            <li><a href="#deployment">Deployment: pods con supervisor</a></li>
+            <li><a href="#service">Service: la dirección estable</a></li>
+            <li><a href="#ingress">Ingress: la puerta HTTP</a></li>
+            <li><a href="#mapa">El mapa completo (y namespaces)</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Kubernetes tiene fama de océano. El secreto para no ahogarse: el
+            95% del trabajo de un desarrollador usa <strong>cuatro
+            objetos</strong> — Pod, Deployment, Service, Ingress — unidos por
+            un único mecanismo. Esta lección construye ese mapa; las siguientes
+            lo manejan con las manos.
+          </p>
+
+          <h2 id="idea">
+            Declarar, no ordenar
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Con Docker a secas das órdenes: <code>docker run</code>, y si el
+            contenedor muere, muerto queda hasta que alguien vuelva a
+            ejecutarlo. Con Kubernetes <strong>declaras</strong>: «quiero 3
+            réplicas de esta imagen, con estos recursos» — lo escribes en un
+            objeto (YAML) y lo entregas al clúster. La diferencia parece
+            estilística y es estructural: una orden se ejecuta una vez; una
+            declaración es un <strong>contrato permanente</strong> que el
+            clúster se pasa la vida haciendo cumplir. ¿Muere un pod? Aparece
+            otro. ¿Se cae un nodo entero? Sus pods renacen en otro. Nadie
+            «reacciona»: el sistema converge.
+          </p>
+
+          <h2 id="bucle">
+            El bucle de reconciliación
+            <a href="#bucle" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Estado deseado</b><small>Lo que declaraste: «3 réplicas de app:v2». Vive en la base de datos del clúster (etcd).</small></span>
+              </div>
+              <div class="flow__arrow" data-label="comparar"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Estado real</b><small>Lo que hay ahora mismo: «2 réplicas vivas» (una acaba de morir).</small></span>
+              </div>
+              <div class="flow__arrow" data-label="hay diferencia → actuar"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Reconciliar</b><small>Un controller arranca la réplica que falta. Y vuelta al paso 1, para siempre.</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              Todo Kubernetes son variaciones de este bucle: controllers
+              observando la diferencia entre lo deseado y lo real, y actuando.
+            </p>
+          </div>
+
+          <p>
+            Si esto te suena, es porque lo es: el <strong>estado deseado contra
+            estado real</strong> es el mismo modelo del Terraform del curso de
+            infraestructura, y de esta misma academia (el manifest declara, el
+            render converge). Kubernetes lo aplica en tiempo real, sin parar,
+            a procesos vivos.
+          </p>
+
+          <h2 id="pod">
+            Pod: la unidad mínima
+            <a href="#pod" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un <strong>Pod</strong> es uno o más contenedores que comparten red
+            (la misma IP, localhost entre ellos) y destino: nacen y mueren
+            juntos. El caso común es un contenedor por pod; el caso a dos es el
+            «sidecar» (tu app + un proxy o recolector al lado). La regla mental
+            que evita disgustos: <strong>los pods son ganado, no
+            mascotas</strong> — efímeros, reemplazables, con IP que cambia en
+            cada renacimiento. Nunca guardas estado en uno, nunca apuntas a su
+            IP. Casi nunca creas pods a mano: los crea el siguiente objeto.
+          </p>
+
+          <h2 id="deployment">
+            Deployment: pods con supervisor
+            <a href="#deployment" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El <strong>Deployment</strong> es el objeto con el que de verdad
+            trabajas: declara «quiero N réplicas de esta plantilla de pod», y
+            su controller mantiene la cuenta — repone caídos, retira sobrantes.
+            Y su segundo superpoder es el que usarás cada semana: cambias la
+            imagen (v2 → v3) y el Deployment ejecuta un <strong>rolling
+            update</strong> — levanta pods nuevos, espera a que estén sanos,
+            retira viejos, sin dejar de servir. ¿Te suena? Es el despliegue sin
+            caída del curso de infraestructura, convertido en una línea de
+            YAML. Y <code>kubectl rollout undo</code> es el botón de deshacer.
+          </p>
+
+          <h2 id="service">
+            Service: la dirección estable
+            <a href="#service" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Si los pods cambian de IP al morir y renacer, ¿cómo les habla
+            nadie? El <strong>Service</strong> resuelve el problema: una IP y
+            un nombre DNS <strong>estables</strong> que balancean hacia los
+            pods que casen con su selector de etiquetas, estén donde estén hoy.
+            Tu PHP se conecta a <code>mysql:3306</code> — un Service — y le da
+            igual qué pod de MySQL viva debajo esta semana. Es el patrón de
+            «nombre estable delante de instancias volátiles» que ya viste en
+            DNS y en el balanceador de infra, nativo dentro del clúster.
+          </p>
+
+          <h2 id="ingress">
+            Ingress: la puerta HTTP
+            <a href="#ingress" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Los Services resuelven el tráfico <em>interno</em>. Para el tráfico
+            de fuera — usuarios llegando por HTTPS — está el
+            <strong>Ingress</strong>: reglas de enrutado HTTP («el host
+            api.miapp.com va al Service api, el / va al Service web») que
+            ejecuta un <em>ingress controller</em>... que es, casi siempre, un
+            nginx gestionado por el clúster. El reverse proxy del curso de
+            infraestructura no ha desaparecido: se ha vuelto declarativo.
+          </p>
+
+          <h2 id="mapa">
+            El mapa completo (y namespaces)
+            <a href="#mapa" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Ingress</b><small>api.miapp.com → Service «api»</small></span>
+              </div>
+              <div class="flow__arrow" data-label="enruta"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Service</b><small>IP/DNS estable, balancea por etiquetas</small></span>
+              </div>
+              <div class="flow__arrow" data-label="hacia los pods sanos"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Deployment</b><small>Mantiene N réplicas de la plantilla</small></span>
+              </div>
+              <div class="flow__arrow" data-label="crea y repone"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>Pods</b><small>Tus contenedores corriendo — ganado, no mascotas</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              La cadena que memorizar: Ingress enruta, Service da nombre,
+              Deployment mantiene, Pod ejecuta.
+            </p>
+          </div>
+
+          <p>
+            Última pieza de vocabulario: los <strong>namespaces</strong>
+            dividen el clúster en carpetas lógicas (por equipo, por entorno).
+            Los objetos viven en uno, y el DNS interno lo refleja
+            (<code>mysql.mi-namespace.svc</code>). Para el curso usaremos uno
+            propio y listo — la potencia fina (cuotas, permisos por namespace)
+            queda para cuando la necesites.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Este modelo te sirve cuando…</h4>
+              <ul>
+                <li>Tu empresa despliega en k8s y quieres dejar de tocar de oído</li>
+                <li>Lees un YAML ajeno: ahora la cadena Ingress→Service→Deployment→Pod se lee sola</li>
+                <li>Depuras «no llega tráfico»: ya sabes que hay 4 eslabones donde mirar</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Recuerda del curso de infra…</h4>
+              <ul>
+                <li>Kubernetes cobra un precio: para un proyecto pequeño, compose o un PaaS siguen ganando</li>
+                <li>Este curso te hace usuario competente, no administrador de clústeres: operar k8s es otro oficio</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Declaras estado deseado; el bucle de reconciliación lo persigue para siempre. Toda la magia de k8s es ese bucle repetido.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Pod = contenedores que comparten IP y destino. Ganado, no mascotas: efímeros, sin estado, nunca apuntas a su IP.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Deployment mantiene N réplicas y hace rolling updates con undo: el despliegue sin caída, declarativo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Service da IP/DNS estable sobre pods volátiles; Ingress enruta el HTTP de fuera — un nginx vuelto declarativo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La cadena completa: Ingress enruta → Service nombra → Deployment mantiene → Pod ejecuta. El 95% de tu trabajo vive ahí.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../curso.html?slug=k8s-para-devs">
+              <small>← Curso</small>
+              <b>Kubernetes para desarrolladores</b>
+            </a>
+            <a href="k8s-kubectl-y-manifiestos.html" class="next">
+              <small>Siguiente →</small>
+              <b>kubectl y manifiestos</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../tutorials/practica.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

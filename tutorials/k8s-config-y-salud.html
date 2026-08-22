@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Config, secrets y salud — MentorAI</title>
+    <meta name="description" content="Lo que separa un pod de juguete de uno de producción: ConfigMaps y Secrets (y qué NO son los secrets), requests y limits de recursos, y las probes de liveness y readiness — el contrato de salud que hace posible el despliegue sin caída." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Kubernetes</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Config, secrets y salud</h1>
+        <p class="tutorial-hero__lead">
+          El nginx de la lección anterior corría desnudo: sin configuración,
+          sin límites, sin que nadie supiera si estaba sano. Esta lección viste
+          al pod para producción — y de paso responde la pregunta que k8s te
+          hace y tu app tiene que saber contestar: «¿estás vivo? ¿estás listo?».
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Kubernetes
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">Config fuera de la imagen</a></li>
+            <li><a href="#configmap">ConfigMaps</a></li>
+            <li><a href="#secrets">Secrets (y lo que no son)</a></li>
+            <li><a href="#recursos">Requests y limits</a></li>
+            <li><a href="#probes">Las probes: vivo no es listo</a></li>
+            <li><a href="#rolling">Por qué el rolling update depende de esto</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Tres piezas, y las tres son viejas conocidas con uniforme nuevo: la
+            config por entorno (del artículo de config y entornos), los límites
+            de recursos (cgroups del kernel, lección de syscalls) y los health
+            checks (del despliegue sin caída de infra). Kubernetes no inventa:
+            sistematiza.
+          </p>
+
+          <h2 id="idea">
+            Config fuera de la imagen
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El principio que ya conoces del curso de Docker: <strong>la misma
+            imagen corre en todos los entornos; lo que cambia es la
+            configuración</strong>, y entra desde fuera. En Kubernetes ese
+            «fuera» son dos objetos — ConfigMap para lo normal, Secret para lo
+            sensible — que los pods consumen como variables de entorno o como
+            ficheros montados.
+          </p>
+
+          <h2 id="configmap">
+            ConfigMaps
+            <a href="#configmap" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">yaml · configmap + su consumo en el pod</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="yaml">apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  APP_ENV: "prod"
+  CACHE_TTL: "300"
+---
+# en la plantilla del pod, dentro de containers[]:
+#   envFrom:
+#     - configMapRef:
+#         name: app-config</code></pre>
+          </div>
+
+          <p>
+            Con <code>envFrom</code>, cada clave del ConfigMap aparece como
+            variable de entorno en tu PHP — <code>getenv("APP_ENV")</code> y
+            listo, exactamente el patrón de config por entorno que ya usabas
+            con Docker. El matiz operativo: cambiar un ConfigMap <strong>no
+            reinicia los pods</strong> que lo consumen como env vars — hace
+            falta un rollout para que lo vean. Sorprende a todo el mundo la
+            primera vez.
+          </p>
+
+          <h2 id="secrets">
+            Secrets (y lo que no son)
+            <a href="#secrets" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Los <strong>Secrets</strong> tienen la misma mecánica (claves y
+            valores, consumidos como env o ficheros) con tratamiento aparte:
+            no aparecen en <code>describe</code>, se pueden cifrar en reposo y
+            permiten permisos más finos. Y la advertencia honesta que la doc
+            oficial también hace: <strong>un Secret básico es codificación
+            base64, no cifrado</strong> — quien puede leer el objeto puede leer
+            el valor. Es separación y control de acceso, no criptografía. Por
+            eso las reglas de siempre siguen: los secrets <em>nunca</em> van en
+            git en claro (el manifiesto del Secret se genera desde el gestor de
+            secretos del equipo, como en el curso de infra), y en serio se
+            complementan con cifrado en etcd o un vault externo.
+          </p>
+
+          <h2 id="recursos">
+            Requests y limits
+            <a href="#recursos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cada contenedor debería declarar cuántos recursos pide y cuántos
+            puede llegar a usar:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">yaml · recursos en la plantilla del contenedor</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="yaml">resources:
+  requests:            # lo que PIDES: k8s lo usa para decidir en que nodo cabes
+    cpu: "250m"        # 0,25 nucleos
+    memory: "128Mi"
+  limits:              # el techo: pasarte tiene consecuencias
+    memory: "256Mi"</code></pre>
+          </div>
+
+          <p>
+            Las dos consecuencias que hay que saberse: pasarse del límite de
+            <strong>memoria</strong> significa <strong>OOMKilled</strong> — el
+            kernel mata el contenedor (los cgroups de la lección de syscalls
+            ejecutando la sentencia) y el Deployment lo repone, en bucle si la
+            fuga persiste; ver <code>OOMKilled</code> en un
+            <code>describe</code> es diagnóstico instantáneo. La CPU, en
+            cambio, no mata: <strong>estrangula</strong> (throttling) — tu app
+            va a cámara lenta sin error visible. Y los <em>requests</em> son lo
+            que el scheduler de k8s usa para encajar pods en nodos: pedir de
+            menos = nodos sobrevendidos; pedir de más = clúster desperdiciado.
+          </p>
+
+          <h2 id="probes">
+            Las probes: vivo no es listo
+            <a href="#probes" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Kubernetes le hace a tu app dos preguntas distintas, y confundirlas
+            causa incidentes:
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Liveness — «¿estás vivo?»</h4>
+              <ul>
+                <li>Si falla repetidamente → el contenedor se REINICIA</li>
+                <li>Detecta cuelgues irrecuperables (deadlock, proceso zombi)</li>
+                <li>Debe ser trivial: ¿responde el proceso? Sin tocar BD ni dependencias</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Readiness — «¿puedes atender tráfico?»</h4>
+              <ul>
+                <li>Si falla → el Service DEJA DE ENVIARLE tráfico (sin matar nada)</li>
+                <li>Para arranques largos, warmups, dependencias caídas</li>
+                <li>Puede mirar más: ¿conecto con la BD? ¿cargué la config?</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El error clásico: BD en la liveness</p>
+              <p>
+                Si tu liveness comprueba la base de datos y la BD tiene un
+                microcorte, k8s <strong>reinicia todos tus pods a la vez</strong>
+                — convirtiendo un incidente pequeño en uno total. La dependencia
+                caída va en la <em>readiness</em> (deja de recibir tráfico,
+                espera) — la liveness solo pregunta si TU proceso sigue cuerdo.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="rolling">
+            Por qué el rolling update depende de esto
+            <a href="#rolling" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cierre del círculo: el despliegue sin caída de la lección anterior
+            («levanta nuevos, espera a que estén sanos, retira viejos») solo
+            funciona si «sano» significa algo — y lo que significa es
+            <strong>tu readiness probe</strong>. Sin ella, k8s considera listo
+            a un pod en cuanto arranca el proceso, y el rolling update enruta
+            tráfico a pods que aún están calentando: errores 500 en cada
+            deploy, «pero solo unos segundos». Con ella, el tráfico solo llega
+            cuando tu app dice estar lista. La probe no es burocracia: es el
+            contrato que hace verdad la promesa del despliegue sin caída.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Desde el primer deployment serio…</h4>
+              <ul>
+                <li>Config y secrets fuera de la imagen, siempre</li>
+                <li>Requests/limits declarados: sin ellos eres el vecino ruidoso del nodo</li>
+                <li>Readiness probe real: es lo que hace honestos tus deploys</li>
+                <li>Liveness trivial y sin dependencias</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Errores que ya sabes evitar</h4>
+              <ul>
+                <li>Secrets «protegidos» por base64 committeados en git</li>
+                <li>La BD en la liveness: el microcorte que reinicia toda la flota</li>
+                <li>Cambiar un ConfigMap y esperar que los pods lo vean sin rollout</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Misma imagen en todos los entornos; la config entra por ConfigMaps y Secrets — env vars o ficheros, como con Docker.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un Secret básico es base64 + control de acceso, no cifrado: nunca en git en claro, y en serio con cifrado en reposo o vault.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Requests deciden dónde cabes; limits tienen dientes: OOMKilled en memoria, throttling silencioso en CPU.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Liveness (¿vivo? → reinicio) y readiness (¿listo? → tráfico) son preguntas distintas — y la BD jamás va en la liveness.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El despliegue sin caída es tan bueno como tu readiness probe: ella define qué significa «sano» en el rolling update.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="k8s-kubectl-y-manifiestos.html">
+              <small>← Anterior</small>
+              <b>kubectl y manifiestos</b>
+            </a>
+            <a href="k8s-desplegar-tu-app.html" class="next">
+              <small>Siguiente →</small>
+              <b>Desplegar tu aplicación</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../tutorials/practica.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
