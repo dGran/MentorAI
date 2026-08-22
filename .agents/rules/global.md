@@ -68,6 +68,10 @@ global del agente y no se duplican aquí.
   de ahí dependen el scrollspy y el resaltado del índice.
 - Persistencia de usuario (tema, marcadores y futuros resaltados): siempre
   `localStorage`, claves con prefijo `academia-`. Uso individual, sin login.
+- **Un curso nuevo lleva sus mini-retos** en `tutorials/practica.js`
+  («Ponlo en práctica», 2-3 por curso, ejecutables en la máquina del lector,
+  con la solución explicando el porqué). El validador avisa si un curso queda
+  sin retos.
 
 ## Frontend (`assets/js/modules/`)
 
@@ -119,9 +123,8 @@ global del agente y no se duplican aquí.
 
 El norte del proyecto está cumplido: **257 tutoriales, 26 cursos y 6 rutas**;
 `el-grado-que-no-hiciste` son 23 cursos y ningún curso queda fuera de una ruta.
-
-Lo único pendiente que no es un plan: **«Ponlo en práctica»** (mini-retos al
-cierre de cada curso), último resto de `archivo/plan-huecos-versatilidad.md`.
+«Ponlo en práctica» se cerró el 2026-08-22: los 26 cursos tienen sus retos en
+`tutorials/practica.js`. No queda nada pendiente.
 
 Decisiones tomadas que **no se reabren sin motivo nuevo**: no hay autoría desde
 la app, no hay tutor con IA (rompería el `file://` y el offline), no hay tablero

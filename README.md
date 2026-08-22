@@ -35,7 +35,7 @@ mentorai/
 ├── sw.js                 Service worker (shell + contenido descargado)
 ├── tutorials/
 │   ├── manifest.js       Fuente de verdad del catálogo
-│   ├── courses.js        paths.js  quizzes.js  checks.js
+│   ├── courses.js        paths.js  quizzes.js  checks.js  practica.js
 │   ├── search-index.js   Índice full-text (GENERADO)
 │   ├── _PLANTILLA.html   Punto de partida de cada tutorial
 │   └── <slug>.html       Un tutorial = una página
@@ -76,7 +76,7 @@ un curso nuevo mal repartido se diluye en el conjunto.
 Pages, descarga toda la academia, **apaga el servidor** y comprueba que sigue
 funcionando. Apagar el servidor es la única forma honesta de probarlo: emular
 «offline» desde las herramientas del navegador no afecta a las peticiones del
-service worker.
+service worker. También corre en CI: los runners de GitHub traen Chrome.
 
 ## Añadir un tutorial
 
@@ -121,6 +121,9 @@ en alguna ruta de `paths.js`. Hoy **ningún curso queda fuera de una ruta**.
 - **Evaluarse.** Examen por curso, comprobaciones de dos o tres preguntas al
   final de cada lección, examen final de ruta y **repaso espaciado** que devuelve
   las preguntas falladas a intervalos crecientes.
+- **Ponerlo en práctica.** Cada curso cierra con dos o tres mini-retos para
+  ejecutar en tu máquina (`tutorials/practica.js`), con la solución plegada y
+  un marcador de hechos.
 - **Subrayar.** Selecciona texto en un tutorial y queda guardado; todo lo
   subrayado se reúne en `repaso.html`.
 - **Llevarte tu progreso.** Exporta un fichero e impórtalo en otro dispositivo:

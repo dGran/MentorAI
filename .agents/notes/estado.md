@@ -1,28 +1,39 @@
 # Estado del proyecto
 
-Última actualización: **2026-08-01**.
+Última actualización: **2026-08-22**.
 
 Este fichero se lee al empezar cada sesión y está pensado para leerse **entero**.
 Lo cerrado vive en `archivo/`; si algo de aquí crece demasiado, se archiva.
 
 ## Dónde está el proyecto
 
-**257 tutoriales · 26 cursos · 6 rutas · 386 preguntas de examen · 530 checks.**
-`node scripts/validar.js` sale sin errores ni avisos.
+**257 tutoriales · 26 cursos · 6 rutas · 386 preguntas de examen · 530 checks ·
+76 retos de práctica.** `node scripts/validar.js` sale sin errores ni avisos.
 
 El **norte está cumplido**: la ruta `el-grado-que-no-hiciste` son 23 cursos, y
 **ningún curso queda fuera de una ruta**. Los 16 planes de `archivo/` están
 cerrados, y las tres colas de ideas están consumidas: no queda backlog.
 
-## Lo único pendiente
+**«Ponlo en práctica» se cerró el 2026-08-22** (era lo último pendiente). El
+formato decidido con el usuario: datos en `tutorials/practica.js`
+(`window.MENTORAI_PRACTICE`, mismo patrón que quizzes/checks), pintados por
+`assets/js/modules/practica.js` al final de la ficha de curso — solución en
+`<details>` plegado y check «hecho» persistido en `academia-practica`, que viaja
+con el export del perfil. 2-3 retos por curso, ejecutables en la máquina del
+lector, con la solución explicando el porqué. El `lang` de los bloques de
+código **no se restringe** a lo que resalta `syntax.js`: el resaltador escapa y
+deja en plano lo que no conoce, así que `sql`, `go` o `rust` son etiquetas
+válidas.
 
-**«Ponlo en práctica»** — mini-retos al cierre de cada curso. Último resto de
-`archivo/plan-huecos-versatilidad.md`. Nunca se diseñó: haría falta decidir el
-formato (¿`details/summary` en HTML puro? ¿una sección más en la ficha de curso?)
-antes de escribir nada.
+De la misma tanda (auditoría 2026-08-22): el validador ganó tres checks
+estructurales (enlaces entre tutoriales, ids duplicados, páginas raíz en el
+shell del service worker), hay skip link y `aria-live` en el buscador del
+inicio (inyectados por JS, sin tocar los 264 HTML), y
+**`verificar-offline.js` ahora corre en CI** — se reabrió la decisión de
+«solo manual» porque los runners de GitHub traen Chrome de serie.
 
-A partir de ahí, todo lo que venga es **contenido nuevo o funcionalidad nueva**,
-sin plan previo que consultar.
+A partir de aquí, todo lo que venga es **contenido nuevo o funcionalidad
+nueva**, sin plan previo que consultar.
 
 ## Decisiones que no se reabren sin motivo nuevo
 
@@ -65,7 +76,7 @@ Cada una costó una depuración; están aquí para no repetirlas.
 | `node scripts/generar-indice.js` | Regenera el índice de búsqueda tras tocar tutoriales |
 | `node scripts/verificar-offline.js` | Comprueba el offline con el servidor apagado |
 
-Al tocar `sw.js` o los módulos del shell, **subir `VERSION`** (va por `v8`).
+Al tocar `sw.js` o los módulos del shell, **subir `VERSION`** (va por `v9`).
 
 ## El archivo
 
