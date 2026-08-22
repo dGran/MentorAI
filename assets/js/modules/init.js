@@ -48,6 +48,8 @@
     MentorAI.Offline?.init();
     MentorAI.Offline?.initCourseButtons();
     MentorAI.Offline?.initOfflinePage();
+
+    MentorAI.Sync?.init();
   });
 
   window.addEventListener("load", () => {

@@ -17,7 +17,12 @@
 
   const VERSION = 1;
   const PREFIJO = "academia-";
-  const NO_VIAJAN = ["academia-offline-saved", "academia-offline-todo", "academia-theme"];
+  const NO_VIAJAN = [
+    "academia-offline-saved",
+    "academia-offline-todo",
+    "academia-theme",
+    "academia-sync",
+  ];
 
   /* ---------- Lectura y escritura crudas ---------- */
 
@@ -315,6 +320,7 @@
   MentorAI.Perfil = {
     exportar,
     importar,
+    contenido: contenidoExportado,
     resumen: () => resumenDe(contenidoExportado().datos),
     renderPage,
   };
