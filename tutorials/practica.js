@@ -1037,4 +1037,75 @@ window.MENTORAI_PRACTICE = {
       },
     },
   ],
+  "la-maquina": [
+    {
+      title: "Filas contra columnas, medido",
+      statement:
+        "Ejecuta el experimento de la lección de CPU: recorre una matriz de 2000×2000 por filas y por columnas, cronometrando ambos con hrtime. Mismo número de sumas exactas. Anota la diferencia — y si tienes Go o Rust a mano, repítelo ahí y compara la brecha.",
+      solution:
+        "En PHP verás una diferencia moderada (el intérprete amortigua); en un lenguaje compilado, brutal. La causa es una sola: por filas aprovechas cada línea de caché de 64 bytes; por columnas la desperdicias y vas a RAM una y otra vez. Mismo Big O, distinta física — a partir de hoy, «recorrer datos contiguos» deja de ser un consejo abstracto.",
+      solutionCode: {
+        lang: "php",
+        source:
+          "for ($fila = 0; $fila < $n; $fila++) {\n    for ($col = 0; $col < $n; $col++) {\n        $suma += $matriz[$fila][$col];\n    }\n}",
+      },
+    },
+    {
+      title: "Espía un hola mundo con strace",
+      statement:
+        "Ejecuta strace -c php -r 'echo \"hola\";' y estudia el resumen: ¿cuántas syscalls en total? ¿Cuáles dominan? Después lanza strace -e trace=write con el mismo echo y encuentra la línea exacta donde tu echo se convierte en syscall.",
+      code: {
+        lang: "bash",
+        source: "strace -c php -r 'echo \"hola\\n\";'\nstrace -e trace=write php -r 'echo \"hola\\n\";'",
+      },
+      solution:
+        "El resumen enseña cientos de llamadas — openat y mmap dominan (cargar el intérprete y sus librerías) — y tu programa entero es una: write(1, \"hola\\n\", 5). Esa desproporción es la lección: el lenguaje de alto nivel es azúcar sobre un menú corto de syscalls, y strace te deja verlo siempre que un proceso haga cosas raras.",
+    },
+    {
+      title: "Provoca un TIME_WAIT masivo",
+      statement:
+        "Con un servidor local (php -S localhost:8000), lanza 2000 curls seguidos en un bucle y a continuación ejecuta ss -tan | grep -c TIME-WAIT. Explica qué ves, por qué pasa, y qué pieza de tu stack real existe para evitarlo.",
+      solution:
+        "Verás cientos o miles de TIME_WAIT: cada curl abrió y cerró su propia conexión, y quien cierra retiene la tumba ~60 segundos por si llegan paquetes rezagados. Es inofensivo en tu máquina y un problema a escala (agotamiento de puertos efímeros). La pieza que lo evita: reutilizar conexiones — keep-alive en HTTP, el pool de conexiones hacia MySQL. Ahora el consejo del curso de rendimiento tiene su porqué de kernel.",
+      solutionCode: {
+        lang: "bash",
+        source: "for i in $(seq 2000); do curl -s localhost:8000 > /dev/null; done\nss -tan | grep -c TIME-WAIT",
+      },
+    },
+  ],
+  "k8s-para-devs": [
+    {
+      title: "Mata al pod y pierde la batalla",
+      statement:
+        "Con tu kind levantado y el deployment de 2 réplicas aplicado: abre kubectl get pods -w en una terminal y, desde otra, borra un pod. Cronometra cuánto tarda el sustituto en estar Running. Después intenta «ganar»: borra pods más rápido de lo que renacen. Espóiler: no puedes.",
+      solution:
+        "El sustituto aparece en segundos, y no hay forma de ganar: no compites contra un script que reacciona sino contra un bucle que compara estado deseado (2 réplicas) con real y actúa, indefinidamente. Cuando interiorizas que borrar pods es inútil mientras la declaración diga otra cosa, el modelo declarativo ha hecho clic — y entiendes por qué los cambios de verdad se hacen editando el manifiesto.",
+      solutionCode: {
+        lang: "bash",
+        source: "kubectl get pods -w   # terminal 1\nkubectl delete pod <nombre>   # terminal 2, y observa",
+      },
+    },
+    {
+      title: "El deploy roto que nadie sufrió",
+      statement:
+        "Reproduce el experimento estrella del curso: tu app con /salud, despliega v1 sana, luego construye una v3 cuyo /salud devuelva 500 y aplícala. Mientras tanto, un bucle de curls contra el Service. Comprueba: ¿cuántos errores vieron tus «usuarios»? ¿En qué estado quedó el rollout? Sal del lío con rollout undo.",
+      solution:
+        "Cero errores: los pods v3 nunca pasan su readiness (0/1 Ready), el rollout se atasca tras el primer intento sin tocar los v2 sanos, y el Service solo enruta a quien está listo. kubectl rollout undo restaura la declaración anterior. Haber visto un deploy roto no doler es el argumento definitivo para no desplegar jamás sin readiness probe.",
+      solutionCode: {
+        lang: "bash",
+        source: "while true; do curl -s localhost:8080 || echo FALLO; sleep 0.2; done\nkubectl rollout status deployment/academia-app\nkubectl rollout undo deployment/academia-app",
+      },
+    },
+    {
+      title: "Provoca un OOMKilled",
+      statement:
+        "Baja el límite de memoria de tu deployment a 32Mi y añade a tu index.php una ruta /comer que reserve memoria en bucle (str_repeat en un array). Llama a /comer y observa con kubectl get pods -w y describe qué le pasa al contenedor. ¿Quién lo mató y quién lo resucitó?",
+      solution:
+        "El contenedor muere y el pod muestra OOMKilled con restarts subiendo: lo mató el kernel (los cgroups aplicando el límite — la lección de syscalls en acción) y lo resucitó el Deployment (el bucle de reconciliación). Si la «fuga» persiste, verás el bucle muerte-resurrección en vivo: exactamente lo que significa CrashLoop con causa de memoria en producción, ahora visto con tus ojos.",
+      solutionCode: {
+        lang: "bash",
+        source: "kubectl get pods -w\nkubectl describe pod <nombre> | grep -A3 \"Last State\"",
+      },
+    },
+  ],
 };
