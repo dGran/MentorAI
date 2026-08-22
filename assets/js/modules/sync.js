@@ -176,8 +176,12 @@
         }
       }
 
+      const configActual = leerConfig();
+
+      if (configActual?.token !== config.token) return;
+
       ultimoSubido = trasFusionar;
-      escribirConfig({ ...config, ultimaSync: Date.now() });
+      escribirConfig({ ...configActual, ultimaSync: Date.now() });
       cambiarEstado("sincronizado");
 
       if (trasFusionar !== antesDeFusionar) repintarTodo();
@@ -237,13 +241,22 @@
 
   async function desconectar({ borrarGist = false } = {}) {
     const config = leerConfig();
+    let gistNoBorrado = false;
 
     if (borrarGist && config?.gistId) {
-      await peticion(`/gists/${config.gistId}`, { method: "DELETE" }).catch(() => {});
+      const respuesta = await peticion(`/gists/${config.gistId}`, { method: "DELETE" }).catch(() => null);
+
+      gistNoBorrado = !respuesta || (!respuesta.ok && respuesta.status !== 404);
     }
 
     escribirConfig(null);
     ultimoSubido = null;
+
+    if (gistNoBorrado) {
+      cambiarEstado("error", "Desconectado, pero el gist no se pudo borrar: hazlo desde gist.github.com.");
+      return;
+    }
+
     cambiarEstado("inactivo");
   }
 

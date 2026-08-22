@@ -68,6 +68,11 @@ global del agente y no se duplican aquí.
   de ahí dependen el scrollspy y el resaltado del índice.
 - Persistencia de usuario (tema, marcadores y futuros resaltados): siempre
   `localStorage`, claves con prefijo `academia-`. Uso individual, sin login.
+- **Sincronización opcional entre dispositivos** (`assets/js/modules/sync.js`):
+  gist secreto de GitHub por usuario con token clásico scope `gist`. Es
+  oportunista: sin token o sin red la app es idéntica a la de siempre. El
+  token (`academia-sync`) **no viaja en el export** (`NO_VIAJAN` en
+  `perfil.js`) y la fusión al bajar reutiliza `Perfil.importar`.
 - **Un curso nuevo lleva sus mini-retos** en `tutorials/practica.js`
   («Ponlo en práctica», 2-3 por curso, ejecutables en la máquina del lector,
   con la solución explicando el porqué). El validador avisa si un curso queda

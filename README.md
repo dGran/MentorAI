@@ -127,7 +127,10 @@ en alguna ruta de `paths.js`. Hoy **ningún curso queda fuera de una ruta**.
 - **Subrayar.** Selecciona texto en un tutorial y queda guardado; todo lo
   subrayado se reúne en `repaso.html`.
 - **Llevarte tu progreso.** Exporta un fichero e impórtalo en otro dispositivo:
-  se **fusiona**, no reemplaza.
+  se **fusiona**, no reemplaza. Y opcionalmente, **sincronización automática**
+  entre tus dispositivos vía un gist secreto de tu cuenta de GitHub (token
+  clásico con scope `gist`, se configura en `repaso.html`): cada persona usa su
+  cuenta, sin backend ni login, y sin red todo sigue funcionando igual.
 
 Todo se guarda en `localStorage` con el prefijo `academia-`. Uso individual, sin
 cuentas ni servidor.

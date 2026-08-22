@@ -42,6 +42,19 @@ inicio (inyectados por JS, sin tocar los 264 HTML), y
 **`verificar-offline.js` ahora corre en CI** — se reabrió la decisión de
 «solo manual» porque los runners de GitHub traen Chrome de serie.
 
+**Sync entre dispositivos (2026-08-23):** se reabrió —con motivo nuevo real:
+uso multi-dispositivo frecuente— la opción Gist que `archivo/plan-multiusuario.md`
+dejó anotada como descartada. `assets/js/modules/sync.js`: gist secreto por
+usuario (token clásico scope `gist`, pegado en `repaso.html`), fusión
+reutilizando `Perfil.importar`, sync oportunista al cargar/salir/botón. El
+token vive en `academia-sync` y **no viaja en el export**. Cada compañero usa
+su cuenta → independencia gratis; se descartó explícitamente centralizar los
+progresos en la cuenta del usuario (exigiría distribuir su token: un secreto
+compartido no es un secreto). E2E verificado con dos perfiles de navegador y
+gist real (creado, encontrado por token, fusionado en ambas direcciones,
+borrado). Ojo para tests futuros: matar Chrome headless a lo bruto puede
+perder escrituras de localStorage — no es un bug de la app.
+
 A partir de aquí, todo lo que venga es **contenido nuevo o funcionalidad
 nueva**, sin plan previo que consultar.
 
