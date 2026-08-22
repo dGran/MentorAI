@@ -548,6 +548,59 @@ window.MENTORAI_COURSES = [
     ],
   },
   {
+    slug: "claude-code",
+    title: "Claude Code: ingeniería con agentes",
+    summary:
+      "Dominar la herramienta agéntica de principio a fin: cómo funciona el agente por dentro (el bucle de tools, el contexto finito, planificar y verificar, subagentes), cómo se configura el entorno (rules, skills, memoria entre sesiones, MCP) y cómo se automatiza (hooks, headless, CI y el flujo de equipo). Cada concepto es transferible a cualquier agente; los ejemplos, de Claude Code.",
+    level: "Avanzado",
+    icon: "bolt",
+    modules: [
+      {
+        title: "El agente por dentro",
+        summary: "Qué hace de verdad la herramienta cuando le pides algo: el bucle, el contexto, el plan y la verificación.",
+        lessons: [
+          "cc-agente-por-dentro",
+          "cc-contexto-finito",
+          "cc-plan-y-verificacion",
+          "cc-subagentes",
+        ],
+      },
+      {
+        title: "Configurar tu entorno",
+        summary: "Rules que se obedecen, skills que empaquetan flujos, memoria entre sesiones y MCP para conectar tus herramientas.",
+        lessons: [
+          "cc-rules",
+          "cc-skills",
+          "cc-memoria-y-continuidad",
+          "cc-mcp",
+        ],
+      },
+      {
+        title: "Automatizar",
+        summary: "Del uso interactivo a la máquina: hooks y permisos, modo headless, agentes en CI y el flujo de equipo.",
+        lessons: [
+          "cc-hooks-y-permisos",
+          "cc-headless-y-ci",
+          "cc-flujo-de-equipo",
+        ],
+      },
+    ],
+  },
+  {
+    slug: "construir-con-ia",
+    title: "Construir con IA",
+    summary:
+      "Meter un LLM dentro de tu producto con criterio: llamar a la API desde el backend, obtener JSON fiable con structured output y tool use, hacer streaming de la respuesta y controlar coste, caché y calidad con evaluaciones mínimas. Con PHP como lenguaje de ejemplo.",
+    level: "Avanzado",
+    icon: "signal",
+    lessons: [
+      "ia-llamar-a-un-llm",
+      "ia-structured-output",
+      "ia-streaming",
+      "ia-coste-y-evaluacion",
+    ],
+  },
+  {
     slug: "diseno-y-arquitectura",
     title: "Diseño y arquitectura",
     summary:
