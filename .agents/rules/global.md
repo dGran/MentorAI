@@ -121,10 +121,13 @@ global del agente y no se duplican aquí.
 **Ninguno.** A 2026-08-01 los 16 planes están cerrados y archivados en
 `.agents/notes/archivo/`, junto con las tres colas de ideas, ya consumidas.
 
-El norte del proyecto está cumplido: **257 tutoriales, 26 cursos y 6 rutas**;
+El norte del proyecto está cumplido: **272 tutoriales, 28 cursos y 7 rutas**;
 `el-grado-que-no-hiciste` son 23 cursos y ningún curso queda fuera de una ruta.
-«Ponlo en práctica» se cerró el 2026-08-22: los 26 cursos tienen sus retos en
-`tutorials/practica.js`. No queda nada pendiente.
+«Ponlo en práctica» se cerró el 2026-08-22: todos los cursos tienen sus retos en
+`tutorials/practica.js`. El 2026-08-22 se añadieron también los cursos
+`claude-code` (11 lecciones) y `construir-con-ia` (4), ordenados con
+`programar-con-ia` en la ruta nueva `ingenieria-con-ia`. No queda nada
+pendiente.
 
 Decisiones tomadas que **no se reabren sin motivo nuevo**: no hay autoría desde
 la app, no hay tutor con IA (rompería el `file://` y el offline), no hay tablero

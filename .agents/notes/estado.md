@@ -7,8 +7,18 @@ Lo cerrado vive en `archivo/`; si algo de aquí crece demasiado, se archiva.
 
 ## Dónde está el proyecto
 
-**257 tutoriales · 26 cursos · 6 rutas · 386 preguntas de examen · 530 checks ·
-76 retos de práctica.** `node scripts/validar.js` sale sin errores ni avisos.
+**272 tutoriales · 28 cursos · 7 rutas · 409 preguntas de examen · 586 checks ·
+82 retos de práctica.** `node scripts/validar.js` sale sin errores ni avisos.
+
+**Tanda IA (2026-08-22, segunda del día):** dos cursos nuevos —
+**`claude-code`** («Claude Code: ingeniería con agentes», 11 lecciones en 3
+módulos: el agente por dentro, configurar el entorno, automatizar) y
+**`construir-con-ia`** (4 lecciones: API desde PHP, structured output,
+streaming, coste y evals) — más la **7ª ruta `ingenieria-con-ia`**
+(programar-con-ia → claude-code → construir-con-ia). Cada curso con su examen,
+sus checks por lección y sus retos. Decisión de arquitectura: tres cursos
+separados sin solapes en vez de inflar `programar-con-ia`, que queda intacto
+como intro. Los slugs nuevos usan prefijos `cc-` e `ia-`.
 
 El **norte está cumplido**: la ruta `el-grado-que-no-hiciste` son 23 cursos, y
 **ningún curso queda fuera de una ruta**. Los 16 planes de `archivo/` están
@@ -76,7 +86,7 @@ Cada una costó una depuración; están aquí para no repetirlas.
 | `node scripts/generar-indice.js` | Regenera el índice de búsqueda tras tocar tutoriales |
 | `node scripts/verificar-offline.js` | Comprueba el offline con el servidor apagado |
 
-Al tocar `sw.js` o los módulos del shell, **subir `VERSION`** (va por `v9`).
+Al tocar `sw.js` o los módulos del shell, **subir `VERSION`** (va por `v10`).
 
 ## El archivo
 

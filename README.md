@@ -1,6 +1,6 @@
 # MentorAI
 
-Una carrera de backend en HTML estático: **257 tutoriales, 26 cursos y 6 rutas**
+Una carrera de backend en HTML estático: **272 tutoriales, 28 cursos y 7 rutas**
 de aprendizaje, pensados para dar la base formal que uno se salta cuando aprende
 a programar por su cuenta.
 

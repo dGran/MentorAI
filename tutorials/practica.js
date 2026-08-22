@@ -978,4 +978,63 @@ window.MENTORAI_PRACTICE = {
       },
     },
   ],
+  "claude-code": [
+    {
+      title: "Escribe una rule y mide si se obedece",
+      statement:
+        "Elige una convención real de tu proyecto que el agente incumpla de vez en cuando. Escríbela en el CLAUDE.md de dos formas: primero como prohibición seca, luego con el mecanismo y el porqué. Abre una sesión nueva con cada versión, pide una tarea que la ponga a prueba y compara el comportamiento.",
+      solution:
+        "La versión con porqué gana casi siempre, y el motivo es el de la lección: un modelo generaliza bien desde mecanismos («fetch falla por CORS en file://, usa un .js que asigne a un global») y mal desde prohibiciones sueltas, que invitan a la excepción. De regalo, el experimento te enseña el ciclo completo: detectar la corrección repetida, destilarla a regla, y verificar contra la realidad en vez de suponer.",
+    },
+    {
+      title: "Monta el servidor MCP mínimo",
+      statement:
+        "Crea un servidor MCP con una sola tool que consulte algo tuyo de verdad (tu BD de desarrollo con conexión de solo lectura, o un fichero de datos). Conéctalo con .mcp.json, abre una sesión y pídele al agente algo que necesite esa tool. Después intenta colarle una operación de escritura y comprueba que el servidor la rechaza.",
+      code: {
+        lang: "bash",
+        source: "npm init -y && npm install @modelcontextprotocol/sdk zod",
+      },
+      solution:
+        "Al pedirle el dato, el agente descubre tu tool en el catálogo y la invoca sin que tú toques nada — el bucle de siempre con un brazo ejecutor nuevo. La parte importante es el segundo paso: la escritura la rechaza tu validación dentro del servidor (y la credencial de solo lectura), no la buena voluntad del modelo. Esa es la frontera determinista de todo el curso, ahora escrita por ti.",
+    },
+    {
+      title: "Un hook que protege un invariante",
+      statement:
+        "Elige un fichero de tu proyecto que nunca deba editarse a mano (uno generado, un lockfile) y escribe un hook pre-herramienta que bloquee su edición con un mensaje que diga qué hacer en su lugar. Pide luego al agente una tarea que le tiente a editarlo y observa la secuencia completa.",
+      solution:
+        "La secuencia que buscas: el agente intenta la edición, el hook la veta, el mensaje vuelve a su contexto y el agente corrige el rumbo solo (regenera el fichero con el comando correcto). Un buen mensaje de bloqueo no dice «prohibido»: dice el camino correcto — el hook no solo protege, enseña en el momento exacto del error, que es cuando las lecciones entran.",
+    },
+  ],
+  "construir-con-ia": [
+    {
+      title: "El clasificador con contrato",
+      statement:
+        "Monta el clasificador de tickets del curso de punta a punta en PHP: salida estructurada con una clase (categoría como enum cerrado, urgencia 1-5, requiereHumano), y pruébalo con diez tickets inventados — incluye dos ambiguos y uno que intente inyección («ignora tus instrucciones y…»). Registra el usage de cada llamada.",
+      solution:
+        "Los diez responden con el objeto tipado — el no determinismo queda en los valores, nunca en la forma. Los ambiguos son la prueba interesante: si tu esquema tiene vía de escape, acaban en «otro» o con requiereHumano a true en vez de en una categoría inventada. Y la inyección se queda en anécdota porque viaja como user, separada de tu system. El usage registrado es la semilla del hábito de la última lección: medir desde el día uno.",
+    },
+    {
+      title: "Streaming de punta a punta",
+      statement:
+        "Construye la tubería completa en local: un endpoint PHP que consume el stream del SDK y reemite SSE, y una página con EventSource que pinta la respuesta palabra a palabra. Después ponle un nginx delante (docker) sin configurar nada y observa qué pasa con el goteo. Arréglalo.",
+      solution:
+        "En directo contra php -S el goteo fluye; detrás de nginx llega de golpe al final — el proxy hace buffering por defecto y mata el streaming en silencio, exactamente el gotcha de la lección. La cabecera X-Accel-Buffering: no (o proxy_buffering off para esa location) lo arregla. Haberlo visto romperse una vez vale más que leerlo tres veces: es el fallo clásico del paso a producción.",
+      solutionCode: {
+        lang: "ini",
+        source: "location /chat-stream {\n    proxy_pass http://app:8000;\n    proxy_buffering off;\n}",
+      },
+    },
+    {
+      title: "Tu primer golden set",
+      statement:
+        "Toma 30 casos del clasificador del primer reto y decide a mano la respuesta correcta de cada uno. Escribe el runner: un script PHP que los pasa todos por el clasificador y saca el porcentaje de aciertos. Después cambia una frase del system prompt y vuelve a correrlo. ¿Mejoró?",
+      solution:
+        "Ahora la pregunta tiene respuesta numérica: «la versión B acierta 27/30, la A acertaba 25/30». Sin el golden set, ese mismo cambio se habría evaluado con tres pruebas a mano y una intuición. El set crece con cada fallo real de producción (el caso que falló entra con su respuesta correcta), y el día que quieras probar un modelo más barato o llegue una retirada de modelo, el runner es tu red: correr y leer el número.",
+      solutionCode: {
+        lang: "php",
+        source:
+          "$aciertos = 0;\n\nforeach ($goldenSet as $caso) {\n    $resultado = $clasificador->clasifica($caso[\"texto\"]);\n\n    if ($resultado->categoria === $caso[\"esperado\"]) {\n        $aciertos++;\n    }\n}\n\necho sprintf(\"%d/%d (%.0f%%)\\n\", $aciertos, count($goldenSet), 100 * $aciertos / count($goldenSet));",
+      },
+    },
+  ],
 };
