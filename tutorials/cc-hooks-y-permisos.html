@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hooks y permisos — MentorAI</title>
+    <meta name="description" content="Las barreras que ejecuta la herramienta, no promesas del modelo: el sistema de permisos por capas de Claude Code (allow/deny, modos) y los hooks — scripts tuyos que interceptan acciones del agente para bloquear, validar o automatizar." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Claude Code</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Hooks y permisos</h1>
+        <p class="tutorial-hero__lead">
+          «De ahora en adelante, haz siempre X» dicho en el chat es una promesa
+          del modelo — y el modelo es probabilístico. Este módulo empieza por la
+          alternativa seria: permisos que filtran lo que puede ejecutarse y
+          hooks que interceptan cada acción con un script tuyo. Automatización
+          de la que se cumple siempre.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Claude Code
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">Dos capas deterministas</a></li>
+            <li><a href="#permisos">Permisos: qué puede ejecutarse</a></li>
+            <li><a href="#afinar">Afinar la lista: menos fricción, mismo control</a></li>
+            <li><a href="#hooks">Hooks: tu código en el bucle</a></li>
+            <li><a href="#ejemplo">Un hook que bloquea de verdad</a></li>
+            <li><a href="#criterio">Qué automatizar con cada pieza</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            La frontera de permisos apareció en la primera lección como
+            concepto. Aquí se convierte en configuración concreta: las listas y
+            modos que deciden qué se ejecuta sin preguntar, y los hooks — el
+            mecanismo que mete <em>tu</em> código dentro del bucle del agente.
+          </p>
+
+          <h2 id="idea">
+            Dos capas deterministas
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Recuerda la jerarquía: una instrucción en rules se cumple casi
+            siempre; un mecanismo del harness, siempre. Claude Code te da dos de
+            esos mecanismos, complementarios:
+          </p>
+          <ul>
+            <li>
+              <strong>Permisos</strong>: filtros declarativos sobre qué
+              herramientas y comandos pueden ejecutarse, y cuáles piden
+              confirmación.
+            </li>
+            <li>
+              <strong>Hooks</strong>: scripts tuyos que el harness ejecuta en
+              momentos fijos del bucle (antes de una herramienta, después, al
+              terminar el agente) y que pueden observar, modificar el veredicto
+              o bloquear.
+            </li>
+          </ul>
+          <p>
+            La diferencia práctica: los permisos deciden con patrones («este
+            comando sí, este no»); los hooks deciden con lógica («ejecuta este
+            script y que él diga»). Lo segundo llega donde los patrones no
+            llegan.
+          </p>
+
+          <h2 id="permisos">
+            Permisos: qué puede ejecutarse
+            <a href="#permisos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El sistema de permisos vive en la configuración del proyecto
+            (<code>.claude/settings.json</code>, versionada) y la personal. Las
+            piezas: listas <code>allow</code> (pasa sin preguntar),
+            <code>deny</code> (se rechaza siempre) y <code>ask</code>, con
+            patrones por herramienta:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">.claude/settings.json · permisos</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>{
+  "permissions": {
+    "allow": [
+      "Bash(vendor/bin/phpunit *)",
+      "Bash(node scripts/validar.js)",
+      "Bash(git status)", "Bash(git diff *)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Read(.env*)",
+      "Bash(git push --force *)"
+    ]
+  }
+}</code></pre>
+          </div>
+
+          <p>
+            Fíjate en <code>Read(.env*)</code>: los permisos no solo acotan
+            ejecución, también lectura — un secreto que el agente no lee es un
+            secreto que no puede acabar en un log ni en un diff. Encima de las
+            listas hay <strong>modos</strong> de sesión: del más conservador
+            (todo pregunta) al de confianza plena para entornos desechables,
+            pasando por el modo plan de la lección 3, que es un modo de permisos
+            con nombre propio.
+          </p>
+
+          <h2 id="afinar">
+            Afinar la lista: menos fricción, mismo control
+            <a href="#afinar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El objetivo del ajuste fino es que las confirmaciones que te pida
+            la herramienta sean <strong>solo las que informan de algo</strong>.
+            Si apruebas veinte veces al día <code>phpunit</code>, la
+            confirmación ya no te protege: te entrena a pulsar «sí» sin leer —
+            la fatiga de alertas del curso de observabilidad, aplicada aquí. El
+            ciclo sano: lo aprobado rutinariamente pasa a <code>allow</code>;
+            lo peligroso, explícitamente a <code>deny</code>; y la pregunta
+            queda reservada para lo genuinamente excepcional.
+          </p>
+
+          <h2 id="hooks">
+            Hooks: tu código en el bucle
+            <a href="#hooks" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un hook es un comando tuyo registrado en un <strong>punto del ciclo
+            de vida</strong> del agente. Los dos más usados: antes de ejecutar
+            una herramienta (puede vetar la acción) y después (puede reaccionar
+            al resultado: formatear el fichero recién editado, lanzar un lint).
+            El harness le pasa al script los datos del evento (qué herramienta,
+            con qué argumentos) y el código de salida del script decide.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>El modelo pide una herramienta</b><small>Por ejemplo: Edit sobre src/Kernel.php.</small></span>
+              </div>
+              <div class="flow__arrow" data-label="hook pre-herramienta"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Tu script decide</b><small>Sale 0 → adelante. Sale con error → acción bloqueada, y el motivo vuelve al modelo.</small></span>
+              </div>
+              <div class="flow__arrow" data-label="si pasó, se ejecuta"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Hook post-herramienta</b><small>Reacciona al hecho consumado: formatear, validar, avisar.</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              El hook corre fuera del modelo: no se le puede convencer, olvidar
+              ni compactar.
+            </p>
+          </div>
+
+          <h2 id="ejemplo">
+            Un hook que bloquea de verdad
+            <a href="#ejemplo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Ejemplo con sustancia: en esta academia, el catálogo se genera del
+            manifest y <strong>nadie debe editar a mano</strong> ciertos
+            ficheros generados. Una rule lo dice — y un hook lo garantiza:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · hooks/protege-generados.sh</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>#!/bin/bash
+# Recibe en stdin el JSON del evento; jq extrae el fichero a editar
+fichero=$(jq -r ".tool_input.file_path // empty")
+
+if [[ "$fichero" == *"search-index.js" ]]; then
+  echo "search-index.js es GENERADO: ejecuta scripts/generar-indice.js" &gt;&amp;2
+  exit 2   # bloquea la accion; el mensaje vuelve al modelo
+fi
+
+exit 0</code></pre>
+          </div>
+
+          <p>
+            El detalle elegante: al bloquear, el mensaje de error
+            <strong>vuelve al contexto del modelo</strong>, que corrige el rumbo
+            solo («ah, tengo que regenerarlo con el script»). El hook no solo
+            protege: enseña en el momento exacto del error, que es cuando las
+            lecciones entran.
+          </p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Los hooks también son superficie</p>
+              <p>
+                Un hook es código que se ejecuta con tus permisos en cada acción
+                del agente: un hook lento hace lenta toda la sesión, y un hook
+                con un bug puede bloquearlo todo o — peor — dejar pasar lo que
+                debía vetar. Se versionan, se revisan y se prueban como el
+                código que son.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="criterio">
+            Qué automatizar con cada pieza
+            <a href="#criterio" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Con rules, permisos y hooks sobre la mesa, el reparto queda así:
+            las <strong>rules</strong> dan criterio y contexto (el porqué, el
+            cómo se hace aquí); los <strong>permisos</strong> definen el
+            perímetro (qué ni siquiera se intenta); los <strong>hooks</strong>
+            imponen los invariantes con lógica (formatos, ficheros intocables,
+            validaciones automáticas tras cada edición). La pregunta guía:
+            <em>¿el coste de que esto falle una vez es asumible?</em> Si no lo
+            es, no puede vivir solo en una rule.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Permisos y hooks cuando…</h4>
+              <ul>
+                <li>Algo no debe pasar nunca (deny) o debe pasar siempre (hook post-edición)</li>
+                <li>Apruebas lo mismo por enésima vez: a la lista allow</li>
+                <li>Hay secretos que el agente no necesita leer</li>
+                <li>Un invariante del proyecto merece garantía, no promesa</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Señales de mal uso</h4>
+              <ul>
+                <li>Modo «todo permitido» en un entorno que no es desechable</li>
+                <li>Hooks tan estrictos que el agente no puede trabajar (todo bloqueado)</li>
+                <li>Meter criterio en hooks: la lógica de negocio del flujo va en rules/skills, el hook solo impone</li>
+                <li>Confirmaciones rutinarias que ya nadie lee</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>«Hazlo siempre» dicho en el chat es una promesa probabilística: la automatización seria vive en permisos y hooks, que el harness ejecuta.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Permisos: allow/deny/ask con patrones, versionados en el repo; también acotan lectura (secretos fuera del contexto).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una confirmación rutinaria ya no protege: lo rutinario a allow, lo peligroso a deny, la pregunta para lo excepcional.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un hook es tu script dentro del bucle: veta, valida o reacciona, y su mensaje de bloqueo enseña al modelo en el momento del error.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Reparto: rules = criterio, permisos = perímetro, hooks = invariantes impuestos. Si fallar una vez no es asumible, no basta una rule.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="cc-mcp.html">
+              <small>← Anterior</small>
+              <b>MCP: conectar herramientas</b>
+            </a>
+            <a href="cc-headless-y-ci.html" class="next">
+              <small>Siguiente →</small>
+              <b>Headless y CI</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../tutorials/practica.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Headless y CI — MentorAI</title>
+    <meta name="description" content="El agente sin terminal: claude -p como comando componible en scripts y pipelines, los casos que funcionan en CI (revisión, triaje, generación acotada) y las reglas del entorno desatendido — salida estructurada, permisos cerrados y verificación externa." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Claude Code</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Headless y CI</h1>
+        <p class="tutorial-hero__lead">
+          Claude Code sin nadie mirando: un comando más que recibe un prompt,
+          trabaja y devuelve un resultado. Eso lo convierte en pieza de
+          scripts, crons y pipelines — y cambia las reglas del juego, porque en
+          un entorno desatendido no hay humano que apruebe, corrija ni frene.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Claude Code
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">El agente como comando</a></li>
+            <li><a href="#anatomia">Anatomía de una llamada headless</a></li>
+            <li><a href="#casos">Los casos que funcionan en CI</a></li>
+            <li><a href="#reglas">Las reglas del entorno desatendido</a></li>
+            <li><a href="#ejemplo">Un ejemplo completo: revisión en el pipeline</a></li>
+            <li><a href="#coste">Coste y no-determinismo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Todo lo del curso hasta aquí — el bucle, los permisos, las rules —
+            sigue aplicando; lo que desaparece es el humano en el bucle. Esta
+            lección enseña la forma headless de Claude Code y, sobre todo, el
+            criterio de qué tareas se pueden soltar sin supervisión y con qué
+            red.
+          </p>
+
+          <h2 id="idea">
+            El agente como comando
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En modo interactivo, Claude Code es una conversación. Con
+            <code>claude -p "prompt"</code> (print), es <strong>un proceso
+            Unix</strong>: recibe la tarea, ejecuta su bucle completo — leer,
+            ejecutar, editar, según los permisos — imprime el resultado y
+            termina con un código de salida. Es decir: se puede meter en un
+            script, encadenar con pipes, lanzar desde un cron o desde un job de
+            CI. La misma máquina, sin terminal delante.
+          </p>
+
+          <h2 id="anatomia">
+            Anatomía de una llamada headless
+            <a href="#anatomia" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · el agente en un script</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code># La forma basica: prompt entra, resultado sale
+claude -p "Resume que cambia este diff y si toca alguna API publica" \
+  --output-format json &lt; cambios.diff
+
+# Acotado: sin permisos de escritura, solo estas herramientas
+claude -p "Lista los endpoints sin test de integracion" \
+  --allowedTools "Read,Grep,Glob"</code></pre>
+          </div>
+
+          <p>
+            Los tres mandos que importan: el <strong>formato de salida</strong>
+            (JSON estructurado si otro programa va a consumir el resultado — el
+            texto libre es para humanos), las <strong>herramientas
+            permitidas</strong> (en desatendido, la lista corta es la norma) y
+            el <strong>prompt</strong>, que aquí trabaja sin red: nadie va a
+            aclararle las ambigüedades a mitad de tarea, así que las reglas de
+            prompting del curso de fundamentos se aplican con doble motivo.
+          </p>
+
+          <h2 id="casos">
+            Los casos que funcionan en CI
+            <a href="#casos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El patrón común de los casos que funcionan: <strong>entrada
+            acotada, salida verificable, y consecuencias reversibles</strong>.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Caso</th>
+                  <th>Por qué funciona</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Revisión de PRs</strong></td>
+                  <td>Entrada = el diff; salida = comentarios. No modifica nada: lo peor que puede pasar es un comentario mediocre.</td>
+                </tr>
+                <tr>
+                  <td><strong>Triaje de issues / alertas</strong></td>
+                  <td>Clasificar, etiquetar, proponer duplicados. Decisiones baratas de deshacer.</td>
+                </tr>
+                <tr>
+                  <td><strong>Generación con validador detrás</strong></td>
+                  <td>Changelogs, documentación, datos de prueba — cuando un check automático valida el resultado antes de que entre.</td>
+                </tr>
+                <tr>
+                  <td><strong>Diagnóstico de fallos</strong></td>
+                  <td>«El build ha fallado: resume la causa probable en el hilo». Informa; no actúa.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que no se suelta sin humano</p>
+              <p>
+                Merge automático de lo que el agente escribió, migraciones,
+                deploys, cualquier cosa que toque producción o datos de
+                usuarios. La regla del curso de fundamentos no cambia por estar
+                en CI: la responsabilidad de lo que entra no se delega — el
+                agente propone, el pipeline valida, y un humano (o un proceso
+                con garantías) decide.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="reglas">
+            Las reglas del entorno desatendido
+            <a href="#reglas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Sin humano en el bucle, las barreras del módulo anterior pasan de
+            recomendables a obligatorias:
+          </p>
+          <ul>
+            <li>
+              <strong>Permisos de mínimos:</strong> solo las herramientas que la
+              tarea exige. Una revisión no necesita Bash; un clasificador no
+              necesita Write.
+            </li>
+            <li>
+              <strong>Entorno desechable:</strong> el runner de CI es perfecto
+              justamente porque se destruye al terminar — un agente con permisos
+              amplios en una máquina efímera es mil veces más sano que uno
+              acotado en tu máquina de trabajo.
+            </li>
+            <li>
+              <strong>Verificación externa al agente:</strong> el pipeline
+              valida el resultado con sus propios checks (tests, linters,
+              validadores). El agente nunca es juez de su propio trabajo en
+              desatendido.
+            </li>
+            <li>
+              <strong>Presupuesto y timeout:</strong> límites de coste y tiempo
+              por ejecución. Un bucle que se atasca no puede quemar la tarde ni
+              la cartera.
+            </li>
+          </ul>
+
+          <h2 id="ejemplo">
+            Un ejemplo completo: revisión en el pipeline
+            <a href="#ejemplo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">yaml · .github/workflows/revision-ia.yml</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>name: Revision IA
+on: pull_request
+
+jobs:
+  revisar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Revisar el diff con el agente
+        run: |
+          git diff origin/main...HEAD &gt; cambios.diff
+          claude -p "Revisa este diff contra las rules del repo.
+            Solo hallazgos verificables, con fichero:linea." \
+            --allowedTools "Read,Grep,Glob" \
+            --output-format json &gt; hallazgos.json
+      - name: Publicar comentarios
+        run: node scripts/publicar-hallazgos.js hallazgos.json</code></pre>
+          </div>
+
+          <p>
+            Los detalles que lo hacen serio: herramientas de solo lectura, el
+            prompt pide hallazgos <em>verificables</em> con ubicación (contra el
+            ruido de opiniones), la salida es JSON que otro script procesa, y
+            las rules del repo — que el agente lee — hacen que la revisión
+            aplique <em>vuestro</em> criterio, no uno genérico.
+          </p>
+
+          <h2 id="coste">
+            Coste y no-determinismo
+            <a href="#coste" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Dos realidades que en interactivo se disimulan y en CI se
+            multiplican por cada ejecución. El <strong>coste</strong>: un agente
+            en cada push de cada PR es un multiplicador — se acota con
+            disparadores selectivos (solo PRs con label, solo ciertos paths) y
+            con presupuesto por ejecución. El <strong>no-determinismo</strong>:
+            la misma entrada puede dar salidas distintas, así que un paso de
+            agente nunca debe ser <em>bloqueante por su opinión</em> (un build
+            rojo porque hoy redactó distinto es un pipeline en el que nadie
+            confía); bloquean los checks deterministas, el agente informa.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Headless/CI encaja cuando…</h4>
+              <ul>
+                <li>La tarea es repetitiva, acotada y con salida verificable</li>
+                <li>Lo peor que puede pasar es asumible (comentario, etiqueta, borrador)</li>
+                <li>Hay validación determinista detrás del agente</li>
+                <li>El entorno es efímero y con permisos de mínimos</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No lo sueltes cuando…</h4>
+              <ul>
+                <li>El resultado entra a producción sin validación ni revisión</li>
+                <li>La tarea exige contexto de negocio que no cabe en el prompt</li>
+                <li>Su opinión bloquearía el pipeline (el no-determinismo no bloquea)</li>
+                <li>No has puesto límites de coste y tiempo</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>claude -p convierte al agente en un proceso Unix: prompt de entrada, resultado (idealmente JSON) de salida, componible en scripts y pipelines.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Funciona en CI lo acotado, verificable y reversible: revisar, triar, generar con validador detrás, diagnosticar.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Sin humano en el bucle: permisos de mínimos, entorno desechable, verificación externa al agente y presupuesto con timeout.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El no-determinismo no bloquea: los checks deterministas dan el rojo/verde; el agente añade información encima.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Lo que toca producción o se mergea sigue pasando por un humano o por garantías deterministas: eso no cambia por estar en CI.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="cc-hooks-y-permisos.html">
+              <small>← Anterior</small>
+              <b>Hooks y permisos</b>
+            </a>
+            <a href="cc-flujo-de-equipo.html" class="next">
+              <small>Siguiente →</small>
+              <b>El flujo de equipo</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../tutorials/practica.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
