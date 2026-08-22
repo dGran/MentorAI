@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Skills: flujos empaquetados — MentorAI</title>
+    <meta name="description" content="Qué es una skill de agente: un procedimiento con nombre que se carga bajo demanda. Cuándo un flujo repetible merece empaquetarse, la anatomía de una buena skill y la frontera con las rules." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Claude Code</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Skills: flujos empaquetados</h1>
+        <p class="tutorial-hero__lead">
+          Hay tareas que haces igual cada vez: revisar un PR, desplegar,
+          escribir un tutorial de esta academia. Explicárselo al agente en cada
+          sesión es repetirse; meterlo en las rules es pagarlo siempre. Una
+          skill es la tercera vía: el procedimiento empaquetado con nombre, que
+          se carga solo cuando se invoca.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Claude Code
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">Qué es una skill</a></li>
+            <li><a href="#frontera">La frontera con las rules</a></li>
+            <li><a href="#anatomia">Anatomía de una buena skill</a></li>
+            <li><a href="#ejemplo">Un ejemplo real, entero</a></li>
+            <li><a href="#crear">Cuándo crear una (y cuándo no)</a></li>
+            <li><a href="#mantener">Mantenerlas: el mismo ciclo que las rules</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            La lección anterior terminó con una válvula de escape: «los
+            procedimientos paso a paso no son rules — son skills». Esta lección
+            abre esa caja: qué forma tienen, cómo decide el agente usarlas y
+            qué convierte un texto en un buen procedimiento ejecutable.
+          </p>
+
+          <h2 id="idea">
+            Qué es una skill
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Mecánicamente, una skill de Claude Code es <strong>un fichero
+            Markdown con nombre</strong> (en <code>.claude/skills/</code> del
+            proyecto, o global) que contiene instrucciones para una tarea
+            concreta. Se activa de dos maneras: tú la invocas por nombre
+            (<code>/deploy</code>, <code>/tutorial</code>) o el agente la carga
+            al reconocer que la tarea encaja con su descripción. Al activarse,
+            su contenido <strong>entra en el contexto en ese momento</strong> —
+            no antes.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Carga bajo demanda: esa es toda la magia</p>
+              <p>
+                Con lo que sabes de contexto, la idea se explica sola: en la
+                sesión solo vive permanentemente la <em>lista</em> de skills con
+                una línea de descripción cada una. El procedimiento completo —
+                que puede ser largo — solo ocupa ventana cuando de verdad se usa.
+                Es el «detalle bajo demanda» de las rules, sistematizado.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="frontera">
+            La frontera con las rules
+            <a href="#frontera" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La pregunta que decide dónde va cada cosa: <strong>¿esto aplica
+            siempre, o aplica cuando hago X?</strong>
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Rules</th>
+                  <th>Skill</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Naturaleza</strong></td>
+                  <td>Criterio permanente: convenciones, invariantes</td>
+                  <td>Procedimiento puntual: pasos, en orden, con salida definida</td>
+                </tr>
+                <tr>
+                  <td><strong>Cuándo entra al contexto</strong></td>
+                  <td>Siempre, al arrancar la sesión</td>
+                  <td>Solo al invocarla o reconocer la tarea</td>
+                </tr>
+                <tr>
+                  <td><strong>Coste de que crezca</strong></td>
+                  <td>Alto: impuesto en cada sesión</td>
+                  <td>Bajo: solo paga quien la usa</td>
+                </tr>
+                <tr>
+                  <td><strong>Ejemplo</strong></td>
+                  <td>«Los booleanos llevan prefijo is/has/should»</td>
+                  <td>«Cómo se publica un tutorial: plantilla → manifest → validar»</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="anatomia">
+            Anatomía de una buena skill
+            <a href="#anatomia" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una skill es documentación operativa, y hereda las virtudes de la
+            buena documentación — con un lector que ejecuta. Las piezas que no
+            pueden faltar:
+          </p>
+          <ul>
+            <li>
+              <strong>Descripción con disparador:</strong> la línea que ve el
+              agente para decidir si la carga. «Usar al añadir un tutorial
+              nuevo, al refinar uno existente o al revisar calidad» — casos
+              concretos, no un eslogan.
+            </li>
+            <li>
+              <strong>Los pasos, con sus comandos exactos:</strong> qué se hace,
+              en qué orden, con el comando literal cuando lo hay. La ambigüedad
+              que en un README molesta, en una skill produce ejecuciones
+              distintas cada vez.
+            </li>
+            <li>
+              <strong>El checklist de calidad:</strong> qué tiene que ser verdad
+              al terminar, en forma verificable («el validador sale sin
+              errores», no «el resultado es correcto»).
+            </li>
+            <li>
+              <strong>Los límites:</strong> qué queda fuera de alcance y qué no
+              debe hacer. Es la parte que evita que la skill se use como excusa
+              para tocar lo que no toca.
+            </li>
+          </ul>
+
+          <h2 id="ejemplo">
+            Un ejemplo real, entero
+            <a href="#ejemplo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Esta academia se mantiene con skills, y la que escribió esta lección
+            es un buen espécimen. Reducida a su esqueleto:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">.claude/skills/tutorial/SKILL.md (esqueleto)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code># Tutorial — Autoria y refinado
+Descripcion: crear o refinar un tutorial respetando el sistema
+de diseño y el manifest. Usar al añadir o revisar contenido.
+
+## Pasos
+1. cp tutorials/_PLANTILLA.html tutorials/&lt;slug&gt;.html
+2. Rellenar title, hero, TOC y secciones con los componentes existentes
+3. Añadir la entrada a tutorials/manifest.js
+
+## Checklist (bloqueante)
+- Escapar &amp;lt; &amp;gt; &amp;amp; dentro de code
+- Cada h2 con id enlazado desde el TOC
+- node scripts/validar.js sin errores
+
+## Fuera de alcance
+- El catalogo se auto-genera: no tocarlo a mano
+- El sistema de diseño es otra tarea, no "un tutorial"</code></pre>
+          </div>
+
+          <p>
+            Fíjate en que cada sección responde a un fallo que ocurrió de
+            verdad: el checklist de escapado existe porque hubo tutoriales rotos
+            por un <code>&lt;</code> sin escapar; el «fuera de alcance» existe
+            porque algún día alguien editó el catálogo a mano. Una skill madura
+            es un historial de lecciones aprendidas con forma de procedimiento.
+          </p>
+
+          <h2 id="crear">
+            Cuándo crear una (y cuándo no)
+            <a href="#crear" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La regla de las dos veces, otra vez: la primera vez que haces un
+            flujo, lo haces; la segunda, sospechas; la tercera vez que le
+            explicas lo mismo al agente, <strong>ya te ha costado más que
+            escribir la skill</strong>. Señales a favor: el flujo tiene pasos
+            fijos, un criterio de calidad claro y lo repetirás. Señales en
+            contra: es una tarea única, o el «procedimiento» cambia cada vez —
+            entonces es criterio, no flujo, y quizá era una rule (o nada).
+          </p>
+
+          <h2 id="mantener">
+            Mantenerlas: el mismo ciclo que las rules
+            <a href="#mantener" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una skill se desactualiza en cuanto el proyecto cambia por debajo
+            (un comando renombrado, un paso que ya no hace falta). El ciclo de
+            vida es el de las rules: cuando la ejecución de una skill tropieza —
+            el agente sigue el paso 3 y el paso 3 ya no funciona así — la
+            corrección va <strong>a la skill, en la misma sesión</strong>. Y las
+            skills viven en el repo, versionadas: un cambio de skill se revisa
+            en el diff como cualquier otro cambio, porque programa el
+            comportamiento de todas las sesiones futuras.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Empaqueta como skill…</h4>
+              <ul>
+                <li>Flujos con pasos fijos que repites (publicar, desplegar, revisar)</li>
+                <li>Procedimientos con checklist de calidad verificable</li>
+                <li>Lo que hoy explicas al agente por tercera vez</li>
+                <li>Flujos que el equipo entero debería ejecutar igual</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No lo empaquetes si…</h4>
+              <ul>
+                <li>Aplica siempre: eso es una rule, no una skill</li>
+                <li>Es una tarea única que no volverá</li>
+                <li>Cada ejecución es distinta: ahí hace falta criterio, no pasos</li>
+                <li>Sería tan genérica que no diría nada («haz buen código»)</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una skill es un procedimiento con nombre que entra al contexto solo al invocarse: detalle bajo demanda, sistematizado.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La frontera con las rules es temporal: lo que aplica siempre es rule; lo que aplica «cuando hago X» es skill.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Anatomía: descripción con disparador, pasos con comandos exactos, checklist verificable y límites explícitos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La tercera explicación del mismo flujo ya costó más que escribir la skill: regla de las dos veces.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Las skills viven versionadas en el repo y se corrigen en caliente: programan el comportamiento de las sesiones futuras.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="cc-rules.html">
+              <small>← Anterior</small>
+              <b>Rules: las reglas del proyecto</b>
+            </a>
+            <a href="cc-memoria-y-continuidad.html" class="next">
+              <small>Siguiente →</small>
+              <b>Memoria y continuidad</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../tutorials/practica.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

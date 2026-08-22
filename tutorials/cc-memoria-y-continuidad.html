@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Memoria y continuidad — MentorAI</title>
+    <meta name="description" content="Cómo sobrevive el trabajo entre sesiones de agente: notes de estado que se leen al arrancar, el reparto entre rules, skills y notes, y el método para trabajos que no caben en una sesión — memoria en disco, no en el modelo." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Claude Code</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Memoria y continuidad</h1>
+        <p class="tutorial-hero__lead">
+          Cierra la sesión y el agente olvida todo: las decisiones, el estado,
+          lo que quedó a medias. Los ficheros, no. La continuidad entre sesiones
+          no es una función del modelo: es un sistema que tú montas con notes de
+          estado, y la disciplina de escribirlas antes de cerrar.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Claude Code
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">La memoria es disco</a></li>
+            <li><a href="#reparto">Rules, skills, notes: el reparto</a></li>
+            <li><a href="#notes">La note de estado que funciona</a></li>
+            <li><a href="#criterio">El criterio: ¿podría continuar sin preguntarte?</a></li>
+            <li><a href="#epicas">Trabajos que no caben en una sesión</a></li>
+            <li><a href="#higiene">Higiene: la memoria también se poda</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Este módulo ya colocó dos piezas permanentes: las rules (criterio) y
+            las skills (procedimientos). Falta la tercera, la más dinámica: el
+            <strong>estado del trabajo en curso</strong>. Esta lección monta el
+            sistema completo y el método para que un proyecto con agentes no
+            dependa de lo que «recuerde» nadie.
+          </p>
+
+          <h2 id="idea">
+            La memoria es disco
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            De la lección de contexto: el historial de conversación se pierde —
+            al cerrar, al compactar, al cambiar de máquina. La única memoria
+            fiable de un sistema con agentes son los <strong>ficheros del
+            repositorio</strong>: versionados, compartibles entre herramientas y
+            legibles por la sesión de mañana, por otra máquina o por un
+            compañero. Todo lo demás de esta lección deriva de esa frase.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">¿Y las «memorias» automáticas de la herramienta?</p>
+              <p>
+                Claude Code puede guardar memorias por su cuenta (hechos sobre
+                ti, preferencias). Útiles como complemento, pero no sustituyen a
+                las notes: son locales a una herramienta y una máquina, no se
+                versionan ni se revisan en un diff. El estado del
+                <em>proyecto</em> pertenece al proyecto.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="reparto">
+            Rules, skills, notes: el reparto
+            <a href="#reparto" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Las tres piezas se distinguen por la vida útil de lo que guardan:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Pieza</th>
+                  <th>Qué guarda</th>
+                  <th>Cambia…</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Rules</strong></td>
+                  <td>Criterio permanente: invariantes, convenciones, trampas</td>
+                  <td>Rara vez, y con revisión</td>
+                </tr>
+                <tr>
+                  <td><strong>Skills</strong></td>
+                  <td>Procedimientos repetibles con checklist</td>
+                  <td>Cuando cambia el flujo</td>
+                </tr>
+                <tr>
+                  <td><strong>Notes</strong></td>
+                  <td>Estado vivo: qué hay en curso, qué quedó a medias, decisiones y porqués</td>
+                  <td>Cada sesión de trabajo</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            El tráfico entre ellas es parte del sistema: una convención que
+            emerge en una note acaba promocionando a rule; un procedimiento que
+            se repite en varias notes pide ser skill. Las notes son el borrador
+            donde cristaliza lo que luego se consolida.
+          </p>
+
+          <h2 id="notes">
+            La note de estado que funciona
+            <a href="#notes" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El corazón del sistema es un fichero de estado (un
+            <code>estado.md</code> en el directorio de notes del proyecto) con
+            un contrato de lectura y otro de escritura: <strong>se lee al
+            empezar cada sesión, se actualiza al cerrar cada unidad de
+            trabajo</strong>. Su contenido mínimo:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">notes/estado.md · el esqueleto</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code># Estado del proyecto (act: 2026-08-22)
+
+## Donde esta el proyecto
+Que funciona hoy, con numeros medibles si los hay.
+
+## En curso / pendiente
+Que quedo a medias y cual es el siguiente paso CONCRETO.
+
+## Decisiones que no se reabren
+El veredicto y una linea de porque (el detalle, enlazado).
+
+## Trampas que ya nos mordieron
+Cada una costo una depuracion; estan aqui para no repetirlas.</code></pre>
+          </div>
+
+          <p>
+            Las dos secciones menos obvias son las más valiosas. Las
+            <strong>decisiones cerradas</strong> evitan que cada sesión nueva —
+            con su entusiasmo de recién llegada — reabra debates ya zanjados
+            («¿y si usamos un framework?»). Las <strong>trampas</strong> son
+            depuraciones pagadas una vez que no se vuelven a pagar.
+          </p>
+
+          <h2 id="criterio">
+            El criterio: ¿podría continuar sin preguntarte?
+            <a href="#criterio" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            ¿Cuándo hay que escribir? La prueba es una sola pregunta:
+            <strong>si la siguiente sesión (u otra herramienta, u otra máquina,
+            u otra persona) no podría continuar sin preguntarte, falta una
+            note</strong>. Los momentos que la disparan: una tarea terminada,
+            una sesión que se interrumpe, una decisión tomada. Cinco minutos de
+            escritura contra la alternativa: re-explicar el contexto entero
+            mañana, de memoria, con pérdidas.
+          </p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Las notes también mienten si nadie las cierra</p>
+              <p>
+                El fallo típico no es no escribir: es no <em>actualizar</em>. Una
+                note que declara «pendiente» algo publicado hace semanas es peor
+                que ninguna — la sesión que la lea trabajará sobre un mundo
+                falso. Al cerrar algo, se toca su estado en la note, no solo el
+                código.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="epicas">
+            Trabajos que no caben en una sesión
+            <a href="#epicas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Para una migración o un rediseño de semanas, la note de estado se
+            queda corta: hace falta memoria <strong>estructurada</strong>. El
+            patrón que funciona reparte el trabajo en varios ficheros con roles
+            fijos: el <em>charter</em> (el objetivo, que no cambia), el
+            <em>estado</em> (dónde vamos, se actualiza cada sesión), el
+            <em>mapa</em> (las fases y su orden) y las <em>decisiones</em> (el
+            porqué de cada elección, apéndice creciente).
+          </p>
+          <p>
+            Cada sesión nueva arranca leyendo esos ficheros y sabe exactamente
+            dónde continuar — sin que nadie le re-explique nada. Es la versión
+            multi-sesión del plan aprobado: el trabajo largo se vuelve una
+            secuencia de sesiones cortas bien empalmadas, y el empalme son los
+            ficheros.
+          </p>
+
+          <h2 id="higiene">
+            Higiene: la memoria también se poda
+            <a href="#higiene" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una note de estado es <strong>un retrato del presente, no un
+            diario</strong>. Si acumula historia, crece hasta que leerla entera
+            — que era su contrato — deja de ser viable, y aparecen síntomas
+            absurdos: secciones contradictorias, dos apartados declarándose «el
+            más reciente». La rutina que lo evita: lo cerrado se mueve a un
+            archivo (<code>notes/archivo/</code>), con su veredicto al
+            principio; el estado vivo se queda corto y legible. El archivo no se
+            lee para trabajar — se consulta para responder «¿por qué esto es
+            así?».
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Escribe una note cuando…</h4>
+              <ul>
+                <li>Cierras una unidad de trabajo o interrumpes una sesión</li>
+                <li>Tomas una decisión con porqué que no debe reabrirse</li>
+                <li>Una depuración descubre una trampa del proyecto</li>
+                <li>Arrancas un trabajo multi-sesión: charter + estado desde el día uno</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No conviertas las notes en…</h4>
+              <ul>
+                <li>Un diario de todo lo que pasó: eso ya lo cuenta git</li>
+                <li>Documentación del código: se desactualiza; el código manda</li>
+                <li>Un vertedero sin poda: lo cerrado, al archivo</li>
+                <li>El sustituto de las rules: lo permanente promociona</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La conversación se pierde; los ficheros no. La memoria de un sistema con agentes es el repositorio.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Tres piezas por vida útil: rules (criterio permanente), skills (procedimientos), notes (estado vivo). Lo que madura, promociona.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La note de estado se lee al abrir sesión y se actualiza al cerrar trabajo: dónde está el proyecto, qué queda, decisiones y trampas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El criterio: si la siguiente sesión no podría continuar sin preguntarte, falta una note. Y una note desactualizada es peor que ninguna.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los trabajos multi-sesión llevan memoria estructurada (charter, estado, mapa, decisiones), y toda memoria se poda: retrato, no diario.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="cc-skills.html">
+              <small>← Anterior</small>
+              <b>Skills: flujos empaquetados</b>
+            </a>
+            <a href="cc-mcp.html" class="next">
+              <small>Siguiente →</small>
+              <b>MCP: conectar herramientas</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../tutorials/practica.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

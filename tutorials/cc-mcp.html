@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MCP: conectar herramientas — MentorAI</title>
+    <meta name="description" content="El Model Context Protocol sin humo: por qué existe un protocolo estándar para dar herramientas a un agente, qué expone un servidor MCP (tools y resources), un servidor mínimo funcional y el criterio de seguridad para conectar terceros." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Claude Code</span>
+        </nav>
+        <h1 class="tutorial-hero__title">MCP: conectar herramientas</h1>
+        <p class="tutorial-hero__lead">
+          El agente trae de serie las herramientas del código: leer, editar,
+          ejecutar. Pero tu mundo es más grande — tu gestor de tickets, tu base
+          de datos, tu API interna. MCP es el enchufe estándar para conectarlo:
+          un protocolo abierto que ya conoces a medias, porque es la idea de
+          «tool» de la lección 1 sacada de la herramienta.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Claude Code
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">El problema N×M y el enchufe estándar</a></li>
+            <li><a href="#piezas">Qué expone un servidor MCP</a></li>
+            <li><a href="#flujo">Cómo encaja en el bucle</a></li>
+            <li><a href="#minimo">Un servidor mínimo, funcional</a></li>
+            <li><a href="#conectar">Conectarlo a Claude Code</a></li>
+            <li><a href="#seguridad">Seguridad: cada servidor es superficie</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            MCP apareció en el curso de fundamentos como concepto. Aquí lo
+            usamos: qué expone exactamente un servidor, cómo se ve desde el
+            bucle del agente, y el esqueleto de uno propio — porque montar uno
+            mínimo es la forma más rápida de que el protocolo deje de ser
+            humo.
+          </p>
+
+          <h2 id="idea">
+            El problema N×M y el enchufe estándar
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Sin estándar, cada herramienta de IA (N) tendría que integrar cada
+            servicio (M) por su cuenta: N×M conectores, cada uno a su manera. El
+            <strong>Model Context Protocol</strong> corta el nudo como lo han
+            cortado siempre los protocolos: define un contrato único entre
+            <em>clientes</em> (Claude Code y cualquier otra herramienta
+            agéntica) y <em>servidores</em> (procesos que exponen capacidades).
+            Escribes el servidor de tu API interna una vez; lo habla cualquier
+            cliente MCP presente o futuro. Es el mismo movimiento que LSP hizo
+            con editores y lenguajes.
+          </p>
+
+          <h2 id="piezas">
+            Qué expone un servidor MCP
+            <a href="#piezas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un servidor anuncia sus capacidades en categorías; las dos que
+            importan el 95% del tiempo:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Pieza</th>
+                  <th>Qué es</th>
+                  <th>Ejemplo</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Tools</strong></td>
+                  <td>Acciones invocables: nombre + parámetros con esquema + resultado. Exactamente el contrato de la lección 1.</td>
+                  <td><code>crear_ticket(titulo, prioridad)</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Resources</strong></td>
+                  <td>Contenido legible identificado por URI, para meter en contexto sin ser una «acción».</td>
+                  <td><code>tickets://abiertos/backend</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            La distinción es la de siempre entre consulta y comando: un
+            resource se lee (sin efectos), una tool hace cosas. Un buen servidor
+            no lo mezcla — que listar tickets sea una tool con efectos
+            secundarios es el equivalente MCP de un GET que borra.
+          </p>
+
+          <h2 id="flujo">
+            Cómo encaja en el bucle
+            <a href="#flujo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Desde el punto de vista del modelo, <strong>no hay nada nuevo</strong>:
+            las tools de los servidores MCP conectados aparecen en su catálogo
+            junto a las nativas, con un prefijo que delata su origen. Cuando las
+            pide, el harness enruta la llamada al proceso del servidor (por
+            stdio si es local, por HTTP si es remoto), recoge el resultado y lo
+            devuelve al contexto como cualquier otro resultado de herramienta.
+            El bucle de la lección 1, intacto — solo que el brazo ejecutor ahora
+            puede estar en otro proceso u otra máquina.
+          </p>
+
+          <h2 id="minimo">
+            Un servidor mínimo, funcional
+            <a href="#minimo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Por debajo, MCP es JSON-RPC: mensajes con <code>method</code> y
+            <code>params</code>. Con el SDK oficial, un servidor con una tool
+            útil — consultar tu base de datos de desarrollo, con conexión de
+            solo lectura — cabe en una pantalla:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">js · servidor MCP con una tool (SDK oficial, esquema)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { z } from "zod";
+
+const server = new McpServer({ name: "mi-bd-dev", version: "1.0.0" });
+
+server.tool(
+  "consulta_solo_lectura",
+  "Ejecuta un SELECT sobre la BD de desarrollo y devuelve las filas",
+  { sql: z.string().describe("Consulta SELECT unica, sin ; multiples") },
+  async ({ sql }) =&gt; {
+    if (!/^\s*select\b/i.test(sql)) {
+      return { content: [{ type: "text", text: "Solo se aceptan SELECT" }] };
+    }
+
+    const rows = await pool.query(sql);
+
+    return { content: [{ type: "text", text: JSON.stringify(rows.slice(0, 50)) }] };
+  }
+);
+
+await server.connect(new StdioServerTransport());</code></pre>
+          </div>
+
+          <p>
+            Dos detalles del ejemplo que son doctrina, no adorno: la
+            <strong>descripción</strong> de la tool es prompt — el modelo decide
+            usarla (o no, o mal) leyéndola, así que se escribe con el mismo
+            cuidado que una rule. Y la <strong>validación dentro del
+            servidor</strong> (solo SELECT, resultados acotados) es la frontera
+            determinista: no confíes en que el modelo «no mandará un DELETE» —
+            haz que el servidor no pueda ejecutarlo.
+          </p>
+
+          <h2 id="conectar">
+            Conectarlo a Claude Code
+            <a href="#conectar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Los clientes MCP se configuran declarando cómo arrancar (o dónde
+            encontrar) cada servidor. En Claude Code, un fichero
+            <code>.mcp.json</code> en el repo lo deja configurado para todo el
+            equipo:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">.mcp.json</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>{
+  "mcpServers": {
+    "mi-bd-dev": {
+      "command": "node",
+      "args": ["tools/mcp/bd-dev.js"],
+      "env": { "DB_DSN": "mysql://dev@localhost/app" }
+    }
+  }
+}</code></pre>
+          </div>
+
+          <p>
+            Al arrancar la sesión, el harness lanza el proceso, negocia
+            capacidades y añade <code>consulta_solo_lectura</code> al catálogo
+            del modelo. A partir de ahí, «mira si hay usuarios sin confirmar en
+            la BD de dev» deja de ser un copy-paste tuyo y pasa a ser una
+            herramienta más del bucle.
+          </p>
+
+          <h2 id="seguridad">
+            Seguridad: cada servidor es superficie
+            <a href="#seguridad" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Conectar un servidor MCP es dar manos nuevas al agente, y las manos
+            de terceros merecen la desconfianza estándar de las dependencias —
+            más una propia de esta tecnología:
+          </p>
+          <ul>
+            <li>
+              <strong>Un servidor de terceros es código que ejecutas</strong>
+              con tus credenciales: se audita como cualquier dependencia, y se
+              le da la credencial mínima (la conexión de solo lectura del
+              ejemplo no es decorativa).
+            </li>
+            <li>
+              <strong>Lo que el servidor devuelve entra al contexto.</strong> Si
+              una tool trae contenido externo (una web, un ticket escrito por
+              cualquiera), ese texto puede contener instrucciones dirigidas al
+              modelo — la inyección de prompt del curso de fundamentos, ahora
+              por la puerta de las herramientas. Tratar los datos como datos, y
+              desconfiar de resultados que «piden cosas».
+            </li>
+            <li>
+              <strong>Menos es más:</strong> cada servidor conectado suma tools
+              al catálogo (contexto) y superficie de fallo. Se conecta lo que se
+              usa, no lo que mola.
+            </li>
+          </ul>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>MCP encaja cuando…</h4>
+              <ul>
+                <li>El agente necesita un sistema externo de forma recurrente (BD, tickets, API interna)</li>
+                <li>Quieres el mismo acceso desde varias herramientas de IA</li>
+                <li>Puedes acotar la capacidad en el servidor (solo lectura, credencial mínima)</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Sobra cuando…</h4>
+              <ul>
+                <li>Un comando CLI ya lo resuelve: el agente puede ejecutarlo con Bash</li>
+                <li>Es un uso puntual: copiar el dato a mano cuesta menos que mantener un servidor</li>
+                <li>No puedes auditar el servidor de terceros que ibas a conectar</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>MCP es el enchufe estándar entre clientes agénticos y servicios: el conector se escribe una vez y lo habla cualquier herramienta.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un servidor expone tools (acciones con esquema) y resources (contenido por URI): comando y consulta, sin mezclar.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Para el modelo no hay nada nuevo: las tools MCP entran al mismo catálogo y al mismo bucle; cambia quién ejecuta.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La descripción de una tool es prompt (se escribe con cuidado) y la validación va dentro del servidor: la frontera determinista, otra vez.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Cada servidor conectado es superficie: credencial mínima, terceros auditados, y ojo a la inyección que entra por los resultados.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="cc-memoria-y-continuidad.html">
+              <small>← Anterior</small>
+              <b>Memoria y continuidad</b>
+            </a>
+            <a href="cc-hooks-y-permisos.html" class="next">
+              <small>Siguiente →</small>
+              <b>Hooks y permisos</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../tutorials/practica.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
