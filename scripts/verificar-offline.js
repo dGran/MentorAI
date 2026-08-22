@@ -46,6 +46,22 @@ const PAGINAS = [
 
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/* El primer arranque de Chrome puede superar cualquier espera fija (en los
+   runners de CI tarda más que en local): se sondea el CDP hasta que responda. */
+async function esperarCdp() {
+  const limite = Date.now() + 30_000;
+
+  while (true) {
+    try {
+      return await cdpGet("/json/list");
+    } catch (fallo) {
+      if (Date.now() > limite) throw fallo;
+
+      await esperar(500);
+    }
+  }
+}
+
 /* ---------- Sitio servido bajo subdirectorio ---------- */
 
 function prepararSitio() {
@@ -181,9 +197,9 @@ async function main() {
   };
 
   try {
-    await esperar(4000);
+    const pestanas = await esperarCdp();
 
-    const pestanas = await cdpGet("/json/list");
+    await esperar(4000);
     const ws = new WebSocket(pestanas.find((p) => p.type === "page").webSocketDebuggerUrl);
 
     await new Promise((ok) => ws.addEventListener("open", ok, { once: true }));
