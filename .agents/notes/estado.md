@@ -91,6 +91,17 @@ Cada una costó una depuración; están aquí para no repetirlas.
 - **`pkill -f "patrón"` se mata a sí mismo** si el patrón aparece en la propia
   línea de comandos del shell.
 
+## Rutina pendiente: revisión de frescura
+
+El validador vigila la estructura, no la verdad: el contenido caduca sin que
+nada avise. **Hacia febrero-marzo de 2027, primera revisión de frescura** de
+las categorías volátiles — los cursos `claude-code` y `construir-con-ia` sobre
+todo (la lección de la API ya nació corrigiendo `temperature`, que desapareció
+de los modelos actuales), y de paso `programar-con-ia`. Formato: una sesión de
+auditoría como la del 2026-08-22, leyendo contra las fuentes actuales y
+corrigiendo con `/tutorial`. Repetir cada ~6 meses solo para esas categorías;
+el resto del catálogo (SQL, OOP, Linux…) envejece a décadas, no a meses.
+
 ## Cómo se mantiene
 
 | Comando | Para qué |
