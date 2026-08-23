@@ -39,6 +39,7 @@ const PAGINAS = [
   "articulos.html",
   "curso.html",
   "repaso.html",
+  "perfil.html",
   "offline.html",
   "manifest.webmanifest",
   "sw.js",

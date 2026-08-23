@@ -228,7 +228,31 @@
     };
   }
 
-  /* ---------- Interfaz en la página de repaso ---------- */
+  /* ---------- Enlace en la navegación ----------
+     Se inyecta como los de "Repaso" y "Sin conexión", para no tener que
+     tocar los HTML del catálogo. */
+
+  function injectNavLink() {
+    const nav = document.querySelector(".nav__actions");
+
+    if (!nav || nav.querySelector(".perfil-nav-link")) return;
+
+    const base = location.pathname.includes("/tutorials/") ? "../" : "";
+    const link = document.createElement("a");
+
+    link.className = "nav__link perfil-nav-link";
+    link.href = `${base}perfil.html`;
+    link.textContent = "Perfil";
+
+    if (/\bperfil\.html\b/.test(location.pathname)) {
+      link.classList.add("is-active");
+      link.setAttribute("aria-current", "page");
+    }
+
+    nav.insertBefore(link, nav.querySelector(".offline-nav-link") ?? nav.querySelector(".theme-toggle"));
+  }
+
+  /* ---------- Interfaz en la página de perfil ---------- */
 
   const ETIQUETAS = {
     completados: "tutoriales completados",
@@ -322,6 +346,7 @@
     importar,
     contenido: contenidoExportado,
     resumen: () => resumenDe(contenidoExportado().datos),
+    injectNavLink,
     renderPage,
   };
   MentorAI.FicheroInvalido = FicheroInvalido;

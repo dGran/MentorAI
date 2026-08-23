@@ -7,8 +7,20 @@ Lo cerrado vive en `archivo/`; si algo de aquí crece demasiado, se archiva.
 
 ## Dónde está el proyecto
 
-**272 tutoriales · 28 cursos · 7 rutas · 409 preguntas de examen · 586 checks ·
-82 retos de práctica.** `node scripts/validar.js` sale sin errores ni avisos.
+**282 tutoriales · 30 cursos · 7 rutas · 431 preguntas de examen · 622 checks ·
+88 retos de práctica.** `node scripts/validar.js` sale sin errores ni avisos.
+
+**Tanda fundamentos (2026-08-23):** dos cursos nuevos que cierran huecos de
+base detectados en auditoría contra un temario de carrera — **`la-maquina`**
+(«La máquina por dentro», 5 lecciones: CPU y caché, de código a programa,
+kernel y syscalls, scheduler, sockets e I/O; en `el-grado-que-no-hiciste`
+justo tras Fundamentos) y **`k8s-para-devs`** («Kubernetes para
+desarrolladores», 4 lecciones prácticas con kind; en las dos rutas de infra
+tras el curso de Infraestructura) — más el artículo suelto **`regex`**.
+Prefijos de slug `maq-` y `k8s-`. Además, **«Tus datos» se movió de
+`repaso.html` a la página nueva `perfil.html`** (export/import + sync), con
+enlace «Perfil» inyectado en el nav por `perfil.js` — repaso quedaba como un
+nombre que escondía la sincronización. Shell `v12`.
 
 **Tanda IA (2026-08-22, segunda del día):** dos cursos nuevos —
 **`claude-code`** («Claude Code: ingeniería con agentes», 11 lecciones en 3

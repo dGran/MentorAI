@@ -43,6 +43,7 @@
     MentorAI.SyntaxHighlighter.run();
     MentorAI.initHighlights?.();
     MentorAI.Highlights?.renderPage?.();
+    MentorAI.Perfil?.injectNavLink?.();
     MentorAI.Perfil?.renderPage?.();
 
     MentorAI.Offline?.init();

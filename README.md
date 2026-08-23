@@ -1,6 +1,6 @@
 # MentorAI
 
-Una carrera de backend en HTML estático: **272 tutoriales, 28 cursos y 7 rutas**
+Una carrera de backend en HTML estático: **282 tutoriales, 30 cursos y 7 rutas**
 de aprendizaje, pensados para dar la base formal que uno se salta cuando aprende
 a programar por su cuenta.
 
@@ -30,7 +30,8 @@ mentorai/
 ├── rutas.html            Itinerarios completos
 ├── cursos.html           Cursos, y curso.html?slug=... para cada ficha
 ├── articulos.html        Catálogo con filtros y buscador
-├── repaso.html           Repaso espaciado, subrayados y tus datos
+├── repaso.html           Repaso espaciado y subrayados
+├── perfil.html           Tus datos: export/import y sincronización
 ├── offline.html          Descargar la academia para leerla sin red
 ├── sw.js                 Service worker (shell + contenido descargado)
 ├── tutorials/
@@ -129,7 +130,7 @@ en alguna ruta de `paths.js`. Hoy **ningún curso queda fuera de una ruta**.
 - **Llevarte tu progreso.** Exporta un fichero e impórtalo en otro dispositivo:
   se **fusiona**, no reemplaza. Y opcionalmente, **sincronización automática**
   entre tus dispositivos vía un gist secreto de tu cuenta de GitHub (token
-  clásico con scope `gist`, se configura en `repaso.html`): cada persona usa su
+  clásico con scope `gist`, se configura en `perfil.html`): cada persona usa su
   cuenta, sin backend ni login, y sin red todo sigue funcionando igual.
 
 Todo se guarda en `localStorage` con el prefijo `academia-`. Uso individual, sin

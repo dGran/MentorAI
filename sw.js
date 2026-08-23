@@ -12,7 +12,7 @@
    navegadores que ya lo tienen cacheado se traigan lo nuevo.
    ============================================================ */
 
-var VERSION = "v11";
+var VERSION = "v12";
 var SHELL = "academia-shell-" + VERSION;
 var CONTENT = "academia-content-" + VERSION;
 
@@ -23,6 +23,7 @@ var SHELL_PATHS = [
   "articulos.html",
   "offline.html",
   "repaso.html",
+  "perfil.html",
   "curso.html",
   "assets/css/styles.css",
   "assets/fonts/inter-400-latin.woff2",

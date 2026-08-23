@@ -86,7 +86,7 @@ global del agente y no se duplican aquí.
   `storage.js` (`Bookmarks`/`Progress`/`Reading`), `catalog.js` (`Catalog`),
   `courses.js` (`Courses`), `paths.js` (`Paths`, rutas de aprendizaje),
   `home.js` (dashboard + buscador del index),
-  `syntax.js` (`SyntaxHighlighter`), `bridge.js` (compositor/refinador),
+  `syntax.js` (`SyntaxHighlighter`), `practica.js` (retos), `sync.js` (gist),
   `tutorial.js` (mejoras de la página de tutorial) e `init.js` (arranque, va el
   **último** en cada página). Las funciones de arranque se exponen en
   `MentorAI.*` para que `init.js` las orqueste. Mantener esa forma: un módulo
@@ -126,7 +126,7 @@ global del agente y no se duplican aquí.
 **Ninguno.** A 2026-08-01 los 16 planes están cerrados y archivados en
 `.agents/notes/archivo/`, junto con las tres colas de ideas, ya consumidas.
 
-El norte del proyecto está cumplido: **272 tutoriales, 28 cursos y 7 rutas**;
+El norte del proyecto está cumplido: **282 tutoriales, 30 cursos y 7 rutas**;
 `el-grado-que-no-hiciste` son 23 cursos y ningún curso queda fuera de una ruta.
 «Ponlo en práctica» se cerró el 2026-08-22: todos los cursos tienen sus retos en
 `tutorials/practica.js`. El 2026-08-22 se añadieron también los cursos
