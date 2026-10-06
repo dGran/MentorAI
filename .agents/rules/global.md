@@ -9,7 +9,9 @@ Antes de escribir código, lee `~/.agent-flow/rules/engineering-discipline.md`.
 
 ## Convenciones base
 
-Base: `~/.agent-flow/stacks/general/rules.md` y `~/.agent-flow/stacks/ux/rules.md`.
+Base: `~/.agent-flow/stacks/general/rules.md`, `~/.agent-flow/stacks/ux/rules.md` y
+`~/.agent-flow/stacks/js-ts/rules.md` (núcleo, PWA y pruebas de interfaz; el proyecto es JavaScript sin
+TypeScript ni React, así que las normas de TS, RX y ST no aplican).
 Léela antes de escribir código por primera vez en la sesión. **El proyecto
 manda**: estas reglas y las excepciones de abajo prevalecen sobre la base, y un
 conflicto se resuelve a favor del proyecto sin reportarlo como hallazgo.
@@ -19,8 +21,16 @@ Excepciones (lo que la arquitectura de abajo resuelve de otra forma):
 - **G-10** no aplica: no hay clases ni contenedor. Cada módulo es un IIFE que
   cuelga de `window.MentorAI`, y las referencias entre módulos van por
   `MentorAI.X` en runtime (§ Frontend).
-- **G-20** no aplica tal cual: sin build ni dependencias no hay runner de tests.
-  La red son los scripts de `scripts/` (`validar.js`, `verificar-offline.js`).
+- **G-20 y JS-10**: el runner es `node:test` sin dependencias (`scripts/tests/`) más
+  `scripts/validar.js`; los dos corren en CI (`validar.yml`). `verificar-offline.js` es la
+  comprobación de la PWA (JS-20).
+- **JS-05, JS-07 y JS-08** no aplican: sin npm no hay linter ni lockfile, y las páginas no hacen
+  peticiones HTTP (`file://` manda, § Arquitectura); el único `fetch` es el del service worker.
+- **JS-09**: Node solo se usa en CI; la versión se fija en `validar.yml`, sin `.nvmrc`.
+
+**js-ts, deuda conocida**: los accesos a `localStorage` están repartidos por diez módulos (JS-04 pide
+uno solo, `storage.js`, que ya envuelve cada acceso en `try/catch` con reserva). Lo nuevo pasa por
+`storage.js` y lo existente se mueve al tocarlo.
 
 **G-03** (sin comentarios) aplica. Los comentarios que ya hay, cabeceras de sección
 incluidas, son **deuda**: no se añaden nuevos, y quien
