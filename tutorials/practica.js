@@ -1227,7 +1227,7 @@ window.MENTORAI_PRACTICE = {
       id: "rff0996",
       title: "Provoca una alucinación y desmóntala",
       statement:
-        "En un proyecto PHP con dependencias de Composer, elige una librería poco conocida de vendor/. Pregunta a cualquier asistente de IA, sin darle el código, por un método concreto de esa librería: su firma y qué devuelve. Después comprueba la respuesta contra el código instalado.",
+        "En un proyecto PHP con dependencias de Composer, elige una librería poco conocida de vendor/. En un chat sin búsqueda web ni acceso a tu repositorio, y sin darle el código, pregunta por la firma de un método concreto de esa librería y por lo que devuelve. Si acierta, pregunta por un parámetro concreto o por su comportamiento en una versión antigua. Después comprueba la respuesta contra el código instalado.",
       solution:
         "Es frecuente que la respuesta sea plausible y falsa: un método con el nombre que «tendría», una firma de otra versión o un parámetro que no existe. El modelo no tiene esa librería en la memoria con detalle y produce lo verosímil. La comprobación con grep sobre el código real convierte la afirmación en evidencia: existe o no existe, y su firma es la que dice el fichero. Es el patrón del curso entero: afirmar, ejecutar, citar. Y es lo que hace un agente con herramientas cuando lee el código en lugar de responder de memoria.",
       solutionCode: {
@@ -1235,6 +1235,14 @@ window.MENTORAI_PRACTICE = {
         source:
           "grep -rn \"function nombreDelMetodo\" vendor/vendedor/libreria/src\ncomposer show vendedor/libreria | grep versions",
       },
+    },
+    {
+      id: "raaab3f",
+      title: "La aguja en el pajar",
+      statement:
+        "Toma un documento largo (por ejemplo, la documentación de una librería pegada entera) y esconde en mitad del texto un dato inventado y fácil de comprobar, como «el código de soporte de esta librería es PERCEBE-42». Pregunta por ese dato junto a otra tarea sobre el documento y anota si lo recupera. Repite con el dato al final del documento, y otra vez con un documento más corto.",
+      solution:
+        "Con documentos suficientemente largos, lo habitual es que el dato del final se recupere mejor que el del medio: es el patrón «perdido en el medio» y la recencia de la lección de atención. Con documentos cortos o con modelos recientes puede no notarse, porque han mejorado mucho en contextos largos; si no lo ves, alarga el documento o añade más texto irrelevante alrededor. La lección práctica es la misma: que algo quepa en el contexto no garantiza que pese, así que lo crítico va cerca de donde se usa o se repite al final.",
     },
   ],
 };

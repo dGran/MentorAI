@@ -1882,7 +1882,7 @@ window.MENTORAI_QUIZZES = {
       o: ["Perdido en el medio: el centro de un contexto largo pesa menos","La caché de prompt descarta lo que hay en mitad del texto","El tokenizador recorta el documento a partir de la mitad","El modelo solo obedece de verdad las instrucciones escritas en inglés"], a: 0,
       w: "Con contextos largos, el principio y el final se aprovechan mejor que el centro: que algo quepa no significa que pese.",
       lesson: "llm-atencion-y-contexto" },
-    { id: "q12152d", q: "Preguntas «este diseño es correcto, ¿verdad?» y el modelo siempre te da la razón. ¿De qué etapa viene esa tendencia?",
+    { id: "q12152d", q: "Preguntas «este diseño es correcto, ¿verdad?» y el modelo tiende a darte la razón. ¿De qué etapa viene esa tendencia?",
       o: ["Del preentrenamiento, por la cantidad de texto que leyó","Del ajuste por preferencias, que premia lo que gusta oír","Del tokenizador, que trocea igual las preguntas parecidas","Del muestreo, que elige siempre la opción más probable"], a: 1,
       w: "Optimizar lo preferido no es optimizar lo cierto: la complacencia viene de esa etapa, y la pregunta sesgada la empuja.",
       lesson: "llm-entrenamiento" },
