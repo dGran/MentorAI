@@ -186,20 +186,24 @@
           <div class="callout callout--warning">
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <div class="callout__body">
-              <p class="callout__title">Un deny filtra herramientas, no ficheros</p>
+              <p class="callout__title">Hasta dónde llega un deny</p>
               <p>
-                Cada regla habla de <strong>una herramienta</strong>.
-                <code>Read(.env*)</code> impide que la herramienta Read abra el
-                fichero, pero un <code>cat .env</code> por Bash es otra
-                herramienta y no lo cubre. Y un patrón de Bash compara el texto
-                del comando: <code>Bash(rm -rf *)</code> no ve un
-                <code>rm -fr</code>, un <code>rm -r -f</code> ni un script que
-                borre por dentro. Los permisos quitan del camino lo obvio y la
-                fricción; para lo que no puede fallar ni una vez hace falta
-                lógica (un hook que inspeccione el comando) y, como frontera
-                real, el <strong>sandbox</strong> del sistema operativo, que
-                restringe qué puede tocar cualquier proceso que el agente lance,
-                lo invoque como lo invoque.
+                <code>Read(.env*)</code> no solo frena a la herramienta Read: la
+                herramienta también lo aplica a los comandos de fichero que
+                reconoce en Bash, como <code>cat</code>, <code>head</code>,
+                <code>tail</code> o una redirección. Lo que no puede ver es un
+                <code>grep -r</code> que lee el fichero sin nombrarlo, o un
+                script de Python que lo abre por dentro. Y un patrón de Bash
+                compara el texto del comando: <code>Bash(rm -rf *)</code> no ve
+                un <code>rm -fr</code> ni un script que borre por su cuenta. Los
+                permisos quitan del camino lo obvio y la fricción; para lo que
+                no puede fallar ni una vez hace falta lógica (un hook que
+                inspeccione el comando) y, como frontera real para lo que se
+                ejecuta en la shell, el <strong>sandbox</strong> del sistema
+                operativo: restringe qué ficheros y red pueden tocar los
+                comandos que el agente lanza y sus procesos hijos. Ojo: las
+                herramientas de fichero propias, los hooks y los servidores MCP
+                corren fuera de él.
               </p>
             </div>
           </div>
@@ -241,7 +245,7 @@
               <div class="flow__arrow" data-label="hook pre-herramienta"></div>
               <div class="flow__node">
                 <span class="flow__num">2</span>
-                <span><b>Tu script decide</b><small>Sale 0 → adelante. Sale <strong>2</strong> → acción bloqueada, y su stderr vuelve al modelo. Cualquier otro código → error <strong>no bloqueante</strong>: la acción sigue.</small></span>
+                <span><b>Tu script decide</b><small>Sale 0 → no objeta: sigue el flujo normal de permisos. Sale <strong>2</strong> → acción bloqueada, y su stderr vuelve al modelo. Cualquier otro código → error <strong>no bloqueante</strong>: la acción sigue.</small></span>
               </div>
               <div class="flow__arrow" data-label="si pasó, se ejecuta"></div>
               <div class="flow__node flow__node--end">
@@ -305,7 +309,7 @@ exit 0</code></pre>
       {
         "matcher": "Edit|Write",
         "hooks": [
-          { "type": "command", "command": "hooks/protege-generados.sh" }
+          { "type": "command", "command": "\"$CLAUDE_PROJECT_DIR\"/hooks/protege-generados.sh" }
         ]
       }
     ]
@@ -325,7 +329,7 @@ exit 0</code></pre>
           </p>
 
           <div class="callout callout--danger">
-            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
             <div class="callout__body">
               <p class="callout__title">Solo el 2 bloquea</p>
               <p>
@@ -334,7 +338,7 @@ exit 0</code></pre>
                 nada. La herramienta lo trata como un fallo del propio hook, lo
                 anota y <strong>deja pasar la acción</strong>. Un guardián que
                 falla abierto es peor que no tenerlo, porque crees que está ahí.
-                Pruébalo provocando el caso prohibido antes de fiarte de él.
+                Lo mismo ocurre si el script ni siquiera se encuentra (sale con 127): por eso el <code>command</code> usa la ruta absoluta del proyecto. Pruébalo provocando el caso prohibido antes de fiarte de él.
               </p>
             </div>
           </div>
