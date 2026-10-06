@@ -16,6 +16,7 @@ var VERSION = "v16";
 var SHELL = "academia-shell-" + VERSION;
 var CONTENT = "academia-content";
 var LEGACY_CONTENT_PREFIX = "academia-content-";
+var SLOW_NETWORK_TIMEOUT_MS = 3000;
 
 var SHELL_PATHS = [
   "index.html",
@@ -237,7 +238,9 @@ function respond(request, isNavigation) {
 }
 
 function refreshSavedContent(request, savedResponse) {
-  return fetch(request)
+  var savedKey = savedResponse.url || request.url;
+
+  var fromNetwork = fetch(request)
     .then(function (fresh) {
       if (!fresh.ok) return savedResponse;
 
@@ -246,7 +249,7 @@ function refreshSavedContent(request, savedResponse) {
       return caches
         .open(CONTENT)
         .then(function (cache) {
-          return cache.put(request, copy);
+          return cache.put(savedKey, copy);
         })
         .then(function () {
           return fresh;
@@ -255,6 +258,14 @@ function refreshSavedContent(request, savedResponse) {
     .catch(function () {
       return savedResponse;
     });
+
+  var savedAfterTimeout = new Promise(function (resolve) {
+    setTimeout(function () {
+      resolve(savedResponse);
+    }, SLOW_NETWORK_TIMEOUT_MS);
+  });
+
+  return Promise.race([fromNetwork, savedAfterTimeout]);
 }
 
 function sinConexion() {
