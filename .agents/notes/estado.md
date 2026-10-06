@@ -80,8 +80,10 @@ discutirlas por olvido:
 - **No hay tutor con IA por lección.** Rompería el invariante de `file://` y
   offline por una función que compite con leer. El diseño técnico está guardado
   en `archivo/plan-ia-en-la-app.md` por si algún día cambia el criterio.
-- **No hay tablero de tareas** (ni GitHub Projects ni GitLab). La continuidad es
-  este fichero.
+- ~~No hay tablero de tareas~~ **Reabierta el 2026-10-06** a petición del usuario:
+  la auditoría de ese día sacó ~40 tareas y se adoptó el flujo de agent-flow con
+  tablero (Project 6). La continuidad del proyecto sigue en este fichero; la de
+  cada tarea, en su issue.
 - **El uso es individual**: nada de campo `author` ni features de grupo. Sí hay
   export/import del progreso, que es el caso real de dos dispositivos.
 

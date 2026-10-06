@@ -132,24 +132,62 @@ el diff crece). No se limpian en bloque fuera de un issue propio.
 - **`estado.md` no crece sin límite.** Es un retrato del presente, no un diario:
   lo que envejece se archiva. Ya pasó una vez —llegó a 106 KB y 50 secciones, dos
   de ellas afirmando ser «la más reciente»— y se partió el 2026-08-01.
-- **Decisión deliberada:** este proyecto **no usa** el flujo `spec → implement →
-  review → qa → deploy` ni tablero de GitHub; no lo necesita. No proponer
-  `/new-project`. La continuidad vive en `.agents/notes/` y basta.
+- **El trabajo se gestiona con el flujo de agent-flow** (§ Flujo de trabajo)
+  desde el 2026-10-06. `estado.md` sigue siendo el retrato del proyecto; el
+  detalle de cada tarea vive en su issue.
+- Ante tandas continuadas, iteración hasta verificación o workflow dinámico, lee
+  `~/.agent-flow/skills/_shared/workflow-routing.md` y carga las skills indicadas
+  aunque el usuario no use comandos slash.
+
+## Flujo de trabajo (GitHub)
+
+- **Repo**: `dGran/MentorAI` · **Tablero**: [Project 6 de dGran](https://github.com/users/dGran/projects/6)
+  (enlazado al repo). Las tareas son **issues** de este repo.
+
+### El estado vive en el tablero; los labels dicen el tipo
+
+Seis estados, en el campo `Status` del Project y **en ningún otro sitio**:
+
+```
+Backlog → In Progress → Code Review → QA → Ready for prod → Done
+```
+
+- **No hay labels de estado.** Un issue que no está en el tablero no tiene
+  estado: `/spec` lo añade al crearlo.
+- **Labels = tipo**: `feat`, `fix`, `refactor`, `test`, `chore`, `docs` (uno por
+  issue), más `skip-qa` y `blocked-external`. **`Priority`** (P0–P3) es un campo
+  del tablero.
+- Las tareas de contenido (lecciones, cursos, retos) también son issues; se
+  implementan con la skill `/tutorial` dentro de `/implement`. Los cursos nuevos
+  son épicas para `/implement-epic`.
+
+### Lo que las skills preguntan si no está escrito aquí
+
+- **Estrategia de merge**: squash. Un issue = un commit en `main`, que mantiene
+  el historial lineal que el repo ha tenido siempre.
+- **Commit de evidencias de QA**: revertir antes de mergear. `.qa-evidence/` está
+  en el `.gitignore`, así que el commit necesita `git add -f`.
+- **Dónde corre la app en local**: `python3 -m http.server 8000` desde la raíz →
+  `http://localhost:8000/`. El service worker y el offline solo funcionan por
+  http; el resto también se comprueba abriendo `index.html` por `file://`, que es
+  invariante. No hay API.
+- **Gate de calidad**: `node scripts/validar.js` y `node scripts/verificar-offline.js`
+  (los mismos que corre CI en cada push y PR).
+- **Cómo se despliega**: GitHub Pages (build legacy desde `main`, raíz), automático
+  al mergear. Si el cambio toca `sw.js` o el shell, subir `VERSION`.
+- **Desfase main↔producción**: no aplica, el despliegue es automático post-merge.
+- **Qué puede observar `/deploy-watch`**: el SHA desplegado con
+  `gh api repos/dGran/MentorAI/pages/builds/latest` y la web en
+  https://dgran.github.io/MentorAI/. Solo HTTP: no hay logs ni métricas, así que
+  no permite afirmar ausencia de regresiones.
+- **Réplicas locales**: no se usan.
 
 ## Planes abiertos
 
-**Ninguno.** A 2026-08-01 los 16 planes están cerrados y archivados en
-`.agents/notes/archivo/`, junto con las tres colas de ideas, ya consumidas.
-
-El norte del proyecto está cumplido: **282 tutoriales, 30 cursos y 7 rutas**;
-`el-grado-que-no-hiciste` son 23 cursos y ningún curso queda fuera de una ruta.
-«Ponlo en práctica» se cerró el 2026-08-22: todos los cursos tienen sus retos en
-`tutorials/practica.js`. El 2026-08-22 se añadieron también los cursos
-`claude-code` (11 lecciones) y `construir-con-ia` (4), ordenados con
-`programar-con-ia` en la ruta nueva `ingenieria-con-ia`. No queda nada
-pendiente.
+La auditoría del 2026-10-06 (`.agents/notes/auditoria-2026-10-06.md`) está
+volcada al tablero como issues; el backlog vive allí.
 
 Decisiones tomadas que **no se reabren sin motivo nuevo**: no hay autoría desde
-la app, no hay tutor con IA (rompería el `file://` y el offline), no hay tablero
-de tareas, y el uso es individual (nada de `author` ni features de grupo). El
-detalle y el porqué, en `.agents/notes/estado.md`.
+la app, no hay tutor con IA (rompería el `file://` y el offline), y el uso es
+individual (nada de `author` ni features de grupo). El detalle y el porqué, en
+`.agents/notes/estado.md`.
