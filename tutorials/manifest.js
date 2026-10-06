@@ -4260,4 +4260,19 @@ window.ACADEMIA_TUTORIALS = [
     status: "published",
     date: "2026-08-23",
   },
+  {
+    slug: "llm-de-texto-a-tokens",
+    title: "Del texto a números: tokens y embeddings",
+    description:
+      "Qué ve de verdad un modelo: el texto troceado en tokens con BPE y cada token convertido en un embedding. Por qué eso explica que un LLM cuente mal letras, que el español y el código salgan más caros, y que contexto y precio se midan en tokens.",
+    href: "tutorials/llm-de-texto-a-tokens.html",
+    categories: ["ia"],
+    topic: "La IA por dentro",
+    tags: ["LLM", "Tokens", "Embeddings"],
+    level: "Intermedio",
+    minutes: 16,
+    icon: "signal",
+    status: "published",
+    date: "2026-10-06",
+  },
 ];

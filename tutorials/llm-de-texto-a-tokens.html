@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Del texto a números: tokens y embeddings — MentorAI</title>
+    <meta name="description" content="Qué ve de verdad un modelo de lenguaje: el texto troceado en tokens con BPE, cada token convertido en un vector, y por qué esa conversión explica que un LLM cuente mal letras, que el español y el código salgan más caros, y que todo se mida y se pague en tokens." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>La IA por dentro</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Del texto a números: tokens y embeddings</h1>
+        <p class="tutorial-hero__lead">
+          Un modelo de lenguaje no lee letras ni palabras: lee números. Entender cómo se trocea el texto y en qué se convierte cada trozo explica media docena de rarezas que parecen fallos — y te dice dónde se va el dinero y el contexto cuando trabajas con IA.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            16 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            La IA por dentro
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#por-que">Ni letras ni palabras</a></li>
+            <li><a href="#bpe">BPE: el troceado en tres pasos</a></li>
+            <li><a href="#peso">No todo el texto pesa igual</a></li>
+            <li><a href="#embeddings">Embeddings: el significado como posición</a></li>
+            <li><a href="#explica">Lo que esto explica</a></li>
+            <li><a href="#ingenieria">Consecuencias para tu trabajo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            En <a href="como-piensa-un-llm.html">Cómo piensa un LLM</a> viste la idea general: un modelo predice el siguiente token. Este curso abre la caja. Empezamos por el principio de todo: qué es un token, de dónde sale y qué consecuencias tiene que el modelo vea el mundo así.
+          </p>
+
+          <h2 id="por-que">
+            Ni letras ni palabras
+            <a href="#por-que" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            Una red neuronal solo opera con números, así que lo primero que pasa con tu prompt es convertirlo en una secuencia de enteros. Hay dos formas obvias de hacerlo, y las dos fallan.
+          </p>
+
+          <p>
+            <strong>Por letras</strong>: el vocabulario sería pequeño (unos cientos de símbolos), pero cada texto se convertiría en una secuencia larguísima. Como el coste de procesar una secuencia crece con su longitud — lo verás en la lección siguiente —, sería carísimo, y el modelo tendría que aprender desde cero que <code>g-a-t-o</code> forman algo con significado.
+          </p>
+
+          <p>
+            <strong>Por palabras</strong>: las secuencias serían cortas, pero el vocabulario explotaría. Cada conjugación, cada plural, cada nombre de variable, cada palabra en otro idioma necesitaría su propia entrada, y cualquier palabra nueva quedaría fuera.
+          </p>
+
+          <p>
+            La solución que usan los modelos actuales está en medio: <strong>trozos de palabra</strong>, llamados <em>tokens</em>. Las palabras frecuentes son un solo token; las raras se componen de varios trozos que sí están en el vocabulario. Así nada queda fuera y las secuencias siguen siendo razonables.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Un vocabulario de tamaño fijo</p>
+              <p>Un tokenizador moderno tiene un vocabulario de decenas o cientos de miles de tokens, fijado antes de entrenar el modelo. Cada token tiene un número (su <em>id</em>). Ese vocabulario no cambia nunca durante la vida del modelo: por eso dos modelos de familias distintas trocean el mismo texto de forma diferente.</p>
+            </div>
+          </div>
+
+          <h2 id="bpe">
+            BPE: el troceado en tres pasos
+            <a href="#bpe" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            El algoritmo más extendido para construir ese vocabulario es <strong>BPE</strong> (<em>Byte Pair Encoding</em>). La idea es sencilla y se entiende mejor con un ejemplo de juguete:
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Empieza por lo mínimo</b><small>El vocabulario inicial son los bytes (o caracteres). Cualquier texto se puede escribir con ellos, así que nada queda fuera.</small></span>
+              </div>
+              <div class="flow__arrow" data-label="la más frecuente"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Cuenta parejas</b><small>Recorre un corpus enorme y cuenta qué pareja de símbolos contiguos aparece más: por ejemplo, «e» seguida de «s».</small></span>
+              </div>
+              <div class="flow__arrow" data-label="hasta N tokens"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Fusiona y repite</b><small>Esa pareja pasa a ser un símbolo nuevo («es») y se repite el proceso miles de veces, hasta llegar al tamaño de vocabulario deseado.</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Tras miles de fusiones, las palabras comunes acaban siendo un único token y las raras se escriben con varios.</p>
+          </div>
+
+          <p>
+            Con un corpus mayoritariamente en inglés, «the» o «function» terminan siendo un token. Una palabra poco frecuente en ese corpus — un apellido, un término técnico en español, un identificador como <code>calcularImporteConIva</code> — se queda partida en varios trozos.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">pseudocódigo · una vuelta de BPE</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>corpus = ["l o w", "l o w e r", "n e w e s t", "w i d e s t"]
+
+pareja más frecuente:  ("e", "s")   → nuevo símbolo "es"
+corpus = ["l o w", "l o w e r", "n e w es t", "w i d es t"]
+
+pareja más frecuente:  ("es", "t")  → nuevo símbolo "est"
+corpus = ["l o w", "l o w e r", "n e w est", "w i d est"]</code></pre>
+          </div>
+
+          <p>
+            En el reto práctico de este curso implementarás estas fusiones en unas pocas líneas de Node, y verás aparecer los trozos frecuentes por sí solos.
+          </p>
+
+          <h2 id="peso">
+            No todo el texto pesa igual
+            <a href="#peso" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            Como el vocabulario se aprende de un corpus concreto, el mismo contenido cuesta un número distinto de tokens según cómo esté escrito. Como orden de magnitud, en inglés un token equivale a unos 4 caracteres; el resto depende de lo bien representado que estuviera ese tipo de texto al construir el vocabulario.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tipo de texto</th>
+                  <th>Qué pasa al trocearlo</th>
+                  <th>Efecto práctico</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Inglés corriente</td><td>Las palabras frecuentes son un token</td><td>La referencia: el texto más «barato»</td></tr>
+                <tr><td>Español</td><td>Más palabras partidas: tildes, conjugaciones, plurales</td><td>Suele necesitar más tokens para decir lo mismo</td></tr>
+                <tr><td>Código</td><td>Espacios de indentación, símbolos, identificadores largos</td><td>Un fichero ocupa más de lo que su longitud sugiere</td></tr>
+                <tr><td>Números largos</td><td>Se parten en grupos de cifras, no en dígitos con valor</td><td>Aritmética y comparaciones poco fiables sin herramienta</td></tr>
+                <tr><td>JSON y logs</td><td>Comillas, llaves y claves repetidas en cada línea</td><td>Una salida verbosa consume contexto a toda velocidad</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Mídelo en lugar de estimarlo</p>
+              <p>Los proveedores ofrecen una forma de contar los tokens de un texto antes de enviarlo (en la API de Claude, un endpoint de conteo de tokens). Si un dato de coste o de contexto importa, cuéntalo: las reglas de «4 caracteres por token» valen para el inglés y engañan con código o con español.</p>
+            </div>
+          </div>
+
+          <h2 id="embeddings">
+            Embeddings: el significado como posición
+            <a href="#embeddings" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            Un id de token es solo un número de catálogo: el 1.000 no se parece más al 1.001 que al 50.000. Para que el modelo pueda trabajar con significados, cada id se traduce en un <strong>embedding</strong>: un vector de cientos o miles de números que el modelo aprendió durante el entrenamiento.
+          </p>
+
+          <p>
+            La propiedad útil es geométrica: tokens que aparecen en contextos parecidos acaban con vectores cercanos. «Gato» queda cerca de «perro», «PostgreSQL» cerca de «MySQL». Nadie programó esas cercanías: salen de predecir texto miles de millones de veces.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Texto</b><small>«El gato duerme»</small></span>
+              </div>
+              <div class="flow__arrow" data-label="tokenizador"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Tokens</b><small>Trozos del vocabulario: «El», « gato», « duerme»</small></span>
+              </div>
+              <div class="flow__arrow" data-label="catálogo"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Ids</b><small>Un entero por token: 791, 47332, 18820 (ilustrativos)</small></span>
+              </div>
+              <div class="flow__arrow" data-label="tabla aprendida"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>Vectores</b><small>Cada id se sustituye por su embedding: una lista de miles de números</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">A partir de aquí el modelo ya no ve texto: ve vectores, y todo lo que hace son operaciones sobre ellos.</p>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La misma idea, en tu producto</p>
+              <p>Los embeddings no son solo una pieza interna: los proveedores también exponen modelos de embeddings para textos completos. Son la base de la búsqueda semántica y del RAG que viste en <a href="conceptos-ia.html">conceptos de IA</a>: dos textos con vectores cercanos hablan de cosas parecidas, aunque no compartan palabras.</p>
+            </div>
+          </div>
+
+          <h2 id="explica">
+            Lo que esto explica
+            <a href="#explica" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            Con tokens y embeddings sobre la mesa, varias rarezas dejan de ser misterios:
+          </p>
+
+          <ul>
+            <li><strong>Contar letras sale mal.</strong> Si «fresa» es uno o dos tokens, el modelo nunca vio sus letras por separado: tiene que deducir cuántas «r» hay en una palabra que para él es un bloque. No es un fallo de inteligencia, es un fallo de percepción.</li>
+            <li><strong>La aritmética larga falla sin herramienta.</strong> Un número de diez cifras llega troceado en grupos arbitrarios; sumar o comparar exige reconstruir unas cifras que el modelo no ve una a una.</li>
+            <li><strong>Los límites se miden en tokens.</strong> La ventana de contexto, el máximo de salida y el precio se expresan en tokens, no en palabras ni en caracteres. Un mismo documento «cabe» o «no cabe» según cuánto ocupe al trocearlo.</li>
+            <li><strong>El idioma cambia la factura.</strong> El mismo prompt en español suele gastar más tokens que en inglés, y esos tokens se pagan en cada llamada.</li>
+            <li><strong>Los errores tipográficos no rompen nada.</strong> Una palabra mal escrita se trocea en piezas más pequeñas pero sigue representable: el modelo la entiende igual, porque no hay palabras «fuera del vocabulario».</li>
+          </ul>
+
+          <h2 id="ingenieria">
+            Consecuencias para tu trabajo
+            <a href="#ingenieria" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            Esta lección parece teoría, pero se traduce en decisiones concretas cuando trabajas con un agente o construyes sobre una API:
+          </p>
+
+          <ul>
+            <li><strong>Todo lo que se carga en cada sesión se paga en cada sesión.</strong> Las instrucciones de proyecto, las descripciones de las herramientas y de las skills viajan en todas las llamadas. Un párrafo de más en ellas es un coste fijo multiplicado por cada conversación: por eso conviene que sean cortas y de alto valor.</li>
+            <li><strong>Las salidas ruidosas consumen contexto.</strong> Un log completo, un JSON indentado o un fichero entero ocupan muchos más tokens que su información útil. Filtra antes de entregárselo al modelo.</li>
+            <li><strong>Para contar, calcular o comparar, una herramienta.</strong> Si la respuesta depende de letras, dígitos o recuentos exactos, que lo haga código (<code>wc</code>, un script, una consulta) y el modelo interprete el resultado.</li>
+            <li><strong>Los presupuestos se calculan en tokens.</strong> Al estimar el coste de una feature con un LLM, mide los tokens reales de entradas y salidas típicas; no los deduzcas de la longitud en caracteres.</li>
+          </ul>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El tokenizador cambia entre modelos</p>
+              <p>Un cambio de modelo o de familia puede cambiar cuántos tokens ocupa el mismo texto. Si tu sistema depende de un límite (cortar documentos, presupuestar contexto), vuelve a medir al migrar de modelo en lugar de arrastrar la cifra antigua.</p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Piensa en tokens cuando…</h4>
+              <ul>
+                <li>Estimes el coste o la latencia de una feature con un LLM</li>
+                <li>Diseñes qué contexto fijo carga un agente en cada sesión</li>
+                <li>Una tarea dependa de letras, dígitos o recuentos exactos</li>
+                <li>Tengas que decidir si un documento cabe o hay que trocearlo</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No te obsesiones si…</h4>
+              <ul>
+                <li>La conversación es puntual y corta: el coste es despreciable</li>
+                <li>Solo te importa el significado: el modelo lo capta igual con erratas</li>
+                <li>Vas a medir de todos modos: una cifra real vale más que una regla de pulgar</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un LLM no ve letras ni palabras: ve tokens, trozos de palabra de un vocabulario fijo construido con algoritmos como BPE.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>BPE parte de bytes y fusiona las parejas más frecuentes: lo común acaba siendo un token y lo raro se escribe con varios.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El mismo contenido cuesta distinto según el idioma y el formato: el español, el código y el JSON suelen gastar más tokens.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Cada token se convierte en un embedding, un vector donde la cercanía refleja parecido de significado.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Contexto, límites y precio se miden en tokens: lo que se carga en cada sesión se paga en cada sesión, y conviene medirlo en vez de estimarlo.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="llm-atencion-y-contexto.html" class="next">
+              <small>Siguiente →</small>
+              <b>Atención y ventana de contexto</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../tutorials/practica.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

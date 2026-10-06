@@ -2731,4 +2731,18 @@ window.MENTORAI_CHECKS = {
       w: "Es el límite teórico con consecuencia práctica: el regex que «funciona» hoy muere con la primera etiqueta anidada rara." },
   ],
 
+  "llm-de-texto-a-tokens": [
+    { id: "c504173", q: "Un modelo responde mal cuántas «r» tiene una palabra. ¿Cuál es la causa más probable?",
+      o: ["Le falta entrenamiento en ortografía española","Ve la palabra como uno o dos tokens, no letra a letra","La temperatura estaba demasiado alta en esa llamada"], a: 1,
+      w: "El modelo nunca vio las letras por separado: tiene que deducir la ortografía de un bloque. Para contar, mejor una herramienta." },
+    { id: "c06633b", q: "El mismo prompt en español y en inglés. ¿Qué es lo esperable en tokens?",
+      o: ["El español suele ocupar más tokens","Ocupan exactamente lo mismo, se cuentan palabras","El inglés ocupa más porque sus palabras son más cortas"], a: 0,
+      w: "El vocabulario se aprendió de un corpus donde dominaba el inglés: el español se parte en más trozos, y eso se paga en contexto y en precio." },
+    { id: "c0fa992", q: "¿Qué hace BPE para construir el vocabulario?",
+      o: ["Asigna un token a cada palabra del diccionario","Agrupa las palabras por su significado con embeddings","Parte de bytes y fusiona las parejas más frecuentes"], a: 2,
+      w: "Fusión tras fusión, lo frecuente acaba siendo un token y lo raro se escribe con varios trozos: nada queda fuera del vocabulario." },
+    { id: "c12eff0", q: "Las instrucciones de proyecto de tu agente tienen diez párrafos. ¿Por qué importa su longitud?",
+      o: ["Porque el modelo ignora todo lo que pase de un párrafo","Porque viajan en cada sesión y se pagan cada vez","Porque los embeddings no admiten textos largos de entrada"], a: 1,
+      w: "Lo que se carga siempre es un coste fijo multiplicado por cada conversación, en tokens y en contexto ocupado." },
+  ],
 };
