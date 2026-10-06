@@ -187,6 +187,26 @@ function validarCursosYRutas() {
 
 const MAXIMO_MISMA_POSICION = 45;
 const MINIMO_PARA_MEDIR_GRUPO = 12;
+const MAXIMO_CORRECTA_MAS_LARGA = 40;
+const resumenDeLongitud = [];
+
+function laCorrectaEsLaMasLarga(pregunta) {
+  const longitudes = (pregunta.o ?? []).map((opcion) => String(opcion).length);
+  const correcta = longitudes[pregunta.a];
+
+  return longitudes.filter((longitud) => longitud >= correcta).length === 1;
+}
+
+function avisarSiHaySesgoDeLongitud(nombre, masLargas, total) {
+  const porcentaje = Math.round((masLargas / total) * 100);
+
+  if (porcentaje <= MAXIMO_CORRECTA_MAS_LARGA) return;
+
+  aviso(
+    `${nombre}: la respuesta correcta es la opción más larga en un ${porcentaje}% de ${total} preguntas ` +
+      `(umbral ${MAXIMO_CORRECTA_MAS_LARGA}%). Se aprueba eligiendo la más larga: iguala los distractores.`
+  );
+}
 
 function avisarSiHaySesgo(nombre, posiciones, total, comoError) {
   if (total === 0) return;
@@ -208,6 +228,7 @@ function validarPreguntas(nombre, entradas, contexto) {
   const posiciones = {};
   const porGrupo = {};
   let total = 0;
+  let masLargas = 0;
 
   for (const [clave, preguntas] of Object.entries(entradas)) {
     if (!contexto.existe(clave)) error(`${nombre}: «${clave}» no corresponde a ${contexto.que}`);
@@ -219,7 +240,7 @@ function validarPreguntas(nombre, entradas, contexto) {
 
     const grupo = contexto.agrupaEn(clave);
 
-    porGrupo[grupo] ??= { posiciones: {}, total: 0 };
+    porGrupo[grupo] ??= { posiciones: {}, total: 0, masLargas: 0 };
 
     preguntas.forEach((pregunta, indice) => {
       const donde = `${nombre} «${clave}» #${indice}`;
@@ -235,6 +256,11 @@ function validarPreguntas(nombre, entradas, contexto) {
       posiciones[pregunta.a] = (posiciones[pregunta.a] ?? 0) + 1;
       porGrupo[grupo].posiciones[pregunta.a] = (porGrupo[grupo].posiciones[pregunta.a] ?? 0) + 1;
       porGrupo[grupo].total += 1;
+
+      if (laCorrectaEsLaMasLarga(pregunta)) {
+        masLargas += 1;
+        porGrupo[grupo].masLargas += 1;
+      }
     });
   }
 
@@ -246,9 +272,11 @@ function validarPreguntas(nombre, entradas, contexto) {
     if (datosDelGrupo.total < MINIMO_PARA_MEDIR_GRUPO) continue;
 
     avisarSiHaySesgo(`${nombre} «${grupo}»`, datosDelGrupo.posiciones, datosDelGrupo.total, true);
+    avisarSiHaySesgoDeLongitud(`${nombre} «${grupo}»`, datosDelGrupo.masLargas, datosDelGrupo.total);
   }
 
   avisarSiHaySesgo(nombre, posiciones, total, true);
+  resumenDeLongitud.push(`${nombre}: la correcta es la más larga en ${masLargas}/${total} (${Math.round((masLargas / total) * 100)}%)`);
 }
 
 /* ---------- 4b. Ponlo en práctica ----------
@@ -500,6 +528,8 @@ console.log(
     `${Object.values(checks).flat().length} de comprobación · ` +
     `${Object.values(practica).flat().length} retos\n`
 );
+
+console.log(`  Sesgo de longitud (umbral ${MAXIMO_CORRECTA_MAS_LARGA}%): ${resumenDeLongitud.join(" · ")}\n`);
 
 for (const mensaje of avisos) console.log(`  aviso  ${mensaje}`);
 for (const mensaje of errores) console.log(`  ERROR  ${mensaje}`);
