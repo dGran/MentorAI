@@ -15,8 +15,10 @@
 
   class FicheroInvalido extends Error {}
 
-  const VERSION = 1;
+  const VERSION = 2;
   const PREFIJO = "academia-";
+  const CLAVE_CAMBIOS = "academia-cambios";
+  const CLAVE_INDICE_SUBRAYADOS = "academia-highlights-index";
   const NO_VIAJAN = [
     "academia-offline-saved",
     "academia-offline-todo",
@@ -190,6 +192,56 @@
     return resultado;
   }
 
+  function fusionarCambios(mios, suyos) {
+    const resultado = {};
+
+    for (const fuente of [mios ?? {}, suyos ?? {}]) {
+      for (const [clave, elementos] of Object.entries(fuente)) {
+        const porElemento = { ...(resultado[clave] ?? {}) };
+
+        for (const [elemento, cambio] of Object.entries(elementos ?? {})) {
+          if ((cambio?.at ?? 0) <= (porElemento[elemento]?.at ?? -1)) continue;
+
+          porElemento[elemento] = cambio;
+        }
+
+        resultado[clave] = porElemento;
+      }
+    }
+
+    return resultado;
+  }
+
+  const estaBorrado = (cambiosDeLaClave, elemento) => cambiosDeLaClave[elemento]?.deleted === true;
+  const idDeSubrayado = (subrayado) => `${subrayado.seccion}|${subrayado.texto}|${subrayado.nth}`;
+
+  function quitarBorrados(clave, valor, cambiosDeLaClave) {
+    if (clave === "academia-reading") {
+      return Object.fromEntries(
+        Object.entries(valor ?? {}).filter(([slug, entrada]) => {
+          if (!estaBorrado(cambiosDeLaClave, slug)) return true;
+
+          return (entrada?.updatedAt ?? 0) > cambiosDeLaClave[slug].at;
+        })
+      );
+    }
+
+    if (!Array.isArray(valor)) return valor;
+
+    if (clave.startsWith("academia-highlights:")) {
+      return valor.filter((subrayado) => !estaBorrado(cambiosDeLaClave, idDeSubrayado(subrayado)));
+    }
+
+    return valor.filter((elemento) => !estaBorrado(cambiosDeLaClave, elemento));
+  }
+
+  function slugsConSubrayados() {
+    return clavesExportables()
+      .filter((clave) => clave.startsWith("academia-highlights:"))
+      .filter((clave) => (leerJson(clave) ?? []).length > 0)
+      .map((clave) => clave.slice("academia-highlights:".length));
+  }
+
   function fusionarClave(clave, mio, suyo) {
     if (clave === "academia-reading") return fusionarLectura(mio, suyo);
     if (clave === "academia-repaso") return fusionarRepaso(mio, suyo);
@@ -236,12 +288,23 @@
     }
 
     const antes = resumenDe(contenidoExportado().datos);
+    const cambios = fusionarCambios(leerJson(CLAVE_CAMBIOS), contenido.datos[CLAVE_CAMBIOS]);
+
+    escribirJson(CLAVE_CAMBIOS, cambios);
 
     for (const [clave, suyo] of Object.entries(contenido.datos)) {
-      if (!clave.startsWith(PREFIJO) || NO_VIAJAN.includes(clave)) continue;
+      if (!clave.startsWith(PREFIJO) || NO_VIAJAN.includes(clave) || clave === CLAVE_CAMBIOS) continue;
 
       escribirJson(clave, fusionarClave(clave, leerJson(clave), suyo));
     }
+
+    for (const clave of clavesExportables()) {
+      if (clave === CLAVE_CAMBIOS || !cambios[clave]) continue;
+
+      escribirJson(clave, quitarBorrados(clave, leerJson(clave), cambios[clave]));
+    }
+
+    escribirJson(CLAVE_INDICE_SUBRAYADOS, slugsConSubrayados());
 
     const despues = resumenDe(contenidoExportado().datos);
 
