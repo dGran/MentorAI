@@ -15,7 +15,16 @@
 
   const SAVED_KEY = "academia-offline-saved";
   const ALL_KEY = "academia-offline-todo";
-  const SHELL_PAGES = ["index.html", "cursos.html", "rutas.html", "articulos.html", "curso.html", "repaso.html"];
+  const SHELL_PAGES = [
+    "index.html",
+    "cursos.html",
+    "rutas.html",
+    "articulos.html",
+    "curso.html",
+    "repaso.html",
+    "perfil.html",
+    "offline.html",
+  ];
 
   const isSupported = () => "serviceWorker" in navigator && location.protocol !== "file:";
 

@@ -201,6 +201,7 @@
     { id: "cursos", label: "Cursos" },
     { id: "articulos", label: "Artículos" },
     { id: "repaso", label: "Repaso" },
+    { id: "perfil", label: "Perfil" },
     { id: "offline", label: "Sin conexión" },
   ];
 
