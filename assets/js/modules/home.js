@@ -127,7 +127,9 @@
       .sort((a, b) => String(b.date ?? "").localeCompare(String(a.date ?? "")))
       .slice(0, SHELF_LIMIT);
 
-    fillShelf("home-new", "Novedades", "Lo último que hemos publicado", ordered.map(miniCardHtml).join(""));
+    const cards = ordered.map((tutorial) => miniCardHtml(tutorial)).join("");
+
+    fillShelf("home-new", "Novedades", "Lo último que hemos publicado", cards);
   }
 
   function renderPopular(list) {
@@ -138,7 +140,9 @@
       return;
     }
 
-    fillShelf("home-popular", "Destacados", "Una buena puerta de entrada", popular.map(miniCardHtml).join(""));
+    const cards = popular.map((tutorial) => miniCardHtml(tutorial)).join("");
+
+    fillShelf("home-popular", "Destacados", "Una buena puerta de entrada", cards);
   }
 
   /* Primer curso empezado o por empezar que aún tenga lecciones pendientes. */
@@ -280,7 +284,7 @@
     );
 
     const resultados = [
-      ...enMetadatos.map(miniCardHtml),
+      ...enMetadatos.map((tutorial) => miniCardHtml(tutorial)),
       ...enContenido.map((tutorial) => miniCardHtml(tutorial, Search.fragmento(tutorial.slug, query))),
     ].join("");
 
