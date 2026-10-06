@@ -349,7 +349,7 @@ function validarHeroContraManifest() {
     const html = leer(fichero);
     const meta = html.match(/<div class="tutorial-meta">([\s\S]*?)<\/div>/)?.[1] ?? "";
     const minutos = Number(meta.match(/(\d+)\s*min\b/)?.[1]);
-    const nivel = meta.match(new RegExp(`(${NIVELES.join("|")})`, "i"))?.[1];
+    const nivel = meta.match(new RegExp(`\\b(${NIVELES.join("|")})\\b`, "i"))?.[1];
 
     if (minutos !== tutorial.minutes) {
       error(`${fichero}: el hero dice ${minutos} min y el manifest ${tutorial.minutes}`);
