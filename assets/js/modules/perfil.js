@@ -19,6 +19,8 @@
   const PREFIJO = "academia-";
   const CLAVE_CAMBIOS = "academia-cambios";
   const CLAVE_INDICE_SUBRAYADOS = "academia-highlights-index";
+  const CLAVE_LECTURA = "academia-reading";
+  const PREFIJO_SUBRAYADOS = "academia-highlights:";
   const NO_VIAJAN = [
     "academia-offline-saved",
     "academia-offline-todo",
@@ -192,15 +194,24 @@
     return resultado;
   }
 
+  function ganaElCambio(nuevo, actual) {
+    if (!actual) return true;
+    if (nuevo.at !== actual.at) return nuevo.at > actual.at;
+
+    return nuevo.deleted === true && actual.deleted !== true;
+  }
+
   function fusionarCambios(mios, suyos) {
     const resultado = {};
+    const caducan = Date.now() - (MentorAI.CHANGE_RETENTION_MS ?? Infinity);
 
     for (const fuente of [mios ?? {}, suyos ?? {}]) {
       for (const [clave, elementos] of Object.entries(fuente)) {
         const porElemento = { ...(resultado[clave] ?? {}) };
 
         for (const [elemento, cambio] of Object.entries(elementos ?? {})) {
-          if ((cambio?.at ?? 0) <= (porElemento[elemento]?.at ?? -1)) continue;
+          if (typeof cambio?.at !== "number" || cambio.at < caducan) continue;
+          if (!ganaElCambio(cambio, porElemento[elemento])) continue;
 
           porElemento[elemento] = cambio;
         }
@@ -216,7 +227,7 @@
   const idDeSubrayado = (subrayado) => `${subrayado.seccion}|${subrayado.texto}|${subrayado.nth}`;
 
   function quitarBorrados(clave, valor, cambiosDeLaClave) {
-    if (clave === "academia-reading") {
+    if (clave === CLAVE_LECTURA) {
       return Object.fromEntries(
         Object.entries(valor ?? {}).filter(([slug, entrada]) => {
           if (!estaBorrado(cambiosDeLaClave, slug)) return true;
@@ -228,7 +239,7 @@
 
     if (!Array.isArray(valor)) return valor;
 
-    if (clave.startsWith("academia-highlights:")) {
+    if (clave.startsWith(PREFIJO_SUBRAYADOS)) {
       return valor.filter((subrayado) => !estaBorrado(cambiosDeLaClave, idDeSubrayado(subrayado)));
     }
 
@@ -236,18 +247,21 @@
   }
 
   function slugsConSubrayados() {
-    return clavesExportables()
-      .filter((clave) => clave.startsWith("academia-highlights:"))
+    const conSubrayados = clavesExportables()
+      .filter((clave) => clave.startsWith(PREFIJO_SUBRAYADOS))
       .filter((clave) => (leerJson(clave) ?? []).length > 0)
-      .map((clave) => clave.slice("academia-highlights:".length));
+      .map((clave) => clave.slice(PREFIJO_SUBRAYADOS.length));
+    const ordenPrevio = (leerJson(CLAVE_INDICE_SUBRAYADOS) ?? []).filter((slug) => conSubrayados.includes(slug));
+
+    return [...ordenPrevio, ...conSubrayados.filter((slug) => !ordenPrevio.includes(slug))];
   }
 
   function fusionarClave(clave, mio, suyo) {
-    if (clave === "academia-reading") return fusionarLectura(mio, suyo);
+    if (clave === CLAVE_LECTURA) return fusionarLectura(mio, suyo);
     if (clave === "academia-repaso") return fusionarRepaso(mio, suyo);
     if (clave === "academia-checks") return fusionarChecks(mio, suyo);
     if (clave === "academia-practica") return fusionarPractica(mio, suyo);
-    if (clave.startsWith("academia-highlights:")) return fusionarSubrayados(mio, suyo);
+    if (clave.startsWith(PREFIJO_SUBRAYADOS)) return fusionarSubrayados(mio, suyo);
     if (clave.startsWith("academia-quiz-")) return fusionarExamen(mio, suyo);
     if (clave.startsWith("academia-examen-ruta-")) return fusionarExamen(mio, suyo);
 
@@ -295,7 +309,10 @@
     for (const [clave, suyo] of Object.entries(contenido.datos)) {
       if (!clave.startsWith(PREFIJO) || NO_VIAJAN.includes(clave) || clave === CLAVE_CAMBIOS) continue;
 
-      escribirJson(clave, fusionarClave(clave, leerJson(clave), suyo));
+      const borrados = cambios[clave] ?? {};
+      const mio = quitarBorrados(clave, leerJson(clave), borrados);
+
+      escribirJson(clave, fusionarClave(clave, mio, quitarBorrados(clave, suyo, borrados)));
     }
 
     for (const clave of clavesExportables()) {
@@ -315,13 +332,13 @@
 
   function resumenDe(datos) {
     const subrayados = Object.entries(datos)
-      .filter(([clave]) => clave.startsWith("academia-highlights:"))
+      .filter(([clave]) => clave.startsWith(PREFIJO_SUBRAYADOS))
       .reduce((suma, [, lista]) => suma + (Array.isArray(lista) ? lista.length : 0), 0);
 
     return {
       completados: (datos["academia-progress"] ?? []).length,
       marcadores: (datos["academia-bookmarks"] ?? []).length,
-      enCurso: Object.keys(datos["academia-reading"] ?? {}).length,
+      enCurso: Object.keys(datos[CLAVE_LECTURA] ?? {}).length,
       repaso: Object.keys(datos["academia-repaso"] ?? {}).length,
       comprobaciones: Object.keys(datos["academia-checks"] ?? {}).length,
       subrayados,

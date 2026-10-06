@@ -42,8 +42,11 @@ function syncInto(device, remoteEntries, version = 2) {
   device.MentorAI.Perfil.importar(JSON.stringify({ version, datos: remoteEntries }));
 }
 
-const deleted = (at) => ({ at, deleted: true });
-const added = (at) => ({ at, deleted: false });
+const NOW = Date.now();
+const at = (offset) => NOW - 1000 + offset;
+const deleted = (offset) => ({ at: at(offset), deleted: true });
+const added = (offset) => ({ at: at(offset), deleted: false });
+const expired = () => ({ at: 1, deleted: true });
 
 test("a bookmark removed locally does not come back after syncing twice", () => {
   const device = loadDevice({
@@ -102,7 +105,7 @@ test("cleared reading progress is not restored by an older remote entry", () => 
     [CHANGES_KEY]: { "academia-reading": { regex: deleted(300) } },
   });
 
-  syncInto(device, { "academia-reading": { regex: { percent: 80, updatedAt: 100 } } });
+  syncInto(device, { "academia-reading": { regex: { percent: 80, updatedAt: at(100) } } });
 
   assert.deepEqual(device.localStorage.read("academia-reading"), {});
 });
@@ -113,9 +116,9 @@ test("reading progress newer than the clear survives", () => {
     [CHANGES_KEY]: { "academia-reading": { regex: deleted(300) } },
   });
 
-  syncInto(device, { "academia-reading": { regex: { percent: 40, updatedAt: 400 } } });
+  syncInto(device, { "academia-reading": { regex: { percent: 40, updatedAt: at(400) } } });
 
-  assert.deepEqual(device.localStorage.read("academia-reading"), { regex: { percent: 40, updatedAt: 400 } });
+  assert.deepEqual(device.localStorage.read("academia-reading"), { regex: { percent: 40, updatedAt: at(400) } });
 });
 
 test("adding on one device after the other removed wins", () => {
@@ -151,6 +154,60 @@ test("an export from the previous version is still imported", () => {
   assert.deepEqual(device.localStorage.read("academia-bookmarks"), ["git", "regex"]);
 });
 
+test("local removals also apply to an export from the previous version", () => {
+  const device = loadDevice({
+    "academia-bookmarks": ["git"],
+    [CHANGES_KEY]: { "academia-bookmarks": { regex: deleted(500) } },
+  });
+
+  syncInto(device, { "academia-bookmarks": ["git", "regex"] }, 1);
+
+  assert.deepEqual(device.localStorage.read("academia-bookmarks"), ["git"]);
+});
+
+test("reading reset and read again does not get the old percentage back", () => {
+  const device = loadDevice({
+    "academia-reading": { regex: { percent: 10, updatedAt: at(400) } },
+    [CHANGES_KEY]: { "academia-reading": { regex: deleted(300) } },
+  });
+
+  syncInto(device, { "academia-reading": { regex: { percent: 80, updatedAt: at(100) } } });
+
+  assert.deepEqual(device.localStorage.read("academia-reading"), { regex: { percent: 10, updatedAt: at(400) } });
+});
+
+test("a removal and an addition at the same instant converge on the removal", () => {
+  const first = loadDevice({ "academia-bookmarks": [], [CHANGES_KEY]: { "academia-bookmarks": { x: deleted(500) } } });
+  const second = loadDevice({ "academia-bookmarks": ["x"], [CHANGES_KEY]: { "academia-bookmarks": { x: added(500) } } });
+
+  syncInto(first, { "academia-bookmarks": ["x"], [CHANGES_KEY]: { "academia-bookmarks": { x: added(500) } } });
+  syncInto(second, { "academia-bookmarks": [], [CHANGES_KEY]: { "academia-bookmarks": { x: deleted(500) } } });
+
+  assert.deepEqual(first.localStorage.read("academia-bookmarks"), []);
+  assert.deepEqual(second.localStorage.read("academia-bookmarks"), []);
+});
+
+test("expired changes are purged when merging too", () => {
+  const device = loadDevice({ [CHANGES_KEY]: { "academia-bookmarks": { viejo: expired() } } });
+
+  syncInto(device, { [CHANGES_KEY]: { "academia-bookmarks": { otro: expired() } } });
+
+  assert.deepEqual(device.localStorage.read(CHANGES_KEY), { "academia-bookmarks": {} });
+});
+
+test("the highlights index keeps its order after an import", () => {
+  const one = { seccion: "a", texto: "uno", nth: 0 };
+  const device = loadDevice({
+    "academia-highlights:zeta": [one],
+    "academia-highlights:alfa": [one],
+    "academia-highlights-index": ["zeta", "alfa"],
+  });
+
+  syncInto(device, { "academia-highlights:beta": [one] });
+
+  assert.deepEqual(device.localStorage.read("academia-highlights-index"), ["zeta", "alfa", "beta"]);
+});
+
 test("toggling a bookmark off records the removal", () => {
   const device = loadDevice({ "academia-bookmarks": ["regex"] });
 
@@ -174,7 +231,7 @@ test("resetting progress, clearing reading and removing highlights record their 
   const highlight = { seccion: "idea", texto: "uno", nth: 0 };
   const device = loadDevice({
     "academia-progress": ["regex"],
-    "academia-reading": { regex: { percent: 50, updatedAt: 1 } },
+    "academia-reading": { regex: { percent: 50, updatedAt: at(1) } },
     "academia-highlights:regex": [highlight],
     "academia-highlights-index": ["regex"],
   });
@@ -193,7 +250,7 @@ test("resetting progress, clearing reading and removing highlights record their 
 test("changes older than the retention window are purged when recording", () => {
   const device = loadDevice({
     "academia-bookmarks": ["regex"],
-    [CHANGES_KEY]: { "academia-bookmarks": { viejo: deleted(1) } },
+    [CHANGES_KEY]: { "academia-bookmarks": { viejo: expired() } },
   });
 
   device.MentorAI.Bookmarks.toggle("regex");

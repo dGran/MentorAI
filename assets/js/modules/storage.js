@@ -37,6 +37,8 @@
   const CHANGES_KEY = "academia-cambios";
   const CHANGE_RETENTION_MS = 180 * 24 * 60 * 60 * 1000;
 
+  MentorAI.CHANGE_RETENTION_MS = CHANGE_RETENTION_MS;
+
   function withoutExpiredChanges(changes, now) {
     const kept = {};
 
