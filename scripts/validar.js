@@ -188,6 +188,7 @@ function validarCursosYRutas() {
 const MAXIMO_MISMA_POSICION = 45;
 const MINIMO_PARA_MEDIR_GRUPO = 12;
 const MAXIMO_CORRECTA_MAS_LARGA = 40;
+const MINIMO_PARA_MEDIR_LONGITUD = 5;
 const resumenDeLongitud = [];
 
 function laCorrectaEsLaMasLarga(pregunta) {
@@ -272,11 +273,18 @@ function validarPreguntas(nombre, entradas, contexto) {
     if (datosDelGrupo.total < MINIMO_PARA_MEDIR_GRUPO) continue;
 
     avisarSiHaySesgo(`${nombre} «${grupo}»`, datosDelGrupo.posiciones, datosDelGrupo.total, true);
+  }
+
+  for (const [grupo, datosDelGrupo] of Object.entries(porGrupo)) {
+    if (datosDelGrupo.total < MINIMO_PARA_MEDIR_LONGITUD) continue;
+
     avisarSiHaySesgoDeLongitud(`${nombre} «${grupo}»`, datosDelGrupo.masLargas, datosDelGrupo.total);
   }
 
   avisarSiHaySesgo(nombre, posiciones, total, true);
-  resumenDeLongitud.push(`${nombre}: la correcta es la más larga en ${masLargas}/${total} (${Math.round((masLargas / total) * 100)}%)`);
+  if (total > 0) {
+    resumenDeLongitud.push(`${nombre}: la correcta es la más larga en ${masLargas}/${total} (${Math.round((masLargas / total) * 100)}%)`);
+  }
 }
 
 /* ---------- 4b. Ponlo en práctica ----------
