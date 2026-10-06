@@ -1,6 +1,6 @@
 # Tanda 2026-10-06 — los P0 de la auditoría
 
-Estado: **pausada a las 19:49** por el límite de 60 minutos: 6 de 8 P0 en producción; #3 y #5 quedan desbloqueados y sin empezar. Registro al final.
+Estado: **en curso, segunda parte** (20:29 → 21:29). La primera parte se pausó a las 19:49 con 6 de 8 P0 en producción. Registro al final.
 
 ## 1. Estado de partida (medido 2026-10-06 19:00 +02:00)
 
@@ -104,3 +104,9 @@ Cada merge se verificó en Pages (build del SHA, `sw.js` con su `VERSION`, conte
 ### Estado del backlog
 
 P0 restantes: #3 y #5, en Backlog y tomables. P1 a P3, sin tocar.
+
+## Ampliación (20:29)
+
+> «¿Amplío otros 60 minutos para cerrar el #3 y el #5, con el mismo automerge?» → **«si amplia»**
+
+Mismo contrato: automerge de lo que pase review con contexto fresco, QA y gates. Límite nuevo: 21:29. Orden: #5 (S, construye sobre #4) y luego #3 (M, construye sobre los tests de #2). Ficheros disjuntos (`sw.js`/`offline.js` frente a `perfil.js`/`storage.js`), así que pueden solaparse en fases distintas; `VERSION` se fija al rebasar antes de cada merge.
