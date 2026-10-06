@@ -104,6 +104,18 @@ Cada una costó una depuración; están aquí para no repetirlas.
   el validador; llegó a haber cinco tutoriales rotos así.
 - **`pkill -f "patrón"` se mata a sí mismo** si el patrón aparece en la propia
   línea de comandos del shell.
+- **Dos PRs que suben `VERSION` al mismo valor se fusionan sin conflicto.** Git
+  ve el mismo cambio en los dos lados y no avisa: el segundo despliega su shell
+  con la versión que ya tenía el primero. Pasó en la tanda del 2026-10-06 (tres
+  PRs con `v13`). La versión se fija **al rebasar sobre `main` justo antes de
+  mergear**: la de `main` más uno.
+- **`verificar-offline.js` usa puertos fijos (8899 y CDP 9336).** Dos ejecuciones
+  a la vez se pisan y fallan con errores que parecen del código (`Cannot read
+  properties of null`). Se ejecuta en serie, nunca desde dos sesiones a la vez.
+- **Un dato de documentación volátil se contrasta en la fuente, no en un
+  resumen.** Un subagente resumió mal los permisos de Claude Code («un deny de
+  `Read` no cubre `cat` por Bash») y la lección llegó a escribirse así; lo cazó
+  el review leyendo la página oficial.
 
 ## Rutina pendiente: revisión de frescura
 
@@ -125,7 +137,9 @@ el resto del catálogo (SQL, OOP, Linux…) envejece a décadas, no a meses.
 | `node scripts/verificar-offline.js` | Comprueba el offline con el servidor apagado |
 | `node --test 'scripts/tests/**/*.test.js'` | Tests de la lógica pura (`node:test` + `vm`, sin dependencias). Corre en CI |
 
-Al tocar `sw.js` o los módulos del shell, **subir `VERSION`** (va por `v10`).
+Al tocar `sw.js` o los módulos del shell, **subir `VERSION`** (va por `v18`). La
+caché de contenido guardado (`academia-content`) ya no lleva versión: un
+despliegue no borra lo que el lector guardó para viajar.
 
 ## El archivo
 

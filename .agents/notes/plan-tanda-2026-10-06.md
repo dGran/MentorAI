@@ -1,6 +1,6 @@
 # Tanda 2026-10-06 — los P0 de la auditoría
 
-Estado: **en curso**. Contrato escrito antes de tocar código; el cierre se añade al final.
+Estado: **pausada a las 19:49** por el límite de 60 minutos: 6 de 8 P0 en producción; #3 y #5 quedan desbloqueados y sin empezar. Registro al final.
 
 ## 1. Estado de partida (medido 2026-10-06 19:00 +02:00)
 
@@ -72,3 +72,35 @@ independiente):
 
 Mitigación: cada PR enlaza las evidencias de QA por SHA (capturas y salidas) para repaso a posteriori.
 Review con subagente de contexto fresco (issue + diff + rules, sin la conversación de implementación).
+
+## Registro (19:00 → 19:49)
+
+| Issue | PR | Merge | Review (subagente, contexto fresco) | QA |
+|---|---|---|---|---|
+| #2 fusión sin pisar | #40 | `92a8960` | aprobado; 2 menores arreglados (valor corrupto, test de la rama por defecto) | 4/4, reproducido en main |
+| #1 descripciones | #41 | `9ebafa6` | aprobado; misma causa en el buscador incluida | 2/2, reproducido en main |
+| #6 Perfil en drawer | #42 | `2bcaaff` | aprobado; el check detecta también entradas que sobran | 3/3, reproducido en main |
+| #8 retos y experimento | #44 | `27a85ec` | aprobado; cifra «4×» suavizada a «entre dos y cuatro» | 5/5, reproducido en main |
+| #4 caché offline | #43 | `2e69254` | **bloqueante**: la caché sin versión congelaba lo guardado → network-first con timeout de 3 s; dos rondas de delta | 3/3, verificador ampliado (15 checks) |
+| #7 hooks y deny | #45 | `ef963b4` | **cambios pedidos**: el issue afirmaba algo falso sobre `deny` (enmienda en #7) | 4/4, reproducido en main |
+
+Cada merge se verificó en Pages (build del SHA, `sw.js` con su `VERSION`, contenido nuevo servido). Producción en `v18`.
+
+**Fuera por tiempo:** #3 (lápidas en el sync, M) y #5 («Guardado» honesto, S). Ya no tienen bloqueantes.
+
+### Desviaciones del contrato
+
+- **Tablero sin GraphQL de ~19:15 a ~19:45.** Un límite secundario de GitHub bloqueó GraphQL (el contador decía 5000 libres). PRs, comentarios, merges y asignaciones se hicieron por REST. El gate de `/deploy` «Status = Ready for prod» se sustituyó por su evidencia (comentarios de review y QA aprobados, checks verdes, PR `clean`). Los movimientos pendientes se aplicaron al volver GraphQL. Causa probable: `gh project field-list` dos veces por movimiento, más los subagentes.
+- **Un PR se abrió con `verificar-offline.js` en rojo** (#41). Era la colisión de puertos con el revisor; repetido en serie, verde.
+
+### Lecciones
+
+- `VERSION` colisiona en silencio entre PRs paralelos → trampa en `estado.md`.
+- `verificar-offline.js` no admite ejecuciones simultáneas → trampa en `estado.md`.
+- Los datos de documentación volátil se contrastan en la fuente primaria → trampa en `estado.md`.
+- Review con subagente de contexto fresco: encontró 1 bloqueante real (#43) y 1 error de contenido heredado del issue (#45). Ninguno lo habría visto quien escribió el código.
+- Propuesta para agent-flow (no aplicada): los ids de `Status` y `Priority` se leen una vez por sesión, no en cada movimiento. El preflight dice «nunca se asumen», pero leerlos dos veces por movimiento agotó GraphQL.
+
+### Estado del backlog
+
+P0 restantes: #3 y #5, en Backlog y tomables. P1 a P3, sin tocar.
