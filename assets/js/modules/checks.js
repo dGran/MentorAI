@@ -57,6 +57,7 @@
       const order = shuffled(question.o.map((_option, index) => index));
 
       return {
+        id: question.id,
         text: question.q,
         options: order.map((original) => question.o[original]),
         correct: order.indexOf(question.a),
@@ -130,7 +131,7 @@
       item.classList.add("is-answered");
       results[index] = chosen === correct;
 
-      MentorAI.Repaso?.record(`c:${slug}:${index}`, chosen === correct);
+      MentorAI.Repaso?.record(`c:${slug}:${prepared[index].id}`, chosen === correct);
 
       if (!results.includes(null)) {
         saveResult(slug, results);
