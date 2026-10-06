@@ -1,6 +1,6 @@
 # Tanda 2026-10-06 — los P0 de la auditoría
 
-Estado: **en curso, segunda parte** (20:29 → 21:29). La primera parte se pausó a las 19:49 con 6 de 8 P0 en producción. Registro al final.
+Estado: **cerrada a las 20:56**. Los 8 P0 de la auditoría están mergeados, desplegados en Pages y en Done.
 
 ## 1. Estado de partida (medido 2026-10-06 19:00 +02:00)
 
@@ -110,3 +110,21 @@ P0 restantes: #3 y #5, en Backlog y tomables. P1 a P3, sin tocar.
 > «¿Amplío otros 60 minutos para cerrar el #3 y el #5, con el mismo automerge?» → **«si amplia»**
 
 Mismo contrato: automerge de lo que pase review con contexto fresco, QA y gates. Límite nuevo: 21:29. Orden: #5 (S, construye sobre #4) y luego #3 (M, construye sobre los tests de #2). Ficheros disjuntos (`sw.js`/`offline.js` frente a `perfil.js`/`storage.js`), así que pueden solaparse en fases distintas; `VERSION` se fija al rebasar antes de cada merge.
+
+## Registro de la segunda parte (20:29 → 20:56)
+
+| Issue | PR | Merge | Review (subagente, contexto fresco) | QA |
+|---|---|---|---|---|
+| #3 lápidas en el sync | #47 | `7b9f954` | aprobado con 8 menores; arreglados M1 (la lectura reiniciada recuperaba el % viejo), M2 (purga también al fusionar), M3 (empate de fecha → gana la baja), M5, M7 y M8 | 4/4: desmarcar → importar dos veces → sigue sin marcar (en main vuelve) |
+| #5 guardado honesto | #46 | `6737222` | **3 bloqueantes**: un `SAVE_DONE` atrasado resolvía el reintento, la N salía de contadores y no de la caché, y el aviso no se anunciaba (INT-10) → `requestId`, `countMissing`, región `role="status"`; después, timeout de 30 s por página (cuerpo incluido) | 3/3: sin servidor «Faltan 3 de 3 · Reintentar» (en main, silencio); worker mudo sale a los 45 s (en main, colgado) |
+
+Producción en `v20`.
+
+### Lecciones de la segunda parte
+
+- El review con contexto fresco volvió a ser decisivo: 3 bloqueantes en #46, todos medidos con sondas propias del revisor.
+- Los tests con instantes fijos (p. ej. `at: 200`) se rompen en cuanto existe una purga por antigüedad: los instantes de test van relativos a `Date.now()`.
+
+### Estado del backlog
+
+P0 cerrados (8/8). P1 a P3 en Backlog, sin tocar. Siguiente candidato natural: #9 a #12 (navegación y accesibilidad), o #19 y #20 antes de las épicas de cursos.

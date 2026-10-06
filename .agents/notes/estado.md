@@ -112,6 +112,11 @@ Cada una costó una depuración; están aquí para no repetirlas.
 - **`verificar-offline.js` usa puertos fijos (8899 y CDP 9336).** Dos ejecuciones
   a la vez se pisan y fallan con errores que parecen del código (`Cannot read
   properties of null`). Se ejecuta en serie, nunca desde dos sesiones a la vez.
+- **El sync resuelve los borrados por fecha, con dos límites asumidos.** Las
+  bajas se guardan en `academia-cambios` y se purgan a los 180 días: un
+  dispositivo que lleve más tiempo sin sincronizar puede resucitar lo borrado.
+  Y la fecha es el reloj de cada dispositivo: uno con el reloj adelantado gana
+  los empates y purga antes de tiempo.
 - **Un dato de documentación volátil se contrasta en la fuente, no en un
   resumen.** Un subagente resumió mal los permisos de Claude Code («un deny de
   `Read` no cubre `cat` por Bash») y la lección llegó a escribirse así; lo cazó
@@ -137,7 +142,7 @@ el resto del catálogo (SQL, OOP, Linux…) envejece a décadas, no a meses.
 | `node scripts/verificar-offline.js` | Comprueba el offline con el servidor apagado |
 | `node --test 'scripts/tests/**/*.test.js'` | Tests de la lógica pura (`node:test` + `vm`, sin dependencias). Corre en CI |
 
-Al tocar `sw.js` o los módulos del shell, **subir `VERSION`** (va por `v18`). La
+Al tocar `sw.js` o los módulos del shell, **subir `VERSION`** (va por `v20`). La
 caché de contenido guardado (`academia-content`) ya no lleva versión: un
 despliegue no borra lo que el lector guardó para viajar.
 
