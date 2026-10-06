@@ -2805,4 +2805,28 @@ window.MENTORAI_CHECKS = {
       o: ["Porque usa una versión más grande y entrenada del modelo","Porque el dato está delante en el contexto, no en su memoria","Porque las herramientas bajan la temperatura del muestreo del modelo"], a: 1,
       w: "La alucinación aparece cuando el dato sale de memoria; con el fichero o el test en el contexto, la respuesta se apoya en algo real." },
   ],
+
+  "ag-por-que-un-metodo": [
+    { id: "c5ff0ca", q: "El mismo agente implementa un cambio y después lo revisa en la misma sesión. ¿Qué riesgo introduce?",
+      o: ["Autocertificación: revisa con las suposiciones de quien lo escribió","Ninguno, porque el modelo es el mismo y ya conoce a fondo el cambio que hizo","Que el contexto se llene y la revisión salga más cara de la cuenta"], a: 0,
+      w: "Quien escribe arrastra su anclaje a la revisión. Un método separa la revisión en otra sesión o en otro agente." },
+    { id: "c30072d", q: "La norma «los controladores de Symfony no contienen lógica de negocio». ¿En qué capa va?",
+      o: ["En el método compartido, porque vale para cualquier proyecto","En las preferencias personales de quien la propone, en su máquina","En un paquete del stack, que adoptan los proyectos que lo usan"], a: 2,
+      w: "Si menciona un framework no es del núcleo: va al paquete de ese stack, y cada proyecto decide si lo adopta." },
+    { id: "cad8803", q: "El paquete de convenciones prohíbe algo que tu proyecto necesita hacer por una buena razón. ¿Qué haces?",
+      o: ["Lo ignoras en silencio y confías en que el revisor lo entienda","Escribes una excepción en el proyecto, con el ID de la norma y el porqué","Borras la norma del paquete compartido para todos los proyectos que lo usan"], a: 1,
+      w: "El proyecto manda, pero de forma explícita: con el identificador, el agente sabe qué no aplica y el revisor no lo marca como fallo." },
+  ],
+
+  "ag-como-lee-el-agente": [
+    { id: "c08602a", q: "Una norma de las entidades del dominio se incumple a menudo aunque está en un documento enlazado desde las rules. ¿Qué canal la arregla mejor?",
+      o: ["Un recordatorio que entre al editar ficheros de entidades","Copiarla entera en las rules del proyecto, por si acaso","Repetirla en la descripción de todas las skills del método"], a: 0,
+      w: "Bajo demanda depende de que el agente lea; al editar entra justo cuando importa, con garantía y sin coste fijo." },
+    { id: "cac8be9", q: "¿Por qué conviene que las descripciones de las skills sean cortas?",
+      o: ["Porque el agente no lee descripciones de más de una línea","Porque viajan en todas las sesiones aunque la skill no se use","Porque una descripción larga desactiva el cuerpo de la skill"], a: 1,
+      w: "El cuerpo solo entra al usarse, pero la descripción se paga siempre: es parte del impuesto fijo de cada sesión." },
+    { id: "ce7e8af", q: "La misma norma aparece copiada en las rules, en una skill y en un hook. ¿Qué problema anticipa?",
+      o: ["Ninguno: cuantas más copias, más probable es que se cumpla","Que el hook deje de ejecutarse cuando la norma ya está en las rules","Que las copias deriven y el agente siga la que tenga más cerca"], a: 2,
+      w: "Una norma, un hogar: las demás piezas apuntan o recuerdan, nunca copian, para que no puedan contradecirse." },
+  ],
 };
