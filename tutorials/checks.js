@@ -2775,4 +2775,19 @@ window.MENTORAI_CHECKS = {
       o: ["La contrastas con la documentación de la versión que usas","La aplicas: si lo dice tan seguro es porque lo sabe","Le preguntas si está seguro y aceptas su segunda respuesta"], a: 0,
       w: "La seguridad del tono no es evidencia, y lo reciente puede caer después de su fecha de corte." },
   ],
+
+  "llm-muestreo": [
+    { id: "cc0fa11", q: "Bajas la temperatura casi a cero. ¿Qué pasa con la distribución de probabilidades?",
+      o: ["El token favorito se queda con casi toda la probabilidad","Todos los tokens pasan a tener exactamente la misma probabilidad","El modelo deja de calcular logits y responde de memoria"], a: 0,
+      w: "Dividir los logits por un número pequeño agranda las diferencias: el favorito domina y la salida se vuelve conservadora." },
+    { id: "c5b640a", q: "Con temperatura cero, el mismo prompt da a veces dos respuestas distintas. ¿Por qué?",
+      o: ["Porque la temperatura cero solo se aplica al primer token de la respuesta","Porque el proveedor añade ruido aleatorio a propósito en cada petición","Porque la aritmética en paralelo cambia decimales que deciden empates"], a: 2,
+      w: "La suma en coma flotante no es asociativa: el orden de cálculo en la GPU y el lote cambian los últimos decimales." },
+    { id: "c8407b9", q: "Un proceso automático necesita mañana el mismo resultado que hoy. ¿Qué haces?",
+      o: ["Fijas la temperatura a cero y vuelves a llamar al modelo","Guardas el resultado de hoy y lo reutilizas mañana","Repites la llamada hasta que salga igual que la de hoy"], a: 1,
+      w: "La reproducibilidad no se compra con un parámetro: lo que debe repetirse se guarda o se calcula con código." },
+    { id: "ceb6087", q: "¿Qué hace top-p antes de elegir el siguiente token?",
+      o: ["Descarta los tokens improbables y sortea entre los que suman p","Elige siempre el token con la probabilidad más alta de todas","Multiplica las probabilidades por p para que la salida sea corta"], a: 0,
+      w: "Recorta la cola de opciones absurdas sin volver rígida la respuesta: sortea solo entre los más probables." },
+  ],
 };

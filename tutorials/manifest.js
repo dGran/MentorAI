@@ -4305,4 +4305,19 @@ window.ACADEMIA_TUTORIALS = [
     status: "published",
     date: "2026-10-06",
   },
+  {
+    slug: "llm-muestreo",
+    title: "Muestreo: por qué la misma pregunta da dos respuestas",
+    description:
+      "De las puntuaciones del modelo a la palabra elegida: logits, softmax, temperatura y top-p. Por qué ni con temperatura cero se repite la salida, qué parámetros fijan ya los proveedores y cómo diseñar sistemas que no dependan de que el modelo repita.",
+    href: "tutorials/llm-muestreo.html",
+    categories: ["ia"],
+    topic: "La IA por dentro",
+    tags: ["LLM", "Muestreo", "Temperatura"],
+    level: "Intermedio",
+    minutes: 12,
+    icon: "signal",
+    status: "published",
+    date: "2026-10-06",
+  },
 ];
