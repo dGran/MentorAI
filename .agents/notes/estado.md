@@ -123,6 +123,7 @@ el resto del catálogo (SQL, OOP, Linux…) envejece a décadas, no a meses.
 | `node scripts/validar.js` | Valida el catálogo entero. Corre en CI |
 | `node scripts/generar-indice.js` | Regenera el índice de búsqueda tras tocar tutoriales |
 | `node scripts/verificar-offline.js` | Comprueba el offline con el servidor apagado |
+| `node --test 'scripts/tests/**/*.test.js'` | Tests de la lógica pura (`node:test` + `vm`, sin dependencias). Corre en CI |
 
 Al tocar `sw.js` o los módulos del shell, **subir `VERSION`** (va por `v10`).
 
