@@ -207,6 +207,8 @@
 
   const drawerThemeIcon = () => (currentTheme() === "dark" ? SUN_SVG : MOON_SVG);
 
+  const DRAWER_ID = "nav-drawer";
+
   function initMobileNav() {
     const navActions = document.querySelector(".nav__actions");
 
@@ -218,14 +220,18 @@
     const prefix = pathname.includes("/tutorials/") ? "../" : "";
 
     const enlaces = PAGES.map(({ id, label }) => {
-      const activa = id === page || (isRoot && id === "index") ? " is-active" : "";
+      const isCurrent = id === page || (isRoot && id === "index");
+      const className = isCurrent ? "nav-drawer__link is-active" : "nav-drawer__link";
+      const ariaCurrent = isCurrent ? ' aria-current="page"' : "";
 
-      return `<a class="nav-drawer__link${activa}" href="${prefix}${id}.html">${label}</a>`;
+      return `<a class="${className}"${ariaCurrent} href="${prefix}${id}.html">${label}</a>`;
     }).join("");
 
     const burger = document.createElement("button");
     burger.className = "icon-btn nav__burger";
     burger.setAttribute("aria-label", "Menú");
+    burger.setAttribute("aria-expanded", "false");
+    burger.setAttribute("aria-controls", DRAWER_ID);
     burger.innerHTML = BURGER_SVG;
     navActions.appendChild(burger);
 
@@ -234,6 +240,11 @@
 
     const drawer = document.createElement("div");
     drawer.className = "nav-drawer";
+    drawer.id = DRAWER_ID;
+    drawer.setAttribute("role", "dialog");
+    drawer.setAttribute("aria-modal", "true");
+    drawer.setAttribute("aria-label", "Menú de navegación");
+    drawer.inert = true;
     drawer.innerHTML = `<div class="nav-drawer__head">
         <span class="nav-drawer__title">MentorAI</span>
         <div class="nav-drawer__head-actions">
@@ -245,15 +256,55 @@
 
     document.body.append(backdrop, drawer);
 
+    const focusables = () => [...drawer.querySelectorAll("a[href], button")];
+
     const setOpen = (isOpen) => {
       drawer.classList.toggle("is-open", isOpen);
       backdrop.classList.toggle("is-open", isOpen);
+      drawer.inert = !isOpen;
+      burger.setAttribute("aria-expanded", String(isOpen));
       document.body.style.overflow = isOpen ? "hidden" : "";
+
+      if (isOpen) {
+        requestAnimationFrame(() => drawer.querySelector(".nav-drawer__link")?.focus());
+        return;
+      }
+
+      burger.focus();
+    };
+
+    const isOpen = () => drawer.classList.contains("is-open");
+
+    const keepFocusInside = (event) => {
+      const items = focusables();
+      const first = items[0];
+      const last = items[items.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+        return;
+      }
+
+      if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
 
     burger.addEventListener("click", () => setOpen(true));
     backdrop.addEventListener("click", () => setOpen(false));
     drawer.querySelector(".nav-drawer__close").addEventListener("click", () => setOpen(false));
+    document.addEventListener("keydown", (event) => {
+      if (!isOpen()) return;
+
+      if (event.key === "Escape") {
+        setOpen(false);
+        return;
+      }
+
+      if (event.key === "Tab") keepFocusInside(event);
+    });
 
     const themeToggle = drawer.querySelector(".nav-drawer__theme-toggle");
 
