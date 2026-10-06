@@ -303,14 +303,9 @@ function saveCourse(slug, urls, client, requestId) {
       return urls
         .reduce(function (chain, url) {
           return chain.then(function () {
-            return fetchWithTimeout(url)
-              .then(function (response) {
-                if (!response.ok) {
-                  failed++;
-                  return;
-                }
-
-                return cache.put(url, response);
+            return saveWithTimeout(cache, url)
+              .then(function (isSaved) {
+                if (!isSaved) failed++;
               })
               .catch(function () {
                 failed++;
@@ -340,15 +335,23 @@ function saveCourse(slug, urls, client, requestId) {
     });
 }
 
-function fetchWithTimeout(url) {
+function saveWithTimeout(cache, url) {
   var controller = new AbortController();
   var timer = setTimeout(function () {
     controller.abort();
   }, SAVE_FETCH_TIMEOUT_MS);
 
-  return fetch(url, { signal: controller.signal }).finally(function () {
-    clearTimeout(timer);
-  });
+  return fetch(url, { signal: controller.signal })
+    .then(function (response) {
+      if (!response.ok) return false;
+
+      return cache.put(url, response).then(function () {
+        return true;
+      });
+    })
+    .finally(function () {
+      clearTimeout(timer);
+    });
 }
 
 function removeCourse(urls) {

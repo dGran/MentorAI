@@ -54,18 +54,28 @@
   const isFullyCached = (urls) =>
     urls.length === 0 ? Promise.resolve(false) : countMissing(urls).then((missing) => missing === 0);
 
+  function ensureStatusRegion() {
+    const existing = document.getElementById(STATUS_REGION_ID);
+
+    if (existing) return existing;
+
+    const region = document.createElement("p");
+
+    region.id = STATUS_REGION_ID;
+    region.className = "visually-hidden";
+    region.setAttribute("role", "status");
+    document.body.appendChild(region);
+
+    return region;
+  }
+
   function announce(message) {
-    let region = document.getElementById(STATUS_REGION_ID);
+    const region = ensureStatusRegion();
 
-    if (!region) {
-      region = document.createElement("p");
-      region.id = STATUS_REGION_ID;
-      region.className = "visually-hidden";
-      region.setAttribute("role", "status");
-      document.body.appendChild(region);
-    }
-
-    region.textContent = message;
+    region.textContent = "";
+    requestAnimationFrame(() => {
+      region.textContent = message;
+    });
   }
 
   function savedCourseSlugs() {
@@ -450,6 +460,8 @@
       injectNavLink();
 
       if (!isSupported()) return;
+
+      ensureStatusRegion();
 
       navigator.serviceWorker
         .register(`${basePath()}sw.js`, { scope: basePath() })
