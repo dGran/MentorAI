@@ -99,6 +99,19 @@ test("review keys that cannot be resolved are kept instead of dropped", () => {
   assert.deepEqual(state["ruta:backend"], { s: 1, d: 1, f: 0 });
 });
 
+test("a positional key and its stable id keep the higher step in either order", () => {
+  const advanced = { s: 4, d: 9, f: 0 };
+  const behind = { s: 1, d: 2, f: 3 };
+  const positionalFirst = loadModules({ "academia-repaso": { "c:regex:0": advanced, "c:regex:c-uno": behind } }, DATA);
+  const stableFirst = loadModules({ "academia-repaso": { "c:regex:c-uno": behind, "c:regex:0": advanced } }, DATA);
+
+  positionalFirst.MentorAI.Repaso.record("c:regex:c-dos", true);
+  stableFirst.MentorAI.Repaso.record("c:regex:c-dos", true);
+
+  assert.deepEqual(positionalFirst.localStorage.read("academia-repaso")["c:regex:c-uno"], advanced);
+  assert.deepEqual(stableFirst.localStorage.read("academia-repaso")["c:regex:c-uno"], advanced);
+});
+
 test("reordering questions does not move their review history", () => {
   const history = { "academia-repaso": { "c:regex:c-dos": { s: 4, d: 1, f: 0 } } };
   const { MentorAI, localStorage } = loadModules(history, reversed);

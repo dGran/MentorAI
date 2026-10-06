@@ -40,15 +40,12 @@
     for (const [key, entry] of Object.entries(state)) {
       const legacy = key.match(LEGACY_POSITION_KEY);
       const stableKey = legacy ? stableIdFor(legacy[1], legacy[2], Number(legacy[3])) : null;
+      const target = stableKey ?? key;
 
-      if (!stableKey) {
-        migrated[key] = entry;
-        continue;
-      }
+      if (stableKey) isChanged = true;
+      if ((migrated[target]?.s ?? -1) >= (entry?.s ?? 0)) continue;
 
-      isChanged = true;
-
-      if ((migrated[stableKey]?.s ?? -1) < (entry?.s ?? 0)) migrated[stableKey] = entry;
+      migrated[target] = entry;
     }
 
     return { migrated, isChanged };
