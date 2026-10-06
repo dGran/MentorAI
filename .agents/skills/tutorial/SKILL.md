@@ -80,8 +80,13 @@ faltan, referencias rotas de cursos y rutas, `<` sin escapar dentro de
 ## Secciones obligatorias
 
 Además del esqueleto, todo tutorial lleva una sección **«Cuándo aplicarlo»**
-(`<h2 id="cuando">`) con su enlace en el TOC: los 193 publicados la tienen, y es
-lo que evita que el catálogo sea teoría sin criterio de uso.
+(`<h2 id="cuando">`) con su enlace en el TOC: es lo que evita que el catálogo
+sea teoría sin criterio de uso. Todo tutorial nuevo la lleva; a 2026-10-06 faltan
+96 de los anteriores (Python, Go, Rust y algunos de fundamentos), que
+`validar.js` lista en un aviso hasta que la épica #34 los migre.
+
+El hero copia los minutos y el nivel del manifest, con el nivel escrito igual
+(«Principiante», «Intermedio», «Avanzado»): `validar.js` falla si difieren.
 
 ## Fuera de alcance
 
