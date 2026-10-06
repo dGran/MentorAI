@@ -13,7 +13,7 @@ window.MENTORAI_PRACTICE = {
       statement:
         "El disco de un servidor está al 92% y nadie sabe por qué. Sin abrir ningún explorador gráfico, encuentra los 5 ficheros más pesados que cuelgan de /var en tu máquina (o de tu $HOME si no tienes permisos). Pista: no es lo mismo el tamaño de un directorio que el de un fichero.",
       solution:
-        "find -type f se queda solo con ficheros y -printf '%s %p' imprime el tamaño en bytes y la ruta; sort -rn ordena numéricamente de mayor a menor y head corta los 5 primeros. La trampa de la pista es du -ah | sort -rh: lista directorios además de ficheros, y como un directorio pesa lo que todo lo que contiene, /var y sus subcarpetas copan el podio sin decirte qué fichero es el culpable. du sigue siendo la herramienta para la pregunta anterior —qué carpeta crece—; find, para la de ahora —qué fichero—.",
+        "find -type f se queda solo con ficheros y -printf '%s %p' imprime el tamaño en bytes y la ruta; sort -rn ordena numéricamente de mayor a menor y head corta los 5 primeros. La trampa de la pista es du -ah | sort -rh: lista directorios además de ficheros, y como un directorio pesa lo que todo lo que contiene, /var y sus subcarpetas copan el podio sin decirte qué fichero es el culpable. du sigue siendo la herramienta para otra pregunta del diagnóstico —qué carpeta crece—; find, para esta —qué fichero—.",
       solutionCode: {
         lang: "bash",
         source: "find /var -type f -printf '%s %p\\n' 2>/dev/null | sort -rn | head -n 5",
@@ -1043,7 +1043,7 @@ window.MENTORAI_PRACTICE = {
       statement:
         "Ejecuta el experimento de la lección de CPU: recorre una matriz de 2000×2000 por filas y por columnas, cronometrando ambos con hrtime. Mismo número de sumas exactas. Anota la diferencia — y si tienes Go o Rust a mano, repítelo ahí y compara la brecha.",
       solution:
-        "Construye la matriz fila a fila: con array_fill anidado PHP comparte una sola fila (copy-on-write), cabe en caché y sale empate. Bien construida, en PHP verás el recorrido por columnas unas cuatro veces más lento; en un lenguaje compilado, la brecha puede crecer. La causa es una sola: por filas aprovechas cada línea de caché de 64 bytes; por columnas la desperdicias y vas a RAM una y otra vez. Mismo Big O, distinta física — a partir de hoy, «recorrer datos contiguos» deja de ser un consejo abstracto.",
+        "Construye la matriz fila a fila: con array_fill anidado PHP comparte una sola fila (copy-on-write), cabe en caché y sale empate. Bien construida, en PHP verás el recorrido por columnas entre dos y cuatro veces más lento, según la máquina; en un lenguaje compilado, la brecha puede crecer. La causa es una sola: por filas aprovechas cada línea de caché de 64 bytes; por columnas la desperdicias y vas a RAM una y otra vez. Mismo Big O, distinta física — a partir de hoy, «recorrer datos contiguos» deja de ser un consejo abstracto.",
       solutionCode: {
         lang: "php",
         source:
