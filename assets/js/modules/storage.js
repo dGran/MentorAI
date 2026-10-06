@@ -66,6 +66,17 @@
     writeJson(CHANGES_KEY, { ...changes, [key]: forKey });
   }
 
+  function changeTimesOf(key) {
+    const stored = readJson(CHANGES_KEY, {});
+    const forKey = (stored && typeof stored === "object" ? stored[key] : null) ?? {};
+
+    return Object.fromEntries(
+      Object.entries(forKey)
+        .filter(([, change]) => change?.deleted === false)
+        .map(([itemId, change]) => [itemId, Number(change.at) || 0])
+    );
+  }
+
   function createSlugSet(key) {
     const read = () => {
       const stored = readJson(key, []);
@@ -77,6 +88,7 @@
       has: (slug) => read().includes(slug),
       count: () => read().length,
       list: () => read(),
+      markedAt: () => changeTimesOf(key),
       toggle(slug) {
         const slugs = read();
         const isPresent = slugs.includes(slug);
