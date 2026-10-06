@@ -73,7 +73,7 @@
     return Object.fromEntries(
       Object.entries(forKey)
         .filter(([, change]) => change?.deleted === false)
-        .map(([itemId, change]) => [itemId, change.at])
+        .map(([itemId, change]) => [itemId, Number(change.at) || 0])
     );
   }
 
