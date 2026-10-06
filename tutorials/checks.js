@@ -2889,4 +2889,52 @@ window.MENTORAI_CHECKS = {
       o: ["Cuando hay que leer veinte ficheros para trazar una tarea","Cuando vas a editar ese fichero pequeño y lo necesitas en tu contexto","Cuando quieres una revisión independiente del diff que acabas de escribir"], a: 1,
       w: "Se delega cuando la entrada es grande y la salida pequeña; lo que vas a editar lo necesitas tú." },
   ],
+
+  "ag-del-requisito-al-issue": [
+    { id: "c44606e", q: "Al refinar un issue, ¿qué caso es el más traicionero?",
+      o: ["Un criterio que el código ya cumple","Un número de línea que se movió","Un título demasiado largo para el tablero"], a: 0,
+      w: "El agente marca la casilla sin tocar nada y el PR sale vacío con todo en verde." },
+    { id: "cbec8d2", q: "Vas a pedir algo que ya es un criterio de otro issue abierto. ¿Qué haces?",
+      o: ["Crear el issue y citar el otro en las notas técnicas","Crearlo y marcar el otro como dependencia","No crearlo: ampliar el existente o no hacer nada"], a: 2,
+      w: "Es el caso «contenido»: dos issues sobre el mismo criterio se implementan dos veces o se pisan." },
+    { id: "c19422a", q: "¿Qué hace que la reproducción de un bug sirva al QA?",
+      o: ["Una descripción detallada de lo que ve el usuario","Un comando literal con la salida real de hoy","Una captura del error con la fecha visible"], a: 1,
+      w: "El QA vuelve a ejecutar el mismo comando tras el arreglo y compara: eso demuestra que el fallo se fue." },
+  ],
+
+  "ag-implementar-y-revisar": [
+    { id: "cabad18", q: "En un PR de tipo refactor, ¿qué bloquea además de lo común a todos?",
+      o: ["Que el PR toque más ficheros de los que prevé el plan","Cualquier cambio de comportamiento observable","El estilo que las rules no fijan"], a: 1,
+      w: "Un refactor promete el mismo comportamiento con mejor forma; el tamaño y el estilo libre nunca bloquean." },
+    { id: "c6e1dfb", q: "Un analizador estático imprime «0 errores». ¿Qué falta comprobar?",
+      o: ["Que de verdad llegó a ejecutarse","Que el aviso se silencie en la configuración","Nada: cero errores es un gate en verde"], a: 0,
+      w: "Una herramienta que no corrió también imprime cero: salida vacía no es salida limpia." },
+    { id: "cd95245", q: "La revisión recibe el traspaso del autor con todos los criterios en «ok». ¿Qué hace?",
+      o: ["Darlos por buenos y centrarse en el estilo","Pedir al autor que confirme cada uno por escrito","Comprobar cada criterio contra el diff"], a: 2,
+      w: "El traspaso ahorra buscar rama y ficheros, pero no sustituye comprobar: el autor no se certifica a sí mismo." },
+  ],
+
+  "ag-qa-con-evidencias": [
+    { id: "ca7de50", q: "¿Por qué no basta con ejecutar la suite del framework en la fase de QA?",
+      o: ["Porque es demasiado lenta para hacerlo en cada PR","Porque no pasa por el servidor real","Porque sus resultados no se pueden enlazar desde el PR"], a: 1,
+      w: "Corre en memoria y ya la ejecutaron implementación y revisión: no aporta información nueva." },
+    { id: "cb83da8", q: "El issue es un bug con su reproducción. ¿Por dónde empieza el QA?",
+      o: ["Por el mismo comando, en la rama base y en la del PR","Por los criterios de aceptación, en orden","Por una pasada general por todas las pantallas de la aplicación"], a: 0,
+      w: "Pasar los criterios es compatible con que el bug siga ahí; solo la reproducción antes y después lo demuestra." },
+    { id: "c915071", q: "¿Qué pasa con el commit de evidencias antes del merge?",
+      o: ["Se mueve a una rama aparte que se borra luego","Se mantiene para que los enlaces del PR sigan vivos","Se revierte; los enlaces siguen vivos"], a: 2,
+      w: "El código entra limpio y el commit sigue en el historial del PR, así que los enlaces permanentes no se rompen." },
+  ],
+
+  "ag-cerrar-el-ciclo": [
+    { id: "cebfbae", q: "¿Dónde vive el estado de una tarea en el tablero?",
+      o: ["En un campo del tablero","En una etiqueta por estado","En los dos, sincronizados"], a: 0,
+      w: "Las etiquetas dicen el tipo; lo que se escribe en dos sitios acaba diciendo cosas distintas." },
+    { id: "c79caee", q: "Un script espera los checks y mergea en el mismo comando encadenado. ¿Qué riesgo tiene?",
+      o: ["Que el merge tarde más de lo necesario","Que el merge se ejecute aunque un check esté en rojo","Que los checks se ejecuten dos veces"], a: 1,
+      w: "El gate tiene que poder parar: va en su propio paso, que corta la ejecución si algo no está en verde." },
+    { id: "cd62a3e", q: "Tras desplegar, la tasa de errores es del 2 %. ¿Qué la convierte en un veredicto?",
+      o: ["Que la página principal responda 200","Que no haya alertas abiertas en ese momento","Compararla con la de la versión anterior"], a: 2,
+      w: "Un 2 % puede ser normal o una catástrofe según lo que había antes: se vigila contra una línea base." },
+  ],
 };
