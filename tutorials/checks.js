@@ -2519,7 +2519,7 @@ window.MENTORAI_CHECKS = {
       w: "La jerarquía de la lección 1: para lo que no puede fallar ni una vez, la capa determinista. Con su límite: cubre Read y los comandos de fichero que reconoce en Bash (cat, head…), no un grep -r ni un script que abra el fichero; para eso, hook o sandbox." },
     { q: "Tu hook pre-herramienta detecta un comando prohibido, escribe el motivo en stderr y termina con exit 1. ¿Qué pasa?",
       o: ["Se bloquea la acción y el motivo de stderr vuelve al modelo","Se ejecuta igual: solo exit 2 veta, otro código es un fallo del hook","Se detiene la sesión entera hasta que revises el hook a mano"], a: 1,
-      w: "Es la trampa más cara: un guardián que falla abierto. exit 0 deja pasar, exit 2 veta, cualquier otro código se trata como fallo del propio hook y la acción continúa." },
+      w: "Es la trampa más cara: un guardián que falla abierto. exit 0 no objeta, exit 2 veta, cualquier otro código se trata como fallo del propio hook y la acción continúa." },
     { q: "Un hook pre-herramienta bloquea una edición y escribe un motivo. ¿Qué pasa con ese mensaje?",
       o: ["Se pierde: los hooks no se comunican con el modelo","Solo lo ve el usuario en el terminal","Vuelve al contexto del modelo, que corrige el rumbo: el hook enseña en el momento exacto del error"], a: 2,
       w: "Por eso un buen mensaje de bloqueo dice qué hacer en su lugar, no solo «prohibido»." },
