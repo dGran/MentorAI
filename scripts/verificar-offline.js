@@ -150,6 +150,31 @@ class Sesion {
   }
 }
 
+async function desplegarVersionNueva(raizServida, sesion) {
+  const rutaSw = path.join(raizServida, SUBDIR, "sw.js");
+  const versionNueva = `verificacion-${Date.now()}`;
+
+  fs.writeFileSync(
+    rutaSw,
+    fs.readFileSync(rutaSw, "utf8").replace(/var VERSION = "[^"]+";/, `var VERSION = "${versionNueva}";`)
+  );
+
+  await sesion.evaluar(
+    `navigator.serviceWorker.getRegistration().then(function (r) { return r.update() }).then(function () { return 1 })`
+  );
+
+  for (let intento = 0; intento < 30; intento += 1) {
+    await esperar(1000);
+
+    const claves = await sesion.evaluar(`caches.keys()`);
+    const shells = claves.filter((clave) => clave.startsWith("academia-shell-"));
+
+    if (shells.length === 1 && shells[0] === `academia-shell-${versionNueva}`) return versionNueva;
+  }
+
+  return null;
+}
+
 /* ---------- Comprobaciones ---------- */
 
 const resultados = [];
@@ -258,6 +283,27 @@ async function main() {
     );
 
     anotar("academia descargada", `${total} entradas`, total >= publicados);
+
+    const versionNueva = await desplegarVersionNueva(raizServida, sesion);
+
+    anotar("SW nuevo activo tras subir VERSION", versionNueva || "(no activó)", Boolean(versionNueva));
+
+    const contenidoTrasDespliegue = await sesion.evaluar(`
+      caches.open("academia-content").then(function (cache) { return cache.keys() })
+        .then(function (claves) { return claves.length })
+    `);
+
+    anotar(
+      "contenido intacto tras subir VERSION",
+      `${contenidoTrasDespliegue} entradas`,
+      contenidoTrasDespliegue >= publicados
+    );
+
+    await sesion.navegar(BASE + "offline.html");
+
+    const estadoDescarga = await sesion.textoDe(".offline-all__copy");
+
+    anotar("UI sabe que sigue descargada", estadoDescarga, /ya la tienes entera/i.test(estadoDescarga));
 
     /* El offline honesto: se apaga el servidor */
     process.kill(-servidor.pid);
