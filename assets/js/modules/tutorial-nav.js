@@ -29,10 +29,6 @@
     return `../curso.html?slug=${encodeURIComponent(course.slug)}`;
   }
 
-  /* ---------- Índice de lecciones ----------
-     Aplana todos los cursos a una secuencia lineal de lecciones, para poder
-     situar la actual y calcular sus vecinas. */
-
   function courseSequence() {
     return (window.MENTORAI_COURSES || []).flatMap((course) => {
       const modules = Array.isArray(course.modules)
@@ -117,7 +113,24 @@
     } de ${(module.lessons || []).length}</p>`;
   }
 
-  function neighborsHtml(prev, next, course) {
+  function examIsOnThisLesson(course, slug) {
+    const questions = (window.MENTORAI_QUIZZES ?? {})[course.slug]?.questions ?? [];
+    const lessons = courseSequence()
+      .filter((step) => step.course === course)
+      .map((step) => step.slug);
+
+    return questions.length > 0 && lessons.at(-1) === slug;
+  }
+
+  function endOfCourseHtml(course, slug) {
+    if (examIsOnThisLesson(course, slug)) {
+      return `<a href="#quiz" class="next"><small>Fin del curso →</small><b>Haz el examen del curso</b></a>`;
+    }
+
+    return `<a href="${courseHref(course)}" class="next"><small>Fin del curso →</small><b>Volver al curso</b></a>`;
+  }
+
+  function neighborsHtml(prev, next, course, slug) {
     const prevLink = prev
       ? `<a href="${escapeAttr(basename(prev.href))}"><small>← Anterior</small><b>${escapeAttr(
           prev.title
@@ -128,9 +141,7 @@
       ? `<a href="${escapeAttr(
           basename(next.href)
         )}" class="next"><small>Siguiente →</small><b>${escapeAttr(next.title)}</b></a>`
-      : `<a href="${courseHref(
-          course
-        )}" class="next"><small>Fin del curso →</small><b>Volver al curso</b></a>`;
+      : endOfCourseHtml(course, slug);
 
     return `<div class="tutorial-nav">${prevLink}${nextLink}</div>`;
   }
@@ -162,17 +173,20 @@
     return `<nav class="route-nav">${crumbHtml(current)}${neighborsHtml(
       prev,
       next,
-      course
+      course,
+      current.slug
     )}${relatedHtml(related, module.title || course.title)}</nav>`;
   }
 
   function injectRouteNav(slug, prose) {
     const sequence = courseSequence();
-    const index = sequence.findIndex((step) => step.slug === slug);
+    const current = sequence.find((step) => step.slug === slug);
 
-    if (index === -1) return;
+    if (!current) return;
 
-    const html = buildRouteNav(manifestBySlug(), sequence, index);
+    const courseSteps = sequence.filter((step) => step.course === current.course);
+    const index = courseSteps.findIndex((step) => step.slug === slug);
+    const html = buildRouteNav(manifestBySlug(), courseSteps, index);
     const manualNav = prose.querySelector(".tutorial-nav");
 
     if (manualNav) {
