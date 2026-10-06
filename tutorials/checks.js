@@ -2937,4 +2937,28 @@ window.MENTORAI_CHECKS = {
       o: ["Que la página principal responda 200","Que no haya alertas abiertas en ese momento","Compararla con la de la versión anterior"], a: 2,
       w: "Un 2 % puede ser normal o una catástrofe según lo que había antes: se vigila contra una línea base." },
   ],
+
+  "ag-tandas-y-loops": [
+    { id: "c9e443a", q: "En una tanda, ¿qué issue conviene tomar el primero?",
+      o: ["El de prioridad más alta del backlog, aunque no tenga tests","El que añade tests que cubrirán a los siguientes","El que toca más ficheros compartidos"], a: 1,
+      w: "Se ordena por demostrabilidad: primero lo que construye la red que detectará regresiones en lo que viene detrás." },
+    { id: "cf92edc", q: "Un issue de la tanda se pone en rojo y no hay arreglo evidente. ¿Qué se hace?",
+      o: ["Dejar el PR diagnosticado y seguir con uno independiente","Reintentarlo hasta agotar el tiempo que le queda a la tanda","Mergearlo y abrir un issue de seguimiento"], a: 0,
+      w: "Un rojo en la rama principal envenena lo que viene detrás; no se insiste ni se mergea en rojo." },
+    { id: "c6978e4", q: "¿Qué le falta a «arregla los tests hasta que pasen» para ser un bucle seguro?",
+      o: ["Un modelo más potente que no se rinda","Permiso para editar cualquier fichero del repositorio","Un límite de iteraciones y el estado en disco"], a: 2,
+      w: "La salida ya es medible; sin límite puede no acabar nunca, y sin estado en disco un corte lo reinicia de cero." },
+  ],
+
+  "ag-el-metodo-que-aprende": [
+    { id: "c13534f", q: "Una norma de la rule se incumple por tercera vez. ¿Qué haces?",
+      o: ["Reescribirla en mayúsculas y en negrita","Subirla a un validador, hook o test","Repetirla en todas las skills"], a: 1,
+      w: "Cuando la prosa no basta, la norma sube un peldaño hacia algo que se comprueba solo." },
+    { id: "c5abb3c", q: "La retro de una tanda saca diez mejoras posibles. ¿Cuántas se aplican?",
+      o: ["Una: la que más se repitió","Todas, ordenadas por prioridad","Las que no toquen las rules"], a: 0,
+      w: "Una retro que propone diez cambios no aplica ninguno; se lleva a su sitio la que más se repitió." },
+    { id: "c204f1d", q: "¿Qué es una note de estado sana?",
+      o: ["Un diario con una entrada por cada sesión de trabajo","Una copia de las rules con más detalle","Un retrato del presente que archiva lo cerrado"], a: 2,
+      w: "Se lee entera al empezar: si crece como un diario, el agente acaba leyendo la sección equivocada." },
+  ],
 };
