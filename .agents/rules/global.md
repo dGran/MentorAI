@@ -22,8 +22,10 @@ Excepciones (lo que la arquitectura de abajo resuelve de otra forma):
 - **G-20** no aplica tal cual: sin build ni dependencias no hay runner de tests.
   La red son los scripts de `scripts/` (`validar.js`, `verificar-offline.js`).
 
-Pendiente de decidir: **G-03** (sin comentarios) frente a las cabeceras de
-sección que conserva § Frontend. Hasta que se decida, manda § Frontend.
+**G-03** (sin comentarios) aplica. Los comentarios que ya hay, cabeceras de sección
+incluidas, son **deuda**: no se añaden nuevos, y quien
+toca un bloque retira los de ese bloque cuando el naming lo permite (en un commit `refactor` aparte si
+el diff crece). No se limpian en bloque fuera de un issue propio.
 
 ## Arquitectura — invariantes que no se rompen
 
@@ -108,11 +110,9 @@ sección que conserva § Frontend. Hasta que se decida, manda § Frontend.
   nuevo = un fichero nuevo + su `<script>` antes de `init.js` en cada página.
 - Referencias entre módulos siempre vía `MentorAI.X` (se resuelven en runtime,
   no importa el orden de carga salvo que `init.js` sea el último).
-- **Comentarios:** el estándar global es "sin comentarios". Convención propia de
-  este repo: se conservan las **cabeceras de sección** `/* ---------- X ---------- */`
-  como navegación del fichero (es la estructura del archivo), pero **nada de
-  comentarios explicativos dentro de las funciones**: el naming se explica solo.
-  No introducir comentarios nuevos de prosa.
+- **Comentarios:** ninguno nuevo, tampoco cabeceras de sección (G-03, § Convenciones
+  base). Las cabeceras `/* ---------- X ---------- */` que quedan son deuda: si un
+  fichero necesita navegación, pártelo en módulos con nombre.
 - Escapado: cualquier dato del manifest que se inyecta como HTML pasa por
   `escapeHtml`. Las búsquedas normalizan sin acentos ni mayúsculas (`normalize`).
 
