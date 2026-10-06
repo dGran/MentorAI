@@ -135,17 +135,21 @@ function isLegacyContent(key) {
 }
 
 function moveIntoContent(legacyKey) {
-  return Promise.all([caches.open(legacyKey), caches.open(CONTENT)]).then(function (opened) {
-    var legacy = opened[0];
-    var content = opened[1];
+  return copyCache(legacyKey, CONTENT).catch(function () {});
+}
 
-    return legacy.keys().then(function (requests) {
+function copyCache(sourceKey, targetKey) {
+  return Promise.all([caches.open(sourceKey), caches.open(targetKey)]).then(function (opened) {
+    var source = opened[0];
+    var target = opened[1];
+
+    return source.keys().then(function (requests) {
       return Promise.all(
         requests.map(function (request) {
-          return legacy.match(request).then(function (response) {
+          return source.match(request).then(function (response) {
             if (!response) return;
 
-            return content.put(request, response);
+            return target.put(request, response);
           });
         })
       );
@@ -211,7 +215,7 @@ function matchIn(cacheName, request, isNavigation) {
 function respond(request, isNavigation) {
   return matchIn(CONTENT, request, isNavigation)
     .then(function (contentMatch) {
-      if (contentMatch) return contentMatch;
+      if (contentMatch) return refreshSavedContent(request, contentMatch);
 
       return matchIn(SHELL, request, isNavigation);
     })
@@ -229,6 +233,27 @@ function respond(request, isNavigation) {
 
         return sinConexion();
       });
+    });
+}
+
+function refreshSavedContent(request, savedResponse) {
+  return fetch(request)
+    .then(function (fresh) {
+      if (!fresh.ok) return savedResponse;
+
+      var copy = fresh.clone();
+
+      return caches
+        .open(CONTENT)
+        .then(function (cache) {
+          return cache.put(request, copy);
+        })
+        .then(function () {
+          return fresh;
+        });
+    })
+    .catch(function () {
+      return savedResponse;
     });
 }
 

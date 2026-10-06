@@ -305,6 +305,16 @@ async function main() {
 
     anotar("UI sabe que sigue descargada", estadoDescarga, /ya la tienes entera/i.test(estadoDescarga));
 
+    const marca = `contenido-actualizado-${Date.now()}`;
+    const rutaTutorial = path.join(raizServida, SUBDIR, "tutorials", "regex.html");
+
+    fs.writeFileSync(rutaTutorial, fs.readFileSync(rutaTutorial, "utf8").replace("</body>", `<p id="${marca}"></p></body>`));
+    await sesion.navegar(BASE + "tutorials/regex.html");
+
+    const servidoFresco = await sesion.evaluar(`Boolean(document.getElementById(${JSON.stringify(marca)}))`);
+
+    anotar("lo guardado se refresca con red", servidoFresco ? "versión nueva" : "versión congelada", servidoFresco);
+
     /* El offline honesto: se apaga el servidor */
     process.kill(-servidor.pid);
     await esperar(1500);
