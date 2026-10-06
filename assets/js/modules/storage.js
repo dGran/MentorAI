@@ -34,6 +34,38 @@
      Marcadores y progreso son la misma estructura: una lista de slugs
      que se alterna. Se construyen los dos desde aquí. */
 
+  const CHANGES_KEY = "academia-cambios";
+  const CHANGE_RETENTION_MS = 180 * 24 * 60 * 60 * 1000;
+
+  MentorAI.CHANGE_RETENTION_MS = CHANGE_RETENTION_MS;
+
+  function withoutExpiredChanges(changes, now) {
+    const kept = {};
+
+    for (const [key, items] of Object.entries(changes)) {
+      const fresh = Object.entries(items ?? {}).filter(([, change]) => now - (change?.at ?? 0) < CHANGE_RETENTION_MS);
+
+      if (fresh.length > 0) kept[key] = Object.fromEntries(fresh);
+    }
+
+    return kept;
+  }
+
+  function recordChanges(key, itemIds, isDeleted) {
+    if (itemIds.length === 0) return;
+
+    const now = Date.now();
+    const stored = readJson(CHANGES_KEY, {});
+    const changes = withoutExpiredChanges(stored && typeof stored === "object" ? stored : {}, now);
+    const forKey = { ...(changes[key] ?? {}) };
+
+    for (const itemId of itemIds) {
+      forKey[itemId] = { at: now, deleted: isDeleted };
+    }
+
+    writeJson(CHANGES_KEY, { ...changes, [key]: forKey });
+  }
+
   function createSlugSet(key) {
     const read = () => {
       const stored = readJson(key, []);
@@ -53,14 +85,18 @@
           : [...slugs, slug];
 
         writeJson(key, updated);
+        recordChanges(key, [slug], isPresent);
 
         return !isPresent;
       },
       remove(slugsToRemove) {
+        const slugs = read();
+
         writeJson(
           key,
-          read().filter((slug) => !slugsToRemove.includes(slug))
+          slugs.filter((slug) => !slugsToRemove.includes(slug))
         );
+        recordChanges(key, slugsToRemove.filter((slug) => slugs.includes(slug)), true);
       },
     };
   }
@@ -104,12 +140,14 @@
       },
       clear(slugsToClear) {
         const map = read();
+        const cleared = slugsToClear.filter((slug) => slug in map);
 
         for (const slug of slugsToClear) {
           delete map[slug];
         }
 
         writeJson(KEY, map);
+        recordChanges(KEY, cleared, true);
       },
     };
   })();
@@ -155,6 +193,7 @@
     };
 
     const mismo = (a, b) => a.seccion === b.seccion && a.texto === b.texto && a.nth === b.nth;
+    const idDe = (subrayado) => `${subrayado.seccion}|${subrayado.texto}|${subrayado.nth}`;
 
     return {
       list: leer,
@@ -167,17 +206,24 @@
         if (subrayados.some((actual) => mismo(actual, subrayado))) return false;
 
         guardar(slug, [...subrayados, { ...subrayado, creadoEn: Date.now() }]);
+        recordChanges(claveDe(slug), [idDe(subrayado)], false);
 
         return true;
       },
       remove(slug, subrayado) {
+        const subrayados = leer(slug);
+
         guardar(
           slug,
-          leer(slug).filter((actual) => !mismo(actual, subrayado))
+          subrayados.filter((actual) => !mismo(actual, subrayado))
         );
+        recordChanges(claveDe(slug), subrayados.filter((actual) => mismo(actual, subrayado)).map(idDe), true);
       },
       clear(slug) {
+        const subrayados = leer(slug);
+
         guardar(slug, []);
+        recordChanges(claveDe(slug), subrayados.map(idDe), true);
       },
     };
   })();
