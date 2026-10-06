@@ -19,14 +19,46 @@
 
   /* ---------- Persistencia ---------- */
 
-  function readAll() {
-    try {
-      const stored = JSON.parse(localStorage.getItem(KEY));
+  const LEGACY_POSITION = /^\d+$/;
 
-      return stored && typeof stored === "object" ? stored : {};
+  function withStableIds(stored) {
+    let isChanged = false;
+    const migrated = {};
+
+    for (const [courseSlug, doneByKey] of Object.entries(stored)) {
+      const challenges = (window.MENTORAI_PRACTICE ?? {})[courseSlug] ?? [];
+      const doneById = {};
+
+      for (const [key, isDoneValue] of Object.entries(doneByKey ?? {})) {
+        const challengeId = LEGACY_POSITION.test(key) ? challenges[Number(key)]?.id : null;
+
+        if (challengeId) isChanged = true;
+
+        doneById[challengeId ?? key] = isDoneValue;
+      }
+
+      migrated[courseSlug] = doneById;
+    }
+
+    return { migrated, isChanged };
+  }
+
+  function readAll() {
+    let stored = null;
+
+    try {
+      stored = JSON.parse(localStorage.getItem(KEY));
     } catch {
       return {};
     }
+
+    if (!stored || typeof stored !== "object") return {};
+
+    const { migrated, isChanged } = withStableIds(stored);
+
+    if (isChanged) writeAll(migrated);
+
+    return migrated;
   }
 
   function writeAll(map) {
@@ -39,18 +71,21 @@
 
   const challengesOf = (courseSlug) => (window.MENTORAI_PRACTICE ?? {})[courseSlug] ?? [];
 
-  const isDone = (courseSlug, index) => Boolean(readAll()[courseSlug]?.[index]);
+  const challengeIdOf = (courseSlug, index) => challengesOf(courseSlug)[index]?.id;
+
+  const isDone = (courseSlug, index) => Boolean(readAll()[courseSlug]?.[challengeIdOf(courseSlug, index)]);
 
   const doneCountOf = (courseSlug) =>
     challengesOf(courseSlug).filter((challenge, index) => isDone(courseSlug, index)).length;
 
   function toggleDone(courseSlug, index) {
     const all = readAll();
-    const byIndex = { ...(all[courseSlug] ?? {}) };
-    const done = !byIndex[index];
+    const challengeId = challengeIdOf(courseSlug, index);
+    const byId = { ...(all[courseSlug] ?? {}) };
+    const done = !byId[challengeId];
 
-    done ? (byIndex[index] = true) : delete byIndex[index];
-    Object.keys(byIndex).length ? (all[courseSlug] = byIndex) : delete all[courseSlug];
+    done ? (byId[challengeId] = true) : delete byId[challengeId];
+    Object.keys(byId).length ? (all[courseSlug] = byId) : delete all[courseSlug];
     writeAll(all);
 
     return done;

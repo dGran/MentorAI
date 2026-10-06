@@ -21,12 +21,53 @@
   /* ---------- Persistencia ----------
      Entrada por pregunta: { s: paso, d: fecha de repaso, f: fallos } */
 
+  const LEGACY_POSITION_KEY = /^([cq]):(.+):(\d+)$/;
+
+  function stableIdFor(kind, scope, position) {
+    const questions =
+      kind === "c"
+        ? (window.MENTORAI_CHECKS ?? {})[scope]
+        : (window.MENTORAI_QUIZZES ?? {})[scope]?.questions;
+    const questionId = questions?.[position]?.id;
+
+    return questionId ? `${kind}:${scope}:${questionId}` : null;
+  }
+
+  function withStableIds(state) {
+    let isChanged = false;
+    const migrated = {};
+
+    for (const [key, entry] of Object.entries(state)) {
+      const legacy = key.match(LEGACY_POSITION_KEY);
+      const stableKey = legacy ? stableIdFor(legacy[1], legacy[2], Number(legacy[3])) : null;
+
+      if (!stableKey) {
+        migrated[key] = entry;
+        continue;
+      }
+
+      isChanged = true;
+
+      if ((migrated[stableKey]?.s ?? -1) < (entry?.s ?? 0)) migrated[stableKey] = entry;
+    }
+
+    return { migrated, isChanged };
+  }
+
   function readAll() {
+    let stored = {};
+
     try {
-      return JSON.parse(localStorage.getItem(KEY)) ?? {};
+      stored = JSON.parse(localStorage.getItem(KEY)) ?? {};
     } catch {
       return {};
     }
+
+    const { migrated, isChanged } = withStableIds(stored);
+
+    if (isChanged) writeAll(migrated);
+
+    return migrated;
   }
 
   function writeAll(state) {
@@ -67,15 +108,15 @@
     const index = {};
 
     for (const [slug, questions] of Object.entries(window.MENTORAI_CHECKS ?? {})) {
-      questions.forEach((question, position) => {
-        index[`c:${slug}:${position}`] = { question, source: slug };
-      });
+      for (const question of questions) {
+        index[`c:${slug}:${question.id}`] = { question, source: slug };
+      }
     }
 
     for (const [course, quiz] of Object.entries(window.MENTORAI_QUIZZES ?? {})) {
-      (quiz.questions ?? []).forEach((question, position) => {
-        index[`q:${course}:${position}`] = { question, source: question.lesson ?? null };
-      });
+      for (const question of quiz.questions ?? []) {
+        index[`q:${course}:${question.id}`] = { question, source: question.lesson ?? null };
+      }
     }
 
     return index;

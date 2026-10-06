@@ -9,6 +9,7 @@
 window.MENTORAI_PRACTICE = {
   "terminal-linux": [
     {
+      id: "r4d7106",
       title: "El fichero que se come el disco",
       statement:
         "El disco de un servidor está al 92% y nadie sabe por qué. Sin abrir ningún explorador gráfico, encuentra los 5 ficheros más pesados que cuelgan de /var en tu máquina (o de tu $HOME si no tienes permisos). Pista: no es lo mismo el tamaño de un directorio que el de un fichero.",
@@ -20,6 +21,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "rd40701",
       title: "El permiso que falta no es el que parece",
       statement:
         "Reproduce esta situación y explica por qué falla el cat: el fichero tiene permiso de lectura para todos y aun así no se puede leer. Arréglalo tocando un solo permiso.",
@@ -36,6 +38,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r1012c1",
       title: "Un pipeline con datos de verdad",
       statement:
         "Usando solo cut, sort, uniq y head sobre /etc/passwd, saca cuántos usuarios de tu sistema usan cada shell, ordenado de más a menos. Te dirá cuántas cuentas de servicio hay frente a usuarios reales.",
@@ -49,6 +52,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "cache-y-rendimiento": [
     {
+      id: "r86ef46",
       title: "La media te está mintiendo",
       statement:
         "Genera en PHP 100 latencias simuladas: 95 entre 20 y 40 ms y 5 entre 900 y 1200 ms. Calcula la media, el p95 y el p99, y compáralos. ¿Qué número le enseñarías a tu equipo y por qué?",
@@ -61,6 +65,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r29972f",
       title: "El índice que no entra",
       statement:
         "Crea en tu MySQL (o SQLite) una tabla con 100.000 filas y un índice sobre email. Lanza estas dos consultas con EXPLAIN y explica por qué solo una usa el índice, si el índice cubre la columna en ambas.",
@@ -73,6 +78,7 @@ window.MENTORAI_PRACTICE = {
         "Un índice B-tree ordena por el prefijo del valor: 'ana%' define un rango contiguo en ese orden y el índice lo recorre. '%@gmail.com' empieza por comodín, así que no hay prefijo por el que entrar: cualquier fila podría casar y toca leerlas todas (full scan). Para buscar por sufijo hacen falta otras armas: una columna invertida indexada o un índice full-text.",
     },
     {
+      id: "r0df554",
       title: "Provoca (y evita) la estampida",
       statement:
         "Tienes una clave de caché que expira y 50 peticiones concurrentes que la piden justo después. Escribe el flujo cache-aside ingenuo, señala qué pasa en ese instante y protégelo con un lock para que solo una petición recalcule.",
@@ -87,6 +93,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "infraestructura": [
     {
+      id: "r38c5e5",
       title: "Un servicio que no se puede matar",
       statement:
         "Escribe una unit de systemd para un script que escribe la hora en un fichero cada 5 segundos. Actívala, mátala con kill -9 y comprueba con systemctl status que systemd lo ha resucitado solo. ¿Qué campo lo consigue?",
@@ -104,6 +111,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "rf0caa1",
       title: "nginx delante, tu app detrás",
       statement:
         "Levanta con docker compose un nginx que haga de reverse proxy hacia un contenedor con php -S. Desde fuera solo se habla con nginx. Comprueba qué IP ve tu aplicación en REMOTE_ADDR y arregla la pérdida con la cabecera adecuada.",
@@ -116,6 +124,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r0104af",
       title: "El backup que no existe",
       statement:
         "Haz un dump de una base de datos de prueba, borra la base de datos entera y restáurala desde el dump. Cronometra la restauración. Si nunca has hecho la segunda mitad de este reto en tu proyecto real, tu backup es una hipótesis.",
@@ -135,6 +144,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "protocolos-y-tiempo-real": [
     {
+      id: "r0cedc8",
       title: "Cuenta los viajes del handshake",
       statement:
         "Lanza curl -v contra un sitio HTTPS y separa en la salida qué pertenece al TCP, qué al handshake TLS y cuándo sale por fin la petición HTTP. ¿Cuántos round-trips pasan antes del primer byte útil? Compara con lo que promete TLS 1.3.",
@@ -146,6 +156,7 @@ window.MENTORAI_PRACTICE = {
         "El orden es: SYN/SYN-ACK (1 RTT de TCP), luego el saludo TLS — con 1.3, un solo round-trip: ClientHello y ServerHello ya negocian claves — y solo entonces viaja el GET. Con TLS 1.2 eran dos RTT de TLS; la mejora de 1.3 es estructural, no de implementación. Ese coste fijo por conexión nueva es la razón de ser del keep-alive y de la reutilización de conexiones.",
     },
     {
+      id: "rd7ffe1",
       title: "Server-Sent Events en 15 líneas",
       statement:
         "Escribe un endpoint PHP que emita un evento SSE por segundo con la hora, sírvelo con php -S y consúmelo con curl -N. Fíjate en qué cabecera y qué formato de líneas hacen que esto sea SSE y no una respuesta cualquiera.",
@@ -158,6 +169,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r453e2e",
       title: "Firma tu webhook y rompe el replay",
       statement:
         "Simula el emisor de un webhook: firma el cuerpo JSON con HMAC-SHA256 y una clave compartida, y escribe la verificación del receptor. Después responde: si un atacante captura una petición firmada válida, ¿qué le impide reenviarla mañana? Añade lo que falta.",
@@ -172,6 +184,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "sistemas-distribuidos": [
     {
+      id: "r2ddc38",
       title: "El reintento que cobró dos veces",
       statement:
         "Monta con php -S un endpoint que tarda 3 segundos en responder pero SÍ ejecuta su efecto (escribe una línea en un fichero). Llámalo con timeout de 1 segundo y 3 reintentos, y cuenta después cuántas líneas hay en el fichero. Explica el desastre y cómo lo evita una clave de idempotencia.",
@@ -184,6 +197,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "rb2bb46",
       title: "Outbox: el evento que no se pierde",
       statement:
         "Diseña el esquema y la transacción del patrón outbox: guardar un pedido y su evento PedidoCreado de forma que sea imposible que exista el uno sin el otro, aunque el broker de mensajes esté caído en ese momento. ¿Quién publica el evento y cuándo?",
@@ -196,6 +210,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r942960",
       title: "Un circuit breaker de 30 líneas",
       statement:
         "Implementa en PHP un cortacircuitos con sus tres estados — cerrado, abierto, semiabierto — alrededor de una llamada HTTP: a los 5 fallos seguidos se abre, tras 30 segundos deja pasar una llamada de prueba, y si sale bien se cierra. ¿Qué gana el sistema respecto a reintentar sin más?",
@@ -210,6 +225,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "go": [
     {
+      id: "r1d145d",
       title: "Cuenta en paralelo",
       statement:
         "Escribe un programa que cuente las líneas de todos los ficheros que le pases como argumentos, lanzando una goroutine por fichero y recogiendo los resultados por un channel. Compara mentalmente con cómo lo harías en PHP: ¿qué te está regalando el runtime?",
@@ -222,6 +238,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "ra1a08b",
       title: "La interfaz que nadie declara",
       statement:
         "Define una interfaz Notificador con un método Enviar(mensaje string) error y dos tipos que la cumplan (email y consola) sin mencionar la interfaz en ningún sitio. Escribe una función que acepte Notificador y pásale ambos. ¿Qué línea haría esto imposible en PHP?",
@@ -234,6 +251,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "rd66fad",
       title: "Errores que se preguntan, no se lanzan",
       statement:
         "Escribe una función CargarConfig(ruta string) que devuelva un error envuelto con %w cuando el fichero no exista, y en main distingue con errors.Is si el fallo fue fs.ErrNotExist (usa un valor por defecto) o cualquier otro (aborta). ¿Qué aporta envolver frente a devolver el error tal cual?",
@@ -248,6 +266,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "framework-por-dentro": [
     {
+      id: "r2b8a59",
       title: "Espía el ciclo de la petición",
       statement:
         "En un proyecto Symfony (vale el skeleton en Docker), lista quién escucha kernel.request con debug:event-dispatcher y localiza en qué posición actúan el RouterListener y el firewall. Después escribe tu propio listener con prioridad mayor que el router y comprueba que se ejecuta antes.",
@@ -264,6 +283,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r102f06",
       title: "Recoge tus servicios con un tag",
       statement:
         "Crea una interfaz Exportador con dos implementaciones (CSV y JSON) y un servicio que las reciba TODAS sin nombrarlas: en Symfony con un tagged iterator (o en Laravel con tag() del contenedor). Añade después una tercera implementación y comprueba que no tocaste el consumidor.",
@@ -278,6 +298,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "patrones-diseno": [
     {
+      id: "r466859",
       title: "Del switch al Strategy",
       statement:
         "Esta clase calcula gastos de envío con un switch que crece con cada transportista nuevo. Refactorízala al patrón Strategy: una interfaz, una clase por transportista y un consumidor que no cambia al añadir el siguiente. ¿Dónde queda la decisión de qué estrategia usar?",
@@ -295,6 +316,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "rcaabec",
       title: "Decora sin tocar",
       statement:
         "Tienes un TipoDeCambioApi que llama a un servicio externo lento. Sin modificar esa clase ni sus llamadores, añade una capa de caché con el patrón Decorator. ¿Por qué esto es mejor que meter el if de caché dentro de la clase original?",
@@ -307,6 +329,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r512c34",
       title: "Caza tres patrones en tu framework",
       statement:
         "Sin escribir código: localiza en el framework que uses a diario un Chain of Responsibility, un Observer y un Adapter reales. Nombra la clase o el mecanismo concreto de cada uno y qué problema le resuelve al framework.",
@@ -316,6 +339,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "sql-aplicado": [
     {
+      id: "r7d32c5",
       title: "Top 3 por categoría, sin bucles",
       statement:
         "Con una tabla productos(id, categoria, ventas), saca los 3 productos más vendidos de CADA categoría en una sola consulta. Primero intenta resolverlo sin window functions para sentir el dolor; luego hazlo con ROW_NUMBER.",
@@ -328,6 +352,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r6aa078",
       title: "El JOIN que infló la factura",
       statement:
         "Un cliente tiene 1 pedido de 100 € con 3 líneas de envío. Esta consulta devuelve 300 €. Reprodúcelo con dos tablas pequeñas, explica el porqué del triple y arréglalo manteniendo la información de ambas ramas.",
@@ -345,6 +370,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r7d29f3",
       title: "WHERE no puede, HAVING sí",
       statement:
         "Sobre pedidos(cliente_id, total, creado_en): lista los clientes que en 2025 hayan hecho más de 5 pedidos con un total acumulado superior a 500 €. Decide qué condición va en WHERE y cuál en HAVING, y explica qué pasaría si las cruzaras.",
@@ -359,6 +385,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "git": [
     {
+      id: "r556d76",
       title: "El commit que creías perdido",
       statement:
         "En un repo de prueba: haz dos commits, ejecuta git reset --hard HEAD~1 y comprueba que el segundo commit ya no está en git log. Ahora recupéralo. Pista: git no borra casi nada de verdad.",
@@ -370,6 +397,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r07fc8d",
       title: "Merge y rebase, en paralelo",
       statement:
         "Crea un repo con una rama main y una rama feature que divergen (2 commits cada una). Clónalo en dos copias: en una integra feature con merge, en la otra con rebase + merge. Compara git log --graph --oneline de ambas y di qué historia contarías tú.",
@@ -382,6 +410,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "rd8c5f4",
       title: "Encuentra al culpable con bisect",
       statement:
         "En un repo de prueba, haz 8 commits que escriban números en un fichero y haz que uno intermedio introduzca un «bug» (por ejemplo, la palabra ROTO). Usa git bisect con un script de grep para que git encuentre el commit culpable solo. ¿Cuántos pasos le costó?",
@@ -396,6 +425,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "apis-rest": [
     {
+      id: "r42eed2",
       title: "Cinco respuestas, cinco códigos",
       statement:
         "Asigna el código de estado exacto a estos cinco casos y justifica cada uno: (1) POST que crea un pedido, (2) DELETE de un recurso que ya no existía, (3) petición con JSON válido pero un email mal formado, (4) usuario autenticado que intenta borrar el pedido de otro, (5) petición sin token.",
@@ -403,6 +433,7 @@ window.MENTORAI_PRACTICE = {
         "(1) 201 con Location del recurso nuevo — 200 esconde que hubo creación. (2) 404 o 204 son defendibles: 204 si tratas DELETE como idempotente por resultado («ya no está»), 404 si informas de que no existía; lo importante es elegir uno y documentarlo. (3) 422: la sintaxis era válida, la semántica no — 400 es para JSON roto. (4) 403: sabemos quién es y no puede. (5) 401: no sabemos quién es. Confundir 401/403 es el error más común, y cada uno filtra información distinta.",
     },
     {
+      id: "r9ebea6",
       title: "Un error que se explica solo",
       statement:
         "Diseña la respuesta de error de tu API para una validación fallida con DOS campos mal, siguiendo application/problem+json (RFC 9457). El que consume la API debe poder pintar el error de cada campo debajo de su input sin parsear mensajes.",
@@ -415,6 +446,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r6cc2ca",
       title: "La página 500 que devuelve duplicados",
       statement:
         "Tu listado pagina con ?page=500&limit=20 sobre una tabla donde se insertan filas nuevas constantemente (ordenada por fecha descendente). Explica qué ve un cliente que recorre las páginas mientras entran filas, y rediseña la paginación para que no pase.",
@@ -429,6 +461,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "acceso-a-datos": [
     {
+      id: "r606d47",
       title: "Fabrica tu propio N+1",
       statement:
         "Con PDO y dos tablas (autores y sus libros), escribe primero la versión ingenua: consulta los 100 autores y, en el bucle, consulta los libros de cada uno. Cuenta las consultas y cronométralo. Después arréglalo en 2 consultas totales sin cambiar lo que se pinta.",
@@ -441,6 +474,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r7975da",
       title: "La migración que rompe producción",
       statement:
         "Escribe la migración (up y down) para añadir una columna telefono VARCHAR NOT NULL a una tabla clientes que YA tiene 50.000 filas. La versión obvia falla o miente: descubre por qué y escribe la versión que funciona en producción.",
@@ -453,6 +487,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r5331c6",
       title: "¿Quién hace flush aquí?",
       statement:
         "Sin ejecutar nada: en un servicio con Doctrine que crea un Pedido, modifica el stock de tres Productos ya cargados y llama a flush() una sola vez al final, ¿cuántas sentencias SQL se emiten y cuándo? ¿Y si una línea intermedia lanza una excepción antes del flush? Justifica con el unit of work.",
@@ -462,6 +497,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "docker": [
     {
+      id: "rbb136a",
       title: "La caché de capas, cronometrada",
       statement:
         "Escribe un Dockerfile para un proyecto PHP que copie TODO el código antes del composer install. Construye, toca un fichero cualquiera de src/ y reconstruye cronometrando. Después reordena las instrucciones para que ese segundo build tarde segundos, y explica por qué.",
@@ -479,6 +515,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r62599b",
       title: "¿Por qué muere nada más arrancar?",
       statement:
         "Este contenedor termina con exit 0 al instante aunque nginx queda «lanzado». Reprodúcelo, explica qué contrato está rompiendo y arréglalo. La respuesta tiene que ver con quién es el PID 1.",
@@ -494,6 +531,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r5f01c9",
       title: "Multi-stage: la imagen a dieta",
       statement:
         "Parte de una imagen que compila algo (vale el binario de Go del curso, o composer install con dev incluido) y mide su tamaño con docker images. Reescríbela en dos stages —uno que construye, otro que solo copia el resultado— y compara tamaños. ¿Qué se queda fuera exactamente?",
@@ -508,6 +546,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "ci-cd": [
     {
+      id: "rb8d3e3",
       title: "Tu primer pipeline honesto",
       statement:
         "Monta en un repo de prueba un workflow de GitHub Actions que en cada push instale dependencias con composer y ejecute PHPUnit. Rompe un test a propósito, haz push y comprueba que el push queda marcado en rojo. Sin ese rojo visible, no tienes CI: tienes un script.",
@@ -520,6 +559,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r13c38c",
       title: "El minuto que se repite en cada build",
       statement:
         "Tu pipeline instala las dependencias de composer desde cero en cada ejecución. Añade caché al workflow anterior, lanza dos builds seguidos y compara la duración del paso de instalación. ¿Qué usas como clave de la caché y por qué esa exactamente?",
@@ -532,6 +572,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r778a2c",
       title: "Diseña el rollback antes del deploy",
       statement:
         "Sin escribir YAML: tu app corre en dos contenedores detrás de nginx. Diseña sobre papel el despliegue blue-green — pasos exactos, en orden — y responde: ¿en qué momento puedes volver atrás en segundos, y qué pieza del sistema lo hace posible? ¿Qué pasa con las migraciones de base de datos?",
@@ -541,6 +582,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "oop": [
     {
+      id: "r23efbd",
       title: "Del array al objeto que se defiende",
       statement:
         "Esta función recibe un array asociativo y confía en que todo venga bien. Conviértelo en un value object Importe con validación en el constructor, y explica qué garantiza el objeto que el array no puede garantizar jamás.",
@@ -558,6 +600,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r7fcbfb",
       title: "Mata el switch con polimorfismo",
       statement:
         "Un sistema notifica por email, SMS o push, y cada punto del código que notifica repite el mismo switch sobre un string $canal. Modela los canales como clases con un método común y haz desaparecer todos los switch. ¿Qué pregunta le haces ahora al objeto en vez de preguntarle qué es?",
@@ -570,6 +613,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "rd294fd",
       title: "¿Interfaz o clase abstracta?",
       statement:
         "Tres casos, decide para cada uno interfaz, clase abstracta o ninguna, y justifica: (1) tres formas de almacenar ficheros (disco, S3, memoria) sin código común; (2) cuatro informes que comparten el 80% del flujo y difieren solo en formatear la salida; (3) una única implementación de un servicio de facturación, «por si acaso mañana hay otra».",
@@ -579,6 +623,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "solid": [
     {
+      id: "reb9d88",
       title: "Tres razones para cambiar",
       statement:
         "Esta clase compila, funciona y viola SRP. Identifica sus TRES razones de cambio distintas, sepáralas en clases y di quién orquesta a quién después de la separación.",
@@ -591,6 +636,7 @@ window.MENTORAI_PRACTICE = {
         "Cambia si cambian los impuestos (negocio), si cambia el diseño del PDF (presentación) o si cambia cómo se envía (infraestructura): tres dueños distintos del cambio, tres clases — CalculadoraDeImpuestos, GeneradorDeFactura, y un canal de envío. Facturador queda como orquestador que las recibe por constructor y las llama en orden: sigue existiendo, pero ya solo cambia si cambia el PROCESO. SRP no dice «clases pequeñas»: dice una razón de cambio por clase.",
     },
     {
+      id: "r00e753",
       title: "El contrato que la subclase rompe",
       statement:
         "Crea una clase Rectangulo con setAncho/setAlto y una subclase Cuadrado que sobreescribe ambos para mantener los lados iguales. Escribe un test que reciba un Rectangulo, haga setAncho(4); setAlto(5) y verifique área 20. Pásale un Cuadrado y mira qué pasa. ¿Qué principio se rompió y cuál es la salida?",
@@ -603,6 +649,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r3d19a4",
       title: "Invierte la dependencia de verdad",
       statement:
         "Una clase InformeVentas hace new PDO(...) dentro de su constructor. Enumera todo lo que eso te impide hacer, y refactorízala aplicando DIP. Ojo a la parte fina: ¿la interfaz que crees pertenece a la capa de datos o a la de negocio?",
@@ -617,6 +664,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "clean-code": [
     {
+      id: "rf2c38c",
       title: "Renombra hasta que sobre el comentario",
       statement:
         "Refactoriza este fragmento SOLO renombrando (variables, función) hasta que el comentario sea innecesario y lo puedas borrar. No toques la lógica.",
@@ -634,6 +682,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r533451",
       title: "Una función, un nivel de abstracción",
       statement:
         "Busca en tu propio código (o escribe a propósito) una función de más de 30 líneas que mezcle validar, calcular y persistir. Extráela en funciones privadas hasta que la pública se lea como un índice. Criterio de parada: cada función debe poder describirse sin usar la palabra «y».",
@@ -646,6 +695,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r6432cd",
       title: "El olor tiene nombre",
       statement:
         "Diagnostica este código con el vocabulario del curso: nombra los DOS code smells presentes y aplica el refactor que los cura. Pista: fíjate en a quién le pregunta los datos y en qué grupo de parámetros viaja junto.",
@@ -665,6 +715,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "di-contenedores": [
     {
+      id: "rdbe2ee",
       title: "Un contenedor en 40 líneas",
       statement:
         "Escribe un contenedor con autowiring real: dado un nombre de clase, lee su constructor por reflexión, resuelve recursivamente cada parámetro tipado y devuelve la instancia (cacheada: misma clase, misma instancia). Pruébalo con una cadena A → B → C. ¿Qué caso no puede resolver y qué hacen Symfony o Laravel con él?",
@@ -677,6 +728,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r9432e0",
       title: "El estado que se cuela entre usos",
       statement:
         "Con tu contenedor del reto anterior (o el de tu framework): crea un servicio CarritoEnMemoria con un array interno de líneas e inyéctalo en dos consumidores distintos. Añade líneas desde uno y lee desde el otro. Explica lo que ves y cuándo ese comportamiento es un regalo o una bomba.",
@@ -686,6 +738,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "fundamentos": [
     {
+      id: "r95a890",
       title: "0.1 + 0.2 y el céntimo perdido",
       statement:
         "Ejecuta en PHP: var_dump(0.1 + 0.2 === 0.3), y después suma 0.1 cien veces y compara con 10. Explica el porqué con lo que sabes de IEEE 754 y decide cómo representarías dinero en un sistema de facturación.",
@@ -698,6 +751,7 @@ window.MENTORAI_PRACTICE = {
         "0.1 en binario es periódico —como 1/3 en decimal— así que el double guarda una aproximación, y las aproximaciones se acumulan: tras cien sumas el error ya es visible. No es un bug de PHP: es la naturaleza de coma flotante en cualquier lenguaje. Para dinero: enteros en céntimos (o BCMath/decimal si necesitas divisiones exactas), y las comparaciones de floats, siempre con tolerancia, nunca con ===.",
     },
     {
+      id: "r970984",
       title: "O(n) contra O(1), medido",
       statement:
         "Construye un array de un millón de emails. Mide cuánto tarda in_array buscando el último email 1.000 veces, y compáralo con la misma búsqueda usando isset sobre un array invertido con array_flip. Relaciona los números con la Big-O de cada estructura.",
@@ -710,6 +764,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "ra9ecd6",
       title: "Mira al índice trabajar",
       statement:
         "Crea una tabla con 200.000 filas (vale generarlas con un INSERT ... SELECT recursivo o un bucle en PHP) y lanza la misma consulta por una columna sin índice, con EXPLAIN. Crea el índice, repite el EXPLAIN y compara filas examinadas. Después responde: ¿por qué no indexamos todas las columnas y listo?",
@@ -724,6 +779,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "testing": [
     {
+      id: "r635ac6",
       title: "TDD de verdad: sin adelantarte",
       statement:
         "Implementa con TDD estricto un conversor de números a texto de escalera (1 → «I», 4 → «IV»... números romanos hasta 20). La regla del reto: no puedes escribir NI UNA línea de producción sin un test en rojo que la exija, y tras cada verde, considera refactorizar. Guarda la secuencia de commits como evidencia.",
@@ -736,6 +792,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "rd2c3d3",
       title: "Testea sin enviar emails",
       statement:
         "Un servicio RecuperarPassword genera un token y llama a un EmailSender real. Escribe su test unitario sin que se envíe nada: crea a mano (sin librería de mocks) un doble que capture el envío, y verifica que se llamó una vez, al destinatario correcto y con el token dentro. ¿Qué tipo de doble acabas de escribir?",
@@ -748,6 +805,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "rac77dd",
       title: "El test que estorba",
       statement:
         "Este test pasa, y aun así es un mal test. Encuentra los dos motivos por los que estorbará al refactorizar, y reescríbelo para que proteja el comportamiento en lugar de la implementación.",
@@ -767,6 +825,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "observabilidad": [
     {
+      id: "r981675",
       title: "Logs que responden preguntas",
       statement:
         "Toma un script PHP con logs de texto libre («Error al procesar pedido 42 del usuario 7») y conviértelos a JSON estructurado con campos fijos. Después responde con jq, sobre el fichero de log, la pregunta que el texto libre no puede responder bien: ¿cuántos fallos hubo por usuario en la última hora?",
@@ -779,6 +838,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r5674e3",
       title: "Expón /metrics a mano",
       statement:
         "Sin librerías: haz que tu app PHP exponga un endpoint /metrics en el formato de texto de Prometheus con dos métricas — un counter de peticiones totales (etiquetado por ruta) y un gauge con el timestamp del último deploy. Compruébalo con curl y explica por qué un counter jamás debe bajar.",
@@ -791,6 +851,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r129b3e",
       title: "¿Cuál de las dos alertas despierta a alguien?",
       statement:
         "Redacta dos alertas para tu servicio: «la CPU de la base de datos supera el 90% durante 5 minutos» y «el p99 de latencia del checkout supera 2 segundos durante 5 minutos». Solo una merece despertar a un humano a las 4 de la mañana. Decide cuál, y qué haces con la otra.",
@@ -800,6 +861,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "phpunit": [
     {
+      id: "r6c8ef4",
       title: "Veinte casos, un test",
       statement:
         "Escribe un validador de DNI español (8 dígitos + letra de control) y su test con un data provider que cubra: válidos, letra incorrecta, longitud mala, letras minúsculas y cadena vacía. Nombra cada caso del provider. ¿Qué te da esto que no den 5 tests copiados?",
@@ -812,6 +874,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r64ccd6",
       title: "El mock con expectativas",
       statement:
         "Un servicio CancelarPedido debe: buscar el pedido en el repositorio, marcarlo cancelado y guardarlo UNA sola vez. Escribe el test con createMock: un stub para la búsqueda y una expectativa estricta para el guardado (veces exactas y argumento verificado con un callback). Rompe luego el servicio duplicando el save y mira el mensaje.",
@@ -824,6 +887,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r377d3a",
       title: "La excepción también es contrato",
       statement:
         "Tu servicio de transferencias lanza SaldoInsuficienteException con el déficit en el mensaje cuando no hay fondos. Escribe el test que verifica la clase de excepción Y parte del mensaje — y colócalo de forma que también verifiques que NO se ejecutó nada después del punto de fallo. ¿Dónde tiene que ir la llamada que revienta?",
@@ -838,6 +902,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "programar-con-ia": [
     {
+      id: "r274cf9",
       title: "El mismo prompt, con y sin contexto",
       statement:
         "Pide a tu asistente de IA la misma función dos veces en conversaciones separadas: (1) «hazme una función que valide IBANs» a secas, y (2) la misma petición aportando tu firma exacta, tus convenciones (excepciones tipadas, sin else) y dos tests que debe pasar. Compara los resultados como si revisaras dos PRs. ¿Qué decidió la IA por ti en la versión 1?",
@@ -845,6 +910,7 @@ window.MENTORAI_PRACTICE = {
         "En la versión sin contexto, la IA decidió el lenguaje de los errores (¿bool? ¿excepción? ¿array de errores?), el naming, el manejo de entrada sucia y hasta el alcance (¿valida el checksum o solo el formato?) — y lo decidió con la media de su entrenamiento, no con tu proyecto. La versión con contexto convierte esas decisiones en requisitos. La lección operativa del curso: la calidad de lo generado es función del contrato que le des, y los tests son el contrato más barato y menos ambiguo que existe.",
     },
     {
+      id: "rf686e3",
       title: "Caza la alucinación con red",
       statement:
         "Pide código que use una librería real que NO conozcas bien (por ejemplo, publicar en Redis Streams desde PHP). Antes de ejecutarlo, audita contra la documentación oficial cada llamada: nombre del método, orden de parámetros, valores de retorno. Anota cuántas afirmaciones eran verificables y cuántas te habrías tragado.",
@@ -852,6 +918,7 @@ window.MENTORAI_PRACTICE = {
         "El patrón de las alucinaciones de API es que son plausibles: métodos que DEBERÍAN existir con ese nombre, parámetros en el orden «lógico». Por eso la revisión por intuición no las caza — tu intuición y la del modelo se entrenaron con lo mismo. La red es mecánica: la doc oficial o el propio código fuente de la librería como árbitro, y un test de integración que ejecute la llamada de verdad. Regla del curso: cuanto menos conoces el terreno, menos puedes revisar a ojo y más necesitas verificación ejecutable.",
     },
     {
+      id: "r65b2a5",
       title: "El diff generado, bajo tu checklist",
       statement:
         "Toma un cambio no trivial generado por IA (o genera uno: «añade rate limiting a este endpoint») y revísalo con una checklist escrita por ti ANTES de mirar el diff: casos borde cubiertos, errores manejados, seguridad, tests, consistencia con el proyecto. Firma mentalmente el resultado como si el commit llevara tu nombre — porque lo lleva.",
@@ -861,6 +928,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "diseno-y-arquitectura": [
     {
+      id: "r1e1a02",
       title: "Un puerto, dos adaptadores",
       statement:
         "Toma un caso de uso tuyo que hable directamente con Doctrine o PDO y sepáralo en hexagonal: define el puerto (interfaz de repositorio en lenguaje del dominio), mueve el acceso a datos a un adaptador, y escribe un segundo adaptador EnMemoria. La prueba del algodón: el test del caso de uso debe correr sin base de datos y sin mocks.",
@@ -873,6 +941,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "rd51e9c",
       title: "El evento saca al intruso del agregado",
       statement:
         "Un método Usuario::registra() termina enviando el email de bienvenida (le inyectaron el mailer al agregado). Refactoriza con eventos de dominio: el agregado registra UsuarioRegistrado, y el envío ocurre en un handler fuera. ¿Qué gana el dominio y qué decisión nueva aparece sobre CUÁNDO despachar?",
@@ -885,6 +954,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r823ce6",
       title: "Separa la lectura que no encaja",
       statement:
         "El dashboard de tu app necesita «pedidos por día con nombre de cliente y total, últimos 30 días». Implementarlo con los agregados del dominio obliga a cargar cientos de objetos para tirar el 90%. Aplica CQRS mínimo: un read model que sirva ESA vista. ¿Qué le está permitido a ese modelo de lectura que al de escritura le está prohibido?",
@@ -899,6 +969,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "python": [
     {
+      id: "r79e7de",
       title: "El generador que no revienta la RAM",
       statement:
         "Genera un fichero de 5 millones de líneas y procésalo dos veces: una cargándolo con readlines() y una list comprehension, otra con un generador (expresión generadora o yield). Mide memoria pico con tracemalloc en ambas. Explica la diferencia con el modelo de evaluación de cada uno.",
@@ -911,6 +982,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r77beae",
       title: "Escribe @cronometra",
       statement:
         "Implementa un decorador @cronometra que imprima cuánto tardó la función decorada, sin perder su nombre ni su docstring (compruébalo con __name__). Aplícalo a dos funciones distintas. Explica qué es exactamente lo que hace la sintaxis @ por debajo.",
@@ -923,6 +995,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "re8e4bd",
       title: "FastAPI valida por ti (hasta donde le digas)",
       statement:
         "Monta un endpoint POST /usuarios con un modelo Pydantic: email validado como email real, edad entero entre 18 y 120. Pruébalo con curl tres veces: datos buenos, edad 15 y edad \"quince\". Lee las tres respuestas y di qué trabajo acabas de delegar y qué validación NO puede hacer Pydantic por ti.",
@@ -937,6 +1010,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "rust": [
     {
+      id: "r59f0a9",
       title: "Pelea tu primer error de ownership",
       statement:
         "Escribe este programa, intenta compilarlo y lee el error COMPLETO antes de arreglar nada: crea un String, pásalo a una función saluda(nombre: String) y vuelve a usarlo en main después de la llamada. Arréglalo de dos formas distintas y di cuál preferirías y por qué.",
@@ -954,6 +1028,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r93e8f7",
       title: "El enum que hace imposible el estado ilegal",
       statement:
         "Modela un pago que puede estar Pendiente, Confirmado (con fecha) o Rechazado (con motivo) usando un enum con datos. Escribe una función descripcion(pago) con match — y comprueba qué pasa al compilar si añades una variante nueva Reembolsado y NO tocas el match.",
@@ -966,6 +1041,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "re5ff37",
       title: "Errores con ? de principio a fin",
       statement:
         "Escribe una función que lea un fichero de configuración y devuelva el valor entero de la clave puerto: cada paso puede fallar (fichero ausente, clave ausente, valor no numérico). Sin unwrap ni panic: firma que devuelve Result, operador ? en cada paso, y el main decide qué hacer con el error. ¿Qué hace exactamente el ? en cada línea?",
@@ -980,6 +1056,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "claude-code": [
     {
+      id: "ra1f6e5",
       title: "Escribe una rule y mide si se obedece",
       statement:
         "Elige una convención real de tu proyecto que el agente incumpla de vez en cuando. Escríbela en el CLAUDE.md de dos formas: primero como prohibición seca, luego con el mecanismo y el porqué. Abre una sesión nueva con cada versión, pide una tarea que la ponga a prueba y compara el comportamiento.",
@@ -987,6 +1064,7 @@ window.MENTORAI_PRACTICE = {
         "La versión con porqué gana casi siempre, y el motivo es el de la lección: un modelo generaliza bien desde mecanismos («fetch falla por CORS en file://, usa un .js que asigne a un global») y mal desde prohibiciones sueltas, que invitan a la excepción. De regalo, el experimento te enseña el ciclo completo: detectar la corrección repetida, destilarla a regla, y verificar contra la realidad en vez de suponer.",
     },
     {
+      id: "rf8d3b3",
       title: "Monta el servidor MCP mínimo",
       statement:
         "Crea un servidor MCP con una sola tool que consulte algo tuyo de verdad (tu BD de desarrollo con conexión de solo lectura, o un fichero de datos). Conéctalo con .mcp.json, abre una sesión y pídele al agente algo que necesite esa tool. Después intenta colarle una operación de escritura y comprueba que el servidor la rechaza.",
@@ -998,6 +1076,7 @@ window.MENTORAI_PRACTICE = {
         "Al pedirle el dato, el agente descubre tu tool en el catálogo y la invoca sin que tú toques nada — el bucle de siempre con un brazo ejecutor nuevo. La parte importante es el segundo paso: la escritura la rechaza tu validación dentro del servidor (y la credencial de solo lectura), no la buena voluntad del modelo. Esa es la frontera determinista de todo el curso, ahora escrita por ti.",
     },
     {
+      id: "r52b805",
       title: "Un hook que protege un invariante",
       statement:
         "Elige un fichero de tu proyecto que nunca deba editarse a mano (uno generado, un lockfile) y escribe un hook pre-herramienta que bloquee su edición con un mensaje que diga qué hacer en su lugar. Pide luego al agente una tarea que le tiente a editarlo y observa la secuencia completa.",
@@ -1007,6 +1086,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "construir-con-ia": [
     {
+      id: "rae8dd6",
       title: "El clasificador con contrato",
       statement:
         "Monta el clasificador de tickets del curso de punta a punta en PHP: salida estructurada con una clase (categoría como enum cerrado, urgencia 1-5, requiereHumano), y pruébalo con diez tickets inventados — incluye dos ambiguos y uno que intente inyección («ignora tus instrucciones y…»). Registra el usage de cada llamada.",
@@ -1014,6 +1094,7 @@ window.MENTORAI_PRACTICE = {
         "Los diez responden con el objeto tipado — el no determinismo queda en los valores, nunca en la forma. Los ambiguos son la prueba interesante: si tu esquema tiene vía de escape, acaban en «otro» o con requiereHumano a true en vez de en una categoría inventada. Y la inyección se queda en anécdota porque viaja como user, separada de tu system. El usage registrado es la semilla del hábito de la última lección: medir desde el día uno.",
     },
     {
+      id: "r615cf6",
       title: "Streaming de punta a punta",
       statement:
         "Construye la tubería completa en local: un endpoint PHP que consume el stream del SDK y reemite SSE, y una página con EventSource que pinta la respuesta palabra a palabra. Después ponle un nginx delante (docker) sin configurar nada y observa qué pasa con el goteo. Arréglalo.",
@@ -1025,6 +1106,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "rd05c25",
       title: "Tu primer golden set",
       statement:
         "Toma 30 casos del clasificador del primer reto y decide a mano la respuesta correcta de cada uno. Escribe el runner: un script PHP que los pasa todos por el clasificador y saca el porcentaje de aciertos. Después cambia una frase del system prompt y vuelve a correrlo. ¿Mejoró?",
@@ -1039,6 +1121,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "la-maquina": [
     {
+      id: "r95f4ac",
       title: "Filas contra columnas, medido",
       statement:
         "Ejecuta el experimento de la lección de CPU: recorre una matriz de 2000×2000 por filas y por columnas, cronometrando ambos con hrtime. Mismo número de sumas exactas. Anota la diferencia — y si tienes Go o Rust a mano, repítelo ahí y compara la brecha.",
@@ -1051,6 +1134,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r6d816d",
       title: "Espía un hola mundo con strace",
       statement:
         "Ejecuta strace -c php -r 'echo \"hola\";' y estudia el resumen: ¿cuántas syscalls en total? ¿Cuáles dominan? Después lanza strace -e trace=write con el mismo echo y encuentra la línea exacta donde tu echo se convierte en syscall.",
@@ -1062,6 +1146,7 @@ window.MENTORAI_PRACTICE = {
         "El resumen enseña cientos de llamadas — openat y mmap dominan (cargar el intérprete y sus librerías) — y tu programa entero es una: write(1, \"hola\\n\", 5). Esa desproporción es la lección: el lenguaje de alto nivel es azúcar sobre un menú corto de syscalls, y strace te deja verlo siempre que un proceso haga cosas raras.",
     },
     {
+      id: "r674e66",
       title: "Provoca un TIME_WAIT masivo",
       statement:
         "Con un servidor local (php -S localhost:8000), lanza 2000 curls seguidos en un bucle y a continuación ejecuta ss -tan | grep -c TIME-WAIT. Explica qué ves, por qué pasa, y qué pieza de tu stack real existe para evitarlo.",
@@ -1075,6 +1160,7 @@ window.MENTORAI_PRACTICE = {
   ],
   "k8s-para-devs": [
     {
+      id: "rc856ef",
       title: "Mata al pod y pierde la batalla",
       statement:
         "Con tu kind levantado y el deployment de 2 réplicas aplicado: abre kubectl get pods -w en una terminal y, desde otra, borra un pod. Cronometra cuánto tarda el sustituto en estar Running. Después intenta «ganar»: borra pods más rápido de lo que renacen. Espóiler: no puedes.",
@@ -1086,6 +1172,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "r947bfb",
       title: "El deploy roto que nadie sufrió",
       statement:
         "Reproduce el experimento estrella del curso: tu app con /salud, con la v2 sana desplegada (la del rollout de la lección), construye una v3 cuyo /salud devuelva 500 y aplícala. Mientras tanto, un bucle de curls contra el Service. Comprueba: ¿cuántos errores vieron tus «usuarios»? ¿En qué estado quedó el rollout? Sal del lío con rollout undo.",
@@ -1097,6 +1184,7 @@ window.MENTORAI_PRACTICE = {
       },
     },
     {
+      id: "rdc0d83",
       title: "Provoca un OOMKilled",
       statement:
         "Baja el límite de memoria de tu deployment a 32Mi y añade a tu index.php una ruta /comer que reserve memoria en bucle (str_repeat en un array). Llama a /comer y observa con kubectl get pods -w y describe qué le pasa al contenedor. ¿Quién lo mató y quién lo resucitó?",

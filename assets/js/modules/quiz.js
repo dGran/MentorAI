@@ -271,7 +271,7 @@
       outcomes.forEach((wasCorrect, index) => {
         if (wasCorrect === null) return;
 
-        MentorAI.Repaso?.record(`q:${entry.course.slug}:${index}`, wasCorrect);
+        MentorAI.Repaso?.record(`q:${entry.course.slug}:${entry.quizData.questions[index].id}`, wasCorrect);
       });
 
       if (outcomes.includes(null)) {
