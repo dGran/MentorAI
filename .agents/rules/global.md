@@ -3,8 +3,27 @@
 Plataforma visual de tutoriales técnicos en HTML estático, pensada para crecer
 tutorial a tutorial, iterando el contenido con IA. Estas reglas se cargan en
 cada sesión: capturan lo propio del proyecto. Los estándares de código generales
-(clean code, no `else`, booleanos `is/has/should`, etc.) ya llegan por la config
-global del agente y no se duplican aquí.
+viven en § Convenciones base y no se duplican aquí.
+
+Antes de escribir código, lee `~/.agent-flow/rules/engineering-discipline.md`.
+
+## Convenciones base
+
+Base: `~/.agent-flow/stacks/general/rules.md` y `~/.agent-flow/stacks/ux/rules.md`.
+Léela antes de escribir código por primera vez en la sesión. **El proyecto
+manda**: estas reglas y las excepciones de abajo prevalecen sobre la base, y un
+conflicto se resuelve a favor del proyecto sin reportarlo como hallazgo.
+
+Excepciones (lo que la arquitectura de abajo resuelve de otra forma):
+
+- **G-10** no aplica: no hay clases ni contenedor. Cada módulo es un IIFE que
+  cuelga de `window.MentorAI`, y las referencias entre módulos van por
+  `MentorAI.X` en runtime (§ Frontend).
+- **G-20** no aplica tal cual: sin build ni dependencias no hay runner de tests.
+  La red son los scripts de `scripts/` (`validar.js`, `verificar-offline.js`).
+
+Pendiente de decidir: **G-03** (sin comentarios) frente a las cabeceras de
+sección que conserva § Frontend. Hasta que se decida, manda § Frontend.
 
 ## Arquitectura — invariantes que no se rompen
 
@@ -51,10 +70,6 @@ global del agente y no se duplican aquí.
   `assets/js/modules/syntax.js`):
   una pasada con regex combinado por lenguaje (`php`/`bash`/`ini`). Dentro de los
   `<code data-lang=...>` hay que escapar `<`, `>` y `&` (`&lt;?php`).
-- **El puente (`server/bridge.js`) es opcional.** Añade generar y refinar
-  tutoriales con `claude -p` headless (usa la sesión de Claude Code, **sin API
-  key**). Regla de oro: **el servidor escribe los ficheros**, no Claude (evita
-  prompts de permisos y mantiene el control). Node puro, sin dependencias.
 
 ## Convenciones de contenido
 
