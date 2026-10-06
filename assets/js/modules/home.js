@@ -146,22 +146,32 @@
   }
 
   /* Primer curso empezado o por empezar que aún tenga lecciones pendientes. */
+  function courseActivity(course, map) {
+    const published = lessonsOf(course).filter((slug) => map[slug]?.status !== "soon" && map[slug]);
+    const pending = published.filter((slug) => !MentorAI.Progress.has(slug));
+    const readingTimes = published.map((slug) => MentorAI.Reading.get(slug)?.updatedAt ?? 0);
+    const hasReading = readingTimes.some((time) => time > 0);
+    const done = published.length - pending.length;
+
+    return {
+      course,
+      next: map[pending[0]],
+      done,
+      total: published.length,
+      isStarted: done > 0 || hasReading,
+      hasPending: pending.length > 0,
+      lastActivity: Math.max(0, ...readingTimes),
+    };
+  }
+
   function pendingCourse(map) {
-    for (const course of window.MENTORAI_COURSES ?? []) {
-      const published = lessonsOf(course).filter((slug) => map[slug]?.status !== "soon" && map[slug]);
-      const pending = published.filter((slug) => !MentorAI.Progress.has(slug));
+    const started = (window.MENTORAI_COURSES ?? [])
+      .map((course) => courseActivity(course, map))
+      .filter((activity) => activity.isStarted && activity.hasPending);
 
-      if (published.length > 0 && pending.length > 0) {
-        return {
-          course,
-          next: map[pending[0]],
-          done: published.length - pending.length,
-          total: published.length,
-        };
-      }
-    }
+    if (started.length === 0) return null;
 
-    return null;
+    return started.sort((a, b) => b.lastActivity - a.lastActivity)[0];
   }
 
   function renderRoute(map) {
