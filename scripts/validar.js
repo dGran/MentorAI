@@ -339,6 +339,37 @@ function validarPractica() {
 
 /* ---------- 5. TOC, anclas y escapado en los tutoriales ---------- */
 
+const NIVELES = ["Principiante", "Intermedio", "Avanzado"];
+
+function validarHeroContraManifest() {
+  const sinCuandoAplicarlo = [];
+
+  for (const tutorial of manifest.filter((entrada) => entrada.status !== "soon")) {
+    const fichero = `tutorials/${tutorial.slug}.html`;
+    const html = leer(fichero);
+    const meta = html.match(/<div class="tutorial-meta">([\s\S]*?)<\/div>/)?.[1] ?? "";
+    const minutos = Number(meta.match(/(\d+)\s*min\b/)?.[1]);
+    const nivel = meta.match(new RegExp(`\\b(${NIVELES.join("|")})\\b`, "i"))?.[1];
+
+    if (minutos !== tutorial.minutes) {
+      error(`${fichero}: el hero dice ${minutos} min y el manifest ${tutorial.minutes}`);
+    }
+
+    if (nivel !== tutorial.level) {
+      error(`${fichero}: el hero dice nivel «${nivel}» y el manifest «${tutorial.level}»`);
+    }
+
+    if (!/<h2[^>]*\sid="cuando"/.test(html)) sinCuandoAplicarlo.push(tutorial.slug);
+  }
+
+  if (sinCuandoAplicarlo.length > 0) {
+    aviso(
+      `${sinCuandoAplicarlo.length} tutoriales sin la sección «Cuándo aplicarlo» (<h2 id="cuando">): ` +
+        sinCuandoAplicarlo.join(", ")
+    );
+  }
+}
+
 function validarTutoriales() {
   for (const fichero of htmlDelCatalogo().filter((f) => f.startsWith("tutorials/"))) {
     const html = leer(fichero);
@@ -536,6 +567,7 @@ validarPreguntas("checks", checks, {
 });
 validarPractica();
 validarTutoriales();
+validarHeroContraManifest();
 validarIdsDuplicados();
 validarScripts();
 validarShell();
