@@ -313,7 +313,13 @@ bits:         01001000 10001011 ...  (lo unico que la CPU ve)</code></pre>
             <pre><code data-lang="php">&lt;?php
 
 $n = 2000;
-$matriz = array_fill(0, $n, array_fill(0, $n, 1));
+$matriz = [];
+
+for ($fila = 0; $fila &lt; $n; $fila++) {
+    for ($col = 0; $col &lt; $n; $col++) {
+        $matriz[$fila][$col] = $fila + $col;   // cada fila, su propio array
+    }
+}
 
 $inicio = hrtime(true);
 $suma = 0;
@@ -339,11 +345,30 @@ echo "por columnas: " . intdiv(hrtime(true) - $inicio, 1_000_000) . " ms\n";</co
           </div>
 
           <p>
-            En PHP la diferencia queda amortiguada por las capas del intérprete
-            (verás quizá un 20-50%); en C o Rust puede ser 5-10x. El fenómeno es
-            el mismo: el segundo bucle falla la caché una y otra vez. Mismo Big
-            O, distinta física.
+            Aun con las capas del intérprete, en PHP la diferencia se ve sin
+            esfuerzo: por columnas suele salir <strong>entre dos y cuatro veces
+            más lento</strong> haciendo exactamente las mismas sumas (en un
+            portátil corriente, por ejemplo, unos 40 ms frente a unos 170 ms;
+            tus cifras dependerán de la máquina). En C o Rust la brecha puede
+            ser aún mayor. El fenómeno es el mismo: el segundo bucle falla la
+            caché una y otra vez. Mismo Big O, distinta física.
           </p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Por qué la matriz se construye fila a fila</p>
+              <p>
+                El atajo <code>array_fill(0, $n, array_fill(0, $n, 1))</code>
+                parece equivalente y no lo es: PHP copia los arrays solo al
+                modificarlos (<em>copy-on-write</em>), así que las 2000 filas
+                serían la <strong>misma</strong> fila compartida, 2000 valores
+                que caben enteros en caché. Recorrerla por columnas ya no
+                saltaría por la memoria, y el experimento saldría empatado sin
+                demostrar nada. Medir bien también es saber qué estás midiendo.
+              </p>
+            </div>
+          </div>
 
           <h2 id="backend">
             Qué cambia para un backend

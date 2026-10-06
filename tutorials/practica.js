@@ -13,10 +13,10 @@ window.MENTORAI_PRACTICE = {
       statement:
         "El disco de un servidor está al 92% y nadie sabe por qué. Sin abrir ningún explorador gráfico, encuentra los 5 ficheros más pesados que cuelgan de /var en tu máquina (o de tu $HOME si no tienes permisos). Pista: no es lo mismo el tamaño de un directorio que el de un fichero.",
       solution:
-        "du -ah recorre el árbol mostrando el tamaño de cada fichero y directorio; sort -rh ordena por tamaño legible (entiende K, M, G) de mayor a menor, y head corta los 5 primeros. La alternativa con find -type f -size +100M lista solo ficheros grandes, pero no los ordena: por eso el pipeline con du es la herramienta habitual de diagnóstico.",
+        "find -type f se queda solo con ficheros y -printf '%s %p' imprime el tamaño en bytes y la ruta; sort -rn ordena numéricamente de mayor a menor y head corta los 5 primeros. La trampa de la pista es du -ah | sort -rh: lista directorios además de ficheros, y como un directorio pesa lo que todo lo que contiene, /var y sus subcarpetas copan el podio sin decirte qué fichero es el culpable. du sigue siendo la herramienta para otra pregunta del diagnóstico —qué carpeta crece—; find, para esta —qué fichero—.",
       solutionCode: {
         lang: "bash",
-        source: "du -ah /var 2>/dev/null | sort -rh | head -n 5",
+        source: "find /var -type f -printf '%s %p\\n' 2>/dev/null | sort -rn | head -n 5",
       },
     },
     {
@@ -214,11 +214,11 @@ window.MENTORAI_PRACTICE = {
       statement:
         "Escribe un programa que cuente las líneas de todos los ficheros que le pases como argumentos, lanzando una goroutine por fichero y recogiendo los resultados por un channel. Compara mentalmente con cómo lo harías en PHP: ¿qué te está regalando el runtime?",
       solution:
-        "Cada goroutine cuenta su fichero y manda el resultado por el channel; main recibe exactamente un mensaje por fichero, así que ni siquiera hace falta WaitGroup. En PHP la concurrencia de este estilo exige extensiones o procesos; en Go es parte del lenguaje: goroutines baratas y un canal tipado que además sincroniza — recibir bloquea hasta que hay dato.",
+        "Cada goroutine cuenta su fichero y manda el resultado por el channel; main recibe exactamente un mensaje por fichero, así que ni siquiera hace falta WaitGroup. El error de os.ReadFile viaja también por el channel: ignorarlo con _ haría que un fichero ilegible contase 0 líneas sin avisar, justo lo que la lección de errores enseña a no hacer. En PHP la concurrencia de este estilo exige extensiones o procesos; en Go es parte del lenguaje: goroutines baratas y un canal tipado que además sincroniza — recibir bloquea hasta que hay dato.",
       solutionCode: {
         lang: "go",
         source:
-          "func main() {\n    type result struct {\n        name  string\n        lines int\n    }\n\n    results := make(chan result)\n\n    for _, name := range os.Args[1:] {\n        go func(name string) {\n            data, _ := os.ReadFile(name)\n            results <- result{name, bytes.Count(data, []byte(\"\\n\"))}\n        }(name)\n    }\n\n    for range os.Args[1:] {\n        r := <-results\n        fmt.Println(r.name, r.lines)\n    }\n}",
+          "func main() {\n    type result struct {\n        name  string\n        lines int\n        err   error\n    }\n\n    results := make(chan result)\n\n    for _, name := range os.Args[1:] {\n        go func(name string) {\n            data, err := os.ReadFile(name)\n            if err != nil {\n                results <- result{name: name, err: err}\n                return\n            }\n            results <- result{name: name, lines: bytes.Count(data, []byte(\"\\n\"))}\n        }(name)\n    }\n\n    for range os.Args[1:] {\n        r := <-results\n        if r.err != nil {\n            fmt.Fprintln(os.Stderr, r.name, r.err)\n            continue\n        }\n        fmt.Println(r.name, r.lines)\n    }\n}",
       },
     },
     {
@@ -1043,7 +1043,7 @@ window.MENTORAI_PRACTICE = {
       statement:
         "Ejecuta el experimento de la lección de CPU: recorre una matriz de 2000×2000 por filas y por columnas, cronometrando ambos con hrtime. Mismo número de sumas exactas. Anota la diferencia — y si tienes Go o Rust a mano, repítelo ahí y compara la brecha.",
       solution:
-        "En PHP verás una diferencia moderada (el intérprete amortigua); en un lenguaje compilado, brutal. La causa es una sola: por filas aprovechas cada línea de caché de 64 bytes; por columnas la desperdicias y vas a RAM una y otra vez. Mismo Big O, distinta física — a partir de hoy, «recorrer datos contiguos» deja de ser un consejo abstracto.",
+        "Construye la matriz fila a fila: con array_fill anidado PHP comparte una sola fila (copy-on-write), cabe en caché y sale empate. Bien construida, en PHP verás el recorrido por columnas entre dos y cuatro veces más lento, según la máquina; en un lenguaje compilado, la brecha puede crecer. La causa es una sola: por filas aprovechas cada línea de caché de 64 bytes; por columnas la desperdicias y vas a RAM una y otra vez. Mismo Big O, distinta física — a partir de hoy, «recorrer datos contiguos» deja de ser un consejo abstracto.",
       solutionCode: {
         lang: "php",
         source:
@@ -1088,7 +1088,7 @@ window.MENTORAI_PRACTICE = {
     {
       title: "El deploy roto que nadie sufrió",
       statement:
-        "Reproduce el experimento estrella del curso: tu app con /salud, despliega v1 sana, luego construye una v3 cuyo /salud devuelva 500 y aplícala. Mientras tanto, un bucle de curls contra el Service. Comprueba: ¿cuántos errores vieron tus «usuarios»? ¿En qué estado quedó el rollout? Sal del lío con rollout undo.",
+        "Reproduce el experimento estrella del curso: tu app con /salud, con la v2 sana desplegada (la del rollout de la lección), construye una v3 cuyo /salud devuelva 500 y aplícala. Mientras tanto, un bucle de curls contra el Service. Comprueba: ¿cuántos errores vieron tus «usuarios»? ¿En qué estado quedó el rollout? Sal del lío con rollout undo.",
       solution:
         "Cero errores: los pods v3 nunca pasan su readiness (0/1 Ready), el rollout se atasca tras el primer intento sin tocar los v2 sanos, y el Service solo enruta a quien está listo. kubectl rollout undo restaura la declaración anterior. Haber visto un deploy roto no doler es el argumento definitivo para no desplegar jamás sin readiness probe.",
       solutionCode: {
