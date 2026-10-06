@@ -2733,8 +2733,8 @@ window.MENTORAI_CHECKS = {
 
   "llm-de-texto-a-tokens": [
     { id: "c504173", q: "Un modelo responde mal cuántas «r» tiene una palabra. ¿Cuál es la causa más probable?",
-      o: ["Le falta entrenamiento en ortografía española","Ve la palabra como uno o dos tokens, no letra a letra","La temperatura estaba demasiado alta en esa llamada"], a: 1,
-      w: "El modelo nunca vio las letras por separado: tiene que deducir la ortografía de un bloque. Para contar, mejor una herramienta." },
+      o: ["Le falta entrenamiento en ortografía española","Ve la palabra como varios tokens, no letra a letra","La temperatura estaba demasiado alta en esa llamada"], a: 1,
+      w: "En la entrada el modelo no ve las letras por separado: tiene que deducir la ortografía de unos bloques. Para contar, mejor una herramienta." },
     { id: "c06633b", q: "El mismo prompt en español y en inglés. ¿Qué es lo esperable en tokens?",
       o: ["El español suele ocupar más tokens que el inglés","Depende solo de los caracteres del texto","El inglés ocupa más porque sus palabras son más cortas"], a: 0,
       w: "El vocabulario se aprendió de un corpus donde dominaba el inglés: el español se parte en más trozos, y eso se paga en contexto y en precio." },
