@@ -145,13 +145,20 @@
     fillShelf("home-popular", "Destacados", "Una buena puerta de entrada", cards);
   }
 
-  /* Primer curso empezado o por empezar que aún tenga lecciones pendientes. */
-  function courseActivity(course, map) {
+  function learnerActivity() {
+    return {
+      done: new Set(MentorAI.Progress.list()),
+      doneAt: MentorAI.Progress.markedAt(),
+      readAt: Object.fromEntries(MentorAI.Reading.list().map((entry) => [entry.slug, entry.updatedAt ?? 0])),
+    };
+  }
+
+  function courseActivity(course, map, activity) {
     const published = lessonsOf(course).filter((slug) => map[slug]?.status !== "soon" && map[slug]);
-    const pending = published.filter((slug) => !MentorAI.Progress.has(slug));
-    const readingTimes = published.map((slug) => MentorAI.Reading.get(slug)?.updatedAt ?? 0);
-    const hasReading = readingTimes.some((time) => time > 0);
+    const pending = published.filter((slug) => !activity.done.has(slug));
     const done = published.length - pending.length;
+    const touchedAt = published.map((slug) => Math.max(activity.readAt[slug] ?? 0, activity.doneAt[slug] ?? 0));
+    const hasReading = published.some((slug) => slug in activity.readAt);
 
     return {
       course,
@@ -160,14 +167,15 @@
       total: published.length,
       isStarted: done > 0 || hasReading,
       hasPending: pending.length > 0,
-      lastActivity: Math.max(0, ...readingTimes),
+      lastActivity: Math.max(0, ...touchedAt),
     };
   }
 
   function pendingCourse(map) {
+    const activity = learnerActivity();
     const started = (window.MENTORAI_COURSES ?? [])
-      .map((course) => courseActivity(course, map))
-      .filter((activity) => activity.isStarted && activity.hasPending);
+      .map((course) => courseActivity(course, map, activity))
+      .filter((course) => course.isStarted && course.hasPending);
 
     if (started.length === 0) return null;
 
