@@ -2844,7 +2844,7 @@ window.MENTORAI_CHECKS = {
 
   "ag-rules-y-paquetes": [
     { id: "ca27e4a", q: "Un revisor escribe «no me gusta este else». ¿Qué le falta a ese hallazgo para ser útil?",
-      o: ["Citar la norma por su identificador, por ejemplo G-04","Proponer tres alternativas distintas al autor del cambio","Que lo confirme otra persona del equipo antes de enviarlo"], a: 0,
+      o: ["Citar la norma por su identificador, por ejemplo GEN-02","Proponer tres alternativas distintas al autor del cambio","Que lo confirme otra persona del equipo antes de enviarlo"], a: 0,
       w: "Con identificador, el hallazgo es verificable y se sabe si bloquea (obligatoria) o solo se sugiere (recomendada)." },
     { id: "cc144c9", q: "¿Qué es un anclaje en un paquete de convenciones?",
       o: ["Una norma obligatoria que ningún proyecto puede exceptuar","La copia completa del paquete dentro de cada proyecto","Un resumen de pocas líneas que se inyecta al editar"], a: 2,
@@ -2944,7 +2944,7 @@ window.MENTORAI_CHECKS = {
       w: "Se ordena por demostrabilidad: primero lo que construye la red que detectará regresiones en lo que viene detrás." },
     { id: "cf92edc", q: "Un issue de la tanda se pone en rojo y no hay arreglo evidente. ¿Qué se hace?",
       o: ["Dejar el PR diagnosticado y seguir con uno independiente","Reintentarlo hasta agotar el tiempo que le queda a la tanda","Mergearlo y abrir un issue de seguimiento"], a: 0,
-      w: "Un rojo en la rama principal envenena lo que viene detrás; no se insiste ni se mergea en rojo." },
+      w: "No se insiste ni se mergea en rojo: un rojo que entra en la rama principal envenena lo que viene detrás." },
     { id: "c6978e4", q: "¿Qué le falta a «arregla los tests hasta que pasen» para ser un bucle seguro?",
       o: ["Un modelo más potente que no se rinda","Permiso para editar cualquier fichero del repositorio","Un límite de iteraciones y el estado en disco"], a: 2,
       w: "La salida ya es medible; sin límite puede no acabar nunca, y sin estado en disco un corte lo reinicia de cero." },

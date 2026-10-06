@@ -1930,7 +1930,7 @@ window.MENTORAI_QUIZZES = {
       o: ["En la disciplina portable, que vale para todo","En la memoria personal de cada desarrollador del equipo","En el paquete del stack, porque nombra un framework","Copiada en las rules de cada proyecto Symfony"], a: 2,
       w: "Lo que nombra una tecnología va a su paquete de stack; los proyectos lo adoptan en vez de copiarlo.",
       lesson: "ag-por-que-un-metodo" },
-    { id: "q28b54a", q: "Quieres que una norma sobre migraciones se cumpla siempre, pero sin pagar su coste en todas las sesiones. ¿Qué canal eliges?",
+    { id: "q1ef57f", q: "Quieres que una norma sobre migraciones se tenga presente al tocarlas, sin pagar su coste en todas las sesiones. ¿Qué canal eliges?",
       o: ["El fichero de rules que se carga siempre al arrancar","Una note que el agente lea solo cuando le parezca oportuno","Un recordatorio que se inyecta al editar una migración","La descripción de una skill de base de datos"], a: 2,
       w: "Al editar es un canal de garantía alta y coste bajo: la norma entra justo cuando importa.",
       lesson: "ag-como-lee-el-agente" },
