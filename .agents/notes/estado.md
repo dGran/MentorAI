@@ -108,7 +108,9 @@ Cada una costó una depuración; están aquí para no repetirlas.
   ve el mismo cambio en los dos lados y no avisa: el segundo despliega su shell
   con la versión que ya tenía el primero. Pasó en la tanda del 2026-10-06 (tres
   PRs con `v13`). La versión se fija **al rebasar sobre `main` justo antes de
-  mergear**: la de `main` más uno.
+  mergear**: la de `main` más uno. Y para que un PR **no** toque `VERSION`, se deja
+  `sw.js` sin cambios en la rama: copiarlo de `main` parece neutro, pero tras un
+  rebase revierte la subida de otro PR (pasó con #55 sobre #54, arreglado en #57).
 - **`verificar-offline.js` usa puertos fijos (8899 y CDP 9336).** Dos ejecuciones
   a la vez se pisan y fallan con errores que parecen del código (`Cannot read
   properties of null`). Se ejecuta en serie, nunca desde dos sesiones a la vez.
@@ -142,7 +144,7 @@ el resto del catálogo (SQL, OOP, Linux…) envejece a décadas, no a meses.
 | `node scripts/verificar-offline.js` | Comprueba el offline con el servidor apagado |
 | `node --test 'scripts/tests/**/*.test.js'` | Tests de la lógica pura (`node:test` + `vm`, sin dependencias). Corre en CI |
 
-Al tocar `sw.js` o los módulos del shell, **subir `VERSION`** (va por `v20`). La
+Al tocar `sw.js` o los módulos del shell, **subir `VERSION`** (va por `v25`). La
 caché de contenido guardado (`academia-content`) ya no lleva versión: un
 despliegue no borra lo que el lector guardó para viajar.
 
