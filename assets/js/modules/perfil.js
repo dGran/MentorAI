@@ -159,8 +159,10 @@
   const CAMPOS_DE_MEJOR_NOTA = ["bestScore", "best"];
 
   function fusionarExamen(mio, suyo) {
-    if (!mio) return suyo;
-    if (!suyo) return mio;
+    const esResultado = (valor) => Boolean(valor) && typeof valor === "object";
+
+    if (!esResultado(mio)) return suyo;
+    if (!esResultado(suyo)) return mio;
 
     const resultado = {
       ...suyo,

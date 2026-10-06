@@ -97,7 +97,21 @@ test("a key without its own rule keeps the local value when there is one", () =>
 });
 
 test("a key without its own rule adopts the remote value when there is no local one", () => {
+  const storage = importInto({}, { "academia-unknown": { remote: true } });
+
+  assert.deepEqual(storage.read("academia-unknown"), { remote: true });
+});
+
+test("a course exam imported with no local result is adopted as is", () => {
   const storage = importInto({}, { "academia-quiz-sql": PASSED_QUIZ });
 
   assert.deepEqual(storage.read("academia-quiz-sql"), PASSED_QUIZ);
+});
+
+test("a corrupt exam value on either side does not break the import", () => {
+  const forward = importInto({ "academia-quiz-git": "corrupt" }, { "academia-quiz-git": PASSED_QUIZ });
+  const backward = importInto({ "academia-quiz-git": PASSED_QUIZ }, { "academia-quiz-git": 5 });
+
+  assert.deepEqual(forward.read("academia-quiz-git"), PASSED_QUIZ);
+  assert.deepEqual(backward.read("academia-quiz-git"), PASSED_QUIZ);
 });
