@@ -401,10 +401,14 @@ function exigirPaginas(fichero, presentes, esperadas) {
   for (const pagina of esperadas) {
     if (!presentes.includes(pagina)) error(`${fichero}: falta la página ${pagina} en su lista de páginas`);
   }
+
+  for (const pagina of presentes) {
+    if (!existe(pagina)) error(`${fichero}: su lista de páginas incluye ${pagina}, que no existe`);
+  }
 }
 
 function validarListasDePaginas() {
-  const paginasRaiz = fs.readdirSync(ROOT).filter((f) => f.endsWith(".html"));
+  const paginasRaiz = fs.readdirSync(ROOT).filter((fichero) => fichero.endsWith(".html"));
   const delMenu = paginasRaiz.filter((pagina) => !PAGINAS_FUERA_DEL_MENU.includes(pagina));
 
   const enOffline = paginasDeLista("assets/js/modules/offline.js", /SHELL_PAGES = \[[^\]]*\]/, /"([^"]+\.html)"/g);
