@@ -1,6 +1,9 @@
 # Auditoría 2026-10-06 — código, UX, contenido y huecos
 
-Estado: **abierta**. Entrada para `/spec`. Cuatro auditorías de solo lectura
+Estado: **volcada al tablero** el 2026-10-06 como issues #1–#39 (Project 6). El
+backlog vive allí; esta note queda como detalle y porqué de cada hallazgo.
+
+Origen: cuatro auditorías de solo lectura
 (código/arquitectura, UX/a11y con 60 capturas, calidad de contenido con 13
 lecciones leídas a fondo, huecos + diseño de curso). Los hallazgos marcados ✔
 se re-verificaron en el código tras la auditoría.
