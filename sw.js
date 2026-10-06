@@ -14,7 +14,8 @@
 
 var VERSION = "v16";
 var SHELL = "academia-shell-" + VERSION;
-var CONTENT = "academia-content-" + VERSION;
+var CONTENT = "academia-content";
+var LEGACY_CONTENT_PREFIX = "academia-content-";
 
 var SHELL_PATHS = [
   "index.html",
@@ -108,6 +109,11 @@ self.addEventListener("activate", function (event) {
     caches
       .keys()
       .then(function (keys) {
+        return Promise.all(keys.filter(isLegacyContent).map(moveIntoContent)).then(function () {
+          return keys;
+        });
+      })
+      .then(function (keys) {
         return Promise.all(
           keys
             .filter(function (key) {
@@ -123,6 +129,29 @@ self.addEventListener("activate", function (event) {
       })
   );
 });
+
+function isLegacyContent(key) {
+  return key.indexOf(LEGACY_CONTENT_PREFIX) === 0;
+}
+
+function moveIntoContent(legacyKey) {
+  return Promise.all([caches.open(legacyKey), caches.open(CONTENT)]).then(function (opened) {
+    var legacy = opened[0];
+    var content = opened[1];
+
+    return legacy.keys().then(function (requests) {
+      return Promise.all(
+        requests.map(function (request) {
+          return legacy.match(request).then(function (response) {
+            if (!response) return;
+
+            return content.put(request, response);
+          });
+        })
+      );
+    });
+  });
+}
 
 /* ---------- Refresco del shell, una vez por arranque del worker ----------
    Evita quedarse con CSS y JS viejos entre despliegues sin pagar una
