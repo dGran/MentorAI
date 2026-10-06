@@ -14,6 +14,8 @@
   const MentorAI = (window.MentorAI = window.MentorAI || {});
 
   const CONTENT_CACHE = "academia-content";
+  const SAVE_STALL_TIMEOUT_MS = 45000;
+  const STATUS_REGION_ID = "offline-status";
   const SHELL_PAGES = [
     "index.html",
     "cursos.html",
@@ -33,20 +35,47 @@
   const baseUrl = () => new URL(basePath(), location.href).href;
   const absolute = (ruta) => new URL(ruta, baseUrl()).href;
 
-  function isFullyCached(urls) {
-    if (urls.length === 0 || !window.caches) return Promise.resolve(false);
+  function countMissing(urls) {
+    if (!window.caches) return Promise.resolve(urls.length);
 
     return caches
       .has(CONTENT_CACHE)
       .then((exists) => {
-        if (!exists) return false;
+        if (!exists) return urls.length;
 
         return caches
           .open(CONTENT_CACHE)
           .then((cache) => Promise.all(urls.map((url) => cache.match(url))))
-          .then((matches) => matches.every(Boolean));
+          .then((matches) => matches.filter((match) => !match).length);
       })
-      .catch(() => false);
+      .catch(() => urls.length);
+  }
+
+  const isFullyCached = (urls) =>
+    urls.length === 0 ? Promise.resolve(false) : countMissing(urls).then((missing) => missing === 0);
+
+  function ensureStatusRegion() {
+    const existing = document.getElementById(STATUS_REGION_ID);
+
+    if (existing) return existing;
+
+    const region = document.createElement("p");
+
+    region.id = STATUS_REGION_ID;
+    region.className = "visually-hidden";
+    region.setAttribute("role", "status");
+    document.body.appendChild(region);
+
+    return region;
+  }
+
+  function announce(message) {
+    const region = ensureStatusRegion();
+
+    region.textContent = "";
+    requestAnimationFrame(() => {
+      region.textContent = message;
+    });
   }
 
   function savedCourseSlugs() {
@@ -95,24 +124,42 @@
   }
 
   function cacheUrls(slug, urls, onProgress) {
+    const requestId = `${slug}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+
     return new Promise((resolve) => {
+      let stallTimer = null;
+
+      const finish = (isStalled) => {
+        clearTimeout(stallTimer);
+        navigator.serviceWorker.removeEventListener("message", onMessage);
+        countMissing(urls).then((missing) => resolve({ missing, total: urls.length, isStalled }));
+      };
+
+      const watchForStall = () => {
+        clearTimeout(stallTimer);
+        stallTimer = setTimeout(() => finish(true), SAVE_STALL_TIMEOUT_MS);
+      };
+
       const onMessage = (event) => {
         const data = event.data ?? {};
 
-        if (data.slug !== slug) return;
+        if (data.requestId !== requestId) return;
 
-        if (data.type === "SAVE_PROGRESS") onProgress?.(data.done, data.total);
-
-        if (data.type === "SAVE_DONE") {
-          navigator.serviceWorker.removeEventListener("message", onMessage);
-          resolve();
+        if (data.type === "SAVE_PROGRESS") {
+          onProgress?.(data.done, data.total);
+          watchForStall();
         }
+
+        if (data.type === "SAVE_DONE") finish(false);
       };
 
       navigator.serviceWorker.addEventListener("message", onMessage);
-      sendToSW({ type: "SAVE_COURSE", slug, urls });
+      watchForStall();
+      sendToSW({ type: "SAVE_COURSE", slug, urls, requestId });
     });
   }
+
+  const missingText = ({ missing, total }) => `Faltan ${missing} de ${total}`;
 
   const dropUrls = (slug, urls) => sendToSW({ type: "REMOVE_COURSE", slug, urls });
 
@@ -204,6 +251,17 @@
     });
   }
 
+  function paintIncomplete(button, outcome) {
+    const label = button.querySelector("span");
+
+    if (label) label.textContent = `${missingText(outcome)} · Reintentar`;
+
+    button.title = outcome.isStalled
+      ? "La descarga se quedó parada. Pulsa para reintentar."
+      : "Algunas lecciones no se pudieron descargar. Pulsa para reintentar.";
+    announce(`${missingText(outcome)} lecciones sin guardar. ${button.title}`);
+  }
+
   function buildButton(slug) {
     const button = document.createElement("button");
 
@@ -231,7 +289,16 @@
         const label = button.querySelector("span");
 
         if (label) label.textContent = `Guardando ${done}/${total}…`;
-      }).then(() => paintSavedState(button, slug));
+      })
+        .then((outcome) => paintSavedState(button, slug).then(() => outcome))
+        .then((outcome) => {
+          if (outcome.missing === 0) {
+            announce("Curso guardado: ya puedes leerlo sin conexión.");
+            return;
+          }
+
+          paintIncomplete(button, outcome);
+        });
     });
 
     return button;
@@ -307,11 +374,20 @@
 
       cacheUrls("__todo__", urlsForEverything(), (done, hecho) => {
         copy.textContent = `Descargando ${done} de ${hecho}…`;
-      }).then(() => {
-        copy.textContent = "Listo. Puedes desconectarte y seguir estudiando.";
-        button.textContent = "Volver a descargar";
+      }).then((outcome) => {
         button.disabled = false;
         paintSize();
+
+        if (outcome.missing > 0) {
+          copy.textContent = `${missingText(outcome)} páginas por descargar: revisa la conexión y vuelve a intentarlo.`;
+          button.textContent = "Reintentar";
+          announce(copy.textContent);
+          return;
+        }
+
+        copy.textContent = "Listo. Puedes desconectarte y seguir estudiando.";
+        button.textContent = "Volver a descargar";
+        announce(copy.textContent);
       });
     });
   }
@@ -384,6 +460,8 @@
       injectNavLink();
 
       if (!isSupported()) return;
+
+      ensureStatusRegion();
 
       navigator.serviceWorker
         .register(`${basePath()}sw.js`, { scope: basePath() })

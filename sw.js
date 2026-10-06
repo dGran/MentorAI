@@ -12,11 +12,12 @@
    navegadores que ya lo tienen cacheado se traigan lo nuevo.
    ============================================================ */
 
-var VERSION = "v19";
+var VERSION = "v20";
 var SHELL = "academia-shell-" + VERSION;
 var CONTENT = "academia-content";
 var LEGACY_CONTENT_PREFIX = "academia-content-";
 var SLOW_NETWORK_TIMEOUT_MS = 3000;
+var SAVE_FETCH_TIMEOUT_MS = 30000;
 
 var SHELL_PATHS = [
   "index.html",
@@ -281,7 +282,7 @@ self.addEventListener("message", function (event) {
   var source = event.source;
 
   if (data.type === "SAVE_COURSE") {
-    event.waitUntil(saveCourse(data.slug, data.urls, source));
+    event.waitUntil(saveCourse(data.slug, data.urls, source, data.requestId));
     return;
   }
 
@@ -291,35 +292,65 @@ self.addEventListener("message", function (event) {
   }
 });
 
-function saveCourse(slug, urls, client) {
+function saveCourse(slug, urls, client, requestId) {
   return caches
     .open(CONTENT)
     .then(function (cache) {
       var done = 0;
+      var failed = 0;
       var total = urls.length;
 
-      return urls.reduce(function (chain, url) {
-        return chain.then(function () {
-          return fetch(url)
-            .then(function (response) {
-              if (response.ok) {
-                return cache.put(url, response);
-              }
-            })
-            .catch(function () {})
-            .then(function () {
-              done++;
-              if (client) {
-                client.postMessage({ type: "SAVE_PROGRESS", slug: slug, done: done, total: total });
-              }
-            });
+      return urls
+        .reduce(function (chain, url) {
+          return chain.then(function () {
+            return saveWithTimeout(cache, url)
+              .then(function (isSaved) {
+                if (!isSaved) failed++;
+              })
+              .catch(function () {
+                failed++;
+              })
+              .then(function () {
+                done++;
+                if (client) {
+                  client.postMessage({ type: "SAVE_PROGRESS", requestId: requestId, slug: slug, done: done, total: total });
+                }
+              });
+          });
+        }, Promise.resolve())
+        .then(function () {
+          return { failed: failed, total: total };
         });
-      }, Promise.resolve());
     })
-    .then(function () {
+    .then(function (outcome) {
       if (client) {
-        client.postMessage({ type: "SAVE_DONE", slug: slug });
+        client.postMessage({
+          type: "SAVE_DONE",
+          requestId: requestId,
+          slug: slug,
+          failed: outcome.failed,
+          total: outcome.total,
+        });
       }
+    });
+}
+
+function saveWithTimeout(cache, url) {
+  var controller = new AbortController();
+  var timer = setTimeout(function () {
+    controller.abort();
+  }, SAVE_FETCH_TIMEOUT_MS);
+
+  return fetch(url, { signal: controller.signal })
+    .then(function (response) {
+      if (!response.ok) return false;
+
+      return cache.put(url, response).then(function () {
+        return true;
+      });
+    })
+    .finally(function () {
+      clearTimeout(timer);
     });
 }
 
