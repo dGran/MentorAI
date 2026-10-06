@@ -14,6 +14,7 @@
   const MentorAI = (window.MentorAI = window.MentorAI || {});
 
   const CONTENT_CACHE = "academia-content";
+  const SAVE_STALL_TIMEOUT_MS = 20000;
   const SHELL_PAGES = [
     "index.html",
     "cursos.html",
@@ -96,23 +97,46 @@
 
   function cacheUrls(slug, urls, onProgress) {
     return new Promise((resolve) => {
+      let done = 0;
+      let stallTimer = null;
+
+      const finish = (outcome) => {
+        clearTimeout(stallTimer);
+        navigator.serviceWorker.removeEventListener("message", onMessage);
+        resolve(outcome);
+      };
+
+      const watchForStall = () => {
+        clearTimeout(stallTimer);
+        stallTimer = setTimeout(
+          () => finish({ missing: urls.length - done, total: urls.length, isStalled: true }),
+          SAVE_STALL_TIMEOUT_MS
+        );
+      };
+
       const onMessage = (event) => {
         const data = event.data ?? {};
 
         if (data.slug !== slug) return;
 
-        if (data.type === "SAVE_PROGRESS") onProgress?.(data.done, data.total);
+        if (data.type === "SAVE_PROGRESS") {
+          done = data.done;
+          onProgress?.(data.done, data.total);
+          watchForStall();
+        }
 
         if (data.type === "SAVE_DONE") {
-          navigator.serviceWorker.removeEventListener("message", onMessage);
-          resolve();
+          finish({ missing: data.failed ?? 0, total: data.total ?? urls.length, isStalled: false });
         }
       };
 
       navigator.serviceWorker.addEventListener("message", onMessage);
+      watchForStall();
       sendToSW({ type: "SAVE_COURSE", slug, urls });
     });
   }
+
+  const missingText = ({ missing, total }) => `Faltan ${missing} de ${total}`;
 
   const dropUrls = (slug, urls) => sendToSW({ type: "REMOVE_COURSE", slug, urls });
 
@@ -204,6 +228,16 @@
     });
   }
 
+  function paintIncomplete(button, outcome) {
+    const label = button.querySelector("span");
+
+    if (label) label.textContent = `${missingText(outcome)} · Reintentar`;
+
+    button.title = outcome.isStalled
+      ? "La descarga se quedó parada. Pulsa para reintentar."
+      : "Algunas lecciones no se pudieron descargar. Pulsa para reintentar.";
+  }
+
   function buildButton(slug) {
     const button = document.createElement("button");
 
@@ -231,7 +265,13 @@
         const label = button.querySelector("span");
 
         if (label) label.textContent = `Guardando ${done}/${total}…`;
-      }).then(() => paintSavedState(button, slug));
+      })
+        .then((outcome) => paintSavedState(button, slug).then(() => outcome))
+        .then((outcome) => {
+          if (outcome.missing === 0 || button.dataset.state === "saved") return;
+
+          paintIncomplete(button, outcome);
+        });
     });
 
     return button;
@@ -307,11 +347,18 @@
 
       cacheUrls("__todo__", urlsForEverything(), (done, hecho) => {
         copy.textContent = `Descargando ${done} de ${hecho}…`;
-      }).then(() => {
-        copy.textContent = "Listo. Puedes desconectarte y seguir estudiando.";
-        button.textContent = "Volver a descargar";
+      }).then((outcome) => {
         button.disabled = false;
         paintSize();
+
+        if (outcome.missing > 0) {
+          copy.textContent = `${missingText(outcome)} páginas por descargar: revisa la conexión y vuelve a intentarlo.`;
+          button.textContent = "Reintentar";
+          return;
+        }
+
+        copy.textContent = "Listo. Puedes desconectarte y seguir estudiando.";
+        button.textContent = "Volver a descargar";
       });
     });
   }

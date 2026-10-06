@@ -296,29 +296,36 @@ function saveCourse(slug, urls, client) {
     .open(CONTENT)
     .then(function (cache) {
       var done = 0;
+      var failed = 0;
       var total = urls.length;
 
-      return urls.reduce(function (chain, url) {
-        return chain.then(function () {
-          return fetch(url)
-            .then(function (response) {
-              if (response.ok) {
+      return urls
+        .reduce(function (chain, url) {
+          return chain.then(function () {
+            return fetch(url)
+              .then(function (response) {
+                if (!response.ok) throw new Error("HTTP " + response.status);
+
                 return cache.put(url, response);
-              }
-            })
-            .catch(function () {})
-            .then(function () {
-              done++;
-              if (client) {
-                client.postMessage({ type: "SAVE_PROGRESS", slug: slug, done: done, total: total });
-              }
-            });
+              })
+              .catch(function () {
+                failed++;
+              })
+              .then(function () {
+                done++;
+                if (client) {
+                  client.postMessage({ type: "SAVE_PROGRESS", slug: slug, done: done, total: total });
+                }
+              });
+          });
+        }, Promise.resolve())
+        .then(function () {
+          return { failed: failed, total: total };
         });
-      }, Promise.resolve());
     })
-    .then(function () {
+    .then(function (outcome) {
       if (client) {
-        client.postMessage({ type: "SAVE_DONE", slug: slug });
+        client.postMessage({ type: "SAVE_DONE", slug: slug, failed: outcome.failed, total: outcome.total });
       }
     });
 }
