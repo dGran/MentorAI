@@ -122,13 +122,14 @@ window.MENTORAI_PATHS = [
     slug: "ingenieria-con-ia",
     title: "Ingeniería con IA",
     summary:
-      "De usar la IA con criterio a dominar la herramienta y meterla en tu producto: cómo piensa un LLM y su mecánica por dentro, el trabajo diario con un agente (rules, skills, MCP, automatización) y las features construidas sobre la API.",
+      "De usar la IA con criterio a dominar la herramienta y meterla en tu producto: cómo piensa un LLM y su mecánica por dentro, el trabajo diario con un agente (rules, skills, MCP, automatización), las features construidas sobre la API y, al final, un método de entrega con agentes que escala más allá de una sesión.",
     icon: "signal",
     steps: [
       { type: "course", ref: "programar-con-ia" },
       { type: "course", ref: "ia-por-dentro" },
       { type: "course", ref: "claude-code" },
       { type: "course", ref: "construir-con-ia" },
+      { type: "course", ref: "metodo-con-agentes" },
     ],
   },
   {

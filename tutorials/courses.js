@@ -645,6 +645,47 @@ window.MENTORAI_COURSES = [
     ],
   },
   {
+    slug: "metodo-con-agentes",
+    title: "Método con agentes: del prompt al flujo de entrega",
+    summary:
+      "Montar y operar un método de trabajo con agentes que escale más allá de una sesión: capas compartidas y por proyecto, cómo llega cada norma al contexto, instalación, rules por stack, skills con contrato, hooks que inyectan contexto y roles de subagente; el flujo issue → implementación → revisión → QA → deploy con evidencias, y el trabajo desatendido en tandas, bucles y épicas. Con ejemplos sintéticos, transferibles a cualquier agente.",
+    level: "Avanzado",
+    icon: "bolt",
+    modules: [
+      {
+        title: "Del agente al método",
+        summary: "Qué falla al escalar sin método, cómo se reparte lo que sabe el agente y por qué canal le llega cada cosa.",
+        lessons: ["ag-por-que-un-metodo", "ag-como-lee-el-agente"],
+      },
+      {
+        title: "Las piezas de un método",
+        summary: "Instalarlo sin pisar nada, rules y paquetes por stack, skills con contrato, hooks que recuerdan y subagentes con rol.",
+        lessons: [
+          "ag-instalar-un-metodo",
+          "ag-rules-y-paquetes",
+          "ag-skills-y-contratos",
+          "ag-hooks-que-inyectan",
+          "ag-roles-de-subagente",
+        ],
+      },
+      {
+        title: "El flujo de entrega",
+        summary: "Del issue como contrato a producción: implementar, revisar sin autocertificar, QA con evidencias y el estado como dato.",
+        lessons: [
+          "ag-del-requisito-al-issue",
+          "ag-implementar-y-revisar",
+          "ag-qa-con-evidencias",
+          "ag-cerrar-el-ciclo",
+        ],
+      },
+      {
+        title: "Escalar y mejorar",
+        summary: "Trabajo desatendido bajo contrato y un método que aprende de cada tropiezo.",
+        lessons: ["ag-tandas-y-loops", "ag-el-metodo-que-aprende"],
+      },
+    ],
+  },
+  {
     slug: "diseno-y-arquitectura",
     title: "Diseño y arquitectura",
     summary:
