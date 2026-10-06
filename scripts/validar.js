@@ -384,6 +384,44 @@ function validarShell() {
   }
 }
 
+const PAGINAS_FUERA_DEL_MENU = ["curso.html"];
+
+function paginasDeLista(fichero, patronDeLista, patronDeEntrada) {
+  const lista = leer(fichero).match(patronDeLista);
+
+  if (!lista) {
+    error(`${fichero}: no se encuentra la lista de páginas`);
+    return [];
+  }
+
+  return [...lista[0].matchAll(patronDeEntrada)].map((entrada) => entrada[1]);
+}
+
+function exigirPaginas(fichero, presentes, esperadas) {
+  for (const pagina of esperadas) {
+    if (!presentes.includes(pagina)) error(`${fichero}: falta la página ${pagina} en su lista de páginas`);
+  }
+
+  for (const pagina of presentes) {
+    if (!existe(pagina)) error(`${fichero}: su lista de páginas incluye ${pagina}, que no existe`);
+  }
+}
+
+function validarListasDePaginas() {
+  const paginasRaiz = fs.readdirSync(ROOT).filter((fichero) => fichero.endsWith(".html"));
+  const delMenu = paginasRaiz.filter((pagina) => !PAGINAS_FUERA_DEL_MENU.includes(pagina));
+
+  const enOffline = paginasDeLista("assets/js/modules/offline.js", /SHELL_PAGES = \[[^\]]*\]/, /"([^"]+\.html)"/g);
+  const enVerificador = paginasDeLista("scripts/verificar-offline.js", /PAGINAS = \[[^\]]*\]/, /"([^"]+\.html)"/g);
+  const enMenu = paginasDeLista("assets/js/modules/core.js", /PAGES = \[[^\]]*\]/, /id: "([^"]+)"/g).map(
+    (id) => `${id}.html`
+  );
+
+  exigirPaginas("assets/js/modules/offline.js", enOffline, paginasRaiz);
+  exigirPaginas("scripts/verificar-offline.js", enVerificador, paginasRaiz);
+  exigirPaginas("assets/js/modules/core.js", enMenu, delMenu);
+}
+
 /* ---------- 8. CSS: llaves y tokens ---------- */
 
 function validarCss() {
@@ -452,6 +490,7 @@ validarTutoriales();
 validarIdsDuplicados();
 validarScripts();
 validarShell();
+validarListasDePaginas();
 validarCss();
 validarIndiceDeBusqueda();
 
