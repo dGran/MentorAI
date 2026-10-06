@@ -156,15 +156,52 @@
     return resultado;
   }
 
+  const CAMPOS_DE_MEJOR_NOTA = ["bestScore", "best"];
+
+  function fusionarExamen(mio, suyo) {
+    const esResultado = (valor) => Boolean(valor) && typeof valor === "object";
+
+    if (!esResultado(mio)) return suyo;
+    if (!esResultado(suyo)) return mio;
+
+    const resultado = {
+      ...suyo,
+      ...mio,
+      passed: Boolean(mio.passed || suyo.passed),
+      attempts: Math.max(mio.attempts ?? 0, suyo.attempts ?? 0),
+    };
+
+    for (const campo of CAMPOS_DE_MEJOR_NOTA) {
+      if (!(campo in mio) && !(campo in suyo)) continue;
+
+      resultado[campo] = Math.max(mio[campo] ?? 0, suyo[campo] ?? 0);
+    }
+
+    return resultado;
+  }
+
+  function fusionarPractica(mio, suyo) {
+    const resultado = { ...(suyo ?? {}) };
+
+    for (const [curso, hechos] of Object.entries(mio ?? {})) {
+      resultado[curso] = { ...(resultado[curso] ?? {}), ...hechos };
+    }
+
+    return resultado;
+  }
+
   function fusionarClave(clave, mio, suyo) {
     if (clave === "academia-reading") return fusionarLectura(mio, suyo);
     if (clave === "academia-repaso") return fusionarRepaso(mio, suyo);
     if (clave === "academia-checks") return fusionarChecks(mio, suyo);
+    if (clave === "academia-practica") return fusionarPractica(mio, suyo);
     if (clave.startsWith("academia-highlights:")) return fusionarSubrayados(mio, suyo);
+    if (clave.startsWith("academia-quiz-")) return fusionarExamen(mio, suyo);
+    if (clave.startsWith("academia-examen-ruta-")) return fusionarExamen(mio, suyo);
 
     if (Array.isArray(suyo)) return union(mio, suyo);
 
-    return suyo;
+    return mio ?? suyo;
   }
 
   /* ---------- Importar ---------- */
