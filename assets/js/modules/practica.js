@@ -175,6 +175,8 @@
 
   MentorAI.Practica = {
     challengesOf,
+    isDone,
+    doneCountOf,
     panelHtml,
     bind,
   };

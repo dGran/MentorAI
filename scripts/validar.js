@@ -240,6 +240,7 @@ function validarPreguntas(nombre, entradas, contexto) {
     }
 
     const grupo = contexto.agrupaEn(clave);
+    const idsDelGrupo = new Set();
 
     porGrupo[grupo] ??= { posiciones: {}, total: 0, masLargas: 0 };
 
@@ -253,6 +254,10 @@ function validarPreguntas(nombre, entradas, contexto) {
       if (!pregunta.w) aviso(`${donde}: sin explicación (campo w)`);
       if (pregunta.lesson && !slugs.has(pregunta.lesson)) error(`${donde}: lesson «${pregunta.lesson}» no existe`);
       if (new Set(pregunta.o ?? []).size !== (pregunta.o ?? []).length) error(`${donde}: opciones repetidas`);
+      if (!pregunta.id) error(`${donde}: sin id (el repaso guarda el historial por id)`);
+      if (pregunta.id && idsDelGrupo.has(pregunta.id)) error(`${donde}: id «${pregunta.id}» repetido en «${clave}»`);
+
+      idsDelGrupo.add(pregunta.id);
 
       posiciones[pregunta.a] = (posiciones[pregunta.a] ?? 0) + 1;
       porGrupo[grupo].posiciones[pregunta.a] = (porGrupo[grupo].posiciones[pregunta.a] ?? 0) + 1;
@@ -301,8 +306,15 @@ function validarPractica() {
       continue;
     }
 
+    const idsDelCurso = new Set();
+
     retos.forEach((reto, indice) => {
       const donde = `practica «${cursoSlug}» #${indice}`;
+
+      if (!reto.id) error(`${donde}: sin id (el progreso de práctica se guarda por id)`);
+      if (reto.id && idsDelCurso.has(reto.id)) error(`${donde}: id «${reto.id}» repetido`);
+
+      idsDelCurso.add(reto.id);
 
       for (const campo of ["title", "statement", "solution"]) {
         if (!reto[campo]) error(`${donde}: sin ${campo}`);
