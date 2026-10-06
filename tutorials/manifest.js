@@ -4275,4 +4275,19 @@ window.ACADEMIA_TUTORIALS = [
     status: "published",
     date: "2026-10-06",
   },
+  {
+    slug: "llm-atencion-y-contexto",
+    title: "Atención y ventana de contexto",
+    description:
+      "Cómo relaciona un modelo unos tokens con otros mediante atención, por qué el contexto largo cuesta más cómputo y dinero, qué son la caché de claves y valores y la caché de prompt, y por qué lo del medio de un contexto largo y lo antiguo de una sesión pesan menos.",
+    href: "tutorials/llm-atencion-y-contexto.html",
+    categories: ["ia"],
+    topic: "La IA por dentro",
+    tags: ["LLM", "Atención", "Contexto"],
+    level: "Intermedio",
+    minutes: 13,
+    icon: "signal",
+    status: "published",
+    date: "2026-10-06",
+  },
 ];

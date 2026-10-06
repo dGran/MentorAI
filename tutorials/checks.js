@@ -2745,4 +2745,19 @@ window.MENTORAI_CHECKS = {
       o: ["Porque el modelo ignora todo lo que pase de un párrafo","Porque viajan en cada sesión y se pagan cada vez","Porque los embeddings no admiten textos largos de entrada"], a: 1,
       w: "Lo que se carga siempre es un coste fijo multiplicado por cada conversación, en tokens y en contexto ocupado." },
   ],
+
+  "llm-atencion-y-contexto": [
+    { id: "c15fb33", q: "En una sesión de agente de dos horas, el agente vuelve a proponer una idea que descartasteis al principio. ¿Qué lo explica mejor?",
+      o: ["La decisión quedó lejos, diluida o resumida por la compactación","El modelo tiene una memoria interna que se vacía cada cierto tiempo","La caché de prompt devolvió una respuesta de una llamada anterior"], a: 0,
+      w: "Lo antiguo pesa menos que lo reciente y la compactación pierde detalle. Por eso las decisiones se escriben a disco." },
+    { id: "c55b035", q: "Quieres aprovechar la caché de prompt en un flujo que hace muchas llamadas. ¿Qué haces?",
+      o: ["Pones la fecha y el id de la petición al principio del prompt","Cambias el orden de las instrucciones para que no se repitan","Dejas lo fijo al principio y lo variable al final"], a: 2,
+      w: "La caché reutiliza prefijos idénticos: cualquier dato variable al principio la rompe en cada llamada." },
+    { id: "c735dea", q: "¿Por qué una instrucción enterrada en mitad de un documento largo puede no cumplirse?",
+      o: ["Porque el modelo solo lee el primer y el último párrafo","Porque lo del medio de un contexto largo se aprovecha peor","Porque el tokenizador descarta el texto que no le cabe en la ventana"], a: 1,
+      w: "Que algo quepa no garantiza que pese: el patrón «perdido en el medio» favorece el principio y el final." },
+    { id: "c216b42", q: "¿Por qué leer un fichero de 3.000 líneas entero al principio de la tarea encarece las llamadas siguientes?",
+      o: ["Porque el agente reenvía ese contexto en cada vuelta del bucle","Porque el agente vuelve a leer el fichero del disco en cada llamada","Porque la caché de prompt se desactiva sola cuando el fichero es grande"], a: 0,
+      w: "Cada llamada envía la conversación entera: lo que entró una vez se procesa y se paga en todas las posteriores." },
+  ],
 };
