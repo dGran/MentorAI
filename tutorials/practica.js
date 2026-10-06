@@ -1196,4 +1196,45 @@ window.MENTORAI_PRACTICE = {
       },
     },
   ],
+  "ia-por-dentro": [
+    {
+      id: "rc6df38",
+      title: "La temperatura, a mano",
+      statement:
+        "Sin red y sin ningún SDK: escribe en Node un sorteo de tokens con tres logits (return 2.0, throw 1.0, echo 0.2). Aplica la temperatura dividiendo los logits, conviértelos en pesos con Math.exp y sortea 10.000 veces con temperatura 0.2, 1 y 2. Cuenta cuántas veces sale cada token y explica qué ves.",
+      solution:
+        "Con 0.2, return sale casi siempre (en torno a 9.900 de 10.000): la temperatura baja agranda las diferencias y el favorito se lo lleva todo. Con 1 aparece la distribución que «aprendió» el modelo (unos 6.500 / 2.400 / 1.100). Con 2 se aplana y echo sale casi una de cada cinco. Además, al repetir el programa los números cambian un poco aunque el código sea el mismo: es la variación que un sistema serio no puede dar por eliminada, y por eso los gates de un proyecto son deterministas y no confían en que el modelo repita.",
+      solutionCode: {
+        lang: "js",
+        source:
+          "const logits = { return: 2.0, throw: 1.0, echo: 0.2 };\n\nfunction sample(temperature) {\n  const weights = Object.entries(logits).map(([token, logit]) => [token, Math.exp(logit / temperature)]);\n  const total = weights.reduce((sum, [, weight]) => sum + weight, 0);\n  let remaining = Math.random() * total;\n\n  for (const [token, weight] of weights) {\n    remaining -= weight;\n    if (remaining <= 0) return token;\n  }\n\n  return weights[weights.length - 1][0];\n}\n\nfor (const temperature of [0.2, 1, 2]) {\n  const counts = { return: 0, throw: 0, echo: 0 };\n\n  for (let draw = 0; draw < 10000; draw += 1) counts[sample(temperature)] += 1;\n\n  console.log(`T=${temperature}`, counts);\n}",
+      },
+    },
+    {
+      id: "rde0599",
+      title: "Un BPE de juguete",
+      statement:
+        "Implementa en Node seis fusiones de BPE sobre un corpus pequeño de palabras en español (por ejemplo: deshacer, rehacer, hacer, hacerlo, deshacerlo, rehacerlo, hacerse). En cada vuelta cuenta las parejas de símbolos contiguos, fusiona la más frecuente y muestra cómo queda cada palabra al final.",
+      solution:
+        "Las primeras fusiones construyen la raíz común: h+a, ha+c, hac+e, hace+r. Tras cuatro vueltas «hacer» ya es un solo símbolo y las dos siguientes forman «hacerlo» (cuando hay empates, el orden depende de cómo desempate la implementación). Los prefijos «des» y «re» siguen partidos en letras porque aparecen menos. Es lo mismo que hace un tokenizador real a escala de miles de millones de palabras: lo frecuente acaba siendo un token y lo raro se escribe con varios. Por eso un texto en un idioma o un dominio poco representado en el corpus del tokenizador ocupa más tokens.",
+      solutionCode: {
+        lang: "js",
+        source:
+          "const corpus = [\"deshacer\", \"rehacer\", \"hacer\", \"hacerlo\", \"deshacerlo\", \"rehacerlo\", \"hacerse\"];\nlet words = corpus.map((word) => word.split(\"\"));\n\nfor (let merge = 1; merge <= 6; merge += 1) {\n  const pairs = new Map();\n\n  for (const symbols of words) {\n    for (let index = 0; index < symbols.length - 1; index += 1) {\n      const pair = symbols[index] + \"|\" + symbols[index + 1];\n      pairs.set(pair, (pairs.get(pair) ?? 0) + 1);\n    }\n  }\n\n  const [best, count] = [...pairs.entries()].sort((a, b) => b[1] - a[1])[0];\n  const [left, right] = best.split(\"|\");\n\n  words = words.map((symbols) => {\n    const merged = [];\n\n    for (let index = 0; index < symbols.length; index += 1) {\n      if (symbols[index] === left && symbols[index + 1] === right) {\n        merged.push(left + right);\n        index += 1;\n        continue;\n      }\n\n      merged.push(symbols[index]);\n    }\n\n    return merged;\n  });\n\n  console.log(`fusión ${merge}: \"${left}\" + \"${right}\" (${count} veces)`);\n}\n\nconsole.log(words.map((symbols) => symbols.join(\" · \")).join(\"\\n\"));",
+      },
+    },
+    {
+      id: "rff0996",
+      title: "Provoca una alucinación y desmóntala",
+      statement:
+        "En un proyecto PHP con dependencias de Composer, elige una librería poco conocida de vendor/. Pregunta a cualquier asistente de IA, sin darle el código, por un método concreto de esa librería: su firma y qué devuelve. Después comprueba la respuesta contra el código instalado.",
+      solution:
+        "Es frecuente que la respuesta sea plausible y falsa: un método con el nombre que «tendría», una firma de otra versión o un parámetro que no existe. El modelo no tiene esa librería en la memoria con detalle y produce lo verosímil. La comprobación con grep sobre el código real convierte la afirmación en evidencia: existe o no existe, y su firma es la que dice el fichero. Es el patrón del curso entero: afirmar, ejecutar, citar. Y es lo que hace un agente con herramientas cuando lee el código en lugar de responder de memoria.",
+      solutionCode: {
+        lang: "bash",
+        source:
+          "grep -rn \"function nombreDelMetodo\" vendor/vendedor/libreria/src\ncomposer show vendedor/libreria | grep versions",
+      },
+    },
+  ],
 };

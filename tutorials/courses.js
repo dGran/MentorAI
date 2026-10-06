@@ -577,6 +577,21 @@ window.MENTORAI_COURSES = [
     ],
   },
   {
+    slug: "ia-por-dentro",
+    title: "La IA por dentro",
+    summary:
+      "La mecánica de un modelo de lenguaje, del texto al razonamiento: tokens y embeddings, atención y contexto, entrenamiento y sesgos, muestreo y alucinación. Cada mecanismo explica una buena práctica de ingeniería con agentes.",
+    level: "Intermedio",
+    icon: "signal",
+    lessons: [
+      "llm-de-texto-a-tokens",
+      "llm-atencion-y-contexto",
+      "llm-entrenamiento",
+      "llm-muestreo",
+      "llm-alucinacion-y-razonamiento",
+    ],
+  },
+  {
     slug: "claude-code",
     title: "Claude Code: ingeniería con agentes",
     summary:
