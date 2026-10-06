@@ -2790,4 +2790,19 @@ window.MENTORAI_CHECKS = {
       o: ["Descarta los tokens improbables y sortea entre los que suman p","Elige siempre el token con la probabilidad más alta de todas","Multiplica las probabilidades por p para que la salida sea corta"], a: 0,
       w: "Recorta la cola de opciones absurdas sin volver rígida la respuesta: sortea solo entre los más probables." },
   ],
+
+  "llm-alucinacion-y-razonamiento": [
+    { id: "c4a4b82", q: "El modelo te asegura que un método existe en la librería que usas. ¿Cómo lo compruebas de verdad?",
+      o: ["Le pides que razone paso a paso y con calma antes de responder","Buscas la definición en el código instalado del proyecto","Le vuelves a preguntar y comparas las dos respuestas que da"], a: 1,
+      w: "Un dato de memoria se ancla con una herramienta: grep sobre el código real convierte una afirmación en evidencia." },
+    { id: "c4263bc", q: "¿Qué no resuelve el razonamiento extendido?",
+      o: ["La falta de un dato que el modelo no tiene","Los problemas que se benefician de ir paso a paso","Las contradicciones entre partes del propio contexto"], a: 0,
+      w: "Razonar sobre algo que no sabe no se lo hace saber: puede incluso justificar con detalle una premisa falsa." },
+    { id: "c4093e9", q: "Un agente informa «los tests pasan». ¿Qué convierte esa frase en evidencia?",
+      o: ["Que lo afirme con seguridad, sin matices ni dudas","Que explique con detalle por qué cree que pasan","La salida real del comando, citada tal cual"], a: 2,
+      w: "Afirmar, ejecutar, citar: un resumen vuelve a ser una afirmación; la salida literal es la prueba." },
+    { id: "c6b76b3", q: "¿Por qué un agente con herramientas alucina menos que el mismo modelo en un chat?",
+      o: ["Porque usa una versión más grande y entrenada del modelo","Porque el dato está delante en el contexto, no en su memoria","Porque las herramientas bajan la temperatura del muestreo del modelo"], a: 1,
+      w: "La alucinación aparece cuando el dato sale de memoria; con el fichero o el test en el contexto, la respuesta se apoya en algo real." },
+  ],
 };

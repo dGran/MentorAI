@@ -4320,4 +4320,19 @@ window.ACADEMIA_TUTORIALS = [
     status: "published",
     date: "2026-10-06",
   },
+  {
+    slug: "llm-alucinacion-y-razonamiento",
+    title: "Alucinar, razonar y verificar",
+    description:
+      "Por qué un modelo afirma con seguridad cosas falsas y no sabe que no sabe, qué aporta y qué no el razonamiento extendido, y por qué las herramientas son el antídoto: el patrón afirmar, ejecutar y citar.",
+    href: "tutorials/llm-alucinacion-y-razonamiento.html",
+    categories: ["ia"],
+    topic: "La IA por dentro",
+    tags: ["LLM", "Alucinación", "Verificación"],
+    level: "Intermedio",
+    minutes: 12,
+    icon: "signal",
+    status: "published",
+    date: "2026-10-06",
+  },
 ];
