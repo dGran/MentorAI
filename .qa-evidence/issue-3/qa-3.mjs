@@ -1,0 +1,35 @@
+import { execSync } from 'node:child_process';
+const root = process.env.PLAYWRIGHT_ROOT ?? execSync('npm root -g').toString().trim();
+const { chromium } = await import(`${root}/playwright/index.mjs`);
+const [base, outDir] = process.argv.slice(2);
+const browser = await chromium.launch();
+const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, serviceWorkers: 'block', acceptDownloads: true });
+const page = await context.newPage();
+const errors = [];
+page.on('pageerror', (error) => errors.push(error.message));
+const doneButton = () => page.locator('.tutorial-action--done');
+const r = {};
+await page.goto(base + 'tutorials/regex.html');
+await page.evaluate(() => localStorage.clear());
+await page.reload();
+await doneButton().click();
+r.trasMarcar = (await doneButton().innerText()).trim();
+await page.goto(base + 'perfil.html');
+const [download] = await Promise.all([page.waitForEvent('download'), page.click('#perfil-exportar')]);
+const exported = `${outDir}/export-con-regex-completado.json`;
+await download.saveAs(exported);
+await page.goto(base + 'tutorials/regex.html');
+await doneButton().click();
+r.trasDesmarcar = (await doneButton().innerText()).trim();
+for (const round of [1, 2]) {
+  await page.goto(base + 'perfil.html');
+  await page.setInputFiles('#perfil-fichero', exported);
+  await page.waitForTimeout(600);
+}
+await page.goto(base + 'tutorials/regex.html');
+r.trasImportarDosVeces = (await doneButton().innerText()).trim();
+r.progress = await page.evaluate(() => localStorage.getItem('academia-progress'));
+await doneButton().screenshot({ path: `${outDir}/boton-tras-importar.png` });
+r.errors = errors;
+console.log(JSON.stringify(r, null, 2));
+await browser.close();
