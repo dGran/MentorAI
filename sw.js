@@ -17,6 +17,7 @@ var SHELL = "academia-shell-" + VERSION;
 var CONTENT = "academia-content";
 var LEGACY_CONTENT_PREFIX = "academia-content-";
 var SLOW_NETWORK_TIMEOUT_MS = 3000;
+var SAVE_FETCH_TIMEOUT_MS = 30000;
 
 var SHELL_PATHS = [
   "index.html",
@@ -281,7 +282,7 @@ self.addEventListener("message", function (event) {
   var source = event.source;
 
   if (data.type === "SAVE_COURSE") {
-    event.waitUntil(saveCourse(data.slug, data.urls, source));
+    event.waitUntil(saveCourse(data.slug, data.urls, source, data.requestId));
     return;
   }
 
@@ -291,7 +292,7 @@ self.addEventListener("message", function (event) {
   }
 });
 
-function saveCourse(slug, urls, client) {
+function saveCourse(slug, urls, client, requestId) {
   return caches
     .open(CONTENT)
     .then(function (cache) {
@@ -302,9 +303,12 @@ function saveCourse(slug, urls, client) {
       return urls
         .reduce(function (chain, url) {
           return chain.then(function () {
-            return fetch(url)
+            return fetchWithTimeout(url)
               .then(function (response) {
-                if (!response.ok) throw new Error("HTTP " + response.status);
+                if (!response.ok) {
+                  failed++;
+                  return;
+                }
 
                 return cache.put(url, response);
               })
@@ -314,7 +318,7 @@ function saveCourse(slug, urls, client) {
               .then(function () {
                 done++;
                 if (client) {
-                  client.postMessage({ type: "SAVE_PROGRESS", slug: slug, done: done, total: total });
+                  client.postMessage({ type: "SAVE_PROGRESS", requestId: requestId, slug: slug, done: done, total: total });
                 }
               });
           });
@@ -325,9 +329,26 @@ function saveCourse(slug, urls, client) {
     })
     .then(function (outcome) {
       if (client) {
-        client.postMessage({ type: "SAVE_DONE", slug: slug, failed: outcome.failed, total: outcome.total });
+        client.postMessage({
+          type: "SAVE_DONE",
+          requestId: requestId,
+          slug: slug,
+          failed: outcome.failed,
+          total: outcome.total,
+        });
       }
     });
+}
+
+function fetchWithTimeout(url) {
+  var controller = new AbortController();
+  var timer = setTimeout(function () {
+    controller.abort();
+  }, SAVE_FETCH_TIMEOUT_MS);
+
+  return fetch(url, { signal: controller.signal }).finally(function () {
+    clearTimeout(timer);
+  });
 }
 
 function removeCourse(urls) {

@@ -14,7 +14,8 @@
   const MentorAI = (window.MentorAI = window.MentorAI || {});
 
   const CONTENT_CACHE = "academia-content";
-  const SAVE_STALL_TIMEOUT_MS = 20000;
+  const SAVE_STALL_TIMEOUT_MS = 45000;
+  const STATUS_REGION_ID = "offline-status";
   const SHELL_PAGES = [
     "index.html",
     "cursos.html",
@@ -34,20 +35,37 @@
   const baseUrl = () => new URL(basePath(), location.href).href;
   const absolute = (ruta) => new URL(ruta, baseUrl()).href;
 
-  function isFullyCached(urls) {
-    if (urls.length === 0 || !window.caches) return Promise.resolve(false);
+  function countMissing(urls) {
+    if (!window.caches) return Promise.resolve(urls.length);
 
     return caches
       .has(CONTENT_CACHE)
       .then((exists) => {
-        if (!exists) return false;
+        if (!exists) return urls.length;
 
         return caches
           .open(CONTENT_CACHE)
           .then((cache) => Promise.all(urls.map((url) => cache.match(url))))
-          .then((matches) => matches.every(Boolean));
+          .then((matches) => matches.filter((match) => !match).length);
       })
-      .catch(() => false);
+      .catch(() => urls.length);
+  }
+
+  const isFullyCached = (urls) =>
+    urls.length === 0 ? Promise.resolve(false) : countMissing(urls).then((missing) => missing === 0);
+
+  function announce(message) {
+    let region = document.getElementById(STATUS_REGION_ID);
+
+    if (!region) {
+      region = document.createElement("p");
+      region.id = STATUS_REGION_ID;
+      region.className = "visually-hidden";
+      region.setAttribute("role", "status");
+      document.body.appendChild(region);
+    }
+
+    region.textContent = message;
   }
 
   function savedCourseSlugs() {
@@ -96,43 +114,38 @@
   }
 
   function cacheUrls(slug, urls, onProgress) {
+    const requestId = `${slug}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+
     return new Promise((resolve) => {
-      let done = 0;
       let stallTimer = null;
 
-      const finish = (outcome) => {
+      const finish = (isStalled) => {
         clearTimeout(stallTimer);
         navigator.serviceWorker.removeEventListener("message", onMessage);
-        resolve(outcome);
+        countMissing(urls).then((missing) => resolve({ missing, total: urls.length, isStalled }));
       };
 
       const watchForStall = () => {
         clearTimeout(stallTimer);
-        stallTimer = setTimeout(
-          () => finish({ missing: urls.length - done, total: urls.length, isStalled: true }),
-          SAVE_STALL_TIMEOUT_MS
-        );
+        stallTimer = setTimeout(() => finish(true), SAVE_STALL_TIMEOUT_MS);
       };
 
       const onMessage = (event) => {
         const data = event.data ?? {};
 
-        if (data.slug !== slug) return;
+        if (data.requestId !== requestId) return;
 
         if (data.type === "SAVE_PROGRESS") {
-          done = data.done;
           onProgress?.(data.done, data.total);
           watchForStall();
         }
 
-        if (data.type === "SAVE_DONE") {
-          finish({ missing: data.failed ?? 0, total: data.total ?? urls.length, isStalled: false });
-        }
+        if (data.type === "SAVE_DONE") finish(false);
       };
 
       navigator.serviceWorker.addEventListener("message", onMessage);
       watchForStall();
-      sendToSW({ type: "SAVE_COURSE", slug, urls });
+      sendToSW({ type: "SAVE_COURSE", slug, urls, requestId });
     });
   }
 
@@ -236,6 +249,7 @@
     button.title = outcome.isStalled
       ? "La descarga se quedó parada. Pulsa para reintentar."
       : "Algunas lecciones no se pudieron descargar. Pulsa para reintentar.";
+    announce(`${missingText(outcome)} lecciones sin guardar. ${button.title}`);
   }
 
   function buildButton(slug) {
@@ -268,7 +282,10 @@
       })
         .then((outcome) => paintSavedState(button, slug).then(() => outcome))
         .then((outcome) => {
-          if (outcome.missing === 0 || button.dataset.state === "saved") return;
+          if (outcome.missing === 0) {
+            announce("Curso guardado: ya puedes leerlo sin conexión.");
+            return;
+          }
 
           paintIncomplete(button, outcome);
         });
@@ -354,11 +371,13 @@
         if (outcome.missing > 0) {
           copy.textContent = `${missingText(outcome)} páginas por descargar: revisa la conexión y vuelve a intentarlo.`;
           button.textContent = "Reintentar";
+          announce(copy.textContent);
           return;
         }
 
         copy.textContent = "Listo. Puedes desconectarte y seguir estudiando.";
         button.textContent = "Volver a descargar";
+        announce(copy.textContent);
       });
     });
   }
