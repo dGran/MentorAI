@@ -282,6 +282,7 @@ function validarPreguntas(nombre, entradas, contexto) {
   }
 
   avisarSiHaySesgo(nombre, posiciones, total, true);
+
   if (total > 0) {
     resumenDeLongitud.push(`${nombre}: la correcta es la más larga en ${masLargas}/${total} (${Math.round((masLargas / total) * 100)}%)`);
   }
