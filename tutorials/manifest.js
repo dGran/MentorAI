@@ -4294,7 +4294,7 @@ window.ACADEMIA_TUTORIALS = [
     slug: "llm-entrenamiento",
     title: "Cómo aprende: preentrenamiento, instrucciones y preferencias",
     description:
-      "Las tres etapas que convierten una red vacía en un asistente —preentrenamiento, ajuste con instrucciones y ajuste por preferencias—, la fecha de corte, y los sesgos que heredas de ellas: complacencia, anclaje y exceso de confianza.",
+      "Las etapas que convierten una red vacía en un asistente —preentrenamiento, ajuste con instrucciones, ajuste por preferencias y, en los modelos que razonan, refuerzo sobre tareas verificables—, la fecha de corte, y los sesgos que heredas de ellas: complacencia, anclaje y exceso de confianza.",
     href: "tutorials/llm-entrenamiento.html",
     categories: ["ia"],
     topic: "Entrenamiento",
