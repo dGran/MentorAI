@@ -12,9 +12,11 @@
    navegadores que ya lo tienen cacheado se traigan lo nuevo.
    ============================================================ */
 
-var VERSION = "v16";
+var VERSION = "v17";
 var SHELL = "academia-shell-" + VERSION;
-var CONTENT = "academia-content-" + VERSION;
+var CONTENT = "academia-content";
+var LEGACY_CONTENT_PREFIX = "academia-content-";
+var SLOW_NETWORK_TIMEOUT_MS = 3000;
 
 var SHELL_PATHS = [
   "index.html",
@@ -108,6 +110,11 @@ self.addEventListener("activate", function (event) {
     caches
       .keys()
       .then(function (keys) {
+        return Promise.all(keys.filter(isLegacyContent).map(moveIntoContent)).then(function () {
+          return keys;
+        });
+      })
+      .then(function (keys) {
         return Promise.all(
           keys
             .filter(function (key) {
@@ -123,6 +130,33 @@ self.addEventListener("activate", function (event) {
       })
   );
 });
+
+function isLegacyContent(key) {
+  return key.indexOf(LEGACY_CONTENT_PREFIX) === 0;
+}
+
+function moveIntoContent(legacyKey) {
+  return copyCache(legacyKey, CONTENT).catch(function () {});
+}
+
+function copyCache(sourceKey, targetKey) {
+  return Promise.all([caches.open(sourceKey), caches.open(targetKey)]).then(function (opened) {
+    var source = opened[0];
+    var target = opened[1];
+
+    return source.keys().then(function (requests) {
+      return Promise.all(
+        requests.map(function (request) {
+          return source.match(request).then(function (response) {
+            if (!response) return;
+
+            return target.put(request, response);
+          });
+        })
+      );
+    });
+  });
+}
 
 /* ---------- Refresco del shell, una vez por arranque del worker ----------
    Evita quedarse con CSS y JS viejos entre despliegues sin pagar una
@@ -182,7 +216,7 @@ function matchIn(cacheName, request, isNavigation) {
 function respond(request, isNavigation) {
   return matchIn(CONTENT, request, isNavigation)
     .then(function (contentMatch) {
-      if (contentMatch) return contentMatch;
+      if (contentMatch) return refreshSavedContent(request, contentMatch);
 
       return matchIn(SHELL, request, isNavigation);
     })
@@ -201,6 +235,37 @@ function respond(request, isNavigation) {
         return sinConexion();
       });
     });
+}
+
+function refreshSavedContent(request, savedResponse) {
+  var savedKey = savedResponse.url || request.url;
+
+  var fromNetwork = fetch(request)
+    .then(function (fresh) {
+      if (!fresh.ok) return savedResponse;
+
+      var copy = fresh.clone();
+
+      return caches
+        .open(CONTENT)
+        .then(function (cache) {
+          return cache.put(savedKey, copy);
+        })
+        .then(function () {
+          return fresh;
+        });
+    })
+    .catch(function () {
+      return savedResponse;
+    });
+
+  var savedAfterTimeout = new Promise(function (resolve) {
+    setTimeout(function () {
+      resolve(savedResponse);
+    }, SLOW_NETWORK_TIMEOUT_MS);
+  });
+
+  return Promise.race([fromNetwork, savedAfterTimeout]);
 }
 
 function sinConexion() {

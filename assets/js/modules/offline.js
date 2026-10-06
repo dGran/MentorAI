@@ -13,8 +13,7 @@
 
   const MentorAI = (window.MentorAI = window.MentorAI || {});
 
-  const SAVED_KEY = "academia-offline-saved";
-  const ALL_KEY = "academia-offline-todo";
+  const CONTENT_CACHE = "academia-content";
   const SHELL_PAGES = [
     "index.html",
     "cursos.html",
@@ -34,28 +33,29 @@
   const baseUrl = () => new URL(basePath(), location.href).href;
   const absolute = (ruta) => new URL(ruta, baseUrl()).href;
 
-  /* ---------- Cursos guardados ---------- */
+  function isFullyCached(urls) {
+    if (urls.length === 0 || !window.caches) return Promise.resolve(false);
 
-  function savedSlugs() {
-    try {
-      const stored = JSON.parse(localStorage.getItem(SAVED_KEY));
+    return caches
+      .has(CONTENT_CACHE)
+      .then((exists) => {
+        if (!exists) return false;
 
-      return Array.isArray(stored) ? stored : [];
-    } catch {
-      return [];
-    }
+        return caches
+          .open(CONTENT_CACHE)
+          .then((cache) => Promise.all(urls.map((url) => cache.match(url))))
+          .then((matches) => matches.every(Boolean));
+      })
+      .catch(() => false);
   }
 
-  function writeSaved(slugs) {
-    try {
-      localStorage.setItem(SAVED_KEY, JSON.stringify(slugs));
-    } catch {
-      /* sin espacio: la caché sigue, solo se pierde la lista */
-    }
-  }
+  function savedCourseSlugs() {
+    const courses = window.MENTORAI_COURSES ?? [];
 
-  const markSaved = (slug) => writeSaved([...new Set([...savedSlugs(), slug])]);
-  const markRemoved = (slug) => writeSaved(savedSlugs().filter((s) => s !== slug));
+    return Promise.all(courses.map((course) => isFullyCached(urlsForCourse(course.slug)))).then(
+      (cached) => courses.filter((course, index) => cached[index]).map((course) => course.slug)
+    );
+  }
 
   /* ---------- URLs ---------- */
 
@@ -198,19 +198,25 @@
     button.title = title;
   }
 
-  function buildButton(slug, isSaved) {
+  function paintSavedState(button, slug) {
+    return isFullyCached(urlsForCourse(slug)).then((isSaved) => {
+      setButtonState(button, isSaved ? "saved" : "idle");
+    });
+  }
+
+  function buildButton(slug) {
     const button = document.createElement("button");
 
     button.className = "offline-btn";
     button.dataset.slug = slug;
-    setButtonState(button, isSaved ? "saved" : "idle");
+    setButtonState(button, "idle");
+    paintSavedState(button, slug);
 
     button.addEventListener("click", () => {
       if (button.dataset.state === "saving") return;
 
       if (button.dataset.state === "saved") {
         dropUrls(slug, urlsForCourse(slug));
-        markRemoved(slug);
         setButtonState(button, "idle");
         return;
       }
@@ -225,10 +231,7 @@
         const label = button.querySelector("span");
 
         if (label) label.textContent = `Guardando ${done}/${total}…`;
-      }).then(() => {
-        markSaved(slug);
-        setButtonState(button, "saved");
-      });
+      }).then(() => paintSavedState(button, slug));
     });
 
     return button;
@@ -238,8 +241,6 @@
     const container = document.getElementById("courses");
 
     if (!container) return;
-
-    const saved = savedSlugs();
 
     for (const card of container.querySelectorAll(".course-card")) {
       if (card.parentElement.classList.contains("course-card-wrap")) continue;
@@ -252,7 +253,7 @@
 
       wrap.className = "course-card-wrap";
       card.parentNode.insertBefore(wrap, card);
-      wrap.append(card, buildButton(slug, saved.includes(slug)));
+      wrap.append(card, buildButton(slug));
     }
   }
 
@@ -265,26 +266,29 @@
 
     if (!host || !isSupported()) return;
 
-    const yaEsta = localStorage.getItem(ALL_KEY) === "1";
     const total = urlsForEverything().length;
 
     host.innerHTML = `<div class="offline-all">
       <div class="offline-all__body">
         <h2 class="offline-all__title">Toda la academia</h2>
-        <p class="offline-all__copy">${
-          yaEsta
-            ? "Ya la tienes entera. Vuelve a descargar si has actualizado el contenido."
-            : `Son ${total} páginas, unos 5 MB. Antes de un vuelo suele salir más a cuenta que ir curso por curso.`
-        }</p>
+        <p class="offline-all__copy">Son ${total} páginas, unos 5 MB. Antes de un vuelo suele salir más a cuenta que ir curso por curso.</p>
         <p class="offline-all__size" id="offline-size"></p>
       </div>
-      <button class="btn btn--primary" id="offline-all-btn">${
-        yaEsta ? "Volver a descargar" : "Descargar todo"
-      }</button>
+      <button class="btn btn--primary" id="offline-all-btn">Descargar todo</button>
     </div>`;
 
     const button = document.getElementById("offline-all-btn");
     const copy = host.querySelector(".offline-all__copy");
+
+    const paintIfComplete = () =>
+      isFullyCached(urlsForEverything()).then((isComplete) => {
+        if (!isComplete) return;
+
+        copy.textContent = "Ya la tienes entera. Vuelve a descargar si has actualizado el contenido.";
+        button.textContent = "Volver a descargar";
+      });
+
+    paintIfComplete();
 
     const paintSize = () =>
       usedMegabytes().then((mb) => {
@@ -304,12 +308,6 @@
       cacheUrls("__todo__", urlsForEverything(), (done, hecho) => {
         copy.textContent = `Descargando ${done} de ${hecho}…`;
       }).then(() => {
-        try {
-          localStorage.setItem(ALL_KEY, "1");
-        } catch {
-          /* no se recordará, pero la caché está */
-        }
-
         copy.textContent = "Listo. Puedes desconectarte y seguir estudiando.";
         button.textContent = "Volver a descargar";
         button.disabled = false;
@@ -354,17 +352,17 @@
       return;
     }
 
-    const saved = savedSlugs();
+    savedCourseSlugs().then((saved) => renderSavedCourses(host, saved));
+  }
 
+  function renderSavedCourses(host, saved) {
     if (saved.length === 0) {
       host.innerHTML =
         '<p class="offline-empty">Aún no has guardado ningún curso suelto. Puedes descargarlo todo aquí arriba, o ir a <a href="cursos.html">Cursos</a> y pulsar <strong>«Guardar para viajar»</strong> en los que quieras.</p>';
       return;
     }
 
-    const courses = (window.MENTORAI_COURSES ?? []).filter((course) =>
-      saved.includes(course.slug)
-    );
+    const courses = (window.MENTORAI_COURSES ?? []).filter((course) => saved.includes(course.slug));
 
     host.innerHTML = `<ul class="offline-list">${courses.map(courseItemHtml).join("")}</ul>`;
 
@@ -373,8 +371,7 @@
         const { slug } = button.dataset;
 
         dropUrls(slug, urlsForCourse(slug));
-        markRemoved(slug);
-        initOfflinePage();
+        renderSavedCourses(host, saved.filter((savedSlug) => savedSlug !== slug));
       });
     }
   }
