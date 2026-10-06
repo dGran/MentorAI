@@ -144,7 +144,7 @@
             El sistema de permisos vive en la configuración del proyecto
             (<code>.claude/settings.json</code>, versionada) y la personal. Las
             piezas: listas <code>allow</code> (pasa sin preguntar),
-            <code>deny</code> (se rechaza siempre) y <code>ask</code>, con
+            <code>deny</code> (esa herramienta con ese patrón se rechaza siempre) y <code>ask</code>, con
             patrones por herramienta:
           </p>
 
@@ -175,12 +175,34 @@
           <p>
             Fíjate en <code>Read(.env*)</code>: los permisos no solo acotan
             ejecución, también lectura — un secreto que el agente no lee es un
-            secreto que no puede acabar en un log ni en un diff. Encima de las
+            secreto que no puede acabar en un log ni en un diff (con un matiz
+            importante que verás enseguida). Encima de las
             listas hay <strong>modos</strong> de sesión: del más conservador
             (todo pregunta) al de confianza plena para entornos desechables,
             pasando por el modo plan de la lección 3, que es un modo de permisos
             con nombre propio.
           </p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Un deny filtra herramientas, no ficheros</p>
+              <p>
+                Cada regla habla de <strong>una herramienta</strong>.
+                <code>Read(.env*)</code> impide que la herramienta Read abra el
+                fichero, pero un <code>cat .env</code> por Bash es otra
+                herramienta y no lo cubre. Y un patrón de Bash compara el texto
+                del comando: <code>Bash(rm -rf *)</code> no ve un
+                <code>rm -fr</code>, un <code>rm -r -f</code> ni un script que
+                borre por dentro. Los permisos quitan del camino lo obvio y la
+                fricción; para lo que no puede fallar ni una vez hace falta
+                lógica (un hook que inspeccione el comando) y, como frontera
+                real, el <strong>sandbox</strong> del sistema operativo, que
+                restringe qué puede tocar cualquier proceso que el agente lance,
+                lo invoque como lo invoque.
+              </p>
+            </div>
+          </div>
 
           <h2 id="afinar">
             Afinar la lista: menos fricción, mismo control
@@ -219,7 +241,7 @@
               <div class="flow__arrow" data-label="hook pre-herramienta"></div>
               <div class="flow__node">
                 <span class="flow__num">2</span>
-                <span><b>Tu script decide</b><small>Sale 0 → adelante. Sale con error → acción bloqueada, y el motivo vuelve al modelo.</small></span>
+                <span><b>Tu script decide</b><small>Sale 0 → adelante. Sale <strong>2</strong> → acción bloqueada, y su stderr vuelve al modelo. Cualquier otro código → error <strong>no bloqueante</strong>: la acción sigue.</small></span>
               </div>
               <div class="flow__arrow" data-label="si pasó, se ejecuta"></div>
               <div class="flow__node flow__node--end">
@@ -261,6 +283,60 @@ if [[ "$fichero" == *"search-index.js" ]]; then
 fi
 
 exit 0</code></pre>
+          </div>
+
+          <p>
+            El script se registra en la configuración, bajo el evento en el que
+            debe correr (<code>PreToolUse</code>: antes de una herramienta) y
+            con un <code>matcher</code> que dice para qué herramientas:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">.claude/settings.json · hooks</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          { "type": "command", "command": "hooks/protege-generados.sh" }
+        ]
+      }
+    ]
+  }
+}</code></pre>
+          </div>
+
+          <p>
+            Hay más eventos que estos dos —al enviar un prompt
+            (<code>UserPromptSubmit</code>), al terminar el turno
+            (<code>Stop</code>), al arrancar la sesión
+            (<code>SessionStart</code>)…—, y no todos pueden vetar: un
+            <code>PostToolUse</code> llega cuando la herramienta ya se ejecutó,
+            así que su <code>exit 2</code> solo avisa al modelo. La lista
+            completa cambia con las versiones; consúltala en la documentación de
+            la herramienta antes de diseñar un hook.
+          </p>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Solo el 2 bloquea</p>
+              <p>
+                Es la trampa más cara de los hooks: un script que veta con
+                <code>exit 1</code> —el «error» de toda la vida en bash— no veta
+                nada. La herramienta lo trata como un fallo del propio hook, lo
+                anota y <strong>deja pasar la acción</strong>. Un guardián que
+                falla abierto es peor que no tenerlo, porque crees que está ahí.
+                Pruébalo provocando el caso prohibido antes de fiarte de él.
+              </p>
+            </div>
           </div>
 
           <p>
