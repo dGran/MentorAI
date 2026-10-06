@@ -2760,4 +2760,19 @@ window.MENTORAI_CHECKS = {
       o: ["Porque el agente reenvía ese contexto en cada vuelta del bucle","Porque el agente vuelve a leer el fichero del disco en cada llamada","Porque la caché de prompt se desactiva sola cuando el fichero es grande"], a: 0,
       w: "Cada llamada envía la conversación entera: lo que entró una vez se procesa y se paga en todas las posteriores." },
   ],
+
+  "llm-entrenamiento": [
+    { id: "c3ebfda", q: "Pides a un modelo «revisa este cambio y confirma que está bien». ¿Qué sesgo empuja su respuesta?",
+      o: ["La complacencia: la pregunta sugiere el sí","La fecha de corte: no conoce tu código","El muestreo: cada vez responde una cosa distinta"], a: 0,
+      w: "El ajuste por preferencias premia respuestas que dan la razón. Para encontrar fallos, pide fallos." },
+    { id: "c66db1c", q: "¿Qué aporta sobre todo el preentrenamiento?",
+      o: ["El formato de pregunta y respuesta del asistente","Los límites de lo que el modelo no debe hacer","El conocimiento: predecir texto obliga a absorberlo"], a: 2,
+      w: "El conocimiento sale de predecir enormes cantidades de texto; las etapas siguientes enseñan a usarlo." },
+    { id: "c9ff061", q: "Delegas en otro agente la verificación de un posible bug. ¿Qué le pasas?",
+      o: ["Tu razonamiento completo, para que no repita trabajo","La afirmación y el código, sin tu conclusión previa","Solo el título del bug, para que no se distraiga"], a: 1,
+      w: "Si le das tu razonamiento hereda tu ancla. Con la afirmación y el código, puede intentar refutarla de verdad." },
+    { id: "c881a97", q: "El modelo describe con total seguridad una opción de configuración de la última versión de tu framework. ¿Qué haces?",
+      o: ["La contrastas con la documentación de la versión que usas","La aplicas: si lo dice tan seguro es porque lo sabe","Le preguntas si está seguro y aceptas su segunda respuesta"], a: 0,
+      w: "La seguridad del tono no es evidencia, y lo reciente puede caer después de su fecha de corte." },
+  ],
 };

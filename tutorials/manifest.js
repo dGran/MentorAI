@@ -4290,4 +4290,19 @@ window.ACADEMIA_TUTORIALS = [
     status: "published",
     date: "2026-10-06",
   },
+  {
+    slug: "llm-entrenamiento",
+    title: "Cómo aprende: preentrenamiento, instrucciones y preferencias",
+    description:
+      "Las tres etapas que convierten una red vacía en un asistente —preentrenamiento, ajuste con instrucciones y ajuste por preferencias—, la fecha de corte, y los sesgos que heredas de ellas: complacencia, anclaje y exceso de confianza.",
+    href: "tutorials/llm-entrenamiento.html",
+    categories: ["ia"],
+    topic: "La IA por dentro",
+    tags: ["LLM", "Entrenamiento", "Sesgos"],
+    level: "Intermedio",
+    minutes: 11,
+    icon: "signal",
+    status: "published",
+    date: "2026-10-06",
+  },
 ];
