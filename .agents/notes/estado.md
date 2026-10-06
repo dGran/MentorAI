@@ -7,8 +7,18 @@ Lo cerrado vive en `archivo/`; si algo de aquí crece demasiado, se archiva.
 
 ## Dónde está el proyecto
 
-**282 tutoriales · 30 cursos · 7 rutas · 431 preguntas de examen · 622 checks ·
-88 retos de práctica.** `node scripts/validar.js` sale sin errores ni avisos.
+**287 tutoriales · 31 cursos · 7 rutas · 447 preguntas de examen · 643 checks ·
+91 retos de práctica.** `node scripts/validar.js` sale sin errores; sus avisos
+son deuda medida (sesgo de longitud de las preguntas, #25; «Cuándo aplicarlo»
+pendiente en 96 tutoriales, #34 y #33).
+
+**Curso `ia-por-dentro` (2026-10-06, épica #23):** «La IA por dentro», 5
+lecciones con prefijo `llm-` (tokens y embeddings, atención y contexto,
+entrenamiento y sesgos, muestreo, alucinación y verificación). Va entre
+`programar-con-ia` y `claude-code` en la ruta `ingenieria-con-ia`, y cierra
+`el-grado-que-no-hiciste`. Es la base mecánica del futuro curso de método con
+agentes (#24). Nació medido: examen de 16 preguntas con la correcta como la más
+larga solo en 2, y checks en 2 de 20.
 
 **Tanda fundamentos (2026-08-23):** dos cursos nuevos que cierran huecos de
 base detectados en auditoría contra un temario de carrera — **`la-maquina`**
@@ -130,7 +140,9 @@ El validador vigila la estructura, no la verdad: el contenido caduca sin que
 nada avise. **Hacia febrero-marzo de 2027, primera revisión de frescura** de
 las categorías volátiles — los cursos `claude-code` y `construir-con-ia` sobre
 todo (la lección de la API ya nació corrigiendo `temperature`, que desapareció
-de los modelos actuales), y de paso `programar-con-ia`. Formato: una sesión de
+de los modelos actuales), y de paso `programar-con-ia` y la sección «Lo que el
+proveedor ya no deja tocar» de `llm-muestreo` (el resto de `ia-por-dentro` es
+mecánica estable). Formato: una sesión de
 auditoría como la del 2026-08-22, leyendo contra las fuentes actuales y
 corrigiendo con `/tutorial`. Repetir cada ~6 meses solo para esas categorías;
 el resto del catálogo (SQL, OOP, Linux…) envejece a décadas, no a meses.
