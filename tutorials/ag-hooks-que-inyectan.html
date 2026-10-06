@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hooks que dan contexto, no solo que bloquean — MentorAI</title>
+    <meta name="description" content="El uso más rentable de los hooks en un método: inyectar el recordatorio de las normas de cada capa justo al editar un fichero de esa capa. Un router por capa con una tabla de patrones, una vez por sesión y capa, silencioso ante la duda, sus puntos ciegos y cómo probarlo sin agente." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Hooks</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Hooks que dan contexto, no solo que bloquean</h1>
+        <p class="tutorial-hero__lead">
+          En el curso de Claude Code los hooks eran guardianes: vetaban una acción peligrosa. En un método maduro, su uso más frecuente es otro: susurrar al agente la norma justa en el momento justo. Un hook que inyecta contexto al editar convierte un documento que nadie relee en un recordatorio que llega siempre.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            11 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Hooks
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#recordar">De bloquear a recordar</a></li>
+            <li><a href="#router">Un router por capa</a></li>
+            <li><a href="#script">El script, en treinta líneas</a></li>
+            <li><a href="#una-vez">Una vez por sesión y capa</a></li>
+            <li><a href="#puntos-ciegos">Lo que el hook no ve</a></li>
+            <li><a href="#probar">Probar un hook sin agente</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Ya viste en <a href="cc-hooks-y-permisos.html">hooks y permisos</a> qué es un hook, cómo se registra y cómo bloquea. Aquí no repetimos eso: montamos el patrón más útil para un método, el que recuerda las normas de cada capa del código justo cuando el agente edita un fichero de esa capa.
+          </p>
+
+          <h2 id="recordar">
+            De bloquear a recordar
+            <a href="#recordar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            Un hook de bloqueo protege un invariante: «este fichero no se edita». Es valioso, pero escaso: hay pocas cosas que deban estar prohibidas siempre. La mayoría de las normas de un proyecto no prohíben, <strong>orientan</strong>: cómo se escribe un controlador, qué no puede depender de qué en el dominio, qué necesita una migración nueva.
+          </p>
+
+          <p>
+            Esas normas viven en documentos que el agente debería leer. El problema, como viste en la lección de canales, es que «debería leer» es el canal más débil. Un hook que se dispara <strong>después de cada edición</strong> y añade una nota al contexto convierte esas normas en un recordatorio que llega en el momento exacto en que son relevantes, sin cargarlas en todas las sesiones.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Por qué funciona tan bien</p>
+              <p>El recordatorio entra justo después de editar el fichero, al final del contexto, que es la zona que más pesa (la recencia de la <a href="llm-atencion-y-contexto.html">lección de atención</a>). Y entra solo cuando toca esa capa: no ocupa sitio en una sesión que nunca toca controladores.</p>
+            </div>
+          </div>
+
+          <h2 id="router">
+            Un router por capa
+            <a href="#router" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            El mecanismo tiene tres piezas, todas dentro del proyecto:
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>routes.conf</b><small>Una tabla de patrones de ruta y capas: <code>src/Controller/</code> → controlador, <code>src/Domain/</code> → dominio, <code>migrations/</code> → migración.</small></span>
+              </div>
+              <div class="flow__arrow" data-label="contenido"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Un fichero por capa</b><small>Seis u ocho líneas por capa: lo no negociable y dónde está el detalle. Si el proyecto adopta paquetes, empieza por el anclaje del paquete.</small></span>
+              </div>
+              <div class="flow__arrow" data-label="al editar"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>El hook</b><small>Tras cada edición, mira la ruta del fichero, encuentra su capa y devuelve el recordatorio como contexto adicional.</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">El orden de la tabla importa: de lo más específico a lo más general, y gana la primera coincidencia.</p>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Los recordatorios no alojan normas</p>
+              <p>El fichero de cada capa avisa y apunta a la regla; no la redefine. Si el recordatorio y la regla discrepan, manda la regla. Es la misma disciplina de «un hecho, un hogar» de la lección anterior.</p>
+            </div>
+          </div>
+
+          <h2 id="script">
+            El script, en treinta líneas
+            <a href="#script" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            El hook recibe por la entrada estándar un JSON con los datos del evento: la sesión, la herramienta usada y sus argumentos (entre ellos, la ruta del fichero editado). Si devuelve un JSON con contexto adicional, la herramienta lo añade a lo que ve el modelo. Este es un router completo y funcional:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · .agents/router/route.sh</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">#!/usr/bin/env bash
+input=$(cat)
+file=$(printf '%s' "$input" | jq -r '.tool_input.file_path // empty')
+session=$(printf '%s' "$input" | jq -r '.session_id // "sin-sesion"')
+[ -n "$file" ] || exit 0
+
+layer=""
+while IFS=$'\t' read -r pattern name; do
+  case "$file" in *"$pattern"*) layer=$name; break ;; esac
+done &lt; .agents/router/routes.conf
+
+[ -n "$layer" ] || exit 0
+[ -f ".agents/router/$layer.md" ] || exit 0
+
+seen="${TMPDIR:-/tmp}/router-$session-$layer"
+[ -e "$seen" ] &amp;&amp; exit 0
+touch "$seen"
+
+jq -n --arg context "$(cat ".agents/router/$layer.md")" \
+  '{hookSpecificOutput: {hookEventName: "PostToolUse", additionalContext: $context}}'</code></pre>
+          </div>
+
+          <p>
+            El formato exacto del JSON de entrada y de salida, y cómo se registra el script como hook tras la edición, dependen de la herramienta y de su versión: compruébalo en su documentación antes de montarlo. El patrón —leer el evento, decidir la capa, devolver contexto— es el mismo en todas las que permiten hooks.
+          </p>
+
+          <h2 id="una-vez">
+            Una vez por sesión y capa
+            <a href="#una-vez" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            El script guarda una marca por sesión y capa, y no repite el recordatorio si ya lo dio. No es un detalle: es lo que decide si el canal sirve o molesta.
+          </p>
+
+          <ul>
+            <li><strong>El ruido entrena a ignorar.</strong> Si cada edición de un controlador repite el mismo párrafo, en una sesión con veinte ediciones el recordatorio es ruido, y el modelo —igual que una persona— deja de prestarle atención.</li>
+            <li><strong>Una vez basta para cambiar la conducta.</strong> El recordatorio llega la primera vez que se toca la capa, que es cuando el agente decide cómo va a trabajar en ella.</li>
+            <li><strong>Silencioso ante la duda.</strong> Si el fichero no encaja en ninguna capa, o falta el fichero de la capa, el script no dice nada. Un recordatorio equivocado es peor que ninguno.</li>
+          </ul>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Un recordatorio no es una garantía</p>
+              <p>A diferencia de un hook de bloqueo, este falla «abierto»: si el script no se ejecuta, la edición sigue y simplemente no llega el recordatorio. Está bien para orientar; para algo que no puede fallar nunca, el mecanismo es un bloqueo o un check en CI.</p>
+            </div>
+          </div>
+
+          <h2 id="puntos-ciegos">
+            Lo que el hook no ve
+            <a href="#puntos-ciegos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            El hook se dispara con la herramienta de edición del agente. Todo lo que cambie ficheros por otro camino pasa desapercibido:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Camino</th>
+                  <th>¿Dispara el hook?</th>
+                  <th>Consecuencia</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Herramienta de edición del agente</td><td>Sí</td><td>Recordatorio en el momento justo</td></tr>
+                <tr><td><code>sed -i</code>, un script de Python o un heredoc en la shell</td><td>No</td><td>El cambio entra sin recordatorio</td></tr>
+                <tr><td>Un generador o un formateador ejecutado por comando</td><td>No</td><td>Igual: el hook no ve el fichero</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            Por eso la disciplina de un método suele incluir una norma explícita: <strong>se edita con la herramienta de edición</strong>, y la shell se reserva para cambios mecánicos ya decididos, tras los cuales se ejecutan los checks del proyecto.
+          </p>
+
+          <h2 id="probar">
+            Probar un hook sin agente
+            <a href="#probar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            Un hook es código y se prueba como código, sin necesidad de abrir una sesión: se le pasa por la entrada estándar el JSON que recibiría y se mira lo que devuelve.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · tres casos que debe cumplir el router</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">echo '{"session_id":"t1","tool_input":{"file_path":"src/Controller/PedidoController.php"}}' | .agents/router/route.sh
+echo '{"session_id":"t1","tool_input":{"file_path":"src/Controller/ClienteController.php"}}' | .agents/router/route.sh
+echo '{"session_id":"t1","tool_input":{"file_path":"README.md"}}' | .agents/router/route.sh</code></pre>
+          </div>
+
+          <p>
+            La primera llamada devuelve el recordatorio de los controladores; la segunda, en la misma sesión, no devuelve nada; la tercera, tampoco, porque el fichero no tiene capa. Si alguno de los tres falla, el hook está mal antes de que ningún agente lo use. En el reto práctico del curso montarás este router y verás los tres casos.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Monta un router por capa cuando…</h4>
+              <ul>
+                <li>El proyecto tiene capas con normas distintas (controladores, dominio, migraciones)</li>
+                <li>Las normas de una capa se incumplen aunque están escritas</li>
+                <li>Las rules del proyecto crecen con normas que solo aplican a una capa</li>
+                <li>Varios agentes o personas tocan el mismo código</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No compensa si…</h4>
+              <ul>
+                <li>El proyecto es pequeño y sus normas caben en las rules generales</li>
+                <li>La herramienta que usas no admite hooks tras la edición</li>
+                <li>Lo que necesitas es impedir algo: ahí va un hook de bloqueo o un check</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El uso más rentable de un hook en un método es recordar, no bloquear: inyectar la norma de una capa al editar un fichero de esa capa.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El router son tres piezas: una tabla de patrones a capas, un recordatorio corto por capa y un script tras la edición.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una vez por sesión y capa, y silencioso ante la duda: el ruido entrena al modelo a ignorar el canal.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El hook no ve las ediciones hechas por la shell; de ahí la norma de editar con la herramienta de edición.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un hook se prueba sin agente, pasándole el JSON por la entrada estándar y comprobando su salida.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="ag-skills-y-contratos.html">
+              <small>← Anterior</small>
+              <b>Skills de fase y contratos compartidos</b>
+            </a>
+            <a href="ag-roles-de-subagente.html" class="next">
+              <small>Siguiente →</small>
+              <b>Roles con contrato: explorador, auditores y verificador</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../tutorials/practica.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

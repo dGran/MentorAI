@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Deploy y tablero: el estado como dato — MentorAI</title>
+    <meta name="description" content="El cierre del ciclo de entrega: el estado de cada tarea en un campo del tablero y no en etiquetas, los gates que deben pasar antes de mergear y desplegar, qué significa «hecho», qué se exige en el primer despliegue y cómo se verifica una versión nueva comparándola con una línea base." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Deploy</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Deploy y tablero: el estado como dato</h1>
+        <p class="tutorial-hero__lead">
+          Un tablero que dice «en revisión» de algo que se desplegó ayer no informa: engaña. Y un despliegue que se hace porque «debería estar bien» es una apuesta. La última fase del flujo convierte el estado de cada tarea en un dato fiable y el paso a producción en una decisión con condiciones.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            10 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Deploy
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#estado">El estado vive en un campo</a></li>
+            <li><a href="#gates">Gates antes de mergear</a></li>
+            <li><a href="#hecho">Qué significa «hecho»</a></li>
+            <li><a href="#primero">El primer despliegue</a></li>
+            <li><a href="#vigilar">Vigilar contra una línea base</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            El PR ya está revisado y con QA aprobado. Queda mergear, desplegar, comprobar que funciona y dejar el tablero diciendo la verdad. Parece lo más mecánico del flujo, y es justo donde un fallo de proceso llega a producción sin que nadie lo vea.
+          </p>
+
+          <h2 id="estado">
+            El estado vive en un campo
+            <a href="#estado" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            Un flujo de entrega tiene pocos estados y cada tarea está exactamente en uno:
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Backlog</b><small>Escrita y priorizada; nadie la ha empezado</small></span>
+              </div>
+              <div class="flow__arrow" data-label="se toma"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>In Progress</b><small>Alguien la implementa en su rama</small></span>
+              </div>
+              <div class="flow__arrow" data-label="PR abierto"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Code Review</b><small>Hay un PR abierto esperando revisión</small></span>
+              </div>
+              <div class="flow__arrow" data-label="revisada"></div>
+              <div class="flow__node">
+                <span class="flow__num">4</span>
+                <span><b>QA</b><small>Revisada; falta comprobarla en la aplicación</small></span>
+              </div>
+              <div class="flow__arrow" data-label="QA aprobado"></div>
+              <div class="flow__node">
+                <span class="flow__num">5</span>
+                <span><b>Ready for prod</b><small>Aprobada; espera el merge o una ventana de despliegue</small></span>
+              </div>
+              <div class="flow__arrow" data-label="merge"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">6</span>
+                <span><b>Done</b><small>Mergeada (y desplegada, si el despliegue es automático)</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Cada fase mueve el estado al terminar: si una fase no lo mueve, el tablero miente.</p>
+          </div>
+
+          <p>
+            El estado va en un <strong>campo del tablero</strong>, no en etiquetas. Las etiquetas dicen el <em>tipo</em> de tarea (arreglo, funcionalidad, refactor) y no cambian; el campo dice <em>dónde está</em> y cambia en cada fase. Tener el estado en los dos sitios obliga a sincronizarlos a mano, y lo que se escribe en dos sitios acaba diciendo cosas distintas.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Prioridad, otro campo</p>
+              <p>La prioridad también es un campo, separado del estado. Y la prioridad no dice qué se puede empezar: una tarea urgente bloqueada por otra no es tomable. Para eso están las dependencias consultables de la lección del issue.</p>
+            </div>
+          </div>
+
+          <h2 id="gates">
+            Gates antes de mergear
+            <a href="#gates" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            El merge es irreversible en la práctica: en cuanto entra en la rama principal, se despliega o lo toma otro trabajo. Por eso tiene condiciones de entrada que se comprueban siempre, y en este orden:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Gate</th>
+                  <th>Qué se comprueba</th>
+                  <th>Si falla</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Estado</td><td>La tarea está en «Ready for prod»</td><td>Falta una fase: se dice cuál y se para</td></tr>
+                <tr><td>Revisión</td><td>El PR tiene su comentario de revisión con los hallazgos resueltos</td><td>No se mergea nada sin revisar</td></tr>
+                <tr><td>QA</td><td>El último comentario de QA es una aprobación, o un salto justificado</td><td>Se vuelve a la fase que corresponda</td></tr>
+                <tr><td>Checks</td><td>Todos los checks del PR en verde y sin conflictos</td><td>Se para; no se reintenta a ciegas</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Un gate tiene que poder parar</p>
+              <p>El fallo más traicionero es comprobar los checks y mergear en el mismo comando encadenado: si la espera termina al ver un check en rojo pero lo siguiente no depende de ese resultado, el merge se ejecuta igual. El gate se comprueba en un paso propio que detiene la ejecución si algo no está en verde, y el merge va después, aparte.</p>
+            </div>
+          </div>
+
+          <h2 id="hecho">
+            Qué significa «hecho»
+            <a href="#hecho" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            Parece obvio y no lo es. En un proyecto con despliegue automático tras el merge, «hecho» es mergeado y desplegado. En uno con despliegue manual, el merge y el despliegue se separan, y el tablero tiene que poder mostrar ese desfase:
+          </p>
+
+          <ul>
+            <li><strong>Despliegue automático:</strong> tras el merge se espera a que termine el pipeline y se comprueba que la versión nueva está en producción. Solo entonces la tarea pasa a «Done».</li>
+            <li><strong>Despliegue manual:</strong> la tarea pasa a «Done» al mergear, y una nota del proyecto apunta qué entró en la rama principal sin desplegarse todavía. Es lo que se mira antes de subir.</li>
+            <li><strong>Cachés con versión:</strong> si el proyecto versiona recursos en caché (una aplicación instalable, un service worker), subir esa versión es parte del despliegue. Dos PRs que suben la versión al mismo valor se fusionan sin conflicto y el segundo se despliega con la versión que ya tenía el primero; la versión se fija al rebasar justo antes de mergear.</li>
+          </ul>
+
+          <h2 id="primero">
+            El primer despliegue
+            <a href="#primero" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            El primer paso de un proyecto a un entorno público tiene dos condiciones extra que los siguientes no necesitan repetir:
+          </p>
+
+          <ul>
+            <li><strong>Seguridad:</strong> una auditoría de seguridad reciente sin hallazgos críticos abiertos. Después, basta con revisar la seguridad de cada cambio.</li>
+            <li><strong>Observabilidad:</strong> logs con rotación y retención definidas. Un disco lleno de logs tumba el servicio, y sin logs no hay forma de saber qué pasó.</li>
+          </ul>
+
+          <h2 id="vigilar">
+            Vigilar contra una línea base
+            <a href="#vigilar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            Tras desplegar, «la home responde 200» es la comprobación mínima, no la suficiente. Lo que de verdad indica si la versión nueva está sana es <strong>compararla con la anterior</strong>: tasa de errores, latencias, colas de trabajos fallidos. Un 2 % de errores puede ser normal o una catástrofe, según lo que había antes.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Una vigilancia útil…</h4>
+              <ul>
+                <li>Identifica qué versión está desplegada (un commit, una etiqueta)</li>
+                <li>Compara con un periodo equivalente de la versión anterior</li>
+                <li>Para con un veredicto medido: sana, degradada o sin datos</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Una vigilancia engañosa…</h4>
+              <ul>
+                <li>Da por bueno un 200 en la página principal</li>
+                <li>Compara contra cero en vez de contra lo que había</li>
+                <li>Convierte «no hay métricas» en «todo bien»</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            Si el proyecto no tiene métricas ni logs accesibles, la vigilancia lo dice: «sin observabilidad, no se puede afirmar que no haya regresiones». Es incómodo, pero es la verdad, y es lo que motiva a montarla.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Formaliza el cierre cuando…</h4>
+              <ul>
+                <li>Varias personas o agentes mueven tareas en el mismo tablero</li>
+                <li>Se mergea y despliega sin supervisión directa</li>
+                <li>El despliegue no es automático y hay desfase entre rama y producción</li>
+                <li>Un fallo en producción cuesta más que unos minutos de comprobación</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Puedes simplificar si…</h4>
+              <ul>
+                <li>Eres la única persona y despliegas a mano mirando el resultado</li>
+                <li>No hay producción: es una herramienta interna sin usuarios</li>
+                <li>El tablero es para ti y no lo consulta nadie más</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El estado de cada tarea vive en un único campo del tablero; las etiquetas dicen el tipo y la prioridad es otro campo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Antes de mergear se comprueban estado, revisión, QA y checks, en un paso que detiene la ejecución si algo falla.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>«Hecho» depende del despliegue: automático, se espera al pipeline; manual, se anota el desfase.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El primer despliegue público exige seguridad revisada y logs con rotación.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una versión nueva se vigila comparándola con la anterior, y la falta de métricas se dice en lugar de darse por buena.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="ag-qa-con-evidencias.html">
+              <small>← Anterior</small>
+              <b>QA funcional: evidencias, no afirmaciones</b>
+            </a>
+            <a href="ag-tandas-y-loops.html" class="next">
+              <small>Siguiente →</small>
+              <b>Tandas y bucles: trabajo desatendido bajo contrato</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../tutorials/practica.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

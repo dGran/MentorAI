@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = localStorage.getItem("academia-theme");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute(
+          "data-theme",
+          stored || (prefersDark ? "dark" : "light")
+        );
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Roles con contrato: explorador, auditores y verificador — MentorAI</title>
+    <meta name="description" content="Cómo un método convierte los subagentes en roles fijos con contrato: cuándo delegar, qué hace cada rol (explorador, auditor de convenciones, auditor entre ficheros, verificador de bloqueantes, escritor de tests), qué debe devolver cada uno, por qué el verificador recibe solo la afirmación y qué hacer cuando no hay subagentes." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">MentorAI</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Subagentes</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Roles con contrato: explorador, auditores y verificador</h1>
+        <p class="tutorial-hero__lead">
+          Un subagente lanzado a mano para «echar un vistazo» devuelve lo que le parezca, con el formato que le parezca. Un rol con contrato devuelve siempre lo mismo: qué miró, qué encontró con su línea exacta y qué no pudo comprobar. Esa diferencia es la que permite confiar en lo que delegas.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            11 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Subagentes
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#delegar">Cuándo delegar</a></li>
+            <li><a href="#roles">Cinco roles, cinco preguntas</a></li>
+            <li><a href="#retorno">El contrato de retorno</a></li>
+            <li><a href="#fresco">Contexto fresco contra el anclaje</a></li>
+            <li><a href="#inline">Cuando no hay subagentes</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            La lección <a href="cc-subagentes.html">subagentes</a> explicó por qué delegar ahorra contexto y cuándo conviene. Aquí damos el paso siguiente: un método no delega «a un subagente», delega a un <strong>rol</strong> con un encargo fijo, unos límites y un formato de respuesta que el agente principal sabe leer.
+          </p>
+
+          <h2 id="delegar">
+            Cuándo delegar
+            <a href="#delegar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            Delegar tiene un coste: el subagente arranca sin contexto, tiene que leer lo que necesita y su respuesta hay que interpretarla. Compensa cuando <strong>la entrada es grande y la salida pequeña</strong>: leer veinte ficheros para devolver un plan de diez líneas, o revisar un diff de quinientas líneas para devolver tres hallazgos.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Situación</th>
+                  <th>¿Delegar?</th>
+                  <th>Por qué</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Entender una tarea que toca más de tres ficheros o unas 600 líneas</td><td>Sí</td><td>La lectura ensuciaría el contexto principal</td></tr>
+                <tr><td>Revisar un diff propio con ojos que no lo escribieron</td><td>Sí</td><td>El contexto fresco es el objetivo, no solo el ahorro</td></tr>
+                <tr><td>Leer un fichero de cien líneas que vas a editar</td><td>No</td><td>Lo necesitas en tu propio contexto para editarlo</td></tr>
+                <tr><td>Tomar una decisión de diseño</td><td>No</td><td>El criterio se queda en el agente principal</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Delega lectura, no criterio</p>
+              <p>Los subagentes leen, buscan, revisan y verifican. Las ediciones de producción y las decisiones las toma el agente principal, que es quien tiene el contexto de la tarea entera y responde de ella.</p>
+            </div>
+          </div>
+
+          <h2 id="roles">
+            Cinco roles, cinco preguntas
+            <a href="#roles" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            En vez de un subagente genérico, el método define pocos roles, cada uno con una única pregunta que responder:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Rol</th>
+                  <th>La pregunta que responde</th>
+                  <th>Qué recibe</th>
+                  <th>Límites</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>Explorador</td><td>¿Qué hay que tocar para esta tarea y en qué orden?</td><td>El issue y el repo</td><td>Solo lectura; un presupuesto de ficheros; respuesta breve</td></tr>
+                <tr><td>Auditor de convenciones</td><td>¿El diff propio cumple las rules del proyecto?</td><td>El diff y las rules</td><td>Solo lectura; solo convenciones</td></tr>
+                <tr><td>Auditor entre ficheros</td><td>¿Las piezas encajan entre sí?</td><td>El diff</td><td>Solo lectura; contratos, llamadores, dependencias</td></tr>
+                <tr><td>Verificador de bloqueantes</td><td>¿Este hallazgo es real?</td><td>La afirmación y su <code>fichero:línea</code></td><td>Solo lectura; intenta refutarlo</td></tr>
+                <tr><td>Escritor de tests</td><td>¿Cómo se prueba este comportamiento?</td><td>El comportamiento y la carpeta de tests</td><td>Solo escribe dentro de la carpeta de tests</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            Cada rol vive en un fichero del método con su encargo, sus herramientas permitidas y su formato de salida. Al lanzarlo, el agente principal no tiene que redactar instrucciones: elige el rol y le pasa la entrada.
+          </p>
+
+          <h2 id="retorno">
+            El contrato de retorno
+            <a href="#retorno" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            Lo que hace útil a un rol es que su respuesta tiene siempre la misma forma. Un contrato de retorno típico exige:
+          </p>
+
+          <ul>
+            <li><strong>Cada hallazgo con su <code>fichero:línea</code>.</strong> Sin ubicación, el agente principal tiene que volver a buscar lo que el subagente ya encontró.</li>
+            <li><strong>Qué se miró.</strong> Un «no hay problemas» no dice nada si no sabes qué ficheros se revisaron.</li>
+            <li><strong>Una sección «NO PUDE COMPROBAR».</strong> Lo que el subagente no verificó —un comando que no pudo ejecutar, un fichero que no encontró— va dicho explícitamente, nunca omitido.</li>
+            <li><strong>Un tamaño máximo.</strong> Si el subagente devuelve tres pantallas, el ahorro de contexto desaparece.</li>
+          </ul>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">texto · respuesta de un auditor de convenciones (ficticia)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>MIRADO: src/Pedido/*.php (4 ficheros del diff), rules del proyecto, paquete PHP
+HALLAZGOS
+- src/Pedido/CalculaTotal.php:42 · GEN-02 · else tras return; aplicar retorno temprano
+- src/Pedido/PedidoController.php:18 · ARQ-02 · lógica de descuento en el controlador
+NO PUDE COMPROBAR
+- Si existe test para CalculaTotal: la carpeta tests/ no está en el diff</code></pre>
+          </div>
+
+          <h2 id="fresco">
+            Contexto fresco contra el anclaje
+            <a href="#fresco" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            El verificador de bloqueantes tiene una regla que parece extraña y es la más importante: <strong>recibe la afirmación, no el razonamiento</strong>. Si el revisor le pasa «creo que aquí hay una condición de carrera porque…», el verificador hereda el ancla del revisor y tiende a confirmarla (lo viste en <a href="llm-entrenamiento.html">anclaje y complacencia</a>).
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>El revisor sospecha</b><small>«Bloqueante: src/Stock.php:57 permite stock negativo con dos peticiones simultáneas»</small></span>
+              </div>
+              <div class="flow__arrow" data-label="sin ancla"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>El verificador recibe</b><small>Solo esa afirmación y la ubicación; nada del razonamiento previo</small></span>
+              </div>
+              <div class="flow__arrow" data-label="contexto fresco"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Intenta refutarla</b><small>Lee el código, busca el bloqueo o la transacción que lo impediría, lo ejecuta si puede</small></span>
+              </div>
+              <div class="flow__arrow" data-label="contrato"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>Veredicto</b><small>Confirmado, degradado a menor, o descartado, con su evidencia</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Un bloqueante que sobrevive a alguien que intentó tumbarlo vale mucho más que uno confirmado por quien lo propuso.</p>
+          </div>
+
+          <h2 id="inline">
+            Cuando no hay subagentes
+            <a href="#inline" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            No todas las herramientas ni todas las situaciones permiten lanzar subagentes. El método no depende de ellos: cada rol tiene una versión <strong>en línea</strong> que el agente principal ejecuta él mismo, con el mismo encargo y el mismo formato de salida. Se pierde el contexto fresco, y por eso se compensa de otra forma: releyendo las rules antes de revisar, y declarando en el informe que la revisión fue del propio autor.
+          </p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Dilo en el informe</p>
+              <p>Si una revisión no pudo hacerse con contexto fresco, el informe lo dice: «revisión del propio autor». Quien lo lea sabrá qué peso darle. Lo que no vale es presentar una autorrevisión como si fuera independiente.</p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Define roles con contrato cuando…</h4>
+              <ul>
+                <li>Delegas a menudo y las respuestas llegan en formatos distintos</li>
+                <li>Necesitas revisiones independientes del autor</li>
+                <li>Los hallazgos de una revisión se discuten sin poder ubicarlos</li>
+                <li>Quieres que un trabajo desatendido se pueda auditar después</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No hace falta si…</h4>
+              <ul>
+                <li>Delegas de forma ocasional y lees tú la respuesta entera</li>
+                <li>Las tareas son pequeñas y caben en el contexto principal</li>
+                <li>Tu herramienta no tiene subagentes y no vas a emular los roles</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Se delega cuando la entrada es grande y la salida pequeña; se delega lectura, no criterio.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un método define pocos roles con una pregunta cada uno: explorador, auditor de convenciones, auditor entre ficheros, verificador y escritor de tests.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El contrato de retorno exige ubicación de cada hallazgo, qué se miró, qué no se pudo comprobar y un tamaño máximo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El verificador recibe la afirmación y no el razonamiento: así no hereda el ancla de quien sospechó.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Sin subagentes, cada rol se ejecuta en línea con el mismo contrato, y la autorrevisión se declara como tal.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="ag-hooks-que-inyectan.html">
+              <small>← Anterior</small>
+              <b>Hooks que dan contexto, no solo que bloquean</b>
+            </a>
+            <a href="ag-del-requisito-al-issue.html" class="next">
+              <small>Siguiente →</small>
+              <b>Del requisito al issue: el issue como contrato</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quizzes.js"></script>
+    <script src="../tutorials/checks.js"></script>
+    <script src="../tutorials/practica.js"></script>
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

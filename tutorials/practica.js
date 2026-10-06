@@ -1245,4 +1245,45 @@ window.MENTORAI_PRACTICE = {
         "Con documentos suficientemente largos, lo habitual es que el dato del final se recupere mejor que el del medio: es el patrón «perdido en el medio» y la recencia de la lección de atención. Con documentos cortos o con modelos recientes puede no notarse, porque han mejorado mucho en contextos largos; si no lo ves, alarga el documento o añade más texto irrelevante alrededor. La lección práctica es la misma: que algo quepa en el contexto no garantiza que pese, así que lo crítico va cerca de donde se usa o se repite al final.",
     },
   ],
+  "metodo-con-agentes": [
+    {
+      id: "r0bc278",
+      title: "Un router de contexto en bash",
+      statement:
+        "En un directorio vacío, monta un router de contexto: una tabla .agents/router/routes.conf (patrón de ruta y capa separados por tabulador), un recordatorio por capa en .agents/router/<capa>.md y un script que lea el JSON del evento por la entrada estándar y devuelva el recordatorio de la capa del fichero editado, una sola vez por sesión y capa. Pruébalo sin ningún agente, con echo: dos ediciones de la misma capa en la misma sesión, un fichero fuera de la tabla, una capa sin recordatorio y otra sesión. Necesitas jq.",
+      solution:
+        "La primera edición en src/Domain/ devuelve el JSON con el recordatorio como contexto adicional; la segunda, en la misma sesión, no devuelve nada, porque el script deja una marca por sesión y capa. Un README.md no casa con ningún patrón y sale en silencio; una migración casa, pero no tiene fichero de capa, y también calla. Con otra sesión el recordatorio vuelve a salir. Todo eso es el diseño: recordar una vez cuando importa y callar ante la duda, porque un canal ruidoso enseña al modelo a ignorarlo. Y probarlo con echo es lo que permite fiarse de un hook antes de engancharlo a ninguna herramienta.",
+      solutionCode: {
+        lang: "bash",
+        source:
+          "mkdir -p .agents/router\nprintf 'src/Domain/\\tdominio\\nsrc/Controller/\\tcontrolador\\nmigrations/\\tmigracion\\n' > .agents/router/routes.conf\nprintf 'Dominio: sin dependencias de framework ni de infraestructura.\\nNorma completa: ~/.metodo/stacks/php/rules.md\\n' > .agents/router/dominio.md\nprintf 'Controlador: solo orquesta; la lógica va a un caso de uso.\\n' > .agents/router/controlador.md\n\ncat > router.sh <<'EOF'\n#!/usr/bin/env bash\ninput=$(cat)\nfile=$(printf '%s' \"$input\" | jq -r '.tool_input.file_path // empty')\nsession=$(printf '%s' \"$input\" | jq -r '.session_id // \"sin-sesion\"')\n[ -n \"$file\" ] || exit 0\n\nlayer=\"\"\nwhile IFS=$'\\t' read -r pattern name; do\n  case \"$file\" in *\"$pattern\"*) layer=$name; break ;; esac\ndone < .agents/router/routes.conf\n\n[ -n \"$layer\" ] || exit 0\n[ -f \".agents/router/$layer.md\" ] || exit 0\n\nseen=\"${TMPDIR:-/tmp}/router-$session-$layer\"\n[ -e \"$seen\" ] && exit 0\ntouch \"$seen\"\n\njq -n --arg context \"$(cat \".agents/router/$layer.md\")\" \\\n  '{hookSpecificOutput: {hookEventName: \"PostToolUse\", additionalContext: $context}}'\nEOF\n\necho '{\"session_id\":\"s1\",\"tool_input\":{\"file_path\":\"src/Domain/Pedido.php\"}}' | bash router.sh\necho '{\"session_id\":\"s1\",\"tool_input\":{\"file_path\":\"src/Domain/Linea.php\"}}' | bash router.sh\necho '{\"session_id\":\"s1\",\"tool_input\":{\"file_path\":\"README.md\"}}' | bash router.sh\necho '{\"session_id\":\"s1\",\"tool_input\":{\"file_path\":\"migrations/V1.sql\"}}' | bash router.sh\necho '{\"session_id\":\"s2\",\"tool_input\":{\"file_path\":\"src/Domain/Pedido.php\"}}' | bash router.sh",
+      },
+    },
+    {
+      id: "rc1e031",
+      title: "Audita las descripciones de tus skills",
+      statement:
+        "Las descripciones de todas tus skills se cargan en cada sesión, las uses o no. Escribe un script que recorra un directorio de skills (por defecto ~/.claude/skills), muestre la longitud de la descripción de cada una ordenada de mayor a menor, marque las que pasen de 250 caracteres y sume el total. Después elige las dos más largas y reescríbelas con tres partes: qué hace, cuándo usarla y con qué skill vecina no confundirla.",
+      solution:
+        "El total es el impuesto fijo que pagas en cada sesión, y suele sorprender: unas decenas de skills con descripciones largas son varios miles de caracteres antes de escribir nada. Ojo: el script mide descripciones de una sola línea; una en varias líneas (description: >) hay que leerla a mano. Las más largas casi nunca lo son por necesidad: repiten el procedimiento que ya está en el cuerpo de la skill. Al reescribirlas con las tres partes se acortan y, además, eligen mejor, porque la descripción es lo único que el agente lee para decidir si carga la skill. Es la auditoría del canal «siempre»: lo que va ahí tiene que ser corto y decisivo, y el detalle se mueve a canales más baratos.",
+      solutionCode: {
+        lang: "bash",
+        source:
+          "dir=${1:-$HOME/.claude/skills}\nlimit=250\ntotal=0\nreport=\"\"\nfor skill in \"$dir\"/*/SKILL.md; do\n  name=$(basename \"$(dirname \"$skill\")\")\n  description=$(sed -n 's/^description: *//p' \"$skill\" | head -1)\n  total=$((total + ${#description}))\n  flag=\"\"\n  [ \"${#description}\" -gt \"$limit\" ] && flag=\"  LARGA\"\n  report+=$(printf '%5d  %s%s' \"${#description}\" \"$name\" \"$flag\")$'\\n'\ndone\nprintf '%s' \"$report\" | sort -rn\nprintf 'Total: %d caracteres en cada sesión\\n' \"$total\"",
+      },
+    },
+    {
+      id: "r475436",
+      title: "De un issue vago a un contrato",
+      statement:
+        "Este es el issue que llega: «El checkout a veces falla con cupones. Revisarlo.». Conviértelo en un contrato que un agente pueda implementar y otro verificar, con contexto, criterios de aceptación verificables, reproducción ejecutable, notas técnicas y dependencias. Inventa el proyecto, pero haz que cada criterio se pueda comprobar con la aplicación levantada.",
+      solution:
+        "«A veces falla» no se puede verificar: primero hay que reproducirlo y dejar el comando con su salida real, porque es lo que el QA ejecutará antes y después del arreglo. Los criterios dejan de hablar de «funcionar» y dicen qué se observa: un total nunca negativo, un código de estado concreto, un mensaje literal. Las notas técnicas señalan dónde está la causa y lo que ya está decidido, sin diseñar la solución entera. Y la dependencia se declara también en el campo del gestor, no solo en el texto. Si al reproducirlo resulta que ya no falla, el issue no se implementa: se refina o se cierra.",
+      solutionCode: {
+        lang: "markdown",
+        source:
+          "## Contexto\nCon un cupón de importe fijo mayor que el total del carrito, el checkout calcula\nun total negativo y la pasarela rechaza el pago con un error genérico.\n\n## Reproducción\n$ curl -s -X POST localhost:8080/api/carrito/42/cupon -d '{\"codigo\":\"VERANO\"}'\n{\"total\": -3.50}\n\n## Criterios de aceptación\n- [ ] Con un cupón mayor que el total, el total queda en 0,00 y nunca es negativo\n- [ ] La misma petición de la reproducción devuelve {\"total\": 0.00}\n- [ ] Con un total de 0,00, el checkout confirma el pedido sin llamar a la pasarela\n- [ ] Un cupón caducado devuelve 422 con «El cupón ha caducado»\n\n## Notas técnicas\nCausa: AplicaCupon.php:31 resta el descuento sin acotar a cero.\nDecidido: los cupones no generan saldo a favor; el sobrante se pierde.\n\n## Dependencias\nDepende de #39 (cupones caducados): reutiliza su validación de fechas.",
+      },
+    },
+  ],
 };

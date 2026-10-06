@@ -1,14 +1,14 @@
 # Estado del proyecto
 
-Última actualización: **2026-08-22**.
+Última actualización: **2026-10-07**.
 
 Este fichero se lee al empezar cada sesión y está pensado para leerse **entero**.
 Lo cerrado vive en `archivo/`; si algo de aquí crece demasiado, se archiva.
 
 ## Dónde está el proyecto
 
-**287 tutoriales · 31 cursos · 7 rutas · 447 preguntas de examen · 643 checks ·
-91 retos de práctica.** `node scripts/validar.js` sale sin errores; sus avisos
+**300 tutoriales · 32 cursos · 7 rutas · 464 preguntas de examen · 682 checks ·
+95 retos de práctica.** `node scripts/validar.js` sale sin errores; sus avisos
 son deuda medida (sesgo de longitud de las preguntas, #25; «Cuándo aplicarlo»
 pendiente en 96 tutoriales, #34 y #33).
 
@@ -16,9 +16,20 @@ pendiente en 96 tutoriales, #34 y #33).
 lecciones con prefijo `llm-` (tokens y embeddings, atención y contexto,
 entrenamiento y sesgos, muestreo, alucinación y verificación). Va entre
 `programar-con-ia` y `claude-code` en la ruta `ingenieria-con-ia`, y cierra
-`el-grado-que-no-hiciste`. Es la base mecánica del futuro curso de método con
-agentes (#24). Nació medido: examen de 16 preguntas con la correcta como la más
+`el-grado-que-no-hiciste`. Es la base mecánica del curso de método con
+agentes. Nació medido: examen de 16 preguntas con la correcta como la más
 larga solo en 2, y checks en 2 de 20.
+
+**Curso `metodo-con-agentes` (2026-10-07, épica #24):** «Método con agentes:
+del prompt al flujo de entrega», 13 lecciones con prefijo `ag-` en 4 módulos
+(del agente al método, las piezas, el flujo de entrega, escalar y mejorar).
+Cierra la ruta `ingenieria-con-ia`, y `cc-flujo-de-equipo` lo enlaza en un
+callout sin tocar su «Fin del curso». **Decisión que no se reabre: el curso
+enseña con ejemplos sintéticos** (proyecto ficticio «tienda» en PHP, método en
+`~/.metodo/`); nunca datos ni nombres del método real del autor, que es
+privado. Examen de 17 preguntas sin la correcta como la más larga, 39 checks y
+3 retos (router de contexto probado con `echo`, auditar descripciones de
+skills, de issue vago a contrato).
 
 **Tanda fundamentos (2026-08-23):** dos cursos nuevos que cierran huecos de
 base detectados en auditoría contra un temario de carrera — **`la-maquina`**
@@ -138,8 +149,9 @@ Cada una costó una depuración; están aquí para no repetirlas.
 
 El validador vigila la estructura, no la verdad: el contenido caduca sin que
 nada avise. **Hacia febrero-marzo de 2027, primera revisión de frescura** de
-las categorías volátiles — los cursos `claude-code` y `construir-con-ia` sobre
-todo (la lección de la API ya nació corrigiendo `temperature`, que desapareció
+las categorías volátiles — los cursos `claude-code`, `construir-con-ia` y
+`metodo-con-agentes` (hooks, subagentes y formato de skills cambian con la
+herramienta) sobre todo (la lección de la API ya nació corrigiendo `temperature`, que desapareció
 de los modelos actuales), y de paso `programar-con-ia` y la sección «Lo que el
 proveedor ya no deja tocar» de `llm-muestreo` (el resto de `ia-por-dentro` es
 mecánica estable). Formato: una sesión de
@@ -156,7 +168,7 @@ el resto del catálogo (SQL, OOP, Linux…) envejece a décadas, no a meses.
 | `node scripts/verificar-offline.js` | Comprueba el offline con el servidor apagado |
 | `node --test 'scripts/tests/**/*.test.js'` | Tests de la lógica pura (`node:test` + `vm`, sin dependencias). Corre en CI |
 
-Al tocar `sw.js` o los módulos del shell, **subir `VERSION`** (va por `v25`). La
+Al tocar `sw.js` o los módulos del shell, **subir `VERSION`** (va por `v28`). La
 caché de contenido guardado (`academia-content`) ya no lleva versión: un
 despliegue no borra lo que el lector guardó para viajar.
 
