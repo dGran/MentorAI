@@ -1203,7 +1203,7 @@ window.MENTORAI_PRACTICE = {
       statement:
         "Sin red y sin ningún SDK: escribe en Node un sorteo de tokens con tres logits (return 2.0, throw 1.0, echo 0.2). Aplica la temperatura dividiendo los logits, conviértelos en pesos con Math.exp y sortea 10.000 veces con temperatura 0.2, 1 y 2. Cuenta cuántas veces sale cada token y explica qué ves.",
       solution:
-        "Con 0.2, return sale casi siempre (en torno a 9.900 de 10.000): la temperatura baja agranda las diferencias y el favorito se lo lleva todo. Con 1 aparece la distribución que «aprendió» el modelo (unos 6.400 / 2.400 / 1.100). Con 2 se aplana y echo sale casi una de cada cinco. Además, al repetir el programa los números cambian un poco aunque el código sea el mismo: es la variación que un sistema serio no puede dar por eliminada, y por eso los gates de un proyecto son deterministas y no confían en que el modelo repita.",
+        "Con 0.2, return sale casi siempre (en torno a 9.900 de 10.000): la temperatura baja agranda las diferencias y el favorito se lo lleva todo. Con 1 aparece la distribución que «aprendió» el modelo (unos 6.500 / 2.400 / 1.100). Con 2 se aplana y echo sale casi una de cada cinco. Además, al repetir el programa los números cambian un poco aunque el código sea el mismo: es la variación que un sistema serio no puede dar por eliminada, y por eso los gates de un proyecto son deterministas y no confían en que el modelo repita.",
       solutionCode: {
         lang: "js",
         source:
@@ -1216,7 +1216,7 @@ window.MENTORAI_PRACTICE = {
       statement:
         "Implementa en Node seis fusiones de BPE sobre un corpus pequeño de palabras en español (por ejemplo: deshacer, rehacer, hacer, hacerlo, deshacerlo, rehacerlo, hacerse). En cada vuelta cuenta las parejas de símbolos contiguos, fusiona la más frecuente y muestra cómo queda cada palabra al final.",
       solution:
-        "Las primeras fusiones construyen la raíz común: h+a, ha+c, hac+e, hace+r. Tras cuatro vueltas «hacer» ya es un solo símbolo y las siguientes añaden «lo». Los prefijos «des» y «re» siguen partidos en letras porque aparecen menos. Es lo mismo que hace un tokenizador real a escala de miles de millones de palabras: lo frecuente acaba siendo un token y lo raro se escribe con varios. Por eso un texto en un idioma o un dominio poco representado en el corpus del tokenizador ocupa más tokens.",
+        "Las primeras fusiones construyen la raíz común: h+a, ha+c, hac+e, hace+r. Tras cuatro vueltas «hacer» ya es un solo símbolo y las dos siguientes forman «hacerlo» (cuando hay empates, el orden depende de cómo desempate la implementación). Los prefijos «des» y «re» siguen partidos en letras porque aparecen menos. Es lo mismo que hace un tokenizador real a escala de miles de millones de palabras: lo frecuente acaba siendo un token y lo raro se escribe con varios. Por eso un texto en un idioma o un dominio poco representado en el corpus del tokenizador ocupa más tokens.",
       solutionCode: {
         lang: "js",
         source:

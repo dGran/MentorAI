@@ -125,7 +125,7 @@
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
             <div class="callout__body">
               <p class="callout__title">Un vocabulario de tamaño fijo</p>
-              <p>Un tokenizador moderno tiene un vocabulario de decenas o cientos de miles de tokens, fijado antes de entrenar el modelo. Cada token tiene un número (su <em>id</em>). Ese vocabulario no cambia nunca durante la vida del modelo: por eso dos modelos de familias distintas trocean el mismo texto de forma diferente.</p>
+              <p>Un tokenizador moderno tiene un vocabulario de decenas o cientos de miles de tokens, fijado antes de entrenar el modelo. Cada token tiene un número (su <em>id</em>). Ese vocabulario no cambia durante la vida del modelo. Y como cada familia lo construye con su propio corpus y sus propias reglas, dos modelos de familias distintas trocean el mismo texto de forma diferente.</p>
             </div>
           </div>
 
@@ -142,7 +142,7 @@
             <div class="flow">
               <div class="flow__node flow__node--start">
                 <span class="flow__num">1</span>
-                <span><b>Empieza por lo mínimo</b><small>El vocabulario inicial son los bytes (o caracteres). Cualquier texto se puede escribir con ellos, así que nada queda fuera.</small></span>
+                <span><b>Empieza por lo mínimo</b><small>El vocabulario inicial son los bytes. Cualquier texto, en cualquier idioma, se puede escribir con ellos, así que nada queda fuera.</small></span>
               </div>
               <div class="flow__arrow" data-label="la más frecuente"></div>
               <div class="flow__node">
@@ -172,15 +172,15 @@
             </div>
             <pre><code>corpus = ["l o w", "l o w e r", "n e w e s t", "w i d e s t"]
 
-pareja más frecuente:  ("e", "s")   → nuevo símbolo "es"
+una de las parejas más frecuentes:  ("e", "s")   → nuevo símbolo "es"
 corpus = ["l o w", "l o w e r", "n e w es t", "w i d es t"]
 
-pareja más frecuente:  ("es", "t")  → nuevo símbolo "est"
+una de las parejas más frecuentes:  ("es", "t")  → nuevo símbolo "est"
 corpus = ["l o w", "l o w e r", "n e w est", "w i d est"]</code></pre>
           </div>
 
           <p>
-            En el reto práctico de este curso implementarás estas fusiones en unas pocas líneas de Node, y verás aparecer los trozos frecuentes por sí solos.
+            Aquí varias parejas empatan a dos apariciones; un tokenizador real rompe los empates con una regla fija, y con un corpus de verdad las frecuencias rara vez empatan. En el reto práctico de este curso implementarás estas fusiones en unas pocas líneas de Node, y verás aparecer los trozos frecuentes por sí solos.
           </p>
 
           <h2 id="peso">
@@ -205,7 +205,7 @@ corpus = ["l o w", "l o w e r", "n e w est", "w i d est"]</code></pre>
                 <tr><td>Inglés corriente</td><td>Las palabras frecuentes son un token</td><td>La referencia: el texto más «barato»</td></tr>
                 <tr><td>Español</td><td>Más palabras partidas: tildes, conjugaciones, plurales</td><td>Suele necesitar más tokens para decir lo mismo</td></tr>
                 <tr><td>Código</td><td>Espacios de indentación, símbolos, identificadores largos</td><td>Un fichero ocupa más de lo que su longitud sugiere</td></tr>
-                <tr><td>Números largos</td><td>Se parten en grupos de cifras, no en dígitos con valor</td><td>Aritmética y comparaciones poco fiables sin herramienta</td></tr>
+                <tr><td>Números largos</td><td>Se parten en cifras sueltas o en grupos de hasta tres, según el tokenizador</td><td>Aritmética y comparaciones poco fiables sin herramienta</td></tr>
                 <tr><td>JSON y logs</td><td>Comillas, llaves y claves repetidas en cada línea</td><td>Una salida verbosa consume contexto a toda velocidad</td></tr>
               </tbody>
             </table>
@@ -275,11 +275,11 @@ corpus = ["l o w", "l o w e r", "n e w est", "w i d est"]</code></pre>
           </p>
 
           <ul>
-            <li><strong>Contar letras sale mal.</strong> Si «fresa» es uno o dos tokens, el modelo nunca vio sus letras por separado: tiene que deducir cuántas «r» hay en una palabra que para él es un bloque. No es un fallo de inteligencia, es un fallo de percepción.</li>
-            <li><strong>La aritmética larga falla sin herramienta.</strong> Un número de diez cifras llega troceado en grupos arbitrarios; sumar o comparar exige reconstruir unas cifras que el modelo no ve una a una.</li>
+            <li><strong>Contar letras sale mal.</strong> El ejemplo clásico es «strawberry»: si la palabra son dos o tres tokens, el modelo nunca vio sus letras por separado y tiene que deducir cuántas «r» hay en algo que para él son bloques. No es un fallo de inteligencia, es un fallo de percepción.</li>
+            <li><strong>La aritmética larga falla sin herramienta.</strong> Un número de diez cifras llega troceado en grupos que no respetan su valor posicional; sumar o comparar exige reconstruir el número a partir de esos trozos.</li>
             <li><strong>Los límites se miden en tokens.</strong> La ventana de contexto, el máximo de salida y el precio se expresan en tokens, no en palabras ni en caracteres. Un mismo documento «cabe» o «no cabe» según cuánto ocupe al trocearlo.</li>
             <li><strong>El idioma cambia la factura.</strong> El mismo prompt en español suele gastar más tokens que en inglés, y esos tokens se pagan en cada llamada.</li>
-            <li><strong>Los errores tipográficos no rompen nada.</strong> Una palabra mal escrita se trocea en piezas más pequeñas pero sigue representable: el modelo la entiende igual, porque no hay palabras «fuera del vocabulario».</li>
+            <li><strong>Una errata no deja la palabra fuera.</strong> Una palabra mal escrita se trocea en piezas más pequeñas pero sigue siendo representable, así que el modelo suele entenderla: no existen palabras «fuera del vocabulario».</li>
           </ul>
 
           <h2 id="ingenieria">
