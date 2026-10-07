@@ -401,7 +401,7 @@
         <label class="btn btn--ghost" for="perfil-fichero">Importar desde un fichero</label>
         <input type="file" id="perfil-fichero" accept="application/json,.json" hidden />
       </div>
-      <p class="perfil__aviso" id="perfil-aviso" hidden></p>
+      <p class="perfil__aviso" id="perfil-aviso" aria-live="polite" hidden></p>
     </div>`;
 
     const aviso = host.querySelector("#perfil-aviso");

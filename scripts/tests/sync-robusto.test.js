@@ -143,17 +143,27 @@ test("the uploaded progress is compact JSON", async () => {
   assert.equal(content, JSON.stringify(JSON.parse(content)));
 });
 
-test("the upload on leaving uses keepalive only while the body fits", async () => {
-  const small = loadStartedApp({
-    localEntries: { ...justSynced(), "academia-progress": ["opcache"] },
-    respond: () => jsonResponse({}),
-  });
-  const bigSlugs = Array.from({ length: 6000 }, (_, index) => `tutorial-con-nombre-largo-${index}`);
-  const big = loadStartedApp({
-    localEntries: { ...justSynced(), "academia-progress": bigSlugs },
-    respond: () => jsonResponse({}),
+async function loadSyncedApp({ localEntries, remote = remoteExport(), answerUpload = () => jsonResponse({}) }) {
+  const app = loadStartedApp({
+    localEntries: { ...connected({ ultimaSync: Date.now() - 60 * SECONDS }), ...localEntries },
+    respond: (request) => (request.method === "GET" ? gistResponse(remote) : answerUpload(request)),
   });
 
+  await settle();
+  app.requests.length = 0;
+
+  return app;
+}
+
+const markCompleted = (app, slugs) => app.localStorage.setItem("academia-progress", JSON.stringify(slugs));
+
+test("the upload on leaving uses keepalive only while the body fits", async () => {
+  const small = await loadSyncedApp({ localEntries: { "academia-progress": ["opcache"] } });
+  const big = await loadSyncedApp({ localEntries: { "academia-progress": ["opcache"] } });
+  const bigSlugs = Array.from({ length: 6000 }, (_, index) => `tutorial-con-nombre-largo-${index}`);
+
+  markCompleted(small, ["opcache", "regex"]);
+  markCompleted(big, bigSlugs);
   small.hide();
   big.hide();
   await settle();
@@ -167,35 +177,82 @@ test("the upload on leaving uses keepalive only while the body fits", async () =
 });
 
 test("a failed upload on leaving is retried the next time", async () => {
-  let answers = 0;
-  const { requests, hide } = loadStartedApp({
-    localEntries: { ...justSynced(), "academia-progress": ["opcache"] },
-    respond: () => {
-      answers += 1;
-      return jsonResponse({}, answers === 1 ? { ok: false, status: 502 } : {});
+  let uploads = 0;
+  const app = await loadSyncedApp({
+    localEntries: { "academia-progress": ["opcache"] },
+    answerUpload: () => {
+      uploads += 1;
+      return jsonResponse({}, uploads === 2 ? { ok: false, status: 502 } : {});
     },
   });
 
-  hide();
+  markCompleted(app, ["opcache", "regex"]);
+  app.hide();
   await settle();
-  hide();
+  app.hide();
   await settle();
 
-  assert.equal(patches(requests).length, 2);
+  assert.equal(patches(app.requests).length, 2);
 });
 
 test("a successful upload on leaving is not repeated without changes", async () => {
+  const app = await loadSyncedApp({ localEntries: { "academia-progress": ["opcache"] } });
+
+  markCompleted(app, ["opcache", "regex"]);
+  app.hide();
+  await settle();
+  app.hide();
+  await settle();
+
+  assert.equal(patches(app.requests).length, 1);
+});
+
+test("leaving without local changes since the sync uploads nothing", async () => {
+  const app = await loadSyncedApp({ localEntries: { "academia-progress": ["opcache"] } });
+
+  app.hide();
+  await settle();
+
+  assert.equal(patches(app.requests).length, 0);
+});
+
+test("a page that skipped the sync never overwrites the gist on leaving", async () => {
   const { requests, hide } = loadStartedApp({
-    localEntries: { ...justSynced(), "academia-progress": ["opcache"] },
-    respond: () => jsonResponse({}),
+    localEntries: { ...justSynced(), "academia-progress": ["local"] },
+    respond: (request) =>
+      request.method === "GET" ? gistResponse(remoteExport({ "academia-progress": ["de-otro-dispositivo"] })) : jsonResponse({}),
   });
 
   hide();
   await settle();
+
+  assert.equal(patches(requests).length, 0);
+});
+
+test("after a sync that could not store the merge, leaving uploads nothing", async () => {
+  const { requests, hide } = loadStartedApp({
+    localEntries: { ...connected({ ultimaSync: Date.now() - 60 * SECONDS }), "academia-progress": ["local"] },
+    respond: (request) =>
+      request.method === "GET" ? gistResponse(remoteExport({ "academia-progress": ["de-otro-dispositivo"] })) : jsonResponse({}),
+    isFull: (key) => key === "academia-progress",
+  });
+
+  await settle();
   hide();
   await settle();
 
-  assert.equal(patches(requests).length, 1);
+  assert.equal(patches(requests).length, 0);
+});
+
+test("a last sync dated in the future does not block the sync", async () => {
+  const { MentorAI, requests } = loadApp({
+    localEntries: connected({ ultimaSync: Date.now() + 3600 * SECONDS }),
+    respond: () => gistResponse(remoteExport()),
+  });
+
+  await MentorAI.Sync.sincronizar();
+
+  assert.ok(requests.length > 0);
 });
 
 test("connecting finds an existing gist beyond the first page", async () => {

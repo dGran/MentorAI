@@ -155,7 +155,13 @@
     pintarPanel();
   }
 
-  const isDentroDelIntervalo = (config) => Date.now() - (config.ultimaSync ?? 0) < INTERVALO_MINIMO_MS;
+  function isDentroDelIntervalo(config) {
+    const transcurrido = Date.now() - (config.ultimaSync ?? 0);
+
+    return transcurrido >= 0 && transcurrido < INTERVALO_MINIMO_MS;
+  }
+
+  const haSincronizadoEstaPagina = () => ultimoSubido !== null;
 
   async function sincronizar({ forzar = false } = {}) {
     const config = leerConfig();
@@ -201,14 +207,13 @@
         try {
           MentorAI.Perfil.importar(contenido);
         } catch (fallo) {
-          if (fallo instanceof MentorAI.SinEspacio) {
-            cambiarEstado("error", fallo.message);
-            return;
-          }
+          if (!(fallo instanceof MentorAI.SinEspacio) && !(fallo instanceof MentorAI.FicheroInvalido)) throw fallo;
 
-          if (!(fallo instanceof MentorAI.FicheroInvalido)) throw fallo;
-
-          cambiarEstado("error", "El contenido del gist no es un progreso válido.");
+          ultimoSubido = null;
+          cambiarEstado(
+            "error",
+            fallo instanceof MentorAI.SinEspacio ? fallo.message : "El contenido del gist no es un progreso válido."
+          );
           return;
         }
       }
@@ -242,7 +247,7 @@
   function subirSiCambio() {
     const config = leerConfig();
 
-    if (!config?.token || !config?.gistId || !navigator.onLine || isSincronizando) return;
+    if (!config?.token || !config?.gistId || !navigator.onLine || isSincronizando || !haSincronizadoEstaPagina()) return;
 
     const actual = contenidoLocal();
     const huellaActual = huellaDe(actual);
