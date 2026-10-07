@@ -10,47 +10,57 @@
 
   const MentorAI = window.MentorAI;
 
+  const ejecutarAislado = (paso) => {
+    try {
+      paso();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   document.addEventListener("DOMContentLoaded", () => {
-    MentorAI.initTheme();
-    MentorAI.initSkipLink();
-    MentorAI.initMobileNav();
-    MentorAI.initReadingProgress();
-    MentorAI.initScrollSpy();
-    MentorAI.initCopyButtons();
+    [
+      () => MentorAI.initTheme(),
+      () => MentorAI.initSkipLink(),
+      () => MentorAI.initMobileNav(),
+      () => MentorAI.initReadingProgress(),
+      () => MentorAI.initScrollSpy(),
+      () => MentorAI.initCopyButtons(),
 
-    MentorAI.Catalog.render();
-    MentorAI.Courses.render();
-    MentorAI.Courses.renderCoursePage();
+      () => MentorAI.Catalog.render(),
+      () => MentorAI.Courses.render(),
+      () => MentorAI.Courses.renderCoursePage(),
 
-    MentorAI.Paths?.render();
-    MentorAI.Paths?.renderHome();
+      () => MentorAI.Paths?.render(),
+      () => MentorAI.Paths?.renderHome(),
 
-    MentorAI.ExamenRuta?.render();
+      () => MentorAI.ExamenRuta?.render(),
 
-    MentorAI.Repaso?.init();
-    MentorAI.Repaso?.renderHome();
-    MentorAI.Repaso?.renderPage();
-    MentorAI.Exams?.renderHome();
+      () => MentorAI.Repaso?.init(),
+      () => MentorAI.Repaso?.renderHome(),
+      () => MentorAI.Repaso?.renderPage(),
+      () => MentorAI.Exams?.renderHome(),
 
-    MentorAI.Home.render();
-    MentorAI.Home.initSearch();
-    MentorAI.initHeroStat();
+      () => MentorAI.Home.render(),
+      () => MentorAI.Home.initSearch(),
+      () => MentorAI.initHeroStat(),
 
-    MentorAI.initTutorialPage();
-    MentorAI.initChecks();
-    MentorAI.initQuiz();
-    MentorAI.initYear();
-    MentorAI.SyntaxHighlighter.run();
-    MentorAI.initHighlights?.();
-    MentorAI.renderHighlightsPage?.();
-    MentorAI.Perfil?.injectNavLink?.();
-    MentorAI.Perfil?.renderPage?.();
+      () => MentorAI.initTutorialPage(),
+      () => MentorAI.initChecks(),
+      () => MentorAI.initQuiz(),
+      () => MentorAI.initYear(),
+      () => MentorAI.SyntaxHighlighter.run(),
+      () => MentorAI.initHighlights?.(),
+      () => MentorAI.renderHighlightsPage?.(),
+      () => MentorAI.Perfil?.injectNavLink?.(),
+      () => MentorAI.Perfil?.renderPage?.(),
 
-    MentorAI.Offline?.init();
-    MentorAI.Offline?.initCourseButtons();
-    MentorAI.Offline?.initOfflinePage();
+      () => MentorAI.Offline?.init(),
+      () => MentorAI.Offline?.initCourseButtons(),
+      () => MentorAI.Offline?.initOfflinePage(),
 
-    MentorAI.Sync?.init();
+      () => MentorAI.Sync?.init(),
+    ].forEach(ejecutarAislado);
   });
 
   window.addEventListener("load", () => {

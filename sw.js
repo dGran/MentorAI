@@ -12,12 +12,14 @@
    navegadores que ya lo tienen cacheado se traigan lo nuevo.
    ============================================================ */
 
-var VERSION = "v31";
+var VERSION = "v32";
 var SHELL = "academia-shell-" + VERSION;
+var CACHE_PREFIX = "academia-";
 var CONTENT = "academia-content";
 var LEGACY_CONTENT_PREFIX = "academia-content-";
 var SLOW_NETWORK_TIMEOUT_MS = 3000;
 var SAVE_FETCH_TIMEOUT_MS = 30000;
+var PATHS_CHANGED_ONLY_BY_VERSION = ["assets/fonts/", "assets/icons/"];
 
 var SHELL_PATHS = [
   "index.html",
@@ -77,10 +79,28 @@ var SHELL_PATHS = [
   "manifest.webmanifest",
 ];
 
+function toScopeUrl(path) {
+  return new URL(path, self.registration.scope).href;
+}
+
 function shellUrls() {
-  return SHELL_PATHS.map(function (path) {
-    return new URL(path, self.registration.scope).href;
+  return SHELL_PATHS.map(toScopeUrl);
+}
+
+function isChangedOnlyByVersion(path) {
+  return PATHS_CHANGED_ONLY_BY_VERSION.some(function (prefix) {
+    return path.indexOf(prefix) === 0;
   });
+}
+
+function refreshableShellUrls() {
+  return SHELL_PATHS.filter(function (path) {
+    return !isChangedOnlyByVersion(path);
+  }).map(toScopeUrl);
+}
+
+function isObsoleteOwnCache(key) {
+  return key.indexOf(CACHE_PREFIX) === 0 && key !== SHELL && key !== CONTENT;
 }
 
 function offlinePageUrl() {
@@ -105,7 +125,6 @@ self.addEventListener("install", function (event) {
   );
 });
 
-/* ---------- Activate: limpia caches obsoletos ---------- */
 self.addEventListener("activate", function (event) {
   event.waitUntil(
     caches
@@ -117,13 +136,9 @@ self.addEventListener("activate", function (event) {
       })
       .then(function (keys) {
         return Promise.all(
-          keys
-            .filter(function (key) {
-              return key !== SHELL && key !== CONTENT;
-            })
-            .map(function (key) {
-              return caches.delete(key);
-            })
+          keys.filter(isObsoleteOwnCache).map(function (key) {
+            return caches.delete(key);
+          })
         );
       })
       .then(function () {
@@ -159,9 +174,6 @@ function copyCache(sourceKey, targetKey) {
   });
 }
 
-/* ---------- Refresco del shell, una vez por arranque del worker ----------
-   Evita quedarse con CSS y JS viejos entre despliegues sin pagar una
-   revalidación por cada petición. Offline falla en silencio. */
 var shellRefreshed = false;
 
 function refreshShell() {
@@ -171,8 +183,8 @@ function refreshShell() {
 
   return caches.open(SHELL).then(function (cache) {
     return Promise.all(
-      shellUrls().map(function (url) {
-        return fetch(url, { cache: "reload" })
+      refreshableShellUrls().map(function (url) {
+        return fetch(url, { cache: "no-cache" })
           .then(function (response) {
             if (response.ok) return cache.put(url, response);
           })

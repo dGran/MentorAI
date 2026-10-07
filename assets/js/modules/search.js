@@ -30,17 +30,20 @@
 
       etiqueta.src = src;
       etiqueta.onload = () => resolver();
-      etiqueta.onerror = () => rechazar(new Error(`no se pudo cargar ${src}`));
+      etiqueta.onerror = () => {
+        etiqueta.remove();
+        rechazar(new Error(`no se pudo cargar ${src}`));
+      };
       document.head.appendChild(etiqueta);
     });
   }
 
-  /* Resuelve siempre: si el índice no está, la búsqueda sigue
-     funcionando sobre los metadatos y nadie ve un error. */
   function cargar() {
     if (promesaDeCarga) return promesaDeCarga;
 
-    promesaDeCarga = inyectar(rutaDelIndice()).catch(() => {});
+    promesaDeCarga = inyectar(rutaDelIndice()).catch(() => {
+      promesaDeCarga = null;
+    });
 
     return promesaDeCarga;
   }
