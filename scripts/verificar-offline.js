@@ -184,6 +184,24 @@ function anotar(nombre, valor, bien) {
   console.log(`  ${bien ? "✓" : "✗"} ${nombre.padEnd(38)} ${valor}`);
 }
 
+const PROCESO_YA_TERMINADO = "ESRCH";
+
+function terminarSiSigueVivo(terminar) {
+  try {
+    terminar();
+  } catch (error) {
+    if (error.code !== PROCESO_YA_TERMINADO) throw error;
+  }
+}
+
+function borrarSinAlterarElResultado(directorio) {
+  try {
+    fs.rmSync(directorio, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 });
+  } catch (error) {
+    console.warn(`  aviso  no se pudo borrar ${directorio}: ${error.message}`);
+  }
+}
+
 async function main() {
   const raizServida = prepararSitio();
 
@@ -214,23 +232,12 @@ async function main() {
       setTimeout(fin, 5000);
     });
 
-    try {
-      chrome.kill();
-    } catch {
-      /* ya estaba */
-    }
-
-    try {
-      process.kill(-servidor.pid);
-    } catch {
-      /* ya estaba */
-    }
+    terminarSiSigueVivo(() => chrome.kill());
+    terminarSiSigueVivo(() => process.kill(-servidor.pid));
 
     await chromeMuerto;
 
-    /* Chrome escribe en su perfil mientras muere: sin reintentos, el borrado
-       pierde la carrera con ENOTEMPTY (pasó en CI con los 11 checks en verde). */
-    fs.rmSync(raizServida, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 });
+    borrarSinAlterarElResultado(raizServida);
   };
 
   try {
