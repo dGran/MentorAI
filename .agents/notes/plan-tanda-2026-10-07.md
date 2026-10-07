@@ -81,3 +81,10 @@ Precedentes que se respetan: lo excluido en las tandas del 2026-10-06 sigue excl
 > «¿Cómo la lanzo?» → **«Lanzar con automerge (Recomendado)»**: se mergea lo que pase review fresca, QA y gate de checks, con las evidencias enlazadas en cada PR para repasarlas después.
 >
 > «#29: ¿qué intervalo?» → **«30 segundos (Recomendado)»**.
+
+## Registro
+
+| Issue | PR | Merge | Review (subagente, contexto fresco) | QA |
+|---|---|---|---|---|
+| #58 limpieza de verificar-offline | #63 | `00a51d9` | sin bloqueantes; menor aplicado: solo se ignora `ESRCH` al terminar procesos | skip-qa documentado: borrado roto simulado → exit 0 con aviso (main: exit 2); fallo real → exit 1, también con el borrado roto |
+| #31 helpers compartidos | #64 | `1a14535` | sin bloqueantes (equivalencia función por función + guion idéntico en navegador); menores: `Quiz?.resultOf`, línea en blanco | main vs rama con `Math.random` sembrado: mismo `localStorage` y DOM, 0 errores; solo `./` en dos enlaces; producción en `v29` |
