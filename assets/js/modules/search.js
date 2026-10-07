@@ -30,7 +30,10 @@
 
       etiqueta.src = src;
       etiqueta.onload = () => resolver();
-      etiqueta.onerror = () => rechazar(new Error(`no se pudo cargar ${src}`));
+      etiqueta.onerror = () => {
+        etiqueta.remove();
+        rechazar(new Error(`no se pudo cargar ${src}`));
+      };
       document.head.appendChild(etiqueta);
     });
   }
