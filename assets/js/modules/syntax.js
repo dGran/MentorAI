@@ -13,12 +13,7 @@
      que empieza antes; a igualdad de posición, el primero de la lista.
      Así no hay colisiones entre reglas (p. ej. números dentro de strings). */
   MentorAI.SyntaxHighlighter = (function () {
-    function escapeHtml(text) {
-      return text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-    }
+    const escapeHtml = (text) => MentorAI.escapeHtml(text);
 
     // Cada regla usa SOLO grupos no capturadores (?:...) para que el grupo
     // capturador externo de cada alternativa identifique la regla.

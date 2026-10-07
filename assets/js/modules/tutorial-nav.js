@@ -9,15 +9,7 @@
 
   const MentorAI = (window.MentorAI = window.MentorAI || {});
 
-  /* ---------- Helpers ---------- */
-
-  function escapeAttr(text) {
-    return String(text)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
+  const escapeHtml = (text) => MentorAI.escapeHtml(text);
 
   function basename(href) {
     const value = String(href ?? "");
@@ -105,8 +97,8 @@
 
   function crumbHtml({ course, module, position }) {
     const label = module.title
-      ? `${escapeAttr(course.title)} · ${escapeAttr(module.title)}`
-      : escapeAttr(course.title);
+      ? `${escapeHtml(course.title)} · ${escapeHtml(module.title)}`
+      : escapeHtml(course.title);
 
     return `<p class="route-nav__crumb"><a href="${courseHref(course)}">${label}</a> · lección ${
       position + 1
@@ -132,15 +124,15 @@
 
   function neighborsHtml(prev, next, course, slug) {
     const prevLink = prev
-      ? `<a href="${escapeAttr(basename(prev.href))}"><small>← Anterior</small><b>${escapeAttr(
+      ? `<a href="${escapeHtml(basename(prev.href))}"><small>← Anterior</small><b>${escapeHtml(
           prev.title
         )}</b></a>`
       : "";
 
     const nextLink = next
-      ? `<a href="${escapeAttr(
+      ? `<a href="${escapeHtml(
           basename(next.href)
-        )}" class="next"><small>Siguiente →</small><b>${escapeAttr(next.title)}</b></a>`
+        )}" class="next"><small>Siguiente →</small><b>${escapeHtml(next.title)}</b></a>`
       : endOfCourseHtml(course, slug);
 
     return `<div class="tutorial-nav">${prevLink}${nextLink}</div>`;
@@ -152,13 +144,13 @@
     const items = related
       .map(
         (tutorial) =>
-          `<li><a href="${escapeAttr(basename(tutorial.href))}">${escapeAttr(
+          `<li><a href="${escapeHtml(basename(tutorial.href))}">${escapeHtml(
             tutorial.title
-          )}<span>${escapeAttr(tutorial.minutes)} min</span></a></li>`
+          )}<span>${escapeHtml(tutorial.minutes)} min</span></a></li>`
       )
       .join("");
 
-    return `<div class="route-related"><p class="route-related__title">Más en «${escapeAttr(
+    return `<div class="route-related"><p class="route-related__title">Más en «${escapeHtml(
       title
     )}»</p><ul>${items}</ul></div>`;
   }

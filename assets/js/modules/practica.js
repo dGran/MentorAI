@@ -44,13 +44,7 @@
   }
 
   function readAll() {
-    let stored = null;
-
-    try {
-      stored = JSON.parse(localStorage.getItem(KEY));
-    } catch {
-      return {};
-    }
+    const stored = MentorAI.readJson(KEY, null);
 
     if (!stored || typeof stored !== "object") return {};
 
@@ -62,11 +56,7 @@
   }
 
   function writeAll(map) {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(map));
-    } catch {
-      /* sin espacio o sin permiso: no persistimos, pero no rompemos */
-    }
+    MentorAI.writeJson(KEY, map);
   }
 
   const challengesOf = (courseSlug) => (window.MENTORAI_PRACTICE ?? {})[courseSlug] ?? [];

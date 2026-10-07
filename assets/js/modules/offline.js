@@ -29,10 +29,7 @@
 
   const isSupported = () => "serviceWorker" in navigator && location.protocol !== "file:";
 
-  /* ---------- Base del sitio ---------- */
-
-  const basePath = () => (location.pathname.includes("/tutorials/") ? "../" : "./");
-  const baseUrl = () => new URL(basePath(), location.href).href;
+  const baseUrl = () => new URL(MentorAI.basePath(), location.href).href;
   const absolute = (ruta) => new URL(ruta, baseUrl()).href;
 
   function countMissing(urls) {
@@ -203,7 +200,7 @@
 
     link.className = "nav__link offline-nav-link";
     link.textContent = "Sin conexión";
-    link.href = `${basePath()}offline.html`;
+    link.href = `${MentorAI.basePath()}offline.html`;
 
     if (/\boffline\.html\b/.test(location.pathname)) {
       link.classList.add("is-active");
@@ -464,7 +461,7 @@
       ensureStatusRegion();
 
       navigator.serviceWorker
-        .register(`${basePath()}sw.js`, { scope: basePath() })
+        .register(`${MentorAI.basePath()}sw.js`, { scope: MentorAI.basePath() })
         .catch((error) => console.warn("[MentorAI] SW no registrado:", error));
     },
     initCourseButtons() {

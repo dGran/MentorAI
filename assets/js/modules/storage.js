@@ -10,10 +10,6 @@
 
   const MentorAI = (window.MentorAI = window.MentorAI || {});
 
-  /* ---------- Acceso seguro a localStorage ----------
-     Puede fallar por cuota o por modo privado: si falla, la app sigue
-     funcionando aunque no recuerde nada. */
-
   function readJson(key, fallback) {
     try {
       return JSON.parse(localStorage.getItem(key)) ?? fallback;
@@ -25,10 +21,24 @@
   function writeJson(key, value) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
+      return true;
     } catch {
-      /* sin espacio o sin permiso: no persistimos, pero no rompemos */
+      return false;
     }
   }
+
+  function removeKey(key) {
+    try {
+      localStorage.removeItem(key);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  MentorAI.readJson = readJson;
+  MentorAI.writeJson = writeJson;
+  MentorAI.removeKey = removeKey;
 
   /* ---------- Conjunto de slugs ----------
      Marcadores y progreso son la misma estructura: una lista de slugs

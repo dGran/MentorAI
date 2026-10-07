@@ -16,13 +16,7 @@
   const TROPHY_SVG =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12v4a6 6 0 0 1-12 0Z"/><path d="M6 6H4a2 2 0 0 0 2 4"/><path d="M18 6h2a2 2 0 0 1-2 4"/><path d="M9 20h6"/><path d="M12 14v6"/></svg>';
 
-  function escapeHtml(text) {
-    return String(text)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
+  const escapeHtml = (text) => MentorAI.escapeHtml(text);
 
   /* ---------- Datos ---------- */
 
@@ -35,11 +29,7 @@
   }
 
   function resultOf(courseSlug) {
-    try {
-      return JSON.parse(localStorage.getItem(`academia-quiz-${courseSlug}`)) ?? null;
-    } catch {
-      return null;
-    }
+    return MentorAI.Quiz?.resultOf(courseSlug) ?? null;
   }
 
   function lessonsOf(course) {

@@ -11,6 +11,8 @@
   const THEME_KEY = "academia-theme";
   const SAVE_EVERY_MS = 600;
 
+  MentorAI.basePath = () => (window.location.pathname.includes("/tutorials/") ? "../" : "./");
+
   /* ---------- Iconos ---------- */
 
   const BURGER_SVG =
@@ -217,7 +219,7 @@
     const { pathname } = window.location;
     const page = pathname.slice(pathname.lastIndexOf("/") + 1).replace(/\.html$/, "");
     const isRoot = page === "" || page === "index";
-    const prefix = pathname.includes("/tutorials/") ? "../" : "";
+    const prefix = MentorAI.basePath();
 
     const enlaces = PAGES.map(({ id, label }) => {
       const isCurrent = id === page || (isRoot && id === "index");

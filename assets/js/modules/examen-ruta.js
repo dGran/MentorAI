@@ -19,11 +19,7 @@
   const storageKey = (slug) => `academia-examen-ruta-${slug}`;
 
   function loadResult(slug) {
-    try {
-      return JSON.parse(localStorage.getItem(storageKey(slug))) ?? null;
-    } catch {
-      return null;
-    }
+    return MentorAI.readJson(storageKey(slug), null);
   }
 
   function saveResult(slug, score, total) {
@@ -35,11 +31,7 @@
       passed: previous.passed || score >= Math.ceil(total * CORTE),
     };
 
-    try {
-      localStorage.setItem(storageKey(slug), JSON.stringify(updated));
-    } catch {
-      /* sin espacio: el examen sigue siendo usable */
-    }
+    MentorAI.writeJson(storageKey(slug), updated);
 
     return updated;
   }
@@ -230,11 +222,11 @@
 
         opciones[correcta].classList.add("quiz__option--correct");
 
-        if (respuesta !== correcta) {
-          opciones[respuesta].classList.add("quiz__option--wrong");
-        } else {
-          score += 1;
-        }
+        const isCorrect = respuesta === correcta;
+
+        if (isCorrect) score += 1;
+
+        if (!isCorrect) opciones[respuesta].classList.add("quiz__option--wrong");
 
         const why = bloque.querySelector(".quiz__why");
 

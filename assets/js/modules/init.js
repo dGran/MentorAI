@@ -42,7 +42,7 @@
     MentorAI.initYear();
     MentorAI.SyntaxHighlighter.run();
     MentorAI.initHighlights?.();
-    MentorAI.Highlights?.renderPage?.();
+    MentorAI.renderHighlightsPage?.();
     MentorAI.Perfil?.injectNavLink?.();
     MentorAI.Perfil?.renderPage?.();
 

@@ -6,10 +6,9 @@ const fs = require("node:fs");
 const path = require("node:path");
 const vm = require("node:vm");
 
-const PERFIL_SOURCE = fs.readFileSync(
-  path.join(__dirname, "..", "..", "assets", "js", "modules", "perfil.js"),
-  "utf8"
-);
+const MODULES = path.join(__dirname, "..", "..", "assets", "js", "modules");
+const STORAGE_SOURCE = fs.readFileSync(path.join(MODULES, "storage.js"), "utf8");
+const PERFIL_SOURCE = fs.readFileSync(path.join(MODULES, "perfil.js"), "utf8");
 
 function createMemoryStorage(initialEntries) {
   const entries = new Map(Object.entries(initialEntries).map(([key, value]) => [key, JSON.stringify(value)]));
@@ -32,6 +31,7 @@ function loadPerfil(localEntries) {
   sandbox.window = sandbox;
 
   vm.createContext(sandbox);
+  vm.runInContext(STORAGE_SOURCE, sandbox);
   vm.runInContext(PERFIL_SOURCE, sandbox);
 
   return { perfil: sandbox.MentorAI.Perfil, localStorage };
