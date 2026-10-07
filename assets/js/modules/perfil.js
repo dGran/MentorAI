@@ -14,12 +14,14 @@
   const MentorAI = (window.MentorAI = window.MentorAI || {});
 
   class FicheroInvalido extends Error {}
+  class SinEspacio extends Error {}
 
   const VERSION = 2;
   const PREFIJO = "academia-";
   const CLAVE_CAMBIOS = "academia-cambios";
   const CLAVE_INDICE_SUBRAYADOS = "academia-highlights-index";
   const CLAVE_LECTURA = "academia-reading";
+  const MENSAJE_SIN_ESPACIO = "No queda espacio en este navegador: parte del progreso no se ha podido guardar.";
   const PREFIJO_SUBRAYADOS = "academia-highlights:";
   const NO_VIAJAN = [
     "academia-offline-saved",
@@ -285,8 +287,12 @@
 
     const antes = resumenDe(contenidoExportado().datos);
     const cambios = fusionarCambios(MentorAI.readJson(CLAVE_CAMBIOS, null), contenido.datos[CLAVE_CAMBIOS]);
+    let hayEscrituraFallida = false;
+    const guardar = (clave, valor) => {
+      if (!MentorAI.writeJson(clave, valor)) hayEscrituraFallida = true;
+    };
 
-    MentorAI.writeJson(CLAVE_CAMBIOS, cambios);
+    guardar(CLAVE_CAMBIOS, cambios);
 
     for (const [clave, suyo] of Object.entries(contenido.datos)) {
       if (!clave.startsWith(PREFIJO) || NO_VIAJAN.includes(clave) || clave === CLAVE_CAMBIOS) continue;
@@ -294,16 +300,18 @@
       const borrados = cambios[clave] ?? {};
       const mio = quitarBorrados(clave, MentorAI.readJson(clave, null), borrados);
 
-      MentorAI.writeJson(clave, fusionarClave(clave, mio, quitarBorrados(clave, suyo, borrados)));
+      guardar(clave, fusionarClave(clave, mio, quitarBorrados(clave, suyo, borrados)));
     }
 
     for (const clave of clavesExportables()) {
       if (clave === CLAVE_CAMBIOS || !cambios[clave]) continue;
 
-      MentorAI.writeJson(clave, quitarBorrados(clave, MentorAI.readJson(clave, null), cambios[clave]));
+      guardar(clave, quitarBorrados(clave, MentorAI.readJson(clave, null), cambios[clave]));
     }
 
-    MentorAI.writeJson(CLAVE_INDICE_SUBRAYADOS, slugsConSubrayados());
+    guardar(CLAVE_INDICE_SUBRAYADOS, slugsConSubrayados());
+
+    if (hayEscrituraFallida) throw new SinEspacio(MENSAJE_SIN_ESPACIO);
 
     const despues = resumenDe(contenidoExportado().datos);
 
@@ -379,7 +387,7 @@
     return nuevos.length ? nuevos.join(" · ") : "No había nada nuevo que añadir.";
   }
 
-  function renderPage() {
+  function renderPage(avisoTrasPintar = null) {
     const host = document.getElementById("perfil");
 
     if (!host) return;
@@ -421,21 +429,21 @@
         try {
           const { antes, despues } = importar(String(lector.result));
 
-          decir(`Importado y fusionado. ${contarNuevos(antes, despues)}`, false);
-          renderPage();
+          renderPage({ mensaje: `Importado y fusionado. ${contarNuevos(antes, despues)}`, esError: false });
           MentorAI.Repaso?.renderPage?.();
           MentorAI.renderHighlightsPage?.();
         } catch (fallo) {
-          decir(
-            fallo instanceof FicheroInvalido ? fallo.message : "No se pudo leer el fichero.",
-            true
-          );
+          const isErrorExplicable = fallo instanceof FicheroInvalido || fallo instanceof SinEspacio;
+
+          decir(isErrorExplicable ? fallo.message : "No se pudo leer el fichero.", true);
         }
       };
 
       lector.onerror = () => decir("No se pudo leer el fichero.", true);
       lector.readAsText(fichero);
     });
+
+    if (avisoTrasPintar) decir(avisoTrasPintar.mensaje, avisoTrasPintar.esError);
   }
 
   /* ---------- API pública ---------- */
@@ -449,4 +457,5 @@
     renderPage,
   };
   MentorAI.FicheroInvalido = FicheroInvalido;
+  MentorAI.SinEspacio = SinEspacio;
 })();
