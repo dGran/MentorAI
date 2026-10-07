@@ -28,23 +28,6 @@
     "academia-sync",
   ];
 
-  /* ---------- Lectura y escritura crudas ---------- */
-
-  function leerJson(clave) {
-    try {
-      return JSON.parse(localStorage.getItem(clave));
-    } catch {
-      return null;
-    }
-  }
-
-  function escribirJson(clave, valor) {
-    try {
-      localStorage.setItem(clave, JSON.stringify(valor));
-    } catch {
-      /* sin espacio: se importa lo que quepa */
-    }
-  }
 
   function clavesExportables() {
     const claves = [];
@@ -66,7 +49,7 @@
     const datos = {};
 
     for (const clave of clavesExportables()) {
-      const valor = leerJson(clave);
+      const valor = MentorAI.readJson(clave, null);
 
       if (valor !== null) datos[clave] = valor;
     }
@@ -249,9 +232,9 @@
   function slugsConSubrayados() {
     const conSubrayados = clavesExportables()
       .filter((clave) => clave.startsWith(PREFIJO_SUBRAYADOS))
-      .filter((clave) => (leerJson(clave) ?? []).length > 0)
+      .filter((clave) => MentorAI.readJson(clave, []).length > 0)
       .map((clave) => clave.slice(PREFIJO_SUBRAYADOS.length));
-    const ordenPrevio = (leerJson(CLAVE_INDICE_SUBRAYADOS) ?? []).filter((slug) => conSubrayados.includes(slug));
+    const ordenPrevio = MentorAI.readJson(CLAVE_INDICE_SUBRAYADOS, []).filter((slug) => conSubrayados.includes(slug));
 
     return [...ordenPrevio, ...conSubrayados.filter((slug) => !ordenPrevio.includes(slug))];
   }
@@ -302,26 +285,26 @@
     }
 
     const antes = resumenDe(contenidoExportado().datos);
-    const cambios = fusionarCambios(leerJson(CLAVE_CAMBIOS), contenido.datos[CLAVE_CAMBIOS]);
+    const cambios = fusionarCambios(MentorAI.readJson(CLAVE_CAMBIOS, null), contenido.datos[CLAVE_CAMBIOS]);
 
-    escribirJson(CLAVE_CAMBIOS, cambios);
+    MentorAI.writeJson(CLAVE_CAMBIOS, cambios);
 
     for (const [clave, suyo] of Object.entries(contenido.datos)) {
       if (!clave.startsWith(PREFIJO) || NO_VIAJAN.includes(clave) || clave === CLAVE_CAMBIOS) continue;
 
       const borrados = cambios[clave] ?? {};
-      const mio = quitarBorrados(clave, leerJson(clave), borrados);
+      const mio = quitarBorrados(clave, MentorAI.readJson(clave, null), borrados);
 
-      escribirJson(clave, fusionarClave(clave, mio, quitarBorrados(clave, suyo, borrados)));
+      MentorAI.writeJson(clave, fusionarClave(clave, mio, quitarBorrados(clave, suyo, borrados)));
     }
 
     for (const clave of clavesExportables()) {
       if (clave === CLAVE_CAMBIOS || !cambios[clave]) continue;
 
-      escribirJson(clave, quitarBorrados(clave, leerJson(clave), cambios[clave]));
+      MentorAI.writeJson(clave, quitarBorrados(clave, MentorAI.readJson(clave, null), cambios[clave]));
     }
 
-    escribirJson(CLAVE_INDICE_SUBRAYADOS, slugsConSubrayados());
+    MentorAI.writeJson(CLAVE_INDICE_SUBRAYADOS, slugsConSubrayados());
 
     const despues = resumenDe(contenidoExportado().datos);
 
@@ -354,7 +337,7 @@
 
     if (!nav || nav.querySelector(".perfil-nav-link")) return;
 
-    const base = location.pathname.includes("/tutorials/") ? "../" : "";
+    const base = MentorAI.basePath();
     const link = document.createElement("a");
 
     link.className = "nav__link perfil-nav-link";
@@ -442,7 +425,7 @@
           decir(`Importado y fusionado. ${contarNuevos(antes, despues)}`, false);
           renderPage();
           MentorAI.Repaso?.renderPage?.();
-          MentorAI.Highlights?.renderPage?.();
+          MentorAI.renderHighlightsPage?.();
         } catch (fallo) {
           decir(
             fallo instanceof FicheroInvalido ? fallo.message : "No se pudo leer el fichero.",

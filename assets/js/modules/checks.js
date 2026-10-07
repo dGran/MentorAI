@@ -16,14 +16,8 @@
 
   const KEY = "academia-checks";
 
-  /* ---------- Persistencia ---------- */
-
   function readAll() {
-    try {
-      return JSON.parse(localStorage.getItem(KEY)) ?? {};
-    } catch {
-      return {};
-    }
+    return MentorAI.readJson(KEY, {});
   }
 
   function saveResult(slug, results) {
@@ -31,11 +25,7 @@
 
     all[slug] = { at: Date.now(), results };
 
-    try {
-      localStorage.setItem(KEY, JSON.stringify(all));
-    } catch {
-      /* sin espacio: la comprobación sigue siendo usable */
-    }
+    MentorAI.writeJson(KEY, all);
   }
 
   /* ---------- Barajado ---------- */
@@ -152,16 +142,20 @@
     if (!prose) return;
 
     const prepared = prepare(questions);
+
+    insertSection(prose, sectionHtml(prepared));
+    wire(document.getElementById("check"), prepared, slug);
+  }
+
+  function insertSection(prose, html) {
     const anchor = prose.querySelector(".route-nav") ?? prose.querySelector(".tutorial-nav");
-    const html = sectionHtml(prepared);
 
     if (anchor) {
       anchor.insertAdjacentHTML("beforebegin", html);
-    } else {
-      prose.insertAdjacentHTML("beforeend", html);
+      return;
     }
 
-    wire(document.getElementById("check"), prepared, slug);
+    prose.insertAdjacentHTML("beforeend", html);
   }
 
   MentorAI.Checks = { read: readAll };

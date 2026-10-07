@@ -21,9 +21,7 @@
   /* ---------- Carga bajo demanda ---------- */
 
   function rutaDelIndice() {
-    const { pathname } = window.location;
-
-    return pathname.includes("/tutorials/") ? `../${FICHERO}` : FICHERO;
+    return `${MentorAI.basePath()}${FICHERO}`;
   }
 
   function inyectar(src) {

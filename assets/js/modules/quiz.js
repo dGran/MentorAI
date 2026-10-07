@@ -18,26 +18,14 @@
 
   const PASS_RATIO = 0.7;
 
-  /* ---------- Helpers ---------- */
-
-  function escapeHtml(text) {
-    return String(text)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
-  }
+  const escapeHtml = (text) => MentorAI.escapeHtml(text);
 
   function storageKey(courseSlug) {
     return `academia-quiz-${courseSlug}`;
   }
 
   function loadResult(courseSlug) {
-    try {
-      return JSON.parse(localStorage.getItem(storageKey(courseSlug))) ?? null;
-    } catch {
-      return null;
-    }
+    return MentorAI.readJson(storageKey(courseSlug), null);
   }
 
   function saveResult(courseSlug, passed, score) {
@@ -48,11 +36,7 @@
       attempts: previous.attempts + 1,
     };
 
-    try {
-      localStorage.setItem(storageKey(courseSlug), JSON.stringify(updated));
-    } catch {
-      /* localStorage lleno o bloqueado: el examen sigue siendo usable */
-    }
+    MentorAI.writeJson(storageKey(courseSlug), updated);
 
     return updated;
   }
@@ -326,17 +310,23 @@
     prose.insertAdjacentHTML("beforeend", html);
   }
 
-  function mountQuiz(entry, lessonSlug, prose) {
-    const saved = loadResult(entry.course.slug);
-    const prepared = prepareQuestions(entry.quizData.questions);
-    const html = buildQuizSection(entry.course, entry.quizData, prepared, saved);
+  function placeQuiz(prose, html) {
     const existing = document.getElementById("quiz");
 
     if (existing) {
       existing.outerHTML = html;
-    } else {
-      insertQuiz(prose, html);
+      return;
     }
+
+    insertQuiz(prose, html);
+  }
+
+  function mountQuiz(entry, lessonSlug, prose) {
+    const saved = loadResult(entry.course.slug);
+    const prepared = prepareQuestions(entry.quizData.questions);
+    const html = buildQuizSection(entry.course, entry.quizData, prepared, saved);
+
+    placeQuiz(prose, html);
 
     const form = document.getElementById("quiz-form");
     const resultEl = document.getElementById("quiz-result");
@@ -371,4 +361,5 @@
   }
 
   MentorAI.initQuiz = initQuiz;
+  MentorAI.Quiz = { resultOf: loadResult };
 })();

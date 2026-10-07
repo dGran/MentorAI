@@ -52,14 +52,7 @@
   }
 
   function readAll() {
-    let stored = {};
-
-    try {
-      stored = JSON.parse(localStorage.getItem(KEY)) ?? {};
-    } catch {
-      return {};
-    }
-
+    const stored = MentorAI.readJson(KEY, {});
     const { migrated, isChanged } = withStableIds(stored);
 
     if (isChanged) writeAll(migrated);
@@ -68,11 +61,7 @@
   }
 
   function writeAll(state) {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(state));
-    } catch {
-      /* sin espacio: el repaso deja de recordarse, la app sigue */
-    }
+    MentorAI.writeJson(KEY, state);
   }
 
   function startOfToday() {
@@ -157,7 +146,7 @@
       return;
     }
 
-    const base = location.pathname.includes("/tutorials/") ? "../" : "";
+    const base = MentorAI.basePath();
     const cuerpo =
       due === 0
         ? `<p class="repaso-card__copy">Nada que repasar hoy. Llevas ${total} preguntas en seguimiento y ${dominadas} dominadas.</p>`
@@ -285,7 +274,7 @@
     if (!nav || nav.querySelector(".repaso-nav-link")) return;
 
     const { due } = stats();
-    const base = location.pathname.includes("/tutorials/") ? "../" : "";
+    const base = MentorAI.basePath();
     const link = document.createElement("a");
 
     link.className = "nav__link repaso-nav-link";

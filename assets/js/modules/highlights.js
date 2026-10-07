@@ -380,8 +380,6 @@
     host.innerHTML = `<div class="subrayados">${slugs.map(grupoHtml).join("")}</div>`;
   }
 
-  /* ---------- API pública ---------- */
-
   MentorAI.initHighlights = initHighlights;
-  MentorAI.Highlights.renderPage = renderPaginaDeRepaso;
+  MentorAI.renderHighlightsPage = renderPaginaDeRepaso;
 })();

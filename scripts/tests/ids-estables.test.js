@@ -7,6 +7,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const MODULES = path.join(__dirname, "..", "..", "assets", "js", "modules");
+const STORAGE_SOURCE = fs.readFileSync(path.join(MODULES, "storage.js"), "utf8");
 const REPASO_SOURCE = fs.readFileSync(path.join(MODULES, "repaso.js"), "utf8");
 const PRACTICA_SOURCE = fs.readFileSync(path.join(MODULES, "practica.js"), "utf8");
 
@@ -56,6 +57,7 @@ function loadModules(localEntries, data) {
   sandbox.window = sandbox;
 
   vm.createContext(sandbox);
+  vm.runInContext(STORAGE_SOURCE, sandbox);
   vm.runInContext(REPASO_SOURCE, sandbox);
   vm.runInContext(PRACTICA_SOURCE, sandbox);
 

@@ -152,11 +152,7 @@
     const togglePause = () => {
       isPaused = !isPaused;
 
-      if (isPaused) {
-        window.speechSynthesis.pause();
-      } else {
-        window.speechSynthesis.resume();
-      }
+      window.speechSynthesis[isPaused ? "pause" : "resume"]();
 
       renderToggle();
     };

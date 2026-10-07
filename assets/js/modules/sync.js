@@ -22,29 +22,19 @@
   let estado = { fase: "inactivo", detalle: "" };
   let ultimoSubido = null;
 
-  /* ---------- Config ---------- */
-
   function leerConfig() {
-    try {
-      const guardado = JSON.parse(localStorage.getItem(CLAVE));
+    const guardado = MentorAI.readJson(CLAVE, null);
 
-      return guardado && typeof guardado === "object" ? guardado : null;
-    } catch {
-      return null;
-    }
+    return guardado && typeof guardado === "object" ? guardado : null;
   }
 
   function escribirConfig(config) {
-    try {
-      if (config === null) {
-        localStorage.removeItem(CLAVE);
-        return;
-      }
-
-      localStorage.setItem(CLAVE, JSON.stringify(config));
-    } catch {
-      /* sin espacio o sin permiso: el sync no puede persistir, la app sigue */
+    if (config === null) {
+      MentorAI.removeKey(CLAVE);
+      return;
     }
+
+    MentorAI.writeJson(CLAVE, config);
   }
 
   /* ---------- Cliente de la API de Gists ---------- */
@@ -267,7 +257,7 @@
     MentorAI.Exams?.renderHome?.();
     MentorAI.Repaso?.renderHome?.();
     MentorAI.Repaso?.renderPage?.();
-    MentorAI.Highlights?.renderPage?.();
+    MentorAI.renderHighlightsPage?.();
     MentorAI.Perfil?.renderPage?.();
     MentorAI.Catalog?.render?.();
     MentorAI.Courses?.render?.();
