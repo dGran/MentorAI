@@ -1,6 +1,6 @@
 # Tanda 2026-10-07 — red de seguridad y deuda técnica sin decisiones
 
-Estado: **lanzada a las 08:05**.
+Estado: **cerrada**. Los 6 issues están mergeados, desplegados (`v33`) y en Done. La revisión fresca cazó un bloqueante real, una pérdida de progreso en el sync, que se arregló antes del merge. Hay 2 issues nuevos: #69 y #70.
 
 ## 1. Estado de partida (medido 07:59 +02:00)
 
@@ -16,6 +16,7 @@ Estado: **lanzada a las 08:05**.
 | #29 sync | `per_page=100` sin paginar (`sync.js:67`), `keepalive` sin tope (`:117`), JSON indentado (`:123`), `ultimoSubido` antes del PATCH (`:202`), sin flag de exclusión (`:130`), input sin `<label>` (`:321`), error sin `role="alert"` (`:316`), cuota tragada (`perfil.js:41-44`) |
 | #13 cabeceras | 5 variantes de `<header>` y 4 de `<footer>` en `tutorials/*.html`; `python-async-await` pinta 2 `.nav__burger` (`initMobileNav` no es idempotente, `core.js:230-236`) |
 | #30 SW y arranque | `refreshShell` recarga fuentes (~336 KB) en cada arranque; `activate` borra cachés ajenas; `init.js` sin aislar; script del tema sin `try/catch` en 309/309 HTML; `search.js:43-45` memoriza la carga fallida |
+| #15 scroll horizontal | #68 | `628d27a` | sin bloqueantes; menores aplicados: el paso de CI exige vistas pintadas y la emulación se restablece en `finally`; desborde de ~100 tutoriales → issue nuevo | 66 vistas a 320/375: 31 → 0 desbordes; escritorio idéntico píxel a píxel; producción en `v33` |
 | #15 scroll horizontal | 31 combinaciones vista×ancho desbordan: `articulos` +20 px a 320; 16 cursos a 320 (clean-code +442) y 14 a 375 |
 
 ## 2. Línea de no colisión
@@ -91,3 +92,34 @@ Precedentes que se respetan: lo excluido en las tandas del 2026-10-06 sigue excl
 | #29 sync robusto | #65 | `6dd39b0` | **1 bloqueante aceptado**: con el throttle, la subida al salir de una página que no sincronizó pisaba el gist sin fusionar → solo sube si la página sincronizó; segunda ronda limpia | main vs rama con la API simulada: sin duplicar el gist, 0 peticiones en el intervalo, import y cuota visibles, sin pisar al otro dispositivo; producción en `v30` |
 | #13 cabeceras únicas | #66 | `ac4d78b` | sin bloqueantes; efectos visibles del pie y tooltip declarados en el PR; drawer estático muerto de python/rust → issue nuevo al cierre | 301 tutoriales main vs rama: 42 → 0 páginas con dos hamburguesas, 21 → 0 sin año, nav idéntico; producción en `v31` |
 | #30 SW y arranque | #67 | `65e605a` | sin bloqueantes; menor aplicado: quitar el `<script>` del índice si falla | arranque del worker 1.755 KB → 0 B (304); `otra-app` sobrevive; throw en init no tumba SW ni sync; tema sin destello con `localStorage` bloqueado; búsqueda reintenta; Pages envía ETag; producción en `v32` |
+
+### Desviaciones del contrato
+
+- **#29: el arreglo pedido abría una vía de pérdida de datos.** Con el throttle, una página que se saltaba la sync al cargar subía al salir su progreso local sobre el gist sin fusionarlo. La revisión fresca lo reprodujo. Se arregló antes del merge (solo sube al salir si esa página sincronizó) y una segunda ronda de revisión confirmó el cierre.
+- **#29 destapó la causa de fondo del coste del sync.** `exportadoEn` hacía que todo export pareciera distinto. Entró en el mismo PR porque es lo que el criterio 1 pedía arreglar.
+- **El QA midió dos veces un servidor equivocado** (un `http.server` viejo en el mismo puerto). Se detectó por resultados incoherentes y se repitió. Va como trampa a `estado.md`.
+
+### Lecciones
+
+- La revisión fresca rinde más donde hay datos de usuario: en #29 encontró lo que los tests escritos por el autor no cubrían. Para los PRs de sync y perfil, pedir siempre al revisor que busque caminos de pérdida de datos.
+- Un throttle cambia qué estado tiene una página: todo lo que asumía «esta página ya sincronizó» tiene que volver a comprobarse.
+- Antes de citar una cifra del QA, comprobar qué está midiendo. Los «0 bytes» de main salieron de un servidor mal escrito y solo se vio porque en main no podía salir 0.
+
+### Lo que la tanda destapó
+
+| Issue nuevo | Prioridad | De dónde sale |
+|---|---|---|
+| #69 Retirar el drawer estático muerto de las páginas de Python y Rust | P2 | Review de #66: enlaces invisibles alcanzables con el teclado en 42 páginas |
+| #70 Eliminar el scroll horizontal de los tutoriales a 320 y 375 px | P1 (bloqueado por #15, ya cerrado) | Review de #68: unos 104 tutoriales desbordan a 320 px |
+
+### Preguntas que esperan al usuario
+
+Las que dejan fuera a los issues de la sección 4, sin cambios: confirmación o deshacer al reiniciar (#14), la paleta para el contraste en oscuro (#16, que bloquea #17 y este a #32), qué recomendar en el inicio (#22), el criterio del distractor en #25 y el diseño de rutas y cursos (#27).
+
+### Backlog al cerrar
+
+- **P1 (6):** #14, #16, #17, #18, #22 y #70. Tomables sin decisión: #18 (repaso editorial con fuentes) y #70.
+- **P2 (12):** #25-#28, #32-#38 y #69. Tomable sin decisión: #69.
+- **P3 (1):** #39.
+
+Gates en `main` 628d27a: `validar.js` sin errores (61 avisos); `node --test` 63/63; `verificar-offline.js` 17/17 en CI.

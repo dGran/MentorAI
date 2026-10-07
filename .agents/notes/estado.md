@@ -88,6 +88,24 @@ gist real (creado, encontrado por token, fusionado en ambas direcciones,
 borrado). Ojo para tests futuros: matar Chrome headless a lo bruto puede
 perder escrituras de localStorage — no es un bug de la app.
 
+Desde #29 (2026-10-07):
+- **Ritmo:** como mucho una sync cada 30 s, contados desde `ultimaSync`, y nunca dos a la vez. «Sincronizar ahora» y conectar fuerzan saltándose el intervalo.
+- **Subida al salir:** solo ocurre si esa misma página ya bajó, fusionó y subió. Así nunca pisa el gist sin fusionar; lo pendiente lo sube la siguiente sync.
+- **Comparación:** se compara una huella sin `exportadoEn` y con las claves ordenadas, así que no se sube nada si no hay cambios.
+- **Cuota llena:** `Perfil.importar` lanza `SinEspacio` si no cabe lo fusionado.
+
+**Tanda de red de seguridad (2026-10-07):** #58, #31, #29, #13, #30 y #15, con
+el contrato y el registro en `plan-tanda-2026-10-07.md`. Lo que cambió en la
+forma de trabajar:
+- **`verificar-offline.js`** mide el scroll horizontal a 320 y 375 px en
+  `articulos.html` y en cada curso, y una limpieza fallida ya no da rojo.
+- **`validar.js`** exige que el `<header>` y el `<footer>` de cada tutorial sean
+  los de `_PLANTILLA.html`.
+- **`init.js`** ejecuta cada paso aislado.
+- **El service worker** revalida el shell con 304 (0 bytes por arranque si no
+  hay cambios) y solo borra cachés `academia-*`.
+- **Tests:** 32 → 63 (SRS, `fragmento` y sync).
+
 A partir de aquí, todo lo que venga es **contenido nuevo o funcionalidad
 nueva**, sin plan previo que consultar.
 
@@ -140,6 +158,14 @@ Cada una costó una depuración; están aquí para no repetirlas.
   dispositivo que lleve más tiempo sin sincronizar puede resucitar lo borrado.
   Y la fecha es el reloj de cada dispositivo: uno con el reloj adelantado gana
   los empates y purga antes de tiempo.
+- **`Perfil.contenido()` lleva `exportadoEn` con la hora actual.** Comparar dos
+  exports como texto da siempre «distinto»: el sync hacía un PATCH por página
+  sin cambios y su `ultimoSubido` no servía de nada (#29). Se compara la huella
+  sin esa fecha.
+- **Un `http.server` viejo en el mismo puerto hace que el nuevo no arranque, sin
+  avisar.** Lanzado con `setsid … &`, el fallo de `bind` no se ve y el QA
+  acaba midiendo otro directorio (pasó dos veces en la tanda del 2026-10-07).
+  Antes de levantar uno, `ss -ltnp` y `readlink /proc/<pid>/cwd`.
 - **Un dato de documentación volátil se contrasta en la fuente, no en un
   resumen.** Un subagente resumió mal los permisos de Claude Code («un deny de
   `Read` no cubre `cat` por Bash») y la lección llegó a escribirse así; lo cazó
@@ -163,12 +189,12 @@ el resto del catálogo (SQL, OOP, Linux…) envejece a décadas, no a meses.
 
 | Comando | Para qué |
 | --- | --- |
-| `node scripts/validar.js` | Valida el catálogo entero. Corre en CI |
+| `node scripts/validar.js` | Valida el catálogo entero, incluida la cabecera y el pie de plantilla de cada tutorial. Corre en CI |
 | `node scripts/generar-indice.js` | Regenera el índice de búsqueda tras tocar tutoriales |
-| `node scripts/verificar-offline.js` | Comprueba el offline con el servidor apagado |
+| `node scripts/verificar-offline.js` | Comprueba el offline con el servidor apagado y el scroll horizontal a 320/375 px. Corre en CI |
 | `node --test 'scripts/tests/**/*.test.js'` | Tests de la lógica pura (`node:test` + `vm`, sin dependencias). Corre en CI |
 
-Al tocar `sw.js` o los módulos del shell, **subir `VERSION`** (va por `v28`). La
+Al tocar `sw.js` o los módulos del shell, **subir `VERSION`** (va por `v33`). La
 caché de contenido guardado (`academia-content`) ya no lleva versión: un
 despliegue no borra lo que el lector guardó para viajar.
 

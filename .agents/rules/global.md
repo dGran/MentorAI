@@ -28,9 +28,10 @@ Excepciones (lo que la arquitectura de abajo resuelve de otra forma):
   peticiones HTTP (`file://` manda, § Arquitectura); el único `fetch` es el del service worker.
 - **JS-09**: Node solo se usa en CI; la versión se fija en `validar.yml`, sin `.nvmrc`.
 
-**js-ts, deuda conocida**: los accesos a `localStorage` están repartidos por diez módulos (JS-04 pide
-uno solo, `storage.js`, que ya envuelve cada acceso en `try/catch` con reserva). Lo nuevo pasa por
-`storage.js` y lo existente se mueve al tocarlo.
+**js-ts, JS-04**: los datos en `localStorage` se leen y escriben con `MentorAI.readJson`,
+`MentorAI.writeJson` (devuelve si pudo escribir) y `MentorAI.removeKey`, de `storage.js`, que envuelven
+cada acceso en `try/catch` (#31). Quedan fuera, con su propio `try/catch`, el tema (`core.js`, string,
+no JSON), el recorrido de claves del export (`perfil.js`) y el script del tema en línea de cada página.
 
 **G-03** (sin comentarios) aplica. Los comentarios que ya hay, cabeceras de sección
 incluidas, son **deuda**: no se añaden nuevos, y quien
@@ -109,8 +110,8 @@ el diff crece). No se limpian en bloque fuera de un issue propio.
 
 - El JS está partido en un fichero por responsabilidad dentro de
   `assets/js/modules/`, cada uno su propio IIFE sin dependencias que cuelga lo
-  suyo de `window.MentorAI`: `core.js` (tema, progreso, scrollspy, copiar, año),
-  `storage.js` (`Bookmarks`/`Progress`/`Reading`), `catalog.js` (`Catalog`),
+  suyo de `window.MentorAI`: `core.js` (tema, progreso, scrollspy, copiar, año, `basePath`),
+  `storage.js` (`readJson`/`writeJson`/`removeKey`, `Bookmarks`/`Progress`/`Reading`), `catalog.js` (`Catalog`),
   `courses.js` (`Courses`), `paths.js` (`Paths`, rutas de aprendizaje),
   `home.js` (dashboard + buscador del index),
   `syntax.js` (`SyntaxHighlighter`), `practica.js` (retos), `sync.js` (gist),
