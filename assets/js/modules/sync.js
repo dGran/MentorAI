@@ -18,9 +18,14 @@
   const API = "https://api.github.com";
   const FICHERO = "mentorai-progreso.json";
   const DESCRIPCION = "MentorAI — progreso";
+  const INTERVALO_MINIMO_MS = 30 * 1000;
+  const LIMITE_KEEPALIVE_BYTES = 60 * 1024;
+  const GISTS_POR_PAGINA = 100;
+  const MAXIMO_DE_PAGINAS = 50;
 
   let estado = { fase: "inactivo", detalle: "" };
   let ultimoSubido = null;
+  let isSincronizando = false;
 
   function leerConfig() {
     const guardado = MentorAI.readJson(CLAVE, null);
@@ -54,14 +59,20 @@
   }
 
   async function buscarGistExistente() {
-    const respuesta = await peticion("/gists?per_page=100");
+    for (let pagina = 1; pagina <= MAXIMO_DE_PAGINAS; pagina += 1) {
+      const respuesta = await peticion(`/gists?per_page=${GISTS_POR_PAGINA}&page=${pagina}`);
 
-    if (!respuesta.ok) return { error: respuesta.status };
+      if (!respuesta.ok) return { error: respuesta.status };
 
-    const gists = await respuesta.json();
-    const propio = gists.find((gist) => gist.files && gist.files[FICHERO]);
+      const gists = await respuesta.json();
+      const propio = gists.find((gist) => gist.files && gist.files[FICHERO]);
 
-    return { gistId: propio?.id ?? null };
+      if (propio) return { gistId: propio.id };
+
+      if (gists.length < GISTS_POR_PAGINA) return { gistId: null };
+    }
+
+    return { gistId: null };
   }
 
   async function crearGist(contenido) {
@@ -100,33 +111,80 @@
     return { contenido: fichero.content };
   }
 
+  const bytesDe = (texto) => new TextEncoder().encode(texto).length;
+
   function subirGist(gistId, contenido, { alSalir = false } = {}) {
+    const cuerpo = JSON.stringify({ files: { [FICHERO]: { content: contenido } } });
+    const shouldKeepAlive = alSalir && bytesDe(cuerpo) <= LIMITE_KEEPALIVE_BYTES;
+
     return peticion(`/gists/${gistId}`, {
       method: "PATCH",
-      body: JSON.stringify({ files: { [FICHERO]: { content: contenido } } }),
-      ...(alSalir ? { keepalive: true } : {}),
+      body: cuerpo,
+      ...(shouldKeepAlive ? { keepalive: true } : {}),
     });
   }
 
-  /* ---------- El ciclo de sincronización ---------- */
+  const contenidoLocal = () => JSON.stringify(MentorAI.Perfil.contenido());
 
-  const contenidoLocal = () => JSON.stringify(MentorAI.Perfil.contenido(), null, 2);
+  function conClavesOrdenadas(valor) {
+    if (Array.isArray(valor)) return valor.map(conClavesOrdenadas);
+
+    if (!valor || typeof valor !== "object") return valor;
+
+    return Object.fromEntries(
+      Object.keys(valor)
+        .sort()
+        .map((clave) => [clave, conClavesOrdenadas(valor[clave])])
+    );
+  }
+
+  function huellaDe(texto) {
+    try {
+      const progreso = JSON.parse(texto);
+
+      delete progreso.exportadoEn;
+
+      return JSON.stringify(conClavesOrdenadas(progreso));
+    } catch {
+      return texto;
+    }
+  }
 
   function cambiarEstado(fase, detalle = "") {
     estado = { fase, detalle };
     pintarPanel();
   }
 
-  async function sincronizar() {
+  function isDentroDelIntervalo(config) {
+    const transcurrido = Date.now() - (config.ultimaSync ?? 0);
+
+    return transcurrido >= 0 && transcurrido < INTERVALO_MINIMO_MS;
+  }
+
+  const haSincronizadoEstaPagina = () => ultimoSubido !== null;
+
+  async function sincronizar({ forzar = false } = {}) {
     const config = leerConfig();
 
-    if (!config?.token || !config?.gistId) return;
+    if (!config?.token || !config?.gistId || isSincronizando) return;
+
+    if (!forzar && isDentroDelIntervalo(config)) return;
 
     if (!navigator.onLine) {
       cambiarEstado("sin-conexion");
       return;
     }
 
+    isSincronizando = true;
+
+    try {
+      await sincronizarConElGist(config);
+    } finally {
+      isSincronizando = false;
+    }
+  }
+
+  async function sincronizarConElGist(config) {
     cambiarEstado("sincronizando");
 
     try {
@@ -143,21 +201,27 @@
       }
 
       const antesDeFusionar = contenidoLocal();
+      const huellaRemota = contenido ? huellaDe(contenido) : null;
 
-      if (contenido && contenido !== antesDeFusionar) {
+      if (huellaRemota && huellaRemota !== huellaDe(antesDeFusionar)) {
         try {
           MentorAI.Perfil.importar(contenido);
         } catch (fallo) {
-          if (!(fallo instanceof MentorAI.FicheroInvalido)) throw fallo;
+          if (!(fallo instanceof MentorAI.SinEspacio) && !(fallo instanceof MentorAI.FicheroInvalido)) throw fallo;
 
-          cambiarEstado("error", "El contenido del gist no es un progreso válido.");
+          ultimoSubido = null;
+          cambiarEstado(
+            "error",
+            fallo instanceof MentorAI.SinEspacio ? fallo.message : "El contenido del gist no es un progreso válido."
+          );
           return;
         }
       }
 
       const trasFusionar = contenidoLocal();
+      const huellaTrasFusionar = huellaDe(trasFusionar);
 
-      if (trasFusionar !== contenido) {
+      if (huellaTrasFusionar !== huellaRemota) {
         const subida = await subirGist(config.gistId, trasFusionar);
 
         if (!subida.ok) {
@@ -170,11 +234,11 @@
 
       if (configActual?.token !== config.token) return;
 
-      ultimoSubido = trasFusionar;
+      ultimoSubido = huellaTrasFusionar;
       escribirConfig({ ...configActual, ultimaSync: Date.now() });
       cambiarEstado("sincronizado");
 
-      if (trasFusionar !== antesDeFusionar) repintarTodo();
+      if (huellaTrasFusionar !== huellaDe(antesDeFusionar)) repintarTodo();
     } catch {
       cambiarEstado("sin-conexion");
     }
@@ -183,14 +247,18 @@
   function subirSiCambio() {
     const config = leerConfig();
 
-    if (!config?.token || !config?.gistId || !navigator.onLine) return;
+    if (!config?.token || !config?.gistId || !navigator.onLine || isSincronizando || !haSincronizadoEstaPagina()) return;
 
     const actual = contenidoLocal();
+    const huellaActual = huellaDe(actual);
 
-    if (actual === ultimoSubido) return;
+    if (huellaActual === ultimoSubido) return;
 
-    ultimoSubido = actual;
-    subirGist(config.gistId, actual, { alSalir: true }).catch(() => {});
+    subirGist(config.gistId, actual, { alSalir: true })
+      .then((respuesta) => {
+        if (respuesta.ok) ultimoSubido = huellaActual;
+      })
+      .catch(() => {});
   }
 
   async function vincular(token) {
@@ -226,7 +294,7 @@
     }
 
     escribirConfig({ token, gistId });
-    await sincronizar();
+    await sincronizar({ forzar: true });
   }
 
   async function desconectar({ borrarGist = false } = {}) {
@@ -288,6 +356,13 @@
     return `Sincronizado ${haceCuanto(config?.ultimaSync)}.`;
   }
 
+  function mostrarErrorDeConexion(host, mensaje) {
+    const aviso = host.querySelector("#sync-error");
+
+    aviso.textContent = mensaje;
+    aviso.hidden = false;
+  }
+
   function pintarPanel() {
     const host = document.getElementById("sync");
 
@@ -306,17 +381,23 @@
           <a href="https://github.com/settings/tokens/new?scopes=gist&description=MentorAI%20sync" target="_blank" rel="noopener">token clásico con el scope «gist»</a>.
         </p>
         <div class="sync__acciones">
+          <label class="visually-hidden" for="sync-token">Token de GitHub</label>
           <input type="password" class="sync__token" id="sync-token"
             placeholder="Pega aquí tu token (ghp_…)" autocomplete="off" />
           <button type="button" class="btn btn--primary" id="sync-conectar">Conectar</button>
         </div>
-        ${estado.fase === "error" ? `<p class="sync__aviso sync__aviso--error">${escapeHtml(estado.detalle)}</p>` : ""}
+        <p class="sync__aviso sync__aviso--error" id="sync-error" role="alert"${estado.fase === "error" ? "" : " hidden"}>${
+          estado.fase === "error" ? escapeHtml(estado.detalle) : ""
+        }</p>
       </div>`;
 
       host.querySelector("#sync-conectar").addEventListener("click", () => {
         const token = host.querySelector("#sync-token").value.trim();
 
-        if (!token) return;
+        if (!token) {
+          mostrarErrorDeConexion(host, "Pega primero tu token de GitHub.");
+          return;
+        }
 
         vincular(token);
       });
@@ -331,14 +412,14 @@
       <p class="sync__texto">
         Conectado con el token <code>····${escapeHtml(config.token.slice(-4))}</code>.
       </p>
-      <p class="sync__aviso${esError ? " sync__aviso--error" : ""}">${escapeHtml(textoDeEstado(config))}</p>
+      <p class="sync__aviso${esError ? " sync__aviso--error" : ""}"${esError ? ' role="alert"' : ""}>${escapeHtml(textoDeEstado(config))}</p>
       <div class="sync__acciones">
         <button type="button" class="btn btn--primary" id="sync-ahora">Sincronizar ahora</button>
         <button type="button" class="btn btn--ghost" id="sync-desconectar">Desconectar</button>
       </div>
     </div>`;
 
-    host.querySelector("#sync-ahora").addEventListener("click", sincronizar);
+    host.querySelector("#sync-ahora").addEventListener("click", () => sincronizar({ forzar: true }));
     host.querySelector("#sync-desconectar").addEventListener("click", () => {
       const borrarGist = window.confirm(
         "¿Borrar también el gist de GitHub?\n\nAceptar: borra el gist y desconecta.\nCancelar: solo desconecta este dispositivo (el gist sigue para los demás)."
