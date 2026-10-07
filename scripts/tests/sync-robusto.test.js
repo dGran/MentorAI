@@ -321,3 +321,26 @@ test("a sync whose remote only differs in export time or key order does not uplo
 
   assert.equal(patches(requests).length, 0);
 });
+
+test("a later sync in the same page that cannot store the merge stops the upload on leaving", async () => {
+  let remote = remoteExport();
+  let isStorageFull = false;
+  const app = loadStartedApp({
+    localEntries: { ...connected({ ultimaSync: Date.now() - 60 * SECONDS }), "academia-progress": ["local"] },
+    respond: (request) => (request.method === "GET" ? gistResponse(remote) : jsonResponse({})),
+    isFull: (key) => isStorageFull && key === "academia-progress",
+  });
+
+  await settle();
+  remote = remoteExport({ "academia-progress": ["de-otro-dispositivo"] });
+  isStorageFull = true;
+  await app.MentorAI.Sync.sincronizar({ forzar: true });
+  isStorageFull = false;
+  app.localStorage.setItem("academia-progress", JSON.stringify(["local", "nuevo"]));
+  app.requests.length = 0;
+
+  app.hide();
+  await settle();
+
+  assert.equal(patches(app.requests).length, 0);
+});
