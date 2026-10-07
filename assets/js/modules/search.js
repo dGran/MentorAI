@@ -35,12 +35,12 @@
     });
   }
 
-  /* Resuelve siempre: si el índice no está, la búsqueda sigue
-     funcionando sobre los metadatos y nadie ve un error. */
   function cargar() {
     if (promesaDeCarga) return promesaDeCarga;
 
-    promesaDeCarga = inyectar(rutaDelIndice()).catch(() => {});
+    promesaDeCarga = inyectar(rutaDelIndice()).catch(() => {
+      promesaDeCarga = null;
+    });
 
     return promesaDeCarga;
   }
