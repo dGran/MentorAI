@@ -28,7 +28,6 @@
     "academia-sync",
   ];
 
-
   function clavesExportables() {
     const claves = [];
 

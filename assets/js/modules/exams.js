@@ -29,7 +29,7 @@
   }
 
   function resultOf(courseSlug) {
-    return MentorAI.Quiz.resultOf(courseSlug);
+    return MentorAI.Quiz?.resultOf(courseSlug) ?? null;
   }
 
   function lessonsOf(course) {
