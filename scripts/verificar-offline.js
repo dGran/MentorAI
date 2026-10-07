@@ -184,11 +184,13 @@ function anotar(nombre, valor, bien) {
   console.log(`  ${bien ? "✓" : "✗"} ${nombre.padEnd(38)} ${valor}`);
 }
 
+const PROCESO_YA_TERMINADO = "ESRCH";
+
 function terminarSiSigueVivo(terminar) {
   try {
     terminar();
-  } catch {
-    return;
+  } catch (error) {
+    if (error.code !== PROCESO_YA_TERMINADO) throw error;
   }
 }
 
