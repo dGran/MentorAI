@@ -30,6 +30,9 @@ const ROOT = path.join(__dirname, "..");
 const PUERTO_WEB = 8899;
 const PUERTO_CDP = 9336;
 const SUBDIR = "MentorAI";
+const ANCHOS_MOVILES = [320, 375];
+const ALTO_MOVIL = 800;
+const ESPERA_VISTA_MOVIL_MS = 600;
 const BASE = `http://127.0.0.1:${PUERTO_WEB}/${SUBDIR}/`;
 
 const PAGINAS = [
@@ -185,6 +188,36 @@ function anotar(nombre, valor, bien) {
 }
 
 const PROCESO_YA_TERMINADO = "ESRCH";
+
+async function medirDesbordesMoviles(sesion) {
+  const cursos = await sesion.evaluar(`(window.MENTORAI_COURSES || []).map((curso) => curso.slug)`);
+  const vistas = ["articulos.html", ...cursos.map((slug) => `curso.html?slug=${slug}`)];
+  const desbordes = [];
+
+  for (const ancho of ANCHOS_MOVILES) {
+    await sesion.enviar("Emulation.setDeviceMetricsOverride", {
+      width: ancho,
+      height: ALTO_MOVIL,
+      deviceScaleFactor: 1,
+      mobile: true,
+    });
+
+    for (const vista of vistas) {
+      await sesion.enviar("Page.navigate", { url: BASE + vista });
+      await esperar(ESPERA_VISTA_MOVIL_MS);
+
+      const exceso = await sesion.evaluar(
+        "document.documentElement.scrollWidth - document.documentElement.clientWidth"
+      );
+
+      if (exceso > 0) desbordes.push(`${vista} a ${ancho}px: +${exceso}px`);
+    }
+  }
+
+  await sesion.enviar("Emulation.clearDeviceMetricsOverride");
+
+  return { vistas: vistas.length * ANCHOS_MOVILES.length, desbordes };
+}
 
 function terminarSiSigueVivo(terminar) {
   try {
@@ -379,6 +412,14 @@ async function main() {
       })()
     `);
     anotar("buscador full-text sin servidor", busqueda, !busqueda.includes("resultados=0"));
+
+    const { vistas, desbordes } = await medirDesbordesMoviles(sesion);
+
+    anotar(
+      "sin scroll horizontal a 320 y 375 px",
+      desbordes.length === 0 ? `${vistas} vistas` : desbordes.slice(0, 3).join(" · "),
+      desbordes.length === 0
+    );
 
     await sesion.navegar(BASE + "no-existe.html");
 
