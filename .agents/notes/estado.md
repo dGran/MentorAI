@@ -109,6 +109,24 @@ forma de trabajar:
 A partir de aquí, todo lo que venga es **contenido nuevo o funcionalidad
 nueva**, sin plan previo que consultar.
 
+## Para retomar (2026-10-07)
+
+`main` en `3228ec5`, producción en `v33`, tablero sano. No hay ningún PR abierto ni trabajo a medias. La última tanda está cerrada en `plan-tanda-2026-10-07.md`.
+
+**Tomables sin decisión del usuario**, por orden sugerido:
+1. **#70 (P1).** Scroll horizontal en unos 104 tutoriales a 320 px. Ampliar el paso de `verificar-offline.js` a los tutoriales.
+2. **#69 (P2).** Drawer estático muerto en 42 páginas de Python y Rust.
+3. **#18 (P1).** Errores técnicos de nueve lecciones. Repaso editorial contra fuentes, como #60.
+
+**Esperan una decisión del usuario:**
+- **#14:** al reiniciar el progreso, ¿confirmación o deshacer?
+- **#16:** paleta para el contraste en oscuro. Desbloquea #17 y, a través de él, #32.
+- **#22:** qué recomendar en el inicio.
+- **#25:** criterio del distractor plausible.
+- **#27:** diseño de las páginas de rutas y cursos.
+
+Las épicas de curso #34-#38 van por `/implement-epic`.
+
 ## Decisiones que no se reabren sin motivo nuevo
 
 Están razonadas en `archivo/`; aquí solo el veredicto, para no volver a
