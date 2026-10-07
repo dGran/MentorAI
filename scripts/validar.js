@@ -418,6 +418,34 @@ function validarIdsDuplicados() {
   }
 }
 
+const PLANTILLA_DE_TUTORIAL = "tutorials/_PLANTILLA.html";
+const BLOQUES_COMUNES = ["header", "footer"];
+
+function bloqueNormalizado(html, etiqueta) {
+  const bloque = html.match(new RegExp(`<${etiqueta}\\b[\\s\\S]*?</${etiqueta}>`));
+
+  return bloque ? bloque[0].replace(/\s+/g, " ").trim() : null;
+}
+
+function validarCabecerasDeTutoriales() {
+  const plantilla = leer(PLANTILLA_DE_TUTORIAL);
+  const tutoriales = fs
+    .readdirSync(path.join(ROOT, "tutorials"))
+    .filter((fichero) => fichero.endsWith(".html"))
+    .map((fichero) => `tutorials/${fichero}`);
+
+  for (const etiqueta of BLOQUES_COMUNES) {
+    const canonico = bloqueNormalizado(plantilla, etiqueta);
+    const divergentes = tutoriales.filter((fichero) => bloqueNormalizado(leer(fichero), etiqueta) !== canonico);
+
+    if (divergentes.length === 0) continue;
+
+    error(
+      `${divergentes.length} tutoriales con un <${etiqueta}> distinto del de ${PLANTILLA_DE_TUTORIAL}: ${divergentes.join(", ")}`
+    );
+  }
+}
+
 /* ---------- 6. Coherencia de los <script> entre páginas ---------- */
 
 function validarScripts() {
@@ -569,6 +597,7 @@ validarPractica();
 validarTutoriales();
 validarHeroContraManifest();
 validarIdsDuplicados();
+validarCabecerasDeTutoriales();
 validarScripts();
 validarShell();
 validarListasDePaginas();

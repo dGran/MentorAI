@@ -214,7 +214,7 @@
   function initMobileNav() {
     const navActions = document.querySelector(".nav__actions");
 
-    if (!navActions) return;
+    if (!navActions || navActions.querySelector(".nav__burger")) return;
 
     const { pathname } = window.location;
     const page = pathname.slice(pathname.lastIndexOf("/") + 1).replace(/\.html$/, "");
