@@ -1187,9 +1187,9 @@ window.MENTORAI_PRACTICE = {
       id: "rdc0d83",
       title: "Provoca un OOMKilled",
       statement:
-        "Baja el límite de memoria de tu deployment a 32Mi y añade a tu index.php una ruta /comer que reserve memoria en bucle (str_repeat en un array). Llama a /comer y observa con kubectl get pods -w y describe qué le pasa al contenedor. ¿Quién lo mató y quién lo resucitó?",
+        "Baja el límite de memoria de tu deployment a 32Mi y añade a tu index.php una ruta /comer que reserve memoria en bucle (str_repeat en un array). Llama a /comer y observa con kubectl get pods -w y describe qué le pasa al contenedor. ¿Quién lo mató y quién lo reinició?",
       solution:
-        "El contenedor muere y el pod muestra OOMKilled con restarts subiendo: lo mató el kernel (los cgroups aplicando el límite — la lección de syscalls en acción) y lo resucitó el Deployment (el bucle de reconciliación). Si la «fuga» persiste, verás el bucle muerte-resurrección en vivo: exactamente lo que significa CrashLoop con causa de memoria en producción, ahora visto con tus ojos.",
+        "El contenedor muere y el pod muestra OOMKilled con restarts subiendo: lo mató el kernel (los cgroups aplicando el límite — la lección de syscalls en acción) y lo reinició el kubelet dentro del mismo pod, según su restartPolicy (el Deployment no crea otro: el pod es el mismo y sus restarts suben). Si la «fuga» persiste, verás el bucle muerte-reinicio en vivo: exactamente lo que significa CrashLoop con causa de memoria en producción, ahora visto con tus ojos.",
       solutionCode: {
         lang: "bash",
         source: "kubectl get pods -w\nkubectl describe pod <nombre> | grep -A3 \"Last State\"",

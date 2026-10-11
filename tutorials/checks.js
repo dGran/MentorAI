@@ -2518,7 +2518,7 @@ window.MENTORAI_CHECKS = {
       o: ["Porque las rules no aceptan patrones de ficheros","Porque leer ficheros no se puede regular de otra forma","Porque lo que nunca lee no se filtra, y el deny se aplica siempre"], a: 2,
       w: "La jerarquía de la lección 1: para lo que no puede fallar ni una vez, la capa determinista. Con su límite: cubre Read y los comandos de fichero que reconoce en Bash (cat, head…), no un grep -r ni un script que abra el fichero; para eso, hook o sandbox." },
     { id: "c11d1ee", q: "Tu hook pre-herramienta detecta un comando prohibido, escribe el motivo en stderr y termina con exit 1. ¿Qué pasa?",
-      o: ["Se bloquea la acción y el motivo de stderr vuelve al modelo","Se ejecuta igual porque solo veta exit 2, y exit 1 es fallo","Se detiene la sesión entera hasta que revises el hook a mano"], a: 1,
+      o: ["Se bloquea la acción y el motivo de stderr vuelve al modelo","Se ejecuta igual, porque solo exit 2 veta y exit 1 es un fallo del hook","Se detiene la sesión entera hasta que revises el hook a mano"], a: 1,
       w: "Es la trampa más cara: un guardián que falla abierto. exit 0 no objeta, exit 2 veta, cualquier otro código se trata como fallo del propio hook y la acción continúa." },
     { id: "cb4b168", q: "Un hook pre-herramienta bloquea una edición y escribe un motivo. ¿Qué pasa con ese mensaje?",
       o: ["Se pierde: los hooks no se comunican con el modelo","Solo lo ve el usuario en el terminal, no el modelo","Vuelve al contexto del modelo y corrige el rumbo"], a: 2,
