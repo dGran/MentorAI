@@ -467,6 +467,14 @@ function validarDrawerSoloDinamico() {
   );
 }
 
+function validarMainDeTutoriales() {
+  const sinMain = htmlDeTutoriales().filter((fichero) => !reglas.tieneUnSoloMain(leer(fichero)));
+
+  if (sinMain.length === 0) return;
+
+  error(`${sinMain.length} tutoriales sin un único <main> que envuelva el contenido: ${sinMain.join(", ")}`);
+}
+
 function validarTablasEnvueltas() {
   for (const fichero of htmlDeTutoriales()) {
     const sinEnvolver = reglas.tablasSinEnvolver(leer(fichero));
@@ -629,6 +637,7 @@ validarIdsDuplicados();
 validarCabecerasDeTutoriales();
 validarDrawerSoloDinamico();
 validarTablasEnvueltas();
+validarMainDeTutoriales();
 validarScripts();
 validarShell();
 validarListasDePaginas();

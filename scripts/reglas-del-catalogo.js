@@ -4,6 +4,8 @@ const FECHA_ISO = /^\d{4}-\d{2}-\d{2}$/;
 const DRAWER_ESCRITO = /class=["'][^"']*\bnav-drawer(-backdrop)?\b(?!__)/;
 const TABLA = /<table\b/gi;
 const TABLA_ENVUELTA = /<div class="table-wrap">\s*<table\b/gi;
+const APERTURA_DE_MAIN = /<main\b/gi;
+const CIERRE_DE_MAIN = /<\/main>/gi;
 
 const esFechaReal = (texto) =>
   FECHA_ISO.test(texto) && !Number.isNaN(Date.parse(texto)) && new Date(texto).toISOString().slice(0, 10) === texto;
@@ -36,4 +38,7 @@ const tieneDrawerEscrito = (html) => DRAWER_ESCRITO.test(html);
 
 const tablasSinEnvolver = (html) => (html.match(TABLA) ?? []).length - (html.match(TABLA_ENVUELTA) ?? []).length;
 
-module.exports = { esFechaReal, diaLocal, problemasDeRevision, tieneDrawerEscrito, tablasSinEnvolver };
+const tieneUnSoloMain = (html) =>
+  (html.match(APERTURA_DE_MAIN) ?? []).length === 1 && (html.match(CIERRE_DE_MAIN) ?? []).length === 1;
+
+module.exports = { esFechaReal, diaLocal, problemasDeRevision, tieneDrawerEscrito, tablasSinEnvolver, tieneUnSoloMain };
