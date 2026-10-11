@@ -1,0 +1,13 @@
+const { abrir } = require("./cdp.js");
+const [BASE] = process.argv.slice(2);
+const DATOS = `performance.getEntriesByType("resource").map(e => e.name).filter(n => /tutorials\\/(quizzes|checks)\\.js/.test(n)).map(n => n.split("/").pop()).join(",") || "ninguno"`;
+(async () => { const b = await abrir(9463); await b.ancho(1280, 900, false);
+  await b.ir(`${BASE}/tutorials/git-deshacer.html#quiz`, 2500);
+  console.log("git-deshacer#quiz: top de #quiz", await b.evaluar("Math.round(document.getElementById('quiz')?.getBoundingClientRect().top)"), "· botón bloqueado", await b.evaluar("document.querySelector('.tutorial-action--done')?.disabled"));
+  await b.ir(`${BASE}/tutorials/inf-tls.html#check`, 2500);
+  console.log("inf-tls#check: top de #check", await b.evaluar("Math.round(document.getElementById('check')?.getBoundingClientRect().top)"), "· datos", await b.evaluar(DATOS));
+  const seccion = await b.evaluar("(() => { const h = [...document.querySelectorAll('article.prose h2[id]')][1]; return h ? h.id : ''; })()");
+  await b.ir(`${BASE}/index.html`, 500); await b.ir(`${BASE}/tutorials/inf-tls.html#${seccion}`, 2000);
+  console.log(`inf-tls#${seccion}: top`, await b.evaluar(`Math.round(document.getElementById('${seccion}').getBoundingClientRect().top)`), "· datos al cargar", await b.evaluar(DATOS));
+  console.log("errores", b.consola.length ? JSON.stringify(b.consola) : 0);
+  b.cerrar(); })();
