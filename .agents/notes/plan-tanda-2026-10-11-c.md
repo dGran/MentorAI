@@ -1,6 +1,6 @@
 # Tanda 2026-10-11 (c) — paraguas del catálogo, deuda de contenido y sesgo de longitud
 
-Estado: **en curso**.
+Estado: **cerrada**. Entraron los 3 issues: #39 desglosado en #92-#100, #33 en #101 y #25 en 6 bloques (#102-#107). Desplegado hasta `v54`. Las tres reglas sobre las opciones (longitud, puesto de longitud y forma) son ERROR en `validar.js`, y el catálogo entero las cumple.
 
 ## 1. Estado de partida (medido 2026-10-11, tras cerrar la tanda b)
 
@@ -80,3 +80,35 @@ Después de la tanda, en el mismo loop: **#34** por `/implement-epic`, un curso 
 
 | Issue | PR | Merge | Review (subagente, contexto fresco) | QA |
 |---|---|---|---|---|
+| #39 paraguas | — | — | sin código: desglosado en #92-#100 (issue por hueco), cerrado | — |
+| #33 (lo que queda) | #101 | `95f5a9a` | **2 rondas.** Ronda 1: alta (la lección `hashing` y la pregunta afirmaban que PHP aleatoriza el hash; sus arrays usan DJBX33A sin semilla) y media (con la regla de la mayoría, cursos «de cero» quedaban en Intermedio) → la regla pasa a «nivel de la primera lección». Ronda 2: media (`q4732e0`, la correcta era la más larga por un carácter) | 18 preguntas de escenario (fundamentos 31 %, Go 33 %, SOLID 33 %); 464 existentes idénticas; rutas, niveles y orden de `testing` en `rutas.html`/`cursos.html`; producción en `v48` |
+| #25 bloque 1 | #102 | `7fc8d2e` | **3 rondas.** Ronda 1: media (la correcta en otra forma que los distractores: telegráfica o sin el «Porque…») → regla de forma en `validar.js`. Ronda 2: media (4 pistas que el detector no veía: «Porque»/«Para» mezclados) → conectores agrupados. Ronda 3: aprobado | 4 cursos a 0 avisos; regla de puesto destapada al medir (2.º puesto al 56-87 %); producción en `v49` |
+| #25 bloque 2 | #103 | `d5fa803` | **2 rondas.** Ronda 1: media (`c3d8d0a`, distractor defendible) y retoques de forma y gramática. Ronda 2: aprobado | 4 cursos a 0 avisos; producción en `v50` |
+| #25 bloque 3 | #104 | `c9d0dfa` | **2 rondas** (y una pre-revisión de contenido sobre la simulación). Pre-revisión: alta (OOMKilled: «el Deployment lo repone»; es el kubelet). Ronda 1: media (el reto de práctica repetía el error). Ronda 2: aprobado | 6 cursos a 0 avisos; producción en `v51` |
+| #25 bloque 4 | #105 | `b80a7f2` | **2 rondas** (y pre-revisión). Pre-revisión: media (`Cargo.lock`: la guía cambió en 2023). Ronda 1: medias de redacción (`ce2ff68` sin antecedente, `ca64513` con un distractor cierto). Ronda 2: aprobado | 3 cursos a 0 avisos; producción en `v52` |
+| #25 bloque 5 | #106 | `6c457a4` | **2 rondas** (y pre-revisión). Ronda 1: medias (`tagged_locator` hacía defendible «Service Locator»; los eventos del kernel con `stopPropagation()` se leían como cadena). Ronda 2: aprobado | 6 cursos a 0 avisos; producción en `v53` |
+| #25 bloque 6 | #107 | `9b8b382` | **3 rondas** (y pre-revisión). Pre-revisión: altas (`q671446`, `flush()` sí envuelve su transacción; `q6aabb1`, `readonly`). Ronda 1: medias (`c119fb2`, `q0443d4`). Ronda 2: aprobado con candidato (enum: el error es en ejecución). Ronda 3: aprobado (matiz aplicado) | las tres reglas pasan a ERROR; catálogo entero sin errores; mutación con umbrales bajados → exit 1; producción en `v54`. **#25 cerrado** |
+
+## Cierre
+
+| Issue | Estado | Producción |
+|---|---|---|
+| #39 | Done (desglosado en #92-#100) | — |
+| #33 | Done | `v48` |
+| #25 | Done | `v49`-`v54` |
+
+Gates al cierre (`main` en `9b8b382`): `validar.js` sin errores y **1 aviso** (59 al empezar; el que queda es «Cuándo aplicarlo», de #34), con las reglas de longitud, puesto y forma como ERROR. `node --test` 107/107 (99 al empezar). `verificar-offline.js` en verde. La correcta es la más larga en el 17 % de las 482 preguntas de examen (79 %) y en el 21 % de los 682 checks (80 %).
+
+**Lecciones:**
+- **Arreglar un sesgo mecánico crea el siguiente.** Al igualar longitudes, la correcta quedó como la segunda más larga en el 56-87 % de las preguntas, y luego con otra forma (telegráfica o sin el conector). Cada regla nueva del validador destapó la siguiente. Se mide el truco entero (puesto y forma), no solo el que motivó el issue → reglas en `validar.js`.
+- **La regla nueva destapa lo que «nació medido».** `fundamentos`, `ia-por-dentro` y `metodo-con-agentes` cumplían la regla antigua y no la nueva.
+- **Una pre-revisión de contenido sobre la simulación del estado final** (copia del repo con todos los bloques aplicados) cazó las altas (OOMKilled, `Cargo.lock`, `flush()`, `readonly`) antes de abrir cada PR. Las reviews del PR encontraron después menos y más leve.
+- **El redondeo esconde el umbral.** Un 45,2 % redondeado a 45 % pasaba; el validador compara sin redondear y los medidores también.
+- **Con 3 opciones, los topes no caben a la vez** en grupos pequeños (10-15 checks): se admite la más corta al 40 %, porque es aritmética.
+- **Reescribir distractores destapa errores de las lecciones**: hash flooding en PHP, OOMKilled, `Cargo.lock`, `flush()` y bytes de Go. Cada reescritura de preguntas lleva lectura de la lección.
+
+**Issues nuevos:** #92-#100 (de #39).
+
+**Preguntas que esperan al usuario:** ninguna. Repaso a posteriori de lo decidido con «criterio propio documentado» en #33: la regla de nivel por primera lección (9 cursos cambian), rutas y gemelas.
+
+**Backlog:** #34 (siguiente, por `/implement-epic`), #35-#38 (épicas de curso) y #92-#100 (huecos, P3).

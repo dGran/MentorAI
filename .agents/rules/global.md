@@ -105,6 +105,16 @@ el diff crece). No se limpian en bloque fuera de un issue propio.
   («Ponlo en práctica», 2-3 por curso, ejecutables en la máquina del lector,
   con la solución explicando el porqué). El validador avisa si un curso queda
   sin retos.
+- **Las opciones de una pregunta no delatan la correcta** (examen y checks;
+  `validar.js` da ERROR por curso): la correcta es la más larga como mucho en
+  el 40 % (se apunta al 10-25 %), ningún otro puesto de longitud pasa del 45 %,
+  y en no más del 10 % la forma la distingue (mismo arranque y estilo en todas
+  las opciones). Distractor plausible = el error de quien leyó por encima, nunca
+  relleno ni algo también cierto. Al reescribir una pregunta existente no
+  cambian `id`, `a` ni el orden de las opciones (el repaso guarda el historial
+  por id), y se lee la lección: así salieron errores del propio contenido.
+- **El nivel de un curso es el de su primera lección**: desde dónde se puede
+  empezar, que es lo que filtra `cursos.html`. El validador avisa si no coincide.
 
 ## Frontend (`assets/js/modules/`)
 

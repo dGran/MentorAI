@@ -7,10 +7,10 @@ Lo cerrado vive en `archivo/`; si algo de aquí crece demasiado, se archiva.
 
 ## Dónde está el proyecto
 
-**300 tutoriales · 32 cursos · 7 rutas · 464 preguntas de examen · 682 checks ·
+**300 tutoriales · 32 cursos · 7 rutas · 482 preguntas de examen · 682 checks ·
 95 retos de práctica.** `node scripts/validar.js` sale sin errores; sus avisos
-son deuda medida (sesgo de longitud de las preguntas, #25; «Cuándo aplicarlo»
-pendiente en 96 tutoriales, #34 y #33).
+son deuda medida: queda uno, «Cuándo aplicarlo» pendiente en 96 tutoriales
+(#34). El sesgo de las opciones ya es ERROR (#25).
 
 **Curso `ia-por-dentro` (2026-10-06, épica #23):** «La IA por dentro», 5
 lecciones con prefijo `llm-` (tokens y embeddings, atención y contexto,
@@ -147,23 +147,34 @@ contrato y el registro en `plan-tanda-2026-10-11.md`. Lo que cambió:
 - **Sesgo de longitud:** el piloto «fundamentos» fija el criterio del distractor
   plausible (en el refinado de #25). Quedan los demás cursos.
 
+**Tercera tanda del 2026-10-11:** #39, #33 y #25, con el contrato, sus dos
+enmiendas y el registro en `plan-tanda-2026-10-11-c.md`. Lo que cambió:
+- **#25 cerrado en 6 bloques (#102-#107):** se reescribieron las opciones de
+  ~1.000 preguntas. La correcta como la más larga pasa del 79 % al 17 % en
+  exámenes y del 80 % al 21 % en checks. `validar.js` da ERROR por curso por
+  longitud, por puesto de longitud y por forma (regla en `global.md`). Ids, `a`
+  y orden intactos: el repaso no pierde historial.
+- **#33 cerrado (#101):** 18 preguntas de escenario (fundamentos, Go, SOLID);
+  ninguna pieza fuera de ruta; `testing` empieza por la pirámide; el nivel de
+  un curso es el de su primera lección (cambian 9). Las tres lecciones
+  `*-entorno-docker` se quedan, como decisión.
+- **#39 desglosado** en #92-#100 (huecos del catálogo, P3).
+- **Errores de contenido destapados al reescribir**, corregidos con su lección:
+  hash flooding en PHP (no aleatoriza), OOMKilled (lo reinicia el kubelet, no
+  el Deployment), `Cargo.lock` (guía de 2023), `flush()` de Doctrine,
+  `readonly`, bytes y runes de Go.
+
 ## Para retomar (2026-10-11)
 
-`main` en `f0065c2`, producción en `v47`. Ningún PR abierto.
+`main` en `9b8b382`, producción en `v54`. Ningún PR abierto.
 
-**Tomable sin decisión del usuario:**
-- **#25.** Reescribir los distractores del resto de cursos con el criterio del
-  piloto (refinado de #25), en bloques de cursos, y pasar el umbral a error al
-  final. Hoy, con la correcta como la más larga, el 79 % de 464 preguntas de
-  examen y el 80 % de 682 checks.
+**Siguiente, decidido por el usuario («#34 tras la tanda»):** la épica #34
+(migrar Python, Go y Rust a la plantilla actual, un curso por PR) por
+`/implement-epic`. Después, #35-#38 (cursos nuevos) y #92-#100 (huecos, P3).
 
-**Esperan una decisión del usuario:**
-- **#33 (lo que queda):** preguntas de escenario, orden de rutas, niveles,
-  lecciones gemelas y piezas fuera de ruta.
-- **#39:** qué huecos del catálogo se convierten en issue y cuáles se descartan.
-
-Las épicas de curso #34-#38 van por `/implement-epic`. #34 tiene anotado lo que
-las plantillas antiguas de Go, Python y Rust siguen haciendo mal en escritorio.
+**Esperan al usuario:** ninguna pregunta. Para repasar a posteriori lo decidido
+con «criterio propio documentado» en #33 (regla de nivel por primera lección,
+rutas y gemelas): el refinado del issue.
 
 ## Decisiones que no se reabren sin motivo nuevo
 
@@ -244,6 +255,13 @@ Cada una costó una depuración; están aquí para no repetirlas.
 - **Los subagentes llenan el disco y pisan ficheros compartidos.** En una tanda
   dejaron más de 1 GB en el scratchpad y uno sobrescribió un script de QA. Cada
   revisor usa su propio directorio temporal y lo borra al terminar.
+- **El redondeo esconde el umbral.** Un 45,2 % redondeado a 45 % pasaba por
+  bueno; los umbrales se comparan sin redondear.
+- **Arreglar un sesgo mecánico de las preguntas crea el siguiente.** Al igualar
+  longitudes, la correcta pasó a ser la segunda más larga y luego a tener otra
+  forma. Se mide el truco entero (longitud, puesto y forma), no solo el del issue.
+- **`pgrep -f patrón` se encuentra a sí mismo** si el patrón aparece en la línea
+  de comandos del shell que lo lanza: dio «viva» a una cola ya parada.
 - **El service worker sirve el HTML viejo en la primera visita tras subir
   `VERSION`.** Un perfil de Chrome reutilizado mide la página anterior; la
   medida buena es la segunda visita.
@@ -273,7 +291,7 @@ el resto del catálogo (SQL, OOP, Linux…) envejece a décadas, no a meses.
 | `node scripts/verificar-offline.js` | Comprueba el offline con el servidor apagado y el scroll horizontal a 320/375 px. Corre en CI |
 | `node --test 'scripts/tests/**/*.test.js'` | Tests de la lógica pura (`node:test` + `vm`, sin dependencias). Corre en CI |
 
-Al tocar `sw.js` o el shell (módulos, CSS, `quizzes.js`, `checks.js`, `manifest.js`), **subir `VERSION`** (va por `v47`). La
+Al tocar `sw.js` o el shell (módulos, CSS, `quizzes.js`, `checks.js`, `manifest.js`), **subir `VERSION`** (va por `v54`). La
 caché de contenido guardado (`academia-content`) ya no lleva versión: un
 despliegue no borra lo que el lector guardó para viajar.
 
