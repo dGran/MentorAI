@@ -11,6 +11,7 @@
 
   const MentorAI = (window.MentorAI = window.MentorAI || {});
 
+  const RESET_COURSE_MESSAGE = "Progreso del curso reiniciado.";
   const CHECK_SVG =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 
@@ -199,10 +200,18 @@
 
       host.querySelector(".course-hero__reset")?.addEventListener("click", () => {
         const slugs = lessonSlugsOf(course);
+        const progressBefore = MentorAI.Progress.list();
+        const readingBefore = MentorAI.Reading.all();
 
         MentorAI.Progress.remove(slugs);
         MentorAI.Reading.clear(slugs);
         paint();
+        MentorAI.offerUndo?.(RESET_COURSE_MESSAGE, () => {
+          MentorAI.Progress.restore(progressBefore);
+          MentorAI.Reading.restore(readingBefore);
+          paint();
+          host.querySelector(".course-hero__reset")?.focus();
+        });
       });
     };
 
