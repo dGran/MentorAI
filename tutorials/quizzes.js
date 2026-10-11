@@ -1722,7 +1722,7 @@ window.MENTORAI_QUIZZES = {
       lesson: "ia-llamar-a-un-llm" },
     { id: "q9f8291", q: "¿Dónde va el texto que escriben tus usuarios en la llamada?",
       o: ["En system, junto a tus instrucciones","Concatenado donde quepa","En los mensajes user, jamás mezclado con tus instrucciones de system","En un campo de metadatos"], a: 2,
-      w: "La separación es de seguridad: la inyección de prompt entra por el contenido del usuario, y el modelo pondera el system por encima.",
+      w: "La separación es de seguridad: la inyección entra por el contenido del usuario. El modelo pondera el system por encima, lo que reduce el riesgo sin eliminarlo: validar la salida sigue siendo tuyo.",
       lesson: "ia-llamar-a-un-llm" },
     { id: "q146ef4", q: "Tu endpoint web espera la respuesta del LLM antes de responder. ¿El problema?",
       o: ["El JSON puede llegar mal formado","Tu p99 pasa a ser el del proveedor y tus workers quedan retenidos: la llamada va a una cola, fuera del camino crítico","Ninguno, es el patrón estándar","El proveedor rechaza llamadas desde controladores"], a: 1,
