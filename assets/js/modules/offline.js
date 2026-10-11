@@ -322,7 +322,7 @@
   }
 
   /* ---------- Descargar toda la academia ----------
-     El catálogo entero pesa unos 10 MB, menos que una foto del móvil. Antes
+     El catálogo entero pesa unos 9 MB, menos que una foto del móvil. Antes
      de un vuelo, «me lo llevo todo» es más útil que ir eligiendo cursos. */
 
   function initDownloadAll() {
@@ -335,7 +335,7 @@
     host.innerHTML = `<div class="offline-all">
       <div class="offline-all__body">
         <h2 class="offline-all__title">Toda la academia</h2>
-        <p class="offline-all__copy">Son ${total} páginas, unos 10 MB. Antes de un vuelo suele salir más a cuenta que ir curso por curso.</p>
+        <p class="offline-all__copy">Son ${total} páginas, unos 9 MB. Antes de un vuelo suele salir más a cuenta que ir curso por curso.</p>
         <p class="offline-all__size" id="offline-size"></p>
       </div>
       <button class="btn btn--primary" id="offline-all-btn">Descargar todo</button>
