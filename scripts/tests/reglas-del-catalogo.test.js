@@ -4,6 +4,8 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const reglas = require("../reglas-del-catalogo");
 
+process.env.TZ = "Europe/Madrid";
+
 const TODAY = "2026-10-11";
 const lesson = (reviewed, date = "2026-08-22") => ({ slug: "ia-streaming", date, reviewed });
 
@@ -35,11 +37,24 @@ test("reviewed before the publication date is rejected", () => {
   assert.match(reglas.problemasDeRevision(lesson("2026-01-01"), TODAY)[0], /anterior a su date 2026-08-22/);
 });
 
+test("reviewed on its publication day is accepted", () => {
+  assert.deepEqual(reglas.problemasDeRevision(lesson("2026-08-22"), TODAY), []);
+});
+
+test("a date both before publication and in the future reports both problems", () => {
+  const problems = reglas.problemasDeRevision(lesson("2026-12-01", "2027-01-01"), TODAY);
+
+  assert.equal(problems.length, 2);
+  assert.match(problems[0], /anterior a su date/);
+  assert.match(problems[1], /en el futuro/);
+});
+
 test("reviewed after today is rejected", () => {
   assert.match(reglas.problemasDeRevision(lesson("2026-10-12"), TODAY)[0], /en el futuro/);
 });
 
 test("today is the local calendar day, not the UTC one", () => {
+  assert.equal(reglas.diaLocal(new Date("2026-10-10T23:30:00Z")), "2026-10-11");
   assert.equal(reglas.diaLocal(new Date(2026, 9, 11, 1, 30)), "2026-10-11");
   assert.equal(reglas.diaLocal(new Date(2026, 0, 5, 23, 59)), "2026-01-05");
 });
