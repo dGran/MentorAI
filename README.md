@@ -1,6 +1,6 @@
 # MentorAI
 
-Una carrera de backend en HTML estático: **282 tutoriales, 30 cursos y 7 rutas**
+Una carrera de backend en HTML estático: **300 tutoriales, 32 cursos y 7 rutas**
 de aprendizaje, pensados para dar la base formal que uno se salta cuando aprende
 a programar por su cuenta.
 
@@ -114,7 +114,7 @@ en alguna ruta de `paths.js`. Hoy **ningún curso queda fuera de una ruta**.
 
 ## Qué sabe hacer
 
-- **Buscar dentro del contenido.** El índice full-text (1,6 MB) no se carga con
+- **Buscar dentro del contenido.** El índice full-text (~1,9 MB) no se carga con
   la página: se inyecta la primera vez que escribes en un buscador. Los
   resultados del inicio muestran el fragmento con la coincidencia resaltada.
 - **Leer sin conexión.** Descarga toda la academia desde `offline.html` y

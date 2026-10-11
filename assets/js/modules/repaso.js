@@ -266,7 +266,7 @@
 
   /* ---------- Enlace en la navegación ----------
      Se inyecta como el de "Sin conexión", para no tener que tocar los
-     200 HTML del catálogo. Muestra el número de preguntas pendientes. */
+     HTML del catálogo. Muestra el número de preguntas pendientes. */
 
   function injectNavLink() {
     const nav = document.querySelector(".nav__actions");

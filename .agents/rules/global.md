@@ -49,7 +49,7 @@ el diff crece). No se limpian en bloque fuera de un issue propio.
   (`tutorials/manifest.js` → `window.ACADEMIA_TUTORIALS`). Cualquier dato nuevo
   sigue ese patrón: un `.js` que setea `window.X`, incluido con `<script>` antes
   de los módulos de `assets/js/modules/`. Si un dato pesa demasiado para cargarlo
-  siempre —el índice de búsqueda son 1,6 MB— se **inyecta el `<script>` bajo
+  siempre —el índice de búsqueda son ~1,9 MB— se **inyecta el `<script>` bajo
   demanda**, que sí funciona por `file://` (ver `assets/js/modules/search.js`).
 - **Una vista = una página.** Inicio (`index.html`), Rutas (`rutas.html`), Cursos
   (`cursos.html`) y Artículos (`articulos.html`) son páginas HTML reales con

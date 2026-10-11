@@ -91,6 +91,34 @@ function validarSintaxis() {
 
 /* ---------- 2. Manifiesto ---------- */
 
+const FECHA_ISO = /^\d{4}-\d{2}-\d{2}$/;
+
+const esFechaReal = (texto) =>
+  FECHA_ISO.test(texto) && !Number.isNaN(Date.parse(texto)) && new Date(texto).toISOString().slice(0, 10) === texto;
+
+function hoyEnLocal() {
+  const ahora = new Date();
+
+  return [ahora.getFullYear(), ahora.getMonth() + 1, ahora.getDate()].map((n) => String(n).padStart(2, "0")).join("-");
+}
+
+function validarRevision(tutorial) {
+  if (tutorial.reviewed === undefined) return;
+
+  if (typeof tutorial.reviewed !== "string" || !esFechaReal(tutorial.reviewed)) {
+    error(`manifest: «${tutorial.slug}» tiene reviewed «${tutorial.reviewed}», que no es una fecha AAAA-MM-DD`);
+    return;
+  }
+
+  if (tutorial.date && tutorial.reviewed < tutorial.date) {
+    error(`manifest: «${tutorial.slug}» tiene reviewed ${tutorial.reviewed}, anterior a su date ${tutorial.date}`);
+  }
+
+  if (tutorial.reviewed > hoyEnLocal()) {
+    error(`manifest: «${tutorial.slug}» tiene reviewed ${tutorial.reviewed}, en el futuro`);
+  }
+}
+
 function validarManifest() {
   const vistos = new Set();
 
@@ -105,6 +133,8 @@ function validarManifest() {
     for (const campo of ["title", "description", "href", "categories"]) {
       if (!tutorial[campo]) error(`manifest: «${tutorial.slug}» sin ${campo}`);
     }
+
+    validarRevision(tutorial);
   }
 
   /* El badge "Nuevo" solo se pinta en el catálogo, y el catálogo deja fuera

@@ -53,7 +53,7 @@ sus checks por lección y sus retos. Decisión de arquitectura: tres cursos
 separados sin solapes en vez de inflar `programar-con-ia`, que queda intacto
 como intro. Los slugs nuevos usan prefijos `cc-` e `ia-`.
 
-El **norte está cumplido**: la ruta `el-grado-que-no-hiciste` son 23 cursos, y
+El **norte está cumplido**: la ruta `el-grado-que-no-hiciste` son 26 cursos, y
 **ningún curso queda fuera de una ruta**. Los 16 planes de `archivo/` están
 cerrados, y las tres colas de ideas están consumidas: no queda backlog.
 
@@ -78,7 +78,7 @@ inicio (inyectados por JS, sin tocar los 264 HTML), y
 **Sync entre dispositivos (2026-08-23):** se reabrió —con motivo nuevo real:
 uso multi-dispositivo frecuente— la opción Gist que `archivo/plan-multiusuario.md`
 dejó anotada como descartada. `assets/js/modules/sync.js`: gist secreto por
-usuario (token clásico scope `gist`, pegado en `repaso.html`), fusión
+usuario (token clásico scope `gist`, pegado hoy en `perfil.html`), fusión
 reutilizando `Perfil.importar`, sync oportunista al cargar/salir/botón. El
 token vive en `academia-sync` y **no viaja en el export**. Cada compañero usa
 su cuenta → independencia gratis; se descartó explícitamente centralizar los

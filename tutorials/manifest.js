@@ -19,6 +19,7 @@
      icon         clave de icono (ver ICONS en assets/js/modules/catalog.js)
      status       "published" | "soon"
      date         fecha ISO (ordena el catálogo, más nuevo arriba)
+     reviewed     fecha ISO de la última revisión contra fuentes (opcional)
      featured     true para resaltar como "Nuevo" (el más reciente)
      popular      true para curar la sección "Destacados" de la portada
    ============================================================ */
@@ -553,7 +554,7 @@ window.ACADEMIA_TUTORIALS = [
     slug: "cr-invalidacion",
     title: "Invalidación: el problema difícil de verdad",
     description:
-      "Por qué invalidar es difícil de verdad, por qué el TTL gana casi siempre por ser correcto por construcción, y las tres técnicas explícitas: por clave, por etiqueta y por clave versionada.",
+      "Por qué invalidar es difícil de verdad, por qué el TTL gana casi siempre porque acota la obsolescencia por construcción, y las tres técnicas explícitas: por clave, por etiqueta y por clave versionada.",
     href: "tutorials/cr-invalidacion.html",
     categories: ["rendimiento"],
     topic: "Caché y rendimiento",
@@ -3159,6 +3160,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-06-27",
+    reviewed: "2026-06-27",
   },
   {
     slug: "cqrs-event-sourcing",
@@ -3294,6 +3296,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-06-26",
+    reviewed: "2026-06-26",
   },
   {
     slug: "flujo-con-agentes",
@@ -3309,6 +3312,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-06-26",
+    reviewed: "2026-06-26",
   },
   {
     slug: "prompting-para-codigo",
@@ -3324,6 +3328,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-06-26",
+    reviewed: "2026-06-26",
   },
   {
     slug: "como-piensa-un-llm",
@@ -3339,6 +3344,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-06-26",
+    reviewed: "2026-06-26",
   },
   {
     slug: "tests-que-no-estorban",
@@ -3899,6 +3905,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-08-22",
+    reviewed: "2026-08-22",
   },
   {
     slug: "cc-contexto-finito",
@@ -3914,6 +3921,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-08-22",
+    reviewed: "2026-08-22",
   },
   {
     slug: "cc-plan-y-verificacion",
@@ -3929,6 +3937,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-08-22",
+    reviewed: "2026-08-22",
   },
   {
     slug: "cc-subagentes",
@@ -3944,6 +3953,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-08-22",
+    reviewed: "2026-08-22",
   },
   {
     slug: "cc-rules",
@@ -3959,6 +3969,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-08-22",
+    reviewed: "2026-08-22",
   },
   {
     slug: "cc-skills",
@@ -3974,6 +3985,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-08-22",
+    reviewed: "2026-08-22",
   },
   {
     slug: "cc-memoria-y-continuidad",
@@ -3989,6 +4001,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-08-22",
+    reviewed: "2026-08-22",
   },
   {
     slug: "cc-mcp",
@@ -4004,6 +4017,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-08-22",
+    reviewed: "2026-08-22",
   },
   {
     slug: "cc-hooks-y-permisos",
@@ -4019,6 +4033,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-08-22",
+    reviewed: "2026-08-22",
   },
   {
     slug: "cc-headless-y-ci",
@@ -4034,6 +4049,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-08-22",
+    reviewed: "2026-08-22",
   },
   {
     slug: "cc-flujo-de-equipo",
@@ -4049,6 +4065,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-08-22",
+    reviewed: "2026-08-22",
   },
   {
     slug: "ia-llamar-a-un-llm",
@@ -4064,6 +4081,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-08-22",
+    reviewed: "2026-10-11",
   },
   {
     slug: "ia-structured-output",
@@ -4079,6 +4097,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-08-22",
+    reviewed: "2026-08-22",
   },
   {
     slug: "ia-streaming",
@@ -4094,6 +4113,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-08-22",
+    reviewed: "2026-08-22",
   },
   {
     slug: "ia-coste-y-evaluacion",
@@ -4109,6 +4129,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-08-22",
+    reviewed: "2026-08-22",
   },
   {
     slug: "maq-cpu",
@@ -4274,6 +4295,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-10-06",
+    reviewed: "2026-10-07",
   },
   {
     slug: "llm-atencion-y-contexto",
@@ -4289,6 +4311,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-10-06",
+    reviewed: "2026-10-07",
   },
   {
     slug: "llm-entrenamiento",
@@ -4304,6 +4327,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-10-06",
+    reviewed: "2026-10-07",
   },
   {
     slug: "llm-muestreo",
@@ -4319,6 +4343,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-10-06",
+    reviewed: "2026-10-07",
   },
   {
     slug: "llm-alucinacion-y-razonamiento",
@@ -4334,6 +4359,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-10-06",
+    reviewed: "2026-10-07",
   },
   {
     slug: "ag-por-que-un-metodo",
@@ -4349,6 +4375,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-10-06",
+    reviewed: "2026-10-06",
   },
   {
     slug: "ag-como-lee-el-agente",
@@ -4364,6 +4391,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-10-06",
+    reviewed: "2026-10-06",
   },
   {
     slug: "ag-instalar-un-metodo",
@@ -4379,6 +4407,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-10-06",
+    reviewed: "2026-10-06",
   },
   {
     slug: "ag-rules-y-paquetes",
@@ -4394,6 +4423,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-10-06",
+    reviewed: "2026-10-06",
   },
   {
     slug: "ag-skills-y-contratos",
@@ -4409,6 +4439,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-10-06",
+    reviewed: "2026-10-06",
   },
   {
     slug: "ag-hooks-que-inyectan",
@@ -4424,6 +4455,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-10-06",
+    reviewed: "2026-10-06",
   },
   {
     slug: "ag-roles-de-subagente",
@@ -4439,6 +4471,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-10-06",
+    reviewed: "2026-10-06",
   },
   {
     slug: "ag-del-requisito-al-issue",
@@ -4454,6 +4487,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-10-06",
+    reviewed: "2026-10-06",
   },
   {
     slug: "ag-implementar-y-revisar",
@@ -4469,6 +4503,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-10-06",
+    reviewed: "2026-10-06",
   },
   {
     slug: "ag-qa-con-evidencias",
@@ -4484,6 +4519,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-10-06",
+    reviewed: "2026-10-06",
   },
   {
     slug: "ag-cerrar-el-ciclo",
@@ -4499,6 +4535,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-10-06",
+    reviewed: "2026-10-06",
   },
   {
     slug: "ag-tandas-y-loops",
@@ -4514,6 +4551,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-10-06",
+    reviewed: "2026-10-06",
   },
   {
     slug: "ag-el-metodo-que-aprende",
@@ -4529,5 +4567,6 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-10-06",
+    reviewed: "2026-10-06",
   },
 ];
