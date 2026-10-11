@@ -709,55 +709,55 @@ window.MENTORAI_CHECKS = {
 
   "clean-code-intro": [
     { id: "c5d59d2", q: "¿Por qué se insiste tanto en optimizar el código para leerlo?",
-      o: ["Porque los linters lo exigen","Porque el código legible se ejecuta más rápido","Porque se lee muchas más veces de las que se escribe"], a: 2,
+      o: ["Porque los linters marcan como error el código ilegible","Porque el código legible se ejecuta más rápido","Porque se lee muchas más veces de las que se escribe"], a: 2,
       w: "Y quien más lo relee eres tú dentro de seis meses. Escribir rápido optimiza la parte barata del trabajo." },
     { id: "cb5f46e", q: "¿Qué propone la regla del boy scout?",
-      o: ["Dejar el código un poco mejor cada vez que lo tocas","Reservar un sprint para refactorizar","No tocar código que ya funciona"], a: 0,
+      o: ["Dejar el código un poco mejor cada vez que lo tocas","Reservar un sprint entero cada trimestre para refactorizar","No tocar el código que ya funciona aunque esté desordenado"], a: 0,
       w: "Es la alternativa realista al «paramos todo y refactorizamos», que casi nunca llega." },
   ],
 
   "nombres": [
     { id: "c22a2ec", q: "¿Qué tiene de malo llamar `$d` a los días transcurridos?",
-      o: ["Que rompe el estándar PSR", "Que obliga al lector a deducir el significado por el contexto", "Nada, si hay un comentario al lado"], a: 1,
+      o: ["Que rompe el estándar PSR, que exige nombres largos", "Que obliga al lector a deducir el significado por el contexto", "Que no pasa nada si hay un comentario al lado"], a: 1,
       w: "El coste no es teclear menos letras: es que cada lector tiene que reconstruir el significado. Y el comentario al lado envejece por su cuenta." },
     { id: "c3da997", q: "¿Cómo se nombra un booleano según la convención habitual?",
-      o: ["Con un sustantivo: `active`, `permission`","En mayúsculas, como las constantes","Con prefijo `is`, `has` o `should`: `isActive`, `hasPermission`"], a: 2,
+      o: ["Con un sustantivo: `active`, `permission`","En mayúsculas y con guiones bajos, como las constantes: `IS_ACTIVE`","Con prefijo `is`, `has` o `should`: `isActive`, `hasPermission`"], a: 2,
       w: "El prefijo hace que la condición se lea como una frase: `if (isActive)` en vez de `if (active)`." },
   ],
 
   "funciones-limpias": [
     { id: "cbfae8a", q: "Ves una llamada `generarInforme($datos, true)`. ¿Qué problema tiene ese `true`?",
-      o: ["Que en el sitio donde se lee no dice nada, y suele indicar que la función hace dos cosas","Ninguno si está documentado","Que debería ser un entero"], a: 0,
+      o: ["Que no dice nada donde se lee, y suele indicar que la función hace dos cosas","Que no tiene ninguno si el parámetro está documentado en el docblock de la función","Que PHP convierte el `true` a entero y la función recibe un 1 en lugar del booleano"], a: 0,
       w: "Si el booleano elige entre dos comportamientos, sepáralas: el nombre de cada función ya dice cuál quieres." },
     { id: "c8d2c12", q: "Una función tiene seis parámetros. ¿Qué suele significar?",
-      o: ["Que es una función potente y reutilizable", "Que hay un concepto escondido pidiendo ser su propio objeto", "Que faltan valores por defecto"], a: 1,
+      o: ["Que es una función potente y reutilizable en muchos contextos", "Que hay un concepto escondido pidiendo ser su propio objeto", "Que le faltan valores por defecto en los parámetros"], a: 1,
       w: "Cada parámetro multiplica los casos que probar y las formas de equivocarse en el orden." },
   ],
 
   "comentarios": [
     { id: "cd72d0c", q: "¿Qué comentario merece la pena escribir?",
-      o: ["El que explica qué hace la línea siguiente","El que documenta cada parámetro de cada método","El que explica por qué se decidió así, cuando no es deducible del código"], a: 2,
+      o: ["El que explica qué hace la línea siguiente para que se entienda sin leerla","El que documenta cada parámetro de cada método, aunque el tipo ya lo diga","El que explica por qué se decidió así, cuando no es deducible del código"], a: 2,
       w: "El código ya dice qué hace; lo que no puede decir es qué restricción externa o decisión de negocio hay detrás." },
     { id: "cd16b0a", q: "Necesitas un párrafo para que se entienda un bloque de código.",
-      o: ["Es señal de que el problema es el bloque: extraer una función con buen nombre suele eliminarlo","Escribe el comentario, para eso están","Divide el comentario en varias líneas cortas"], a: 0,
+      o: ["Es señal de que hay que mejorar el bloque, por ejemplo extrayendo una función con buen nombre","Es señal de que hace falta ese comentario, que para eso están","Es señal de que conviene partir el comentario en varias líneas cortas"], a: 0,
       w: "Además el nombre de una función no se puede desincronizar de su cuerpo, y un comentario sí." },
   ],
 
   "manejo-errores": [
     { id: "cf102ce", q: "Un método devuelve `null` cuando no encuentra nada. ¿Qué provoca?",
-      o: ["Un error en tiempo de compilación","Que todos los llamadores tengan que comprobarlo, y alguno se olvidará","Nada, es la forma estándar"], a: 1,
+      o: ["Que PHP dé un error de compilación si el método declara tipo de retorno","Que todos los llamadores tengan que comprobarlo, y alguno se olvidará","Que no pase nada, porque es la forma estándar de PHP"], a: 1,
       w: "El null viaja hacia arriba hasta que alguien no lo comprueba. Alternativas: excepción, colección vacía u objeto nulo explícito." },
     { id: "cb57977", q: "¿Qué propone «fail fast»?",
-      o: ["Terminar el programa ante cualquier error","Ejecutar primero los tests más rápidos","Validar las precondiciones al entrar y lanzar cuanto antes, en vez de propagar estado inválido"], a: 2,
+      o: ["Terminar el programa en cuanto aparezca cualquier error, por pequeño que sea, sin recuperarse","Ejecutar primero los tests más rápidos para que el pipeline de integración falle antes","Validar precondiciones al entrar y lanzar cuanto antes, sin propagar estado inválido"], a: 2,
       w: "Cuanto más cerca del origen falle, más barato es el diagnóstico. Si no, el error aparece tres capas más allá y sin contexto." },
   ],
 
   "code-smells-refactoring": [
     { id: "caae3d8", q: "Refactorizas y, de paso, corriges un caso que estaba mal. ¿Sigue siendo un refactor?",
-      o: ["No: si cambia el comportamiento es un cambio funcional, y merece su propio commit","Sí, mientras los tests pasen","Sí, si el cambio es pequeño"], a: 0,
+      o: ["No, si cambia el comportamiento ya es un cambio funcional con su propio commit","Sí, mientras los tests sigan pasando al terminar","No, salvo que añadas un test que cubra el arreglo en ese mismo commit del refactor"], a: 0,
       w: "Refactorizar es cambiar la forma sin cambiar el comportamiento. Mezclarlos hace imposible saber qué causó un fallo después." },
     { id: "c055c8d", q: "¿Por qué no conviene refactorizar sin tests?",
-      o: ["Porque los linters no detectan errores de lógica", "Porque no hay forma fiable de comprobar que el comportamiento no cambió", "Porque el equipo no aprobará el PR"], a: 1,
+      o: ["Porque los linters no detectan errores de lógica", "Porque no hay forma fiable de comprobar que el comportamiento no cambió", "Porque el equipo no aprobará un PR sin tests nuevos"], a: 1,
       w: "Sin esa red, cada refactor es una apuesta; y como no se puede comprobar, el miedo acaba congelando el código." },
   ],
 
@@ -767,61 +767,61 @@ window.MENTORAI_CHECKS = {
       o: ["Cohesión alta y acoplamiento bajo","Cobertura y complejidad ciclomática","Líneas por método y número de clases"], a: 0,
       w: "Cohesión mide si lo que está junto tiene que estarlo; acoplamiento, de cuánto ajeno dependes. Casi todo SOLID va de mover esas dos." },
     { id: "cb6021f", q: "¿Para qué sirven realmente los principios SOLID?",
-      o: ["Para reducir el número de líneas de código","Para que el código aguante el cambio sin romperse por sitios inesperados","Para cumplir con los estándares PSR"], a: 1,
+      o: ["Para reducir el número de líneas de código del proyecto","Para que el código aguante cambios sin romperse donde no esperas","Para cumplir los estándares PSR y pasar sin problemas las revisiones"], a: 1,
       w: "Si el código no va a cambiar, SOLID no te devuelve nada. El criterio siempre es el cambio esperado." },
   ],
 
   "srp-responsabilidad-unica": [
     { id: "c8e1d19", q: "Una clase calcula facturas, las guarda en BD y las imprime en PDF. ¿Cuántas razones para cambiar tiene?",
-      o: ["Una: todo va sobre facturas","Dos: cálculo y presentación","Tres, y cada una viene de un actor distinto: negocio, infraestructura y diseño"], a: 2,
+      o: ["Una: todo gira en torno a las facturas, así que es un solo tema","Dos: el cálculo por un lado y la presentación y guardado por otro","Tres: negocio, infraestructura y diseño, un actor cada una"], a: 2,
       w: "«Razón para cambiar» significa actor, no tema. Tres departamentos que pueden pedirte cambios son tres razones." },
     { id: "ca393ff", q: "¿Cómo detectas en la práctica que una clase viola SRP?",
-      o: ["Cuando distintas personas o áreas te piden cambios en ella por motivos que no tienen que ver entre sí","Cuando supera las 200 líneas","Cuando tiene más de cinco métodos públicos"], a: 0,
+      o: ["Cuando áreas distintas te piden cambios en ella por motivos ajenos","Cuando supera las 200 líneas o los diez métodos privados","Cuando tiene más de cinco métodos públicos, hagan lo que hagan"], a: 0,
       w: "La longitud es un síntoma, no la definición. Hay clases largas y cohesionadas, y clases cortas que sirven a dos amos." },
   ],
 
   "ocp-abierto-cerrado": [
     { id: "c38ffc1", q: "Cada método de pago nuevo te obliga a añadir un `case` al mismo switch. ¿Qué principio se está violando?",
-      o: ["Single Responsibility","Open/Closed: deberías poder extender sin modificar lo que ya funciona","Interface Segregation"], a: 1,
+      o: ["Single Responsibility, porque la clase de pagos hace demasiado","Open/Closed, porque extender obliga a modificar lo que ya funciona","Interface Segregation, porque la interfaz de pago es muy grande"], a: 1,
       w: "Cada edición de código probado es una oportunidad de romperlo. Con una interfaz, el caso nuevo es una clase nueva." },
     { id: "ccc9b90", q: "¿Qué mecanismo concreto permite cumplir Open/Closed?",
-      o: ["Marcar las clases como final","Usar traits para compartir el código común","El polimorfismo tras una interfaz, que es lo que hace Strategy"], a: 2,
+      o: ["Marcar las clases como final para que nadie las modifique","Usar traits para compartir el código común","Usar polimorfismo tras una interfaz, como hace Strategy"], a: 2,
       w: "Los patrones GoF no son un tema aparte: la mayoría son formas concretas de aplicar estos principios." },
   ],
 
   "lsp-sustitucion-liskov": [
     { id: "c2c5001", q: "Una subclase lanza una excepción en un método que el padre nunca lanzaba. ¿Es válido?",
-      o: ["No: quien la usa a través del tipo padre no puede saberlo y romperá","Sí, mientras la firma coincida","Sí, si se documenta en el PHPDoc"], a: 0,
+      o: ["No, quien la usa por el tipo padre no lo sabe y fallará","Sí, siempre que la firma del método coincida con la del padre","Depende: es válido si la excepción se documenta en el PHPDoc"], a: 0,
       w: "Liskov va de cumplir el contrato, no solo la firma. También lo violan endurecer precondiciones o debilitar postcondiciones." },
     { id: "c966479", q: "¿Por qué `Cuadrado extends Rectangulo` es el ejemplo clásico de violación?",
-      o: ["Porque un cuadrado no es matemáticamente un rectángulo","Porque el rectángulo mutable promete que ancho y alto son independientes, y el cuadrado rompe esa promesa","Porque duplica código entre las dos clases"], a: 1,
+      o: ["Porque un cuadrado no es, matemáticamente, un rectángulo de verdad","Porque el rectángulo mutable promete lados independientes y el cuadrado no","Porque duplica entre las dos clases el código de cálculo del área y el perímetro"], a: 1,
       w: "Matemáticamente sí lo es. Enseña que la herencia debe seguir al comportamiento, no a la taxonomía." },
   ],
 
   "isp-segregacion-interfaces": [
     { id: "cb8f0e2", q: "Una interfaz `Dispositivo` obliga a la impresora a implementar `faxear()`. ¿Cuál es el problema real?",
-      o: ["Que escribe más código del necesario","Que el nombre de la interfaz es demasiado genérico","Que acaba lanzando excepciones o devolviendo vacío, lo que además rompe Liskov"], a: 2,
+      o: ["Que la impresora escribe más código del que necesita para poder imprimir","Que el nombre de la interfaz es demasiado genérico","Que acaba lanzando excepciones o sin hacer nada, y eso rompe Liskov"], a: 2,
       w: "La solución es partirla por roles y que cada dispositivo implemente solo lo que de verdad cumple." },
     { id: "ca68796", q: "¿Por qué te acopla un método de una interfaz que nunca llamas?",
-      o: ["Porque si cambia su firma te toca reajustar igualmente","No te acopla si no lo usas","Porque consume memoria en tiempo de ejecución"], a: 0,
+      o: ["Porque si cambia su firma te toca reajustar igualmente","No te acopla, porque un método que no llamas no te afecta","Porque consume memoria en tiempo de ejecución aunque no lo llames"], a: 0,
       w: "Interfaces pequeñas y por rol reducen esa superficie de contacto." },
   ],
 
   "dip-inversion-dependencias": [
     { id: "ca0e7e9", q: "Un servicio de dominio importa directamente un repositorio MySQL. ¿Qué falla?",
-      o: ["Nada, si el repositorio implementa una interfaz","Que el dominio depende de infraestructura: la flecha apunta al revés","Que falta inyectarlo por constructor"], a: 1,
+      o: ["Nada, si el repositorio MySQL implementa alguna interfaz","Que el dominio depende de infraestructura y la flecha apunta al revés","Que falta inyectar el repositorio por constructor en lugar de crearlo dentro"], a: 1,
       w: "Inyectarlo por constructor no arregla nada si lo que inyectas sigue siendo la clase concreta." },
     { id: "c947a20", q: "Según DIP, ¿quién define la interfaz del repositorio?",
-      o: ["La capa de infraestructura, que sabe cómo se guarda","Da igual, mientras exista la interfaz","El módulo de alto nivel que la consume, según lo que necesita"], a: 2,
+      o: ["La capa de infraestructura, que sabe cómo se guarda","Da igual quién, mientras la interfaz exista","El módulo de alto nivel que la consume"], a: 2,
       w: "Este es el detalle que casi todo el mundo se salta: si la interfaz vive con la implementación, no has invertido nada." },
   ],
 
   "solid-en-conjunto": [
     { id: "c4e88de", q: "¿Cuándo NO merece la pena aplicar SOLID?",
-      o: ["En scripts de una vez, migraciones puntuales o código de pegamento","Nunca: siempre compensa","En proyectos con menos de tres desarrolladores"], a: 0,
+      o: ["En scripts de una vez, migraciones puntuales o código de pegamento","Nunca, porque a la larga siempre compensa aplicarlo","En proyectos pequeños, con menos de tres desarrolladores en el equipo"], a: 0,
       w: "Donde no se espera cambio, la abstracción es coste sin retorno. El criterio es el cambio esperado, no la pureza." },
     { id: "cb4058f", q: "¿Por qué se dice que los cinco principios se refuerzan entre sí?",
-      o: ["Porque los definió la misma persona","Porque extender sin modificar necesita abstracciones bien cortadas, y que los sustitutos cumplan el contrato","Porque todos hablan de clases"], a: 1,
+      o: ["Porque los definió la misma persona en el mismo libro","Porque extender sin modificar pide interfaces bien cortadas y sustitutos fieles","Porque todos hablan de clases y de cómo heredan entre sí"], a: 1,
       w: "No son cinco reglas sueltas: OCP se apoya en ISP y LSP, y todos ellos en que las dependencias apunten a interfaces." },
   ],
 
@@ -887,55 +887,55 @@ window.MENTORAI_CHECKS = {
 
   "phpunit-primeros-pasos": [
     { id: "c05eede", q: "¿Qué ordena el patrón AAA dentro de un test?",
-      o: ["Assert, Act, Arrange","Arrange, Act, Assert: preparar, ejecutar y comprobar","Act, Arrange, Assert"], a: 1,
+      o: ["Assert, Act, Arrange: comprobar, ejecutar y preparar","Arrange, Act, Assert: preparar, actuar y comprobar","Act, Arrange, Assert: actuar, preparar y medir"], a: 1,
       w: "Separarlas hace el test legible de un vistazo. Cuando cuesta separarlas, suele ser que prueba varias cosas a la vez." },
     { id: "c4bf504", q: "¿Qué nombre le pones a un test?",
-      o: ["El del método que prueba, como `testCalcular`","`test1`, `test2`… numerados por orden","Uno que describa el comportamiento esperado y el caso"], a: 2,
+      o: ["El del método que prueba, como `testCalcularTotal`","Uno corto y numerado por orden, como `test1` o `test2`","Uno que describa el comportamiento esperado y el caso"], a: 2,
       w: "Cuando falla en CI, el nombre es lo único que ves: debería contarte qué se rompió sin abrir el fichero." },
   ],
 
   "phpunit-data-providers": [
     { id: "c9002f3", q: "Tienes el mismo test copiado cinco veces cambiando solo el valor de entrada.",
-      o: ["Un data provider los convierte en datos y deja la lógica una sola vez","Es correcto: cada caso merece su test","Habría que meterlos en un bucle dentro del test"], a: 0,
+      o: ["Llevar los valores a un data provider y dejar un solo test","Dejarlo así, porque cada caso merece su propio test copiado","Meter los cinco valores en un bucle dentro de un único test"], a: 0,
       w: "Con el bucle, un fallo detiene el resto y ves un único test en rojo. El provider los reporta por separado." },
     { id: "c3d2fff", q: "¿Qué ventaja tiene el provider frente a un bucle dentro del test?",
-      o: ["Se ejecuta más rápido","Cada caso aparece por separado en la salida, así que sabes exactamente cuál falla","Permite usar mocks"], a: 1,
+      o: ["Que los casos se ejecutan en paralelo y la suite tarda bastante menos","Que cada caso sale por separado y sabes exactamente cuál falla","Que permite usar un mock distinto en cada caso"], a: 1,
       w: "Y nombrando las claves del array, el informe dice el nombre del caso en vez de un índice." },
   ],
 
   "phpunit-fixtures": [
     { id: "c50903b", q: "¿Cada cuánto se ejecuta `setUp()`?",
-      o: ["Una vez por clase de test","Solo antes del primero","Antes de cada método de test"], a: 2,
+      o: ["Una vez por cada clase de test","Después de cada método de test","Antes de cada método de test"], a: 2,
       w: "Es lo que garantiza el aislamiento: ningún test hereda lo que dejó el anterior, y por eso pueden correr en cualquier orden." },
     { id: "c671ae4", q: "¿Qué riesgo tiene poner cosas en `setUpBeforeClass()`?",
-      o: ["Que lo que dejes ahí lo comparten todos los tests, y por ahí se cuelan las dependencias de orden","Que es más lento","Que no funciona con data providers"], a: 0,
+      o: ["Que su estado lo comparten todos los tests y se cuelan dependencias de orden","Que ralentiza cada test, porque se vuelve a ejecutar antes de cada uno","Que no puede usarse junto con data providers en la misma clase"], a: 0,
       w: "Sirve para lo caro y compartido, como abrir una conexión. Para estado mutable, mejor `setUp()`." },
   ],
 
   "phpunit-mocks": [
     { id: "ca22c2d", q: "Quieres comprobar que tu código reacciona bien cuando la dependencia revienta.",
-      o: ["Hay que provocar el fallo real en un test de integración","`->willThrowException(...)` en el doble, y compruebas la reacción","No se puede probar sin tocar el código de producción"], a: 1,
+      o: ["Solo se puede con el fallo real, en un test de integración","Hacer que el doble lance con `->willThrowException(...)`","Modificar el código de producción para forzar el error"], a: 1,
       w: "Probar los caminos de error suele ser más valioso que el camino feliz, y con dobles sale barato." },
     { id: "c7dea56", q: "No vas a verificar cómo se llamó a la dependencia, solo qué devuelve. ¿Qué usas?",
-      o: ["`createMock()`, que es lo estándar","Una clase anónima escrita a mano","`createStub()`, que expresa mejor la intención y no rompe al refactorizar"], a: 2,
+      o: ["`createMock()`, que es el doble estándar y sirve para todo","`createPartialMock()`, para sustituir solo los métodos que necesitas","`createStub()`, que expresa la intención y no rompe al refactorizar"], a: 2,
       w: "`createMock()` genera verificaciones automáticas que no necesitas, y esas verificaciones se rompen al reorganizar el código." },
   ],
 
   "phpunit-excepciones-cobertura": [
     { id: "cc450af", q: "¿Dónde va `$this->expectException(...)` respecto a la llamada que lanza?",
-      o: ["Antes: si va detrás, la excepción escapa y el test falla","Después, como una aserción normal","Da igual, PHPUnit lo detecta"], a: 0,
+      o: ["Antes, porque si va detrás la excepción escapa y el test falla","Después, porque es una aserción y las aserciones van al final","Da igual, porque PHPUnit la detecta en cualquier punto"], a: 0,
       w: "Y conviene ser específico con la clase: esperar `Exception` a secas hace pasar el test aunque falle por otro motivo." },
     { id: "cc8cc22", q: "Tienes 100 % de cobertura. ¿Qué te garantiza?",
-      o: ["Que no hay bugs en las líneas cubiertas","Que todas las líneas se ejecutan, no que se compruebe nada","Que los tests son de buena calidad"], a: 1,
+      o: ["Que no quedan bugs en ninguna de las líneas que están cubiertas","Que todas las líneas se ejecutan, no que se compruebe nada","Que los tests son de calidad, porque recorren todo el código"], a: 1,
       w: "Un test sin una sola aserción da cobertura. Es útil al revés: la cobertura baja sí señala zonas sin probar." },
   ],
 
   "phpunit-integracion-bbdd": [
     { id: "c1a0e9f", q: "¿Por qué no se lanzan los tests de integración contra la BD de desarrollo?",
-      o: ["Por rendimiento","Porque no tiene el esquema actualizado","Porque el test falla cuando alguien cambia un dato, y además ensucia lo que estabas mirando"], a: 2,
+      o: ["Porque es más lenta al tener muchos más datos que la de test","Porque no suele tener el esquema al día con las migraciones","Porque el test falla si alguien cambia un dato, y ensucia lo que miras"], a: 2,
       w: "Con una base propia y controlada, el resultado depende solo del código." },
     { id: "c2913fd", q: "¿Qué estrategia deja cada test empezando con un estado conocido?",
-      o: ["Envolver cada test en una transacción y revertirla al terminar","Borrar todas las tablas en `tearDown()`","Ejecutar los tests siempre en el mismo orden"], a: 0,
+      o: ["Envolver cada test en una transacción y revertirla al terminar","Borrar las tablas en `setUpBeforeClass()`, una vez para toda la clase","Ejecutar los tests siempre en el mismo orden para que cada uno limpie"], a: 0,
       w: "Es rápido y deja la base como estaba pase lo que pase. Su límite: si el código bajo prueba hace su propio commit, deja de servir." },
   ],
 
@@ -1035,49 +1035,49 @@ window.MENTORAI_CHECKS = {
 
   "docker-imagen-vs-contenedor": [
     { id: "cb4f4f9", q: "Instalas un paquete dentro de un contenedor y luego lo borras y lo vuelves a crear.",
-      o: ["Se ha perdido: los cambios dentro del contenedor no se guardan en la imagen","El paquete sigue ahí: forma parte de la imagen","Depende de si hiciste commit del contenedor"], a: 0,
+      o: ["Se ha perdido, porque los cambios del contenedor no pasan a la imagen","Sigue ahí, porque al instalarlo pasó a formar parte de la imagen","Sigue ahí, porque Docker conserva el estado del contenedor al borrarlo"], a: 0,
       w: "La imagen es la receta congelada; el contenedor, el plato. Lo que quieras conservar va en un volumen o en el Dockerfile." },
     { id: "c9276af", q: "¿Por qué un contenedor arranca en milisegundos y una VM en segundos?",
-      o: ["Porque el contenedor usa menos memoria","Porque comparte el kernel del anfitrión en vez de virtualizarlo","Porque la imagen está comprimida"], a: 1,
+      o: ["Porque el contenedor usa menos memoria y arranca con menos procesos","Porque comparte el kernel del anfitrión en vez de virtualizarlo","Porque la imagen va comprimida y se descomprime muy rápido al arrancar"], a: 1,
       w: "De ahí también su limitación: no puedes correr un kernel distinto al del anfitrión." },
   ],
 
   "dockerfile-y-capas": [
     { id: "ce9d507", q: "Cambias una línea de código y el build reinstala todas las dependencias.",
-      o: ["Es inevitable, Docker no cachea dependencias","Falta usar `--no-cache` al revés","El `COPY . .` está antes del `composer install`: hay que copiar primero solo el composer.json"], a: 2,
+      o: ["Es inevitable, porque Docker no cachea la capa de dependencias","Falta añadir `--no-cache` para que Docker recalcule bien las capas","El `COPY . .` va antes del `composer install`, y hay que copiar antes solo el composer.json"], a: 2,
       w: "La caché es en cascada: si una capa cambia, todas las de abajo se invalidan. El orden del Dockerfile determina el tiempo de build." },
     { id: "c0c2fa4", q: "¿Qué invalida la caché de una capa?",
-      o: ["Que esa capa cambie, y entonces también todas las siguientes","Que haya pasado más de un día","Que cambie cualquier capa del Dockerfile"], a: 0,
+      o: ["Que esa capa cambie, y entonces también todas las siguientes","Que pase un tiempo desde el último build y la caché caduque","Que cambie cualquier capa del Dockerfile, esté antes o después de ella"], a: 0,
       w: "Por eso lo que cambia poco (dependencias) va arriba y lo que cambia mucho (tu código) va abajo." },
   ],
 
   "docker-compose": [
     { id: "c9ff93e", q: "Ejecutas `docker-compose down -v` y desaparecen los datos de tu base local.",
-      o: ["Es un bug conocido de compose","El `-v` borra también los volúmenes nombrados; sin él los datos sobreviven","Faltaba declarar el volumen como externo"], a: 1,
+      o: ["Es normal, porque `down` siempre borra los volúmenes, con o sin `-v`","El `-v` borra también los volúmenes nombrados, y sin él sobreviven","El `-v` solo borra los volúmenes anónimos, así que los datos se perdieron por otra causa"], a: 1,
       w: "Es la diferencia entre reiniciar el entorno y perderlo." },
     { id: "ccea533", q: "¿Cómo conecta tu app con el contenedor de MySQL en compose?",
-      o: ["Por la IP del contenedor, que hay que averiguar","Publicando el puerto 3306 en el anfitrión","Por el nombre del servicio como hostname, en la red privada que crea compose"], a: 2,
+      o: ["Por la IP del contenedor, que hay que averiguar con docker inspect","Publicando el puerto 3306 en el anfitrión y conectando a localhost","Por el nombre del servicio, en la red privada que crea compose"], a: 2,
       w: "Por eso no hace falta publicar puertos para que los servicios se hablen entre sí; publicar es para llegar tú desde fuera." },
   ],
 
   "docker-buenas-practicas": [
     { id: "c7c01d4", q: "Metes un secreto en una capa y lo borras en la siguiente instrucción del Dockerfile.",
-      o: ["Sigue en el historial de capas: cualquiera con la imagen puede recuperarlo","Queda eliminado de la imagen final","Solo es recuperable si la imagen no está comprimida"], a: 0,
+      o: ["Sigue en el historial de capas y cualquiera con la imagen puede sacarlo","Queda eliminado, porque la imagen final solo guarda el resultado del build","Solo se puede recuperar si la imagen no se ha comprimido al subirla"], a: 0,
       w: "Los secretos entran en tiempo de ejecución, por variables de entorno o montajes." },
     { id: "cf7cf03", q: "¿Qué te da un multi-stage build?",
-      o: ["Builds paralelos más rápidos","Compilar con todo el herramental y copiar solo el artefacto a una imagen limpia","Poder usar varias imágenes base a la vez en producción"], a: 1,
+      o: ["Ejecutar las fases del build en paralelo para que termine antes","Compilar con todo el herramental y copiar solo el artefacto a una imagen limpia","Combinar varias imágenes base a la vez en el contenedor que corre en producción"], a: 1,
       w: "Imagen mucho menor y menos superficie de ataque, porque el compilador no viaja a producción." },
     { id: "c934612", q: "¿Qué pasa si no tienes `.dockerignore`?",
-      o: ["El build falla si hay ficheros binarios","Docker ignora los ficheros ocultos por defecto","Todo el directorio se envía al daemon en cada build, incluidos `.git`, `vendor/` y quizá tu `.env`"], a: 2,
+      o: ["El build falla en cuanto encuentra ficheros binarios en el directorio","Nada grave, porque Docker ya ignora `.git` y los ficheros ocultos","Todo el directorio va al daemon en cada build, con `.git`, `vendor/` y quizá tu `.env`"], a: 2,
       w: "Además de lentitud, es una vía habitual de acabar con secretos dentro de la imagen." },
   ],
 
   "php-en-docker": [
     { id: "ca68bc1", q: "Recibes un 502 de nginx en tu entorno dockerizado. ¿Dónde miras primero?",
-      o: ["Entre nginx y PHP-FPM: PHP no ha llegado a ejecutarse","En los logs de PHP: el código ha fallado","En la base de datos"], a: 0,
+      o: ["En la conexión entre nginx y PHP-FPM, porque PHP ni llegó a ejecutarse","En los logs de PHP, porque el código de la aplicación ha fallado al ejecutarse","En la base de datos, porque la app no consigue abrir conexión"], a: 0,
       w: "Un 500 significa que tu código corrió y falló; un 502, que nginx no pudo hablar con FPM. Distinguirlo ahorra mucho tiempo." },
     { id: "c1dbcb1", q: "¿Por qué nginx y PHP-FPM van en contenedores separados?",
-      o: ["Porque no pueden compartir el mismo puerto","Por el principio de un proceso por contenedor: escalar y actualizar cada uno por su cuenta","Porque nginx necesita más memoria"], a: 1,
+      o: ["Porque dos procesos no pueden escuchar en el mismo puerto si comparten contenedor","Porque así hay un proceso por contenedor y cada uno escala por su cuenta","Porque nginx consume mucha más memoria que PHP-FPM y no caben en el mismo contenedor"], a: 1,
       w: "Encaja con cómo Docker entiende un contenedor: un proceso en primer plano cuyo ciclo de vida es el del contenedor." },
   ],
 
@@ -1156,56 +1156,56 @@ window.MENTORAI_CHECKS = {
 
   "patrones-introduccion": [
     { id: "c3b0dc2", q: "Reconoces un patrón y te apetece aplicarlo, aunque el problema es sencillo.",
-      o: ["Si la tensión que resuelve no existe todavía, solo estás añadiendo indirección","Aplícalo: es la forma de practicar","Aplícalo solo si el equipo lo conoce"], a: 0,
+      o: ["No lo apliques: sin esa tensión solo añades indirección","Aplícalo: es la mejor forma de practicar el patrón","Depende del equipo: aplícalo solo si ya conoce el patrón"], a: 0,
       w: "Cada patrón resuelve una tensión concreta. Sin esa tensión, el siguiente que lea el código tendrá que atravesar la abstracción para nada." },
     { id: "c977def", q: "¿Para qué sirve conocer los nombres de los patrones, más allá del código?",
-      o: ["Para las entrevistas técnicas","Para tener vocabulario común: decir «aquí hay un Strategy» ahorra un párrafo entero","Para poder aplicarlos automáticamente"], a: 1,
+      o: ["Para superar las entrevistas técnicas sobre diseño de software","Para tener un vocabulario común en las discusiones de diseño","Para poder aplicarlos de forma automática al ver el problema"], a: 1,
       w: "Los patrones son tanto vocabulario como solución; buena parte de su valor está en la conversación de diseño." },
   ],
 
   "patrones-creacionales": [
     { id: "cf13915", q: "Tu constructor ha acabado con siete parámetros, cinco de ellos opcionales.",
-      o: ["Añade sobrecargas del constructor","Pásalos en un array asociativo","Builder: nombra cada paso, deja construir por fases y valida al final"], a: 2,
+      o: ["Añade sobrecargas del constructor, una por combinación","Pásalos en un array asociativo de opciones","Usa un Builder que nombre cada paso y valide al final"], a: 2,
       w: "El array asociativo quita el problema de vista pero pierde el tipado: sigues sin saber qué se puede pasar." },
     { id: "c04c859", q: "¿Por qué el Singleton complica los tests?",
-      o: ["Porque es estado global: un test deja la instancia tocada y el siguiente hereda la resaca","Porque es más lento de instanciar","Porque no se puede documentar"], a: 0,
+      o: ["Porque es estado global que un test deja tocado para el siguiente","Porque crear la instancia única es costoso y ralentiza toda la suite","Porque su constructor privado impide que PHPUnit lo cargue"], a: 0,
       w: "Y además no se puede sustituir por un doble, porque la clase controla su propia creación." },
   ],
 
   "patrones-estructurales": [
     { id: "c046744", q: "Decorator y Proxy tienen la misma estructura. ¿Qué los distingue?",
-      o: ["El número de clases que envuelven","La intención: Decorator amplía lo que hace, Proxy decide si y cuándo se llega a hacer","Que Proxy requiere una interfaz y Decorator no"], a: 1,
+      o: ["La cantidad: Decorator envuelve varios objetos, Proxy solo uno","La intención: Decorator amplía, Proxy controla el acceso","La interfaz: Proxy exige una interfaz y Decorator no la necesita"], a: 1,
       w: "Misma forma, propósito distinto. Es el ejemplo de por qué los patrones no se distinguen por su diagrama." },
     { id: "c2f125b", q: "Tienes que integrar una librería externa cuya interfaz no encaja con tu código.",
-      o: ["Facade, para simplificar su uso","Modificas la librería en tu fork","Adapter: la envuelves y le das la forma que tu código espera"], a: 2,
+      o: ["Facade, para simplificar su uso y ocultar sus detalles","Un fork de la librería con la interfaz cambiada","Adapter, para darle la forma que espera tu código"], a: 2,
       w: "La clave del Adapter es «sin modificar el código existente»: es el patrón de integración por excelencia." },
   ],
 
   "patrones-comportamiento-1": [
     { id: "c7e52b9", q: "Un `switch` elige entre cinco formas de calcular el envío, y cada país nuevo lo toca.",
-      o: ["Strategy: cada algoritmo en su clase, y añadir uno no toca al cliente","Extrae cada rama a un método privado","Observer, para notificar el cambio de país"], a: 0,
+      o: ["Strategy, con cada algoritmo en su clase","Ninguno, basta con extraer cada rama a un método privado","Observer, para notificar cada cambio de país"], a: 0,
       w: "Extraer a métodos privados reduce el ruido pero no el problema: sigues editando código existente por cada caso nuevo." },
     { id: "c7d7cb5", q: "¿Qué permite el Observer que una llamada directa no?",
-      o: ["Mejor rendimiento","Que quien publica no sepa quién escucha, así que se añade comportamiento sin tocarlo","Ejecución en segundo plano"], a: 1,
+      o: ["Que la notificación sea más rápida que una llamada","Que quien publica no necesite saber quién le escucha","Que los oyentes se ejecuten siempre en segundo plano"], a: 1,
       w: "Esa es la gracia y también el peligro: el flujo real deja de leerse en un solo sitio." },
   ],
 
   "patrones-comportamiento-2": [
     { id: "cb47d85", q: "Necesitas poder encolar una operación, reintentarla y deshacerla.",
-      o: ["Strategy, encapsulando el algoritmo","Template Method","Command: la operación pasa a ser un objeto, y por eso se puede guardar y reintentar"], a: 2,
+      o: ["Strategy, que encapsula el algoritmo de la operación","Template Method, que fija los pasos de la operación","Command, que convierte la operación en un objeto"], a: 2,
       w: "Strategy responde a «cómo hacerlo»; Command a «qué hay que hacer», empaquetado." },
     { id: "c2b12cc", q: "¿Dónde reconoces Chain of Responsibility en Symfony o Laravel?",
-      o: ["En el middleware HTTP: la petición pasa por una cadena y cada eslabón decide si sigue","En el contenedor de servicios","En los eventos del kernel"], a: 0,
+      o: ["En el middleware HTTP, donde cada eslabón decide si sigue","En el contenedor de servicios, que encadena las dependencias","En los eventos del kernel, que notifican a todos sus listeners"], a: 0,
       w: "Reconocerlo explica por qué el orden importa tanto, y por qué un middleware que no llama al siguiente corta la petición." },
   ],
 
   "patrones-en-el-framework": [
     { id: "cb03698", q: "El contenedor entrega un proxy para un servicio lazy. ¿Qué patrón es y por qué?",
-      o: ["Decorator, porque añade la carga diferida","Proxy: controla el acceso, instanciando la clase real al primer método","Factory, porque lo construye"], a: 1,
+      o: ["Decorator, porque añade la carga diferida al servicio","Proxy, porque controla el acceso y crea la clase real al usarla","Factory, porque construye el servicio cuando hace falta"], a: 1,
       w: "El proxy cumple la misma interfaz y es barato de crear; controlar el acceso es exactamente la definición del patrón." },
     { id: "c4d8533", q: "¿Qué patrón hay detrás de los tagged services y por qué encaja con OCP?",
-      o: ["Observer: los servicios se suscriben","Ninguno en concreto; es una utilidad del contenedor","El consumidor recibe todos los etiquetados sin conocerlos, así que añadir uno es solo registrarlo"], a: 2,
-      w: "Es OCP implementado por el framework, y el mecanismo detrás de validadores, normalizadores y comandos." },
+      o: ["Decorator: cada servicio etiquetado envuelve al que tiene detrás y le añade su propia parte","Ninguno concreto, porque es solo una utilidad interna del contenedor para agrupar servicios","Strategy: el consumidor usa implementaciones que no conoce, y añadir una es etiquetarla"], a: 2,
+      w: "Es Strategy con registro automático: OCP implementado por el framework, y el mecanismo detrás de normalizadores, validadores y comandos." },
   ],
 
   "hexagonal": [
@@ -1304,10 +1304,10 @@ window.MENTORAI_CHECKS = {
 
   "linux-filesystem": [
     { id: "c098f34", q: "¿Qué implica que «todo sea un fichero» en Linux?",
-      o: ["Que dispositivos, procesos y conexiones se leen y escriben con las mismas herramientas","Que la configuración está siempre en texto plano","Que no existen las carpetas, solo rutas"], a: 0,
+      o: ["Que dispositivos y procesos se leen con las mismas herramientas","Que toda la configuración del sistema se guarda siempre en texto plano","Que los directorios no existen, solo rutas a ficheros"], a: 0,
       w: "`/proc/1234/status` es un proceso y `/dev/null` un dispositivo, y a los dos los lees con `cat`. Por eso un puñado de herramientas sirve para todo." },
     { id: "c32efcf", q: "¿Dónde vive la configuración del sistema y de las aplicaciones?",
-      o: ["/var","/etc","/usr/local"], a: 1,
+      o: ["/var/lib","/etc","/usr/lib"], a: 1,
       w: "La regla que ordena el árbol: `/etc` configura, `/var` cambia (logs, colas), `/usr` es software instalado, `/tmp` se puede borrar sin miedo." },
   ],
 
@@ -1316,25 +1316,25 @@ window.MENTORAI_CHECKS = {
       o: ["`cd ..`","`cd ~`","`cd -`"], a: 2,
       w: "`cd -` alterna entre el actual y el anterior. `..` sube un nivel y `~` va a tu home, que son otras cosas." },
     { id: "cd8a8b3", q: "¿Qué te dice `ls -la` que no te dice `ls`?",
-      o: ["Los ficheros ocultos y los permisos, propietario y fecha de cada uno","El tamaño en formato legible","El tipo MIME"], a: 0,
+      o: ["Los ocultos y, de cada fichero, permisos, dueño y fecha","Los tamaños en formato legible, en KB o MB","Los ficheros ordenados por fecha de modificación"], a: 0,
       w: "El tamaño legible es `-h`. Los ocultos (los que empiezan por punto) son justo los de configuración que sueles buscar." },
   ],
 
   "linux-permisos": [
     { id: "c1140db", q: "Un fichero tiene 644. ¿Qué puede hacer el grupo?",
-      o: ["Leer y escribir","Solo leer","Leer y ejecutar"], a: 1,
+      o: ["Leer y escribir","Leer, nada más","Leer y ejecutar"], a: 1,
       w: "6 es lectura+escritura para el propietario; 4 es solo lectura para grupo y otros. El bit de ejecución sería 1." },
     { id: "ce64906", q: "Tienes permiso de lectura sobre un fichero pero «permiso denegado» al abrirlo.",
-      o: ["El fichero está corrupto","Hay que ser root","Probablemente falta el bit de ejecución en algún directorio del camino: en directorios significa poder entrar"], a: 2,
+      o: ["El fichero lo tiene bloqueado otro proceso","Falta el bit `x` en el propio fichero","Falta el bit `x` en algún directorio del camino"], a: 2,
       w: "Es la confusión clásica: en ficheros `x` es ejecutar, en directorios es atravesarlos." },
   ],
 
   "linux-usuarios": [
     { id: "ccccd38", q: "Ejecutas `usermod -G docker david` y el usuario pierde sudo.",
-      o: ["Sin `-a` reemplaza TODOS sus grupos por `docker`","Es un bug de usermod","Falta reiniciar el servicio"], a: 0,
+      o: ["Sin `-a` reemplaza TODOS sus grupos por `docker`","`-G` solo cambia el grupo principal del usuario","Los grupos docker y sudo son incompatibles entre sí"], a: 0,
       w: "La `-a` es de append. Es el clásico que deja a alguien fuera hasta que otro lo arregla desde otra sesión." },
     { id: "c8cba6f", q: "Añades a un usuario a un grupo y sigue sin tener el permiso.",
-      o: ["Hay que reiniciar la máquina","Hay que reabrir sesión: los grupos se resuelven al iniciarla","El grupo no existe"], a: 1,
+      o: ["Hay que reiniciar el servicio que gestiona los usuarios y grupos","Hay que reabrir sesión, porque los grupos se leen al entrar","Hay que esperar a que el grupo se propague"], a: 1,
       w: "La sesión abierta conserva los grupos con los que arrancó; `newgrp` o volver a entrar es lo que lo aplica." },
   ],
 
@@ -1349,43 +1349,43 @@ window.MENTORAI_CHECKS = {
 
   "linux-texto-y-pipes": [
     { id: "cbe49ba", q: "Rediriges la salida a un fichero pero los errores siguen apareciendo en pantalla.",
-      o: ["Hay que usar `>>` en vez de `>`","Falta `2>&1`: stderr va por otro descriptor","Hay que ejecutarlo con sudo"], a: 1,
+      o: ["Hay que usar `>>` en vez de `>` para capturarlo todo","Hay que añadir `2>&1`, porque stderr va aparte","Hay que redirigir con `1>` en lugar de `>`"], a: 1,
       w: "Y el orden importa: primero rediriges stdout y después enganchas stderr a donde apunte." },
     { id: "cfae962", q: "¿Qué diferencia hay entre `>` y `>>`?",
-      o: ["`>` es para texto y `>>` para binario","Ninguna, son sinónimos","`>` sobrescribe el fichero; `>>` añade al final"], a: 2,
+      o: ["`>` es para texto; `>>` es para datos binarios","`>` escribe stdout; `>>` escribe también stderr","`>` vacía y escribe; `>>` añade al final"], a: 2,
       w: "Confundirlos cuesta caro: un `>` sobre un log lo deja vacío al instante." },
   ],
 
   "linux-scripting": [
     { id: "ce735fc", q: "¿Qué evita `set -euo pipefail` al principio de un script?",
-      o: ["Que siga adelante tras un error y que una variable vacía se trate como cadena vacía","Que el script se ejecute sin permisos","Que se ejecute más de una vez a la vez"], a: 0,
+      o: ["Que siga adelante tras un error o con una variable sin definir","Que el script se ejecute sin permisos de ejecución","Que dos copias del script corran a la vez"], a: 0,
       w: "Así nacen los `rm -rf $DIR/` catastróficos: sin esto, `$DIR` vacío no es un error, es una cadena vacía." },
     { id: "c16bc9b", q: "¿Por qué se entrecomillan las variables en bash, como en `\"$fichero\"`?",
-      o: ["Por estilo","Porque sin comillas, un valor con espacios se parte en varios argumentos","Porque bash no acepta variables sin comillas"], a: 1,
+      o: ["Porque sin comillas no se expanden las variables","Porque sin ellas un valor con espacios se parte en varios","Porque bash da un error de sintaxis si una variable va sin comillas"], a: 1,
       w: "Un fichero llamado «mi informe.txt» se convierte en dos argumentos, y el comando hace algo distinto de lo que crees." },
   ],
 
   "linux-sistema": [
     { id: "ce4d97f", q: "Tu script funciona en la terminal pero falla en cron.",
-      o: ["Cron no soporta scripts largos","Falta darle permisos de ejecución","Cron corre con un entorno mínimo: sin tu PATH ni lo que cargue el .bashrc"], a: 2,
+      o: ["Cron solo ejecuta scripts que estén en /usr/local/bin","Falta darle permisos de ejecución al script","Cron corre con un entorno mínimo, sin tu PATH ni tu .bashrc"], a: 2,
       w: "Por eso en cron se usan rutas absolutas y se declaran explícitamente las variables que el script necesita." },
     { id: "c3be84e", q: "¿Qué significa `*/15 * * * *`?",
       o: ["Cada 15 minutos","A las 15 de cada día","El día 15 de cada mes"], a: 0,
       w: "Los cinco campos son minuto, hora, día del mes, mes y día de la semana. Ante la duda, mejor comprobarlo: un cron mal puesto tarda en notarse." },
     { id: "c34a36d", q: "Sincronizas con `rsync -av --delete origen/ destino/` y borra cosas que no esperabas.",
-      o: ["rsync nunca borra, es un bug","`--delete` borra en destino lo que no está en origen: si el origen es el equivocado, vacías el destino","Faltaba la opción -z"], a: 1,
+      o: ["`--delete` borra en origen lo que ya se copió","`--delete` borra en destino lo que falta en origen","Faltaba `-z`: sin él rsync reescribe todo el destino"], a: 1,
       w: "Y ojo con la barra final del origen: con ella copia el contenido, sin ella copia el directorio dentro del destino." },
   ],
 
   "linux-procesos-y-red": [
     { id: "c6b85bb", q: "Un proceso no responde a `kill`. ¿Qué señal se está mandando y cuál es la alternativa?",
-      o: ["Manda SIGKILL; la alternativa es SIGTERM","Manda SIGHUP; la alternativa es reiniciar","Manda SIGTERM (recoge y vete); si no responde, SIGKILL lo mata sin margen"], a: 2,
+      o: ["Manda SIGKILL; la alternativa es SIGTERM, que es más fuerte","Manda SIGHUP; la alternativa es reiniciar el proceso","Manda SIGTERM; si no responde, SIGKILL lo mata sin margen"], a: 2,
       w: "Con SIGTERM el proceso puede cerrar conexiones y guardar. SIGKILL no le da esa oportunidad, así que es el último recurso." },
     { id: "c058df7", q: "Quieres saber qué proceso está ocupando el puerto 8080.",
       o: ["`ss -tlnp`","`ps aux | grep 8080`","`netstat -r`"], a: 0,
       w: "El `-p` (que suele necesitar sudo) es el que revela el proceso. `ps` no sabe nada de puertos." },
     { id: "cdc8cd2", q: "¿Qué te ahorra un `~/.ssh/config`?",
-      o: ["Tener que introducir la contraseña","Repetir usuario, puerto y clave en cada conexión: `ssh prod` y listo","Abrir el firewall"], a: 1,
+      o: ["Introducir la contraseña cada vez que conectas","Repetir usuario, puerto y clave en cada conexión","Abrir el puerto 22 en el firewall del servidor remoto"], a: 1,
       w: "Y lo aprovechan también `scp`, `rsync` y git: se configura una vez y sirve para todo." },
   ],
 
