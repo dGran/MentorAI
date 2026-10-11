@@ -373,10 +373,10 @@
     mountQuiz(entry, slug, prose);
   }
 
-  MentorAI.initQuiz = initQuiz;
   function gateUntilPassed(courseSlug) {
     if (!loadResult(courseSlug)?.passed) gateDoneButton();
   }
 
+  MentorAI.initQuiz = initQuiz;
   MentorAI.Quiz = { resultOf: loadResult, gateUntilPassed };
 })();

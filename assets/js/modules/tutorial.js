@@ -205,10 +205,14 @@
     initTocToggle();
   }
 
-  function scrollToRequestedSection() {
-    const target = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+  const requestedSectionId = () => decodeURIComponent(location.hash.slice(1));
 
-    target?.scrollIntoView();
+  const isRequestedSectionMissing = () => Boolean(location.hash) && !document.getElementById(requestedSectionId());
+
+  function scrollToRequestedSection(wasMissing) {
+    if (!wasMissing) return;
+
+    document.getElementById(requestedSectionId())?.scrollIntoView();
   }
 
   function loadLessonData(onLoaded) {
@@ -217,15 +221,16 @@
     if (!prose) return;
 
     const examCourse = MentorAI.TutorialNav?.examCourseOf(currentTutorialSlug()) ?? null;
+    const isSectionMissing = isRequestedSectionMissing();
     const load = () =>
       MentorAI.loadData(examCourse ? EXAM_LESSON_DATA : LESSON_DATA)
         .then(onLoaded)
-        .then(scrollToRequestedSection)
+        .then(() => scrollToRequestedSection(isSectionMissing))
         .catch((error) => console.error(error));
 
     if (examCourse) MentorAI.Quiz?.gateUntilPassed(examCourse.slug);
 
-    if (examCourse || location.hash || !("IntersectionObserver" in window)) {
+    if (examCourse || isSectionMissing || !("IntersectionObserver" in window)) {
       load();
       return;
     }

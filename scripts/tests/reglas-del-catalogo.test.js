@@ -96,3 +96,25 @@ test("a tutorial needs exactly one main element", () => {
   assert.equal(reglas.tieneUnSoloMain("<main></main><main></main>"), false);
   assert.equal(reglas.tieneUnSoloMain("<main><article></article>"), false);
 });
+
+const FULL_DATA_PAGES = ["curso.html"];
+const ALWAYS_LOADED = '<script src="../tutorials/quiz-summary.js"></script><script src="../assets/js/modules/data-loader.js"></script>';
+
+test("a lesson loading the summary and the loader has no data problems", () => {
+  assert.deepEqual(reglas.problemasDeCargaDeDatos("tutorials/x.html", `${ALWAYS_LOADED}<script src="../assets/js/modules/checks.js"></script>`, FULL_DATA_PAGES), []);
+});
+
+test("a page without the exam summary or the loader is reported", () => {
+  const problems = reglas.problemasDeCargaDeDatos("index.html", "<script src=\"assets/js/modules/init.js\"></script>", FULL_DATA_PAGES);
+
+  assert.equal(problems.length, 2);
+  assert.match(problems[0], /quiz-summary\.js/);
+  assert.match(problems[1], /data-loader\.js/);
+});
+
+test("on-demand data loaded eagerly is reported except on full data pages", () => {
+  const eager = `${ALWAYS_LOADED}<script src="tutorials/quizzes.js"></script><script src="tutorials/practica.js"></script>`;
+
+  assert.equal(reglas.problemasDeCargaDeDatos("index.html", eager, FULL_DATA_PAGES).length, 2);
+  assert.deepEqual(reglas.problemasDeCargaDeDatos("curso.html", eager, FULL_DATA_PAGES), []);
+});

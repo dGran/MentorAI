@@ -442,9 +442,9 @@ async function main() {
     anotar("tutorial íntegro y con estilos", contenido, secciones > 0);
 
     const checksBajoDemanda = await sesion.evaluar(`
-      new Promise((ok) => {
+      new Promise((resolver) => {
         window.scrollTo(0, document.body.scrollHeight);
-        setTimeout(() => ok(document.querySelectorAll(".check__item").length), ${ESPERA_DATOS_BAJO_DEMANDA_MS});
+        setTimeout(() => resolver(document.querySelectorAll(".check__item").length), ${ESPERA_DATOS_BAJO_DEMANDA_MS});
       })
     `);
 

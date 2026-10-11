@@ -6,6 +6,8 @@ const TABLA = /<table\b/gi;
 const TABLA_ENVUELTA = /<div class="table-wrap">\s*<table\b/gi;
 const APERTURA_DE_MAIN = /<main\b/gi;
 const CIERRE_DE_MAIN = /<\/main>/gi;
+const DATOS_BAJO_DEMANDA = ["quizzes", "checks", "practica"];
+const DATOS_SIEMPRE = ["tutorials/quiz-summary.js", "modules/data-loader.js"];
 
 const esFechaReal = (texto) =>
   FECHA_ISO.test(texto) && !Number.isNaN(Date.parse(texto)) && new Date(texto).toISOString().slice(0, 10) === texto;
@@ -41,4 +43,14 @@ const tablasSinEnvolver = (html) => (html.match(TABLA) ?? []).length - (html.mat
 const tieneUnSoloMain = (html) =>
   (html.match(APERTURA_DE_MAIN) ?? []).length === 1 && (html.match(CIERRE_DE_MAIN) ?? []).length === 1;
 
-module.exports = { esFechaReal, diaLocal, problemasDeRevision, tieneDrawerEscrito, tablasSinEnvolver, tieneUnSoloMain };
+function problemasDeCargaDeDatos(fichero, html, paginasConDatosCompletos) {
+  const problemas = DATOS_SIEMPRE.filter((script) => !html.includes(script)).map((script) => `${fichero}: no carga ${script}`);
+
+  if (paginasConDatosCompletos.includes(fichero)) return problemas;
+
+  const cargadosDeMas = DATOS_BAJO_DEMANDA.filter((nombre) => new RegExp(`tutorials/${nombre}\\.js`).test(html));
+
+  return [...problemas, ...cargadosDeMas.map((nombre) => `${fichero}: carga ${nombre}.js, que se inyecta bajo demanda`)];
+}
+
+module.exports = { esFechaReal, diaLocal, problemasDeRevision, tieneDrawerEscrito, tablasSinEnvolver, tieneUnSoloMain, problemasDeCargaDeDatos };

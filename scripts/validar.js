@@ -485,6 +485,8 @@ function validarTablasEnvueltas() {
 
 /* ---------- 6. Coherencia de los <script> entre páginas ---------- */
 
+const PAGINAS_CON_DATOS_COMPLETOS = ["curso.html", "repaso.html", "perfil.html", "offline.html"];
+
 function validarScripts() {
   const modulos = (html) => [...html.matchAll(/modules\/([a-z-]+)\.js/g)].map((m) => m[1]);
   const referencia = new Set(modulos(leer("index.html")));
@@ -494,6 +496,8 @@ function validarScripts() {
     const presentes = new Set(modulos(leer(fichero)));
 
     if (!presentes.has("init")) error(`${fichero}: no carga init.js`);
+
+    reglas.problemasDeCargaDeDatos(fichero, leer(fichero), PAGINAS_CON_DATOS_COMPLETOS).forEach(error);
 
     for (const modulo of referencia) {
       if (soloTutorial.has(modulo)) continue;

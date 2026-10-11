@@ -6,7 +6,6 @@
   const DATA_GLOBALS = {
     quizzes: "MENTORAI_QUIZZES",
     checks: "MENTORAI_CHECKS",
-    practica: "MENTORAI_PRACTICE",
   };
 
   const pending = {};
