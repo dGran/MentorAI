@@ -1,0 +1,15 @@
+const { abrir } = require("./cdp.js");
+const [BASE, LECCION, ULTIMA, OUT] = process.argv.slice(2);
+(async () => { const b = await abrir(9443); await b.ancho(1280, 900, false); const out = [];
+  await b.ir(`${BASE}/tutorials/${LECCION}.html`, 1000); await b.evaluar("localStorage.clear(); 1"); await b.ir(`${BASE}/tutorials/${LECCION}.html`, 1200);
+  await b.evaluar(`document.querySelector(".check__option").focus(); 1`); await b.tecla("Enter", "Enter", 13); await b.sleep(400);
+  out.push("check: " + JSON.stringify(await b.evaluar(`(() => { const it = document.querySelector(".check__item"); const fb = it.querySelector(".check__feedback"); const marcadas = [...it.querySelectorAll(".check__option--correct, .check__option--wrong")]; return { foco: document.activeElement.className, ariaDisabled: document.activeElement.getAttribute("aria-disabled"), rol: fb.getAttribute("role"), tabindex: fb.getAttribute("tabindex"), anuncio: fb.textContent.trim().replace(/\\s+/g, " ").slice(0, 80), opacidadMarcadas: marcadas.map(o => getComputedStyle(o).opacity), etiquetas: it.querySelectorAll(".answer-tag").length }; })()`)));
+  await b.tecla("Enter", "Enter", 13); await b.sleep(200);
+  out.push("check, segundo Enter: etiquetas=" + await b.evaluar(`document.querySelector(".check__item").querySelectorAll(".answer-tag").length`));
+  await b.ir(`${BASE}/tutorials/${ULTIMA}.html#quiz`, 1500); await b.evaluar("localStorage.removeItem('academia-repaso'); 1");
+  await b.evaluar(`(() => { const qs = [...document.querySelectorAll("#quiz-form .quiz__question")]; qs.slice(0, 3).forEach(q => q.querySelectorAll("input")[Number(q.dataset.correct)].checked = true); document.querySelector("#quiz-form .quiz__submit").click(); return 1; })()`); await b.sleep(400);
+  out.push("examen incompleto: " + JSON.stringify(await b.evaluar(`(() => { const e = document.activeElement; const qs = [...document.querySelectorAll("#quiz-form .quiz__question")]; return { focoEnPregunta: qs.findIndex(q => q.contains(e)), aviso: document.getElementById("quiz-result").textContent.trim() }; })()`)));
+  await b.evaluar(`(() => { [...document.querySelectorAll("#quiz-form .quiz__question")].forEach(q => { const i = q.querySelectorAll("input"); if (![...i].some(x => x.checked)) i[Number(q.dataset.correct)].checked = true; }); document.querySelector("#quiz-form .quiz__submit").click(); return 1; })()`); await b.sleep(500);
+  out.push("examen completo: " + JSON.stringify(await b.evaluar(`(() => { const qs = [...document.querySelectorAll("#quiz .quiz__question")]; const repaso = JSON.parse(localStorage.getItem("academia-repaso") || "{}"); return { foco: document.activeElement.id, etiquetasPorPregunta: qs.map(q => q.querySelectorAll(".answer-tag").length).join(","), registrosRepaso: Object.keys(repaso).length, maxIntentos: Math.max(...Object.values(repaso).map(r => r.s ?? 1)) }; })()`)));
+  out.push("errores de consola: " + (b.consola.length ? JSON.stringify(b.consola) : 0));
+  console.log(out.join("\n")); b.cerrar(); })();
