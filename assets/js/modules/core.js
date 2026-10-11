@@ -318,7 +318,7 @@
 
   /* ---------- Saltar al contenido ----------
      Se inyecta desde aquí, como el enlace de "Repaso" en la navegación,
-     para no tener que tocar los 200 HTML del catálogo. */
+     para no tener que tocar los HTML del catálogo. */
 
   function initSkipLink() {
     const destino = document.querySelector("main") ?? document.querySelector("header.nav + *");

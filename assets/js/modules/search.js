@@ -1,6 +1,6 @@
 /* ============================================================
    MentorAI — Búsqueda dentro del contenido (full-text)
-   El índice (tutorials/search-index.js) pesa ~1,6 MB, así que no se
+   El índice (tutorials/search-index.js) pesa ~1,9 MB, así que no se
    carga con la página: se inyecta como <script> la primera vez que
    alguien escribe en un buscador. Inyectar un <script> sí funciona
    por file://, a diferencia de fetch.

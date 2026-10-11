@@ -190,8 +190,8 @@
   })();
 
   /* ---------- Subrayados dentro de un tutorial ----------
-     Una clave por tutorial, para no cargar los subrayados de 257
-     tutoriales cuando solo estás leyendo uno. Cada subrayado se ancla por
+     Una clave por tutorial, para no cargar los subrayados de todos
+     los tutoriales cuando solo estás leyendo uno. Cada subrayado se ancla por
      sección + texto + nº de ocurrencia, nunca por posición en el DOM: así
      sobrevive a que el tutorial se reescriba, mientras su texto siga ahí. */
 
