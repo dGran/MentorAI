@@ -103,7 +103,7 @@ function pistasDeForma(pregunta) {
 
 const BLOQUE_DE_CODIGO = /<div class="code-block">[\s\S]*?<\/pre>\s*<\/div>/g;
 const APERTURA_DE_CALLOUT = /<div class="callout callout--\w+[^"]*"[^>]*>/g;
-const CALLOUT_CON_CUERPO = /^<div class="callout callout--\w+[^"]*"[^>]*>\s*<svg[\s\S]*?<\/svg>\s*<div class="callout__body">/;
+const CALLOUT_CON_CUERPO = /^<div class="callout callout--\w+[^"]*"[^>]*>\s*<svg(?:(?!<\/svg>)[\s\S])*<\/svg>\s*<div class="callout__body">/;
 const ESTRUCTURA_ANTIGUA = [
   [/class="toc__title">En este tutorial/, "el índice se titula «En este tutorial» y no «En esta página»"],
   [/class="tutorial-hero container"/, "el hero no tiene un .container dentro (las acciones del tutorial no se inyectan)"],

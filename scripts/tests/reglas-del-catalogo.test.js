@@ -195,6 +195,12 @@ test("a callout without body is caught even when a correct one follows it", () =
   assert.deepEqual(reglas.problemasDeEstructura(html), ["1 callout(s) sin .callout__body"]);
 });
 
+test("a callout with an icon but no body is caught even when a correct one follows it", () => {
+  const html = '<div class="callout callout--tip"><svg></svg><p>x</p></div><div class="callout callout--info"><svg></svg><div class="callout__body"><p>y</p></div></div>';
+
+  assert.deepEqual(reglas.problemasDeEstructura(html), ["1 callout(s) sin .callout__body"]);
+});
+
 test("a callout with extra classes or attributes is still checked", () => {
   assert.deepEqual(reglas.problemasDeEstructura('<div class="callout callout--tip extra" id="a"><p>x</p></div>'), ["1 callout(s) sin .callout__body"]);
 });
