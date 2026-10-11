@@ -21,9 +21,7 @@
     region.className = "undo-toast";
     region.innerHTML = `<span class="undo-toast__message" role="status"></span><button type="button" class="undo-toast__action" hidden>${UNDO_LABEL}</button>`;
     actionOf().addEventListener("click", undo);
-    region.addEventListener("focusin", pauseTimer);
     region.addEventListener("mouseenter", pauseTimer);
-    region.addEventListener("focusout", startTimer);
     region.addEventListener("mouseleave", startTimer);
     document.body.appendChild(region);
   }
@@ -46,10 +44,6 @@
     pauseTimer();
 
     if (!pendingUndo) return;
-
-    const isInside = region.contains(document.activeElement) || region.matches(":hover");
-
-    if (isInside) return;
 
     pendingTimer = setTimeout(dismiss, UNDO_WINDOW_MS);
   }
@@ -84,7 +78,7 @@
     actionOf().hidden = false;
     requestAnimationFrame(() => (messageOf().textContent = message));
     actionOf().focus();
-    pendingTimer = setTimeout(dismiss, UNDO_WINDOW_MS);
+    startTimer();
   }
 
   MentorAI.offerUndo = offerUndo;
