@@ -134,6 +134,14 @@
     </li>`;
   }
 
+  function hasStartedAnyCourse(courses) {
+    const read = new Set(MentorAI.Reading.list().map((entry) => entry.slug));
+
+    return courses.some((course) =>
+      lessonsOf(course).some((slug) => MentorAI.Progress.has(slug) || read.has(slug))
+    );
+  }
+
   function renderHome() {
     const host = document.getElementById("home-exams");
 
@@ -143,7 +151,7 @@
       hasExam(course.slug)
     );
 
-    if (courses.length === 0) {
+    if (courses.length === 0 || !hasStartedAnyCourse(courses)) {
       host.hidden = true;
       return;
     }

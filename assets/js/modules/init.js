@@ -42,6 +42,7 @@
       () => MentorAI.Exams?.renderHome(),
 
       () => MentorAI.Home.render(),
+      () => MentorAI.Home.renderStart(),
       () => MentorAI.Home.initSearch(),
       () => MentorAI.initHeroStat(),
 
