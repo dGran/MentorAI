@@ -124,26 +124,43 @@ contrato y el registro en `plan-tanda-2026-10-11.md`. Lo que cambió:
 - **Contenido:** 9 lecciones corregidas contra fuentes y 188 enlaces entre
   lecciones (de 200 a 83 piezas sin enlace entrante).
 
+**Segunda tanda del 2026-10-11:** #78, #77, #16, #17, #32 (partido en #83 y #84),
+#27, #22, #25 (piloto) y #26, con el contrato y el registro en
+`plan-tanda-2026-10-11-b.md`. Lo que cambió:
+- **Contraste y foco:** marca oscurecida hasta 4,5:1, anillo `:focus-visible` en
+  todo lo enfocable y tokens de estado (`--success`, `--danger`…).
+  `scripts/contraste.js` mide la matriz de pares en los dos temas, con su test.
+- **Checks y exámenes accesibles:** `aria-live`, foco en la primera sin responder
+  y etiquetas «Correcto»/«Tu respuesta» que no dependen del color.
+- **Navegación:** rutas plegadas con `<details>`, chips de nivel en Cursos,
+  «paso N de M» y miga Inicio › Curso › lección. El inicio orienta a quien llega
+  («Empieza aquí» con el grado y los cimientos).
+- **Lectura:** `--measure: 48ch` en párrafos, listas y callouts, y un solo
+  `<main>` por página (lo exige `validar.js`).
+- **Carga bajo demanda (#26):** los índices y las lecciones no cargan
+  `quizzes.js`, `checks.js` ni `practica.js`. `data-loader.js` los inyecta al
+  acercarse al final de la lección, o al momento en la lección del examen o si el
+  ancla pide `#quiz`/`#check`. Los totales salen de `tutorials/quiz-summary.js`,
+  generado por `scripts/generar-resumen-examenes.js`. `validar.js` da ERROR si el
+  resumen está desfasado o si una página carga datos que no le tocan. Solo curso,
+  repaso, perfil y offline cargan los tres de entrada. Lección: 1.073 → 425 KB.
+- **Sesgo de longitud:** el piloto «fundamentos» fija el criterio del distractor
+  plausible (en el refinado de #25). Quedan los demás cursos.
+
 ## Para retomar (2026-10-11)
 
-`main` en `2aea342`, producción en `v37`. Ningún PR abierto.
+`main` en `f0065c2`, producción en `v47`. Ningún PR abierto.
 
-**Tomables sin decisión del usuario:**
-1. **#26 (P2).** Carga bajo demanda de quizzes, checks y práctica. Quedó fuera
-   de la tanda por tamaño. Sus dos comentarios de refinado traen todo lo medido:
-   - hace falta un resumen generado con el total y la nota de corte por curso,
-     más los ids válidos para el contador «Repaso (N)» del menú;
-   - el criterio rebajado (~415 KB por lección) lo aprobó el usuario.
-2. **#77 (P3).** Desborde de 1 px en `sql-joins` y solape del `.flow` de `alerting`
-   en escritorio. Ya estaban en `main`.
-3. **#78 (P3).** Tests para las reglas de `validar.js`.
+**Tomable sin decisión del usuario:**
+- **#25.** Reescribir los distractores del resto de cursos con el criterio del
+  piloto (refinado de #25), en bloques de cursos, y pasar el umbral a error al
+  final. Hoy, con la correcta como la más larga, el 79 % de 464 preguntas de
+  examen y el 80 % de 682 checks.
 
 **Esperan una decisión del usuario:**
-- **#16:** paleta para el contraste en oscuro. Desbloquea #17 y, a través de él, #32.
-- **#22:** qué recomendar en el inicio.
-- **#25:** criterio del distractor plausible.
-- **#27:** diseño de las páginas de rutas y cursos.
-- **#33 (lo que queda):** preguntas de escenario, orden de rutas, niveles y lecciones gemelas.
+- **#33 (lo que queda):** preguntas de escenario, orden de rutas, niveles,
+  lecciones gemelas y piezas fuera de ruta.
+- **#39:** qué huecos del catálogo se convierten en issue y cuáles se descartan.
 
 Las épicas de curso #34-#38 van por `/implement-epic`. #34 tiene anotado lo que
 las plantillas antiguas de Go, Python y Rust siguen haciendo mal en escritorio.
@@ -218,6 +235,18 @@ Cada una costó una depuración; están aquí para no repetirlas.
 - **`quizzes.js`, `checks.js` y `manifest.js` están en el shell del SW.** Un PR de
   contenido que cambia una pregunta también sube `VERSION`. A #18 se le pasó hasta
   el final del PR.
+- **`display: flex` le gana a `[hidden]`.** El filtro de Cursos ponía `hidden`
+  y la tarjeta seguía visible; el QA miraba el atributo y lo dio por bueno (#27).
+  Se verifica la visibilidad real (`getBoundingClientRect`), no el atributo.
+- **El límite secundario de GraphQL corta `gh pr` y `gh project`** tras muchas
+  llamadas seguidas, durante minutos. Comentarios, PRs, merges y CI van por REST
+  (`gh api repos/...`) y los movimientos del tablero, por una cola con reintentos.
+- **Los subagentes llenan el disco y pisan ficheros compartidos.** En una tanda
+  dejaron más de 1 GB en el scratchpad y uno sobrescribió un script de QA. Cada
+  revisor usa su propio directorio temporal y lo borra al terminar.
+- **El service worker sirve el HTML viejo en la primera visita tras subir
+  `VERSION`.** Un perfil de Chrome reutilizado mide la página anterior; la
+  medida buena es la segunda visita.
 
 ## Rutina pendiente: revisión de frescura
 
@@ -239,10 +268,12 @@ el resto del catálogo (SQL, OOP, Linux…) envejece a décadas, no a meses.
 | --- | --- |
 | `node scripts/validar.js` | Valida el catálogo entero, incluida la cabecera y el pie de plantilla de cada tutorial. Corre en CI |
 | `node scripts/generar-indice.js` | Regenera el índice de búsqueda tras tocar tutoriales |
+| `node scripts/generar-resumen-examenes.js` | Regenera `tutorials/quiz-summary.js` tras tocar un examen (`--comprobar` lo usa `validar.js`) |
+| `node scripts/contraste.js` | Matriz de contraste de los tokens en los dos temas |
 | `node scripts/verificar-offline.js` | Comprueba el offline con el servidor apagado y el scroll horizontal a 320/375 px. Corre en CI |
 | `node --test 'scripts/tests/**/*.test.js'` | Tests de la lógica pura (`node:test` + `vm`, sin dependencias). Corre en CI |
 
-Al tocar `sw.js` o el shell (módulos, CSS, `quizzes.js`, `checks.js`, `manifest.js`), **subir `VERSION`** (va por `v37`). La
+Al tocar `sw.js` o el shell (módulos, CSS, `quizzes.js`, `checks.js`, `manifest.js`), **subir `VERSION`** (va por `v47`). La
 caché de contenido guardado (`academia-content`) ya no lleva versión: un
 despliegue no borra lo que el lector guardó para viajar.
 
