@@ -14,6 +14,9 @@
 
   const MentorAI = (window.MentorAI = window.MentorAI || {});
 
+  const VERDICT_CORRECT = "Correcto.";
+  const VERDICT_WRONG = "No es esa. La correcta es";
+
   const KEY = "academia-checks";
 
   function readAll() {
@@ -73,7 +76,10 @@
     return `<li class="check__item" data-correct="${question.correct}">
       <p class="check__question">${escapeHtml(question.text)}</p>
       <div class="check__options">${options}</div>
-      <p class="check__why" hidden>${escapeHtml(question.why)}</p>
+      <div class="check__feedback" role="status" tabindex="-1">
+        <p class="check__verdict"></p>
+        <p class="check__why" hidden>${escapeHtml(question.why)}</p>
+      </div>
     </li>`;
   }
 
@@ -86,6 +92,19 @@
   }
 
   /* ---------- Interacción ---------- */
+
+  function showVerdict(item, isCorrect, correctText) {
+    const feedback = item.querySelector(".check__feedback");
+    const why = item.querySelector(".check__why");
+
+    item.querySelector(".check__verdict").textContent = isCorrect
+      ? VERDICT_CORRECT
+      : `${VERDICT_WRONG} «${correctText}».`;
+
+    if (why?.textContent) why.hidden = false;
+
+    feedback.focus();
+  }
 
   function wire(section, prepared, slug) {
     const results = new Array(prepared.length).fill(null);
@@ -114,9 +133,8 @@
         option.disabled = true;
       }
 
-      const why = item.querySelector(".check__why");
-
-      if (why?.textContent) why.hidden = false;
+      MentorAI.markAnswer(options, correct, chosen);
+      showVerdict(item, chosen === correct, options[correct].firstChild.textContent);
 
       item.classList.add("is-answered");
       results[index] = chosen === correct;

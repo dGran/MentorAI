@@ -191,7 +191,7 @@
           <button type="submit" class="quiz__submit">Comprobar respuestas</button>
         </div>
       </form>
-      <div class="quiz__result" id="quiz-result" hidden></div>
+      <div class="quiz__result" id="quiz-result" role="status" tabindex="-1" hidden></div>
     </section>`;
   }
 
@@ -215,6 +215,8 @@
     if (answer !== correct) {
       labels[answer].classList.add("quiz__option--wrong");
     }
+
+    MentorAI.markAnswer(labels, correct, answer);
 
     const why = questionEl.querySelector(".quiz__why");
 
@@ -262,6 +264,7 @@
         resultEl.innerHTML =
           '<p class="quiz__warning">Responde todas las preguntas antes de comprobar.</p>';
         resultEl.hidden = false;
+        resultEl.focus();
         return;
       }
 
@@ -272,6 +275,7 @@
       form.querySelector(".quiz__actions").hidden = true;
       resultEl.innerHTML = resultHtml(score, total, threshold, passed);
       resultEl.hidden = false;
+      resultEl.focus();
 
       document.getElementById("quiz-retry")?.addEventListener("click", () => {
         mountQuiz(entry, lessonSlug, prose)?.scrollIntoView({

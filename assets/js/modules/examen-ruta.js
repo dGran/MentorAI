@@ -191,7 +191,7 @@
           <button type="submit" class="quiz__submit">Comprobar respuestas</button>
         </div>
       </form>
-      <div class="quiz__result" id="examen-ruta-result" hidden></div>
+      <div class="quiz__result" id="examen-ruta-result" role="status" tabindex="-1" hidden></div>
     </section>`;
 
     const form = document.getElementById("examen-ruta-form");
@@ -228,6 +228,8 @@
 
         if (!isCorrect) opciones[respuesta].classList.add("quiz__option--wrong");
 
+        MentorAI.markAnswer(opciones, correcta, respuesta);
+
         const why = bloque.querySelector(".quiz__why");
 
         if (why) why.hidden = false;
@@ -237,6 +239,7 @@
         resultEl.innerHTML =
           '<p class="quiz__warning">Responde todas las preguntas antes de comprobar.</p>';
         resultEl.hidden = false;
+        resultEl.focus();
         return;
       }
 
@@ -254,6 +257,7 @@
           : `Necesitas ${corte}/${preguntas.length}. Las explicaciones de arriba enlazan a las lecciones que conviene repasar.`
       }</p>`;
       resultEl.hidden = false;
+      resultEl.focus({ preventScroll: true });
       resultEl.scrollIntoView({ behavior: "smooth", block: "center" });
 
       MentorAI.Repaso?.record(`ruta:${path.slug}`, aprobado);
