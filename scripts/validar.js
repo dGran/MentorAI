@@ -462,8 +462,8 @@ function validarDrawerSoloDinamico() {
   );
 }
 
-const TABLA = /<table\b/g;
-const TABLA_ENVUELTA = /<div class="table-wrap">\s*<table\b/g;
+const TABLA = /<table\b/gi;
+const TABLA_ENVUELTA = /<div class="table-wrap">\s*<table\b/gi;
 
 function validarTablasEnvueltas() {
   for (const fichero of htmlDeTutoriales()) {

@@ -34,6 +34,7 @@ const ANCHOS_MOVILES = [320, 375];
 const ALTO_MOVIL = 800;
 const LIMITE_VISTA_MOVIL_MS = 6000;
 const SONDEO_VISTA_MOVIL_MS = 50;
+const DOCUMENTO_CARGADO = "complete";
 const BASE = `http://127.0.0.1:${PUERTO_WEB}/${SUBDIR}/`;
 
 const PAGINAS = [
@@ -193,7 +194,7 @@ const PROCESO_YA_TERMINADO = "ESRCH";
 async function vistaPintada(sesion, url) {
   try {
     return await sesion.evaluar(`
-      location.href === ${JSON.stringify(url)} && document.readyState === "complete"
+      location.href === ${JSON.stringify(url)} && document.readyState === ${JSON.stringify(DOCUMENTO_CARGADO)}
         ? new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(() => ok(true))))
         : false
     `);
@@ -206,10 +207,12 @@ async function esperarVistaPintada(sesion, url) {
   const limite = Date.now() + LIMITE_VISTA_MOVIL_MS;
 
   while (Date.now() < limite) {
-    if (await vistaPintada(sesion, url)) return;
+    if (await vistaPintada(sesion, url)) return true;
 
     await esperar(SONDEO_VISTA_MOVIL_MS);
   }
+
+  return false;
 }
 
 async function medirDesbordesMoviles(sesion) {
@@ -230,7 +233,12 @@ async function medirDesbordesMoviles(sesion) {
 
       for (const vista of vistas) {
         await sesion.enviar("Page.navigate", { url: BASE + vista });
-        await esperarVistaPintada(sesion, BASE + vista);
+        const isPintada = await esperarVistaPintada(sesion, BASE + vista);
+
+        if (!isPintada) {
+          sinPintar.push(`${vista} a ${ancho}px`);
+          continue;
+        }
 
         const { exceso, titulo } = await sesion.evaluar(`({
           exceso: document.documentElement.scrollWidth - document.documentElement.clientWidth,
