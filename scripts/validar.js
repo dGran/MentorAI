@@ -17,6 +17,7 @@ const fs = require("fs");
 const path = require("path");
 const vm = require("vm");
 const { execFileSync } = require("child_process");
+const reglas = require("./reglas-del-catalogo");
 
 const ROOT = path.join(__dirname, "..");
 const errores = [];
@@ -91,32 +92,8 @@ function validarSintaxis() {
 
 /* ---------- 2. Manifiesto ---------- */
 
-const FECHA_ISO = /^\d{4}-\d{2}-\d{2}$/;
-
-const esFechaReal = (texto) =>
-  FECHA_ISO.test(texto) && !Number.isNaN(Date.parse(texto)) && new Date(texto).toISOString().slice(0, 10) === texto;
-
-function hoyEnLocal() {
-  const ahora = new Date();
-
-  return [ahora.getFullYear(), ahora.getMonth() + 1, ahora.getDate()].map((n) => String(n).padStart(2, "0")).join("-");
-}
-
 function validarRevision(tutorial) {
-  if (tutorial.reviewed === undefined) return;
-
-  if (typeof tutorial.reviewed !== "string" || !esFechaReal(tutorial.reviewed)) {
-    error(`manifest: «${tutorial.slug}» tiene reviewed «${tutorial.reviewed}», que no es una fecha AAAA-MM-DD`);
-    return;
-  }
-
-  if (tutorial.date && tutorial.reviewed < tutorial.date) {
-    error(`manifest: «${tutorial.slug}» tiene reviewed ${tutorial.reviewed}, anterior a su date ${tutorial.date}`);
-  }
-
-  if (tutorial.reviewed > hoyEnLocal()) {
-    error(`manifest: «${tutorial.slug}» tiene reviewed ${tutorial.reviewed}, en el futuro`);
-  }
+  reglas.problemasDeRevision(tutorial, reglas.diaLocal()).forEach(error);
 }
 
 function validarManifest() {
@@ -480,10 +457,8 @@ function validarCabecerasDeTutoriales() {
   }
 }
 
-const DRAWER_ESCRITO = /class=["'][^"']*\bnav-drawer(-backdrop)?\b(?!__)/;
-
 function validarDrawerSoloDinamico() {
-  const conDrawerEscrito = htmlDeTutoriales().filter((fichero) => DRAWER_ESCRITO.test(leer(fichero)));
+  const conDrawerEscrito = htmlDeTutoriales().filter((fichero) => reglas.tieneDrawerEscrito(leer(fichero)));
 
   if (conDrawerEscrito.length === 0) return;
 
@@ -492,13 +467,9 @@ function validarDrawerSoloDinamico() {
   );
 }
 
-const TABLA = /<table\b/gi;
-const TABLA_ENVUELTA = /<div class="table-wrap">\s*<table\b/gi;
-
 function validarTablasEnvueltas() {
   for (const fichero of htmlDeTutoriales()) {
-    const html = leer(fichero);
-    const sinEnvolver = (html.match(TABLA) ?? []).length - (html.match(TABLA_ENVUELTA) ?? []).length;
+    const sinEnvolver = reglas.tablasSinEnvolver(leer(fichero));
 
     if (sinEnvolver > 0) error(`${fichero}: ${sinEnvolver} <table> sin <div class="table-wrap"> (desborda en móvil)`);
   }
