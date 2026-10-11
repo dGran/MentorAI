@@ -226,7 +226,7 @@ func TestListarProductos(t *testing.T) {
         <p>Los benchmarks siguen la misma convención: fichero <code>_test.go</code>, función con prefijo <code>Benchmark</code> que recibe <code>*testing.B</code>:</p>
 
         <pre><code data-lang="go">func BenchmarkSuma(b *testing.B) {
-    for i := 0; i &lt; b.N; i++ {   // b.N lo ajusta el framework automáticamente
+    for b.Loop() {
         Suma(3, 4)
     }
 }
@@ -238,9 +238,10 @@ go test -bench=. ./...
 # Con memoria
 go test -bench=. -benchmem ./...
 
-# Salida: ns/op, B/op, allocs/op
-# BenchmarkSuma-8   1000000000   0.3 ns/op   0 B/op   0 allocs/op
+# Salida por benchmark: iteraciones, ns/op, B/op y allocs/op
 </code></pre>
+
+        <p><code>b.Loop()</code> (Go 1.24+) decide cuántas vueltas dar, mide solo el cuerpo del bucle (la preparación previa no cuenta) y evita que el compilador elimine lo que mides. El patrón clásico <code>for i := 0; i &lt; b.N; i++</code> sigue funcionando, pero tiene trampa: el compilador inlinea una función trivial como <code>Suma</code> y, como su resultado no se usa, la borra. El benchmark mide entonces un bucle vacío, y por eso salen cifras como 0.3 ns/op.</p>
 
         <h2 id="resumen">Resumen</h2>
         <ul class="keypoints">
@@ -248,7 +249,7 @@ go test -bench=. -benchmem ./...
           <li>Table-driven tests con <code>t.Run</code>: el patrón dominante en Go. Añadir un caso es añadir una línea a la tabla.</li>
           <li>En lugar de mocks pesados, define interfaces pequeñas e implementa fakes directamente. Compilados, sin magia de runtime.</li>
           <li><code>httptest.NewRequest</code> y <code>httptest.NewRecorder</code> permiten testear handlers HTTP sin servidor.</li>
-          <li>Benchmarks con <code>BenchmarkNombre(b *testing.B)</code> y <code>go test -bench=.</code>. El framework ajusta <code>b.N</code> automáticamente.</li>
+          <li>Benchmarks con <code>BenchmarkNombre(b *testing.B)</code> y <code>go test -bench=.</code>. El bucle es <code>for b.Loop()</code> (Go 1.24+): mide solo el cuerpo y evita que el compilador elimine la llamada.</li>
           <li><code>go test -race ./...</code> detecta race conditions. <code>go test -cover ./...</code> mide cobertura. Ambos deben pasar en CI.</li>
         </ul>
       </article>
