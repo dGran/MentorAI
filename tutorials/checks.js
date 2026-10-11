@@ -1879,7 +1879,7 @@ window.MENTORAI_CHECKS = {
       o: ["Un framework externo como Gin o Echo","Nginx delante para atender y repartir las conexiones","Solo la librería estándar, con `net/http`"], a: 2,
       w: "Es una de las razones de que Go se use tanto en servicios: el servidor HTTP viene de serie y es de calidad de producción." },
     { id: "ca64513", q: "Un `http.Handler` es cualquier cosa con `ServeHTTP`. ¿Qué permite eso?",
-      o: ["Tanto testearlo sin servidor como componer middlewares","Que Go lo registre solo en el router, sin llamar a `Handle`","Componer middlewares, cada uno envolviendo al siguiente"], a: 0,
+      o: ["Tanto testearlo sin servidor como componer middlewares","Que Go lo registre solo en el router, sin llamar a `Handle`","Comprobar al compilar que cada ruta tiene handler"], a: 0,
       w: "Es interfaz pequeña llevada al extremo, y de ahí sale el patrón de middleware sin necesitar framework." },
   ],
 
@@ -1988,7 +1988,7 @@ window.MENTORAI_CHECKS = {
       o: ["El relativo es más rápido porque Python no tiene que recorrer entero todo el `sys.path`","El relativo solo funciona en los tests, porque pytest añade el directorio actual al path","El absoluto parte de la raíz y el relativo (`from . import x`) del paquete actual"], a: 2,
       w: "Los absolutos se recomiendan por legibilidad: dicen de dónde viene cada cosa sin saber dónde estás." },
     { id: "c03ac6e", q: "Un import circular entre dos módulos.",
-      o: ["Suele indicar responsabilidades mal repartidas, y se arregla extrayendo lo común","Python lo resuelve solo, porque guarda cada módulo en caché la primera vez que lo importa","Se arregla moviendo el import dentro de la función que lo usa"], a: 0,
+      o: ["Suele indicar responsabilidades mal repartidas, y se arregla extrayendo lo común","Python lo resuelve solo, porque guarda cada módulo en caché la primera vez que lo importa","Se arregla renombrando uno de los dos módulos implicados"], a: 0,
       w: "Importar dentro de la función lo esconde y funciona, pero el problema de diseño sigue ahí." },
   ],
 
@@ -2115,7 +2115,7 @@ window.MENTORAI_CHECKS = {
       w: "Compilar dependencias en Rust es lento de verdad, así que este orden en el Dockerfile ahorra minutos por build." },
     { id: "cdfe6ff", q: "¿Qué es `cargo add` equivalente a hacer en PHP?",
       o: ["`composer install`, que instala lo que fija el lock","`composer require`, que añade la crate y actualiza el lock","`composer update`, que sube todas las versiones"], a: 1,
-      w: "`cargo build` sería el equivalente a `composer install`: instala lo que dice el lock sin re-resolver." },
+      w: "`cargo build --locked` sería el equivalente a `composer install`: compila con lo que dice el lock y falla si habría que re-resolver. Un `cargo build` a secas sí re-resuelve si el `Cargo.toml` ha cambiado." },
   ],
 
   "rust-editores": [
@@ -2255,7 +2255,7 @@ window.MENTORAI_CHECKS = {
 
   "rust-cargo-y-crates": [
     { id: "ce2ff68", q: "¿Se versiona `Cargo.lock`?",
-      o: ["Solo en librerías, para fijar lo que reciben sus usuarios","En ninguno: se regenera en cada `cargo build`","En los dos, porque así el CI prueba versiones conocidas"], a: 2,
+      o: ["Solo en librerías, para fijar lo que reciben sus usuarios","No, porque se regenera en cada `cargo build`","Sí, también en librerías, porque el CI usa versiones conocidas"], a: 2,
       w: "Desde 2023 la guía de Cargo recomienda versionarlo por defecto también en librerías: el CI y quien clona el repo compilan con versiones conocidas. Quien usa tu librería no hereda tu lock: resuelve su propio grafo." },
     { id: "c1e92b7", q: "¿Qué son las features de una crate?",
       o: ["Partes opcionales que se activan al declarar la dependencia","Versiones alternativas de la crate publicadas en paralelo con otro nombre","Ramas de desarrollo de la crate que aún no se han publicado en crates.io"], a: 0,
