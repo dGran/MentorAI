@@ -33,6 +33,7 @@ const SUBDIR = "MentorAI";
 const ANCHOS_MOVILES = [320, 375];
 const ALTO_MOVIL = 800;
 const LIMITE_VISTA_MOVIL_MS = 6000;
+const ESPERA_DATOS_BAJO_DEMANDA_MS = 2000;
 const SONDEO_VISTA_MOVIL_MS = 50;
 const DOCUMENTO_CARGADO = "complete";
 const BASE = `http://127.0.0.1:${PUERTO_WEB}/${SUBDIR}/`;
@@ -439,6 +440,15 @@ async function main() {
     const { secciones } = JSON.parse(contenido);
 
     anotar("tutorial íntegro y con estilos", contenido, secciones > 0);
+
+    const checksBajoDemanda = await sesion.evaluar(`
+      new Promise((resolver) => {
+        window.scrollTo(0, document.body.scrollHeight);
+        setTimeout(() => resolver(document.querySelectorAll(".check__item").length), ${ESPERA_DATOS_BAJO_DEMANDA_MS});
+      })
+    `);
+
+    anotar("checks cargados bajo demanda sin red", `${checksBajoDemanda} preguntas`, checksBajoDemanda > 0);
 
     await sesion.navegar(BASE + "index.html");
 

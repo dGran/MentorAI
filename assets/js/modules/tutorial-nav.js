@@ -124,12 +124,12 @@
   }
 
   function examIsOnThisLesson(course, slug) {
-    const questions = (window.MENTORAI_QUIZZES ?? {})[course.slug]?.questions ?? [];
+    const total = MentorAI.examSummary?.(course.slug)?.total ?? 0;
     const lessons = courseSequence()
       .filter((step) => step.course === course)
       .map((step) => step.slug);
 
-    return questions.length > 0 && lessons.at(-1) === slug;
+    return total > 0 && lessons.at(-1) === slug;
   }
 
   function endOfCourseHtml(course, slug) {
@@ -210,7 +210,12 @@
 
   /* ---------- API pública ---------- */
 
+  function examCourseOf(slug) {
+    return (window.MENTORAI_COURSES ?? []).find((course) => examIsOnThisLesson(course, slug)) ?? null;
+  }
+
   MentorAI.TutorialNav = {
+    examCourseOf,
     courseOfSlug,
     courseSequence,
     injectCourseCrumb,
