@@ -462,6 +462,18 @@ function validarDrawerSoloDinamico() {
   );
 }
 
+const TABLA = /<table\b/gi;
+const TABLA_ENVUELTA = /<div class="table-wrap">\s*<table\b/gi;
+
+function validarTablasEnvueltas() {
+  for (const fichero of htmlDeTutoriales()) {
+    const html = leer(fichero);
+    const sinEnvolver = (html.match(TABLA) ?? []).length - (html.match(TABLA_ENVUELTA) ?? []).length;
+
+    if (sinEnvolver > 0) error(`${fichero}: ${sinEnvolver} <table> sin <div class="table-wrap"> (desborda en móvil)`);
+  }
+}
+
 /* ---------- 6. Coherencia de los <script> entre páginas ---------- */
 
 function validarScripts() {
@@ -615,6 +627,7 @@ validarHeroContraManifest();
 validarIdsDuplicados();
 validarCabecerasDeTutoriales();
 validarDrawerSoloDinamico();
+validarTablasEnvueltas();
 validarScripts();
 validarShell();
 validarListasDePaginas();

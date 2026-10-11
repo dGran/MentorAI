@@ -32,7 +32,9 @@ const PUERTO_CDP = 9336;
 const SUBDIR = "MentorAI";
 const ANCHOS_MOVILES = [320, 375];
 const ALTO_MOVIL = 800;
-const ESPERA_VISTA_MOVIL_MS = 600;
+const LIMITE_VISTA_MOVIL_MS = 6000;
+const SONDEO_VISTA_MOVIL_MS = 50;
+const DOCUMENTO_CARGADO = "complete";
 const BASE = `http://127.0.0.1:${PUERTO_WEB}/${SUBDIR}/`;
 
 const PAGINAS = [
@@ -189,9 +191,34 @@ function anotar(nombre, valor, bien) {
 
 const PROCESO_YA_TERMINADO = "ESRCH";
 
+async function vistaPintada(sesion, url) {
+  try {
+    return await sesion.evaluar(`
+      location.href === ${JSON.stringify(url)} && document.readyState === ${JSON.stringify(DOCUMENTO_CARGADO)}
+        ? new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(() => ok(true))))
+        : false
+    `);
+  } catch {
+    return false;
+  }
+}
+
+async function esperarVistaPintada(sesion, url) {
+  const limite = Date.now() + LIMITE_VISTA_MOVIL_MS;
+
+  while (Date.now() < limite) {
+    if (await vistaPintada(sesion, url)) return true;
+
+    await esperar(SONDEO_VISTA_MOVIL_MS);
+  }
+
+  return false;
+}
+
 async function medirDesbordesMoviles(sesion) {
   const cursos = await sesion.evaluar(`(window.MENTORAI_COURSES || []).map((curso) => curso.slug)`);
-  const vistas = ["articulos.html", ...cursos.map((slug) => `curso.html?slug=${slug}`)];
+  const tutoriales = await sesion.evaluar(`(window.ACADEMIA_TUTORIALS || []).map((tutorial) => tutorial.href)`);
+  const vistas = ["articulos.html", ...cursos.map((slug) => `curso.html?slug=${slug}`), ...tutoriales];
   const desbordes = [];
   const sinPintar = [];
 
@@ -206,7 +233,12 @@ async function medirDesbordesMoviles(sesion) {
 
       for (const vista of vistas) {
         await sesion.enviar("Page.navigate", { url: BASE + vista });
-        await esperar(ESPERA_VISTA_MOVIL_MS);
+        const isPintada = await esperarVistaPintada(sesion, BASE + vista);
+
+        if (!isPintada) {
+          sinPintar.push(`${vista} a ${ancho}px`);
+          continue;
+        }
 
         const { exceso, titulo } = await sesion.evaluar(`({
           exceso: document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -222,7 +254,13 @@ async function medirDesbordesMoviles(sesion) {
     await sesion.enviar("Emulation.clearDeviceMetricsOverride");
   }
 
-  return { cursos: cursos.length, vistas: vistas.length * ANCHOS_MOVILES.length, desbordes, sinPintar };
+  return {
+    cursos: cursos.length,
+    tutoriales: tutoriales.length,
+    vistas: vistas.length * ANCHOS_MOVILES.length,
+    desbordes,
+    sinPintar,
+  };
 }
 
 function terminarSiSigueVivo(terminar) {
@@ -421,11 +459,11 @@ async function main() {
 
     const movil = await medirDesbordesMoviles(sesion);
     const problemasMoviles = [...movil.sinPintar.map((vista) => `sin pintar: ${vista}`), ...movil.desbordes];
-    const isMovilMedido = movil.cursos > 0 && problemasMoviles.length === 0;
+    const isMovilMedido = movil.cursos > 0 && movil.tutoriales > 0 && problemasMoviles.length === 0;
 
     anotar(
       "sin scroll horizontal a 320 y 375 px",
-      isMovilMedido ? `${movil.vistas} vistas` : problemasMoviles.slice(0, 3).join(" · ") || "sin cursos que medir",
+      isMovilMedido ? `${movil.vistas} vistas` : problemasMoviles.slice(0, 3).join(" · ") || "sin cursos ni tutoriales que medir",
       isMovilMedido
     );
 
