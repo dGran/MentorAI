@@ -62,7 +62,7 @@
     return (path.steps ?? [])
       .filter((step) => step.type === "course")
       .map((step) => step.ref)
-      .filter((ref) => (window.MENTORAI_QUIZZES ?? {})[ref]?.questions?.length);
+      .filter((ref) => MentorAI.examSummary?.(ref)?.total);
   }
 
   /* Muestra equilibrada: unas pocas de cada curso, no todas las de uno. */
@@ -103,7 +103,7 @@
       cursos: cursos.length,
       preguntas: Math.min(
         cursos.length * POR_CURSO,
-        cursos.reduce((n, c) => n + window.MENTORAI_QUIZZES[c].questions.length, 0)
+        cursos.reduce((n, c) => n + MentorAI.examSummary(c).total, 0)
       ),
     };
   }
@@ -302,7 +302,11 @@
 
       const contenedor = document.getElementById("examen-ruta-host");
 
-      if (contenedor) start(path, contenedor);
+      if (!contenedor) return;
+
+      MentorAI.loadData(["quizzes"])
+        .then(() => start(path, contenedor))
+        .catch((error) => console.error(error));
     });
   }
 

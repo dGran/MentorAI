@@ -46,8 +46,7 @@
       () => MentorAI.initHeroStat(),
 
       () => MentorAI.initTutorialPage(),
-      () => MentorAI.initChecks(),
-      () => MentorAI.initQuiz(),
+      () => MentorAI.loadLessonData(() => [() => MentorAI.initChecks(), () => MentorAI.initQuiz()].forEach(ejecutarAislado)),
       () => MentorAI.initYear(),
       () => MentorAI.SyntaxHighlighter.run(),
       () => MentorAI.initHighlights?.(),

@@ -11,6 +11,10 @@
 
   const MentorAI = (window.MentorAI = window.MentorAI || {});
 
+  const LESSON_DATA = ["checks"];
+  const EXAM_LESSON_DATA = ["checks", "quizzes"];
+  const LESSON_DATA_MARGIN = "100% 0px";
+
   /* ---------- Iconos ---------- */
 
   const DONE_SVG =
@@ -201,6 +205,36 @@
     initTocToggle();
   }
 
+  function loadLessonData(onLoaded) {
+    const prose = document.querySelector("article.prose");
+
+    if (!prose) return;
+
+    const isExamLesson = MentorAI.TutorialNav?.hasExamHere(currentTutorialSlug()) ?? false;
+    const load = () =>
+      MentorAI.loadData(isExamLesson ? EXAM_LESSON_DATA : LESSON_DATA)
+        .then(onLoaded)
+        .catch((error) => console.error(error));
+
+    if (isExamLesson || !("IntersectionObserver" in window)) {
+      load();
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+
+        observer.disconnect();
+        load();
+      },
+      { rootMargin: LESSON_DATA_MARGIN }
+    );
+
+    observer.observe(prose.lastElementChild ?? prose);
+  }
+
+  MentorAI.loadLessonData = loadLessonData;
   MentorAI.currentTutorialSlug = currentTutorialSlug;
   MentorAI.initTutorialPage = initTutorialPage;
 })();

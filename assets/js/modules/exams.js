@@ -20,12 +20,8 @@
 
   /* ---------- Datos ---------- */
 
-  function quizOf(courseSlug) {
-    return (window.MENTORAI_QUIZZES ?? {})[courseSlug] ?? null;
-  }
-
   function hasExam(courseSlug) {
-    return Boolean(quizOf(courseSlug)?.questions?.length);
+    return Boolean(MentorAI.examSummary?.(courseSlug)?.total);
   }
 
   function resultOf(courseSlug) {
@@ -49,12 +45,12 @@
   /* ---------- Estado legible ---------- */
 
   function statusOf(course) {
-    const quiz = quizOf(course.slug);
+    const summary = MentorAI.examSummary?.(course.slug);
 
-    if (!quiz?.questions?.length) return null;
+    if (!summary?.total) return null;
 
-    const total = quiz.questions.length;
-    const threshold = quiz.passingScore ?? Math.ceil(total * PASS_RATIO);
+    const total = summary.total;
+    const threshold = summary.passingScore ?? Math.ceil(total * PASS_RATIO);
     const result = resultOf(course.slug);
 
     if (!result) {
