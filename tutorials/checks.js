@@ -984,7 +984,7 @@ window.MENTORAI_CHECKS = {
       o: ["gRPC: controlas ambos extremos y ganas con binario y contratos generados","REST, por simplicidad","GraphQL, para que cada servicio pida lo que necesita"], a: 0,
       w: "Hacia fuera pesa más que REST se depure con un navegador y lo entienda cualquiera sin herramientas." },
     { id: "c5da2af", q: "¿Qué pierdes al pasar de REST a GraphQL en cuanto a caché?",
-      o: ["Nada, GraphQL cachea igual","La caché HTTP intermedia: al ir todo por POST, los proxies no pueden cachear","Solo la caché del navegador"], a: 1,
+      o: ["Nada, GraphQL cachea igual","La caché HTTP intermedia: un solo endpoint, casi siempre POST","Solo la caché del navegador; la de los proxies y CDN sigue igual"], a: 1,
       w: "GraphQL lo compensa con caché en cliente, pero es caché que gestionas tú, no infraestructura que ya estaba." },
   ],
 

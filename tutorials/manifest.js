@@ -554,7 +554,7 @@ window.ACADEMIA_TUTORIALS = [
     slug: "cr-invalidacion",
     title: "Invalidación: el problema difícil de verdad",
     description:
-      "Por qué invalidar es difícil de verdad, por qué el TTL gana casi siempre por ser correcto por construcción, y las tres técnicas explícitas: por clave, por etiqueta y por clave versionada.",
+      "Por qué invalidar es difícil de verdad, por qué el TTL gana casi siempre porque acota la obsolescencia por construcción, y las tres técnicas explícitas: por clave, por etiqueta y por clave versionada.",
     href: "tutorials/cr-invalidacion.html",
     categories: ["rendimiento"],
     topic: "Caché y rendimiento",
