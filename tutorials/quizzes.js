@@ -1391,7 +1391,7 @@ window.MENTORAI_QUIZZES = {
       w: "Compartir memoria es lo que hace a los hilos baratos y peligrosos a la vez: comunicarse es gratis, pero cualquier acceso concurrente sin sincronizar es una carrera. Entre procesos hace falta IPC, pero un fallo no arrastra a los demás.",
       lesson: "procesos-hilos" },
     { id: "q7189e7", q: "¿Por qué PHP-FPM usa múltiples procesos en lugar de múltiples hilos?",
-      o: ["Porque PHP no soporta la creación de hilos", "Por el modelo shared-nothing: ninguna petición comparte memoria con otra", "Porque los procesos son más rápidos que los hilos en sistemas Linux", "Porque Linux no permite crear hilos dentro de un proceso FastCGI"], a: 1,
+      o: ["Porque PHP no soporta la creación de hilos", "Por el modelo shared-nothing: cada petición con su propia memoria", "Porque los procesos son más rápidos que los hilos en sistemas Linux", "Porque Linux no permite crear hilos dentro de un proceso FastCGI"], a: 1,
       w: "Cada petición arranca con el estado limpio y muere al terminar. Es lo que hace que PHP perdone tantos errores de estado global, y también lo que hay que replantearse al pasar a workers que viven horas. Ojo: shared-nothing evita carreras en memoria, no en la BD o el Redis que comparten.",
       lesson: "procesos-hilos" },
     { id: "q7a021e", q: "¿Qué es una condición de carrera (race condition)?",
