@@ -1,6 +1,6 @@
 # Tanda 2026-10-11 — accesibilidad móvil, carga y repaso de contenido
 
-Estado: **en curso**.
+Estado: **cerrada**. De los 7 issues, entraron 6, todos mergeados, desplegados (`v37`) y verificados en producción: #69, #70, #14, #18, #28 y #33 (en parte). **#26 se quedó fuera** por tamaño y riesgo, con todo lo medido en sus comentarios. Las revisiones frescas cazaron 6 bloqueantes reales y todos se arreglaron antes del merge: 1 en #70, 2 en #14, 1 en la ronda 2 de #70 y 2 en #28. Issues nuevos: #77 y #78.
 
 ## 1. Estado de partida (medido 04:40 +02:00)
 
@@ -89,3 +89,43 @@ Precedentes: lo excluido el 07-10 sigue excluido salvo #14, #18, #26, #28 y #33,
 
 | Issue | PR | Merge | Review (subagente, contexto fresco) | QA |
 |---|---|---|---|---|
+| #69 drawer estático muerto | #71 | `bcfddd4` | sin bloqueantes. Menor aplicado: la regex también caza clases extra y comillas simples. Descartado: falso positivo con la marca como ejemplo de código. CSS `.nav-drawer__footer`/`__theme` sin uso → anotado en #32 | 375 px, rama frente a `main`: drawers en el DOM 2/2 → 1/1, paradas de Tab invisibles 7 → 0, hamburguesa y Esc correctos; producción sin drawers escritos |
+| #70 scroll horizontal en tutoriales | #72 | `faef479` | **2 rondas.** Ronda 1: bloqueante aceptado, `.prose { overflow-wrap: anywhere }` aplastaba tablas y partía palabras (1957 a 320 px) → `anywhere` solo en flex items con tokens largos y `break-word` en `.prose`; menores aplicados: vista sin pintar = fallo, regex de tablas con `i`, literal con nombre. Ronda 2: etiquetas de `.flow__arrow` partidas letra a letra → `overflow-wrap: normal` | http, rama frente a `main`: desbordes 103/88 → 0/0; verificador nuevo verde en la rama (666 vistas) y rojo contra `main`; tablas con scroll en su contenedor; 287/300 idénticas a 1280 (las 13 distintas son las tablas envueltas); producción en `v34` |
+
+### Desviaciones del contrato
+
+- **Orden (07:20).** Lo que queda pasa de #26 → #33 → #28 → #18 a **#18 → #33 → #28 → #26**. Motivo: el refine de #26 midió que las páginas índice necesitan el total y la nota de corte de cada examen (`exams.js`, `examen-ruta.js`), así que sin `quizzes.js` hace falta un resumen generado con su propia comprobación en el validador. Es el issue de más riesgo y tamaño, y con ~3 h de presupuesto va al final: si se agota el tiempo, queda pendiente él y no tres issues de contenido. Ninguno de los adelantados depende de la red de #26.
+| #14 deshacer al reiniciar el progreso | #73 | `6fe2481` | **2 rondas.** Ronda 1: 2 bloqueantes aceptados. (1) La lectura deshecha se perdía en la siguiente sync si había scroll entre reiniciar y deshacer → se registra el alta de toda entrada restaurada que difiera de la actual (test nuevo). (2) Un doble clic en «Reiniciar» anulaba el deshacer → sin progreso no se reinicia. Menores aplicados: foco en «Deshacer» y aviso con el ancho disponible a 320 px. Ronda 2: aprobado; menores aplicados: pausa solo con hover (antes podía quedar abierto sin límite) y el aviso por encima de la barra de audio. Límite asumido: deshacer pisa una acción hecha durante los 8 s | http, datos sembrados: curso y lección restauran exacto; doble clic y teclado correctos; cierre a los 8 s con el foco al `h1`; producción en `v35` |
+| #18 errores técnicos de nueve lecciones | #74 | `7435a87` | sin bloqueantes: el revisor abrió cada fuente oficial. 4 menores aplicados (`Rc` frente a «no cuenta referencias», «como mínimo» en opcache, DynamoDB no expone R/W, *free-threaded* experimental en 3.13). Desviación: `quizzes.js`/`checks.js` son shell y se me pasó `VERSION` hasta el final del PR → `v36` | las 9 cargan sin errores, el índice apunta a `h2` reales, los checks reescritos se pintan y no hay desborde nuevo a 1280 px; investigación con fuentes delegada a un subagente de solo lectura; producción en `v36` |
+| #33 deuda de contenido (parcial) | #75 | `3912b38` | aprobado; menores aplicados: días imposibles (`2026-06-31`) y «futuro» medido en UTC en `validarRevision`, «unos 9 MB» medido (no 10), cifras del README. Deuda declarada: `validar.js` sin tests | check y lecciones con el texto nuevo, `offline.html` con «309 páginas, unos 9 MB»; producción en `v37`. **El issue sigue abierto** en Backlog con lo editorial |
+- **#26 fuera de la tanda (08:15).** Al refinarlo apareció un consumidor más, el contador «Repaso (N)» del menú, que hace crecer el resumen generado. Con ~2,5 h de presupuesto no cabía con review y QA serios. Lo medido está en sus dos comentarios.
+- **#18 subió `VERSION` al final del PR.** `quizzes.js` y `checks.js` son shell, y no lo tuve en cuenta hasta preparar #33. Antes de mergear, `v36` = main + 1.
+- **#33 entra en parte**, por decisión del usuario. El issue vuelve a Backlog sin asignar, con lo editorial pendiente escrito en él.
+- **El refine y la investigación de #18 y la propuesta de enlaces de #28 se delegaron** en subagentes de solo lectura. Devolvieron pares exactos (antes → después) que apliqué yo con un script que falla si el «antes» no aparece una sola vez. Las ediciones de producción siguieron siendo del agente principal.
+- **Una ronda de reviews en paralelo con la implementación del issue siguiente.** Cada rama siguió saliendo de `main`, rebasada justo antes de su merge.
+
+## Cierre
+
+| Issue | Estado | Producción |
+|---|---|---|
+| #69 | Done | `v33` (sin shell) |
+| #70 | Done | `v34` |
+| #14 | Done | `v35` |
+| #18 | Done | `v36` |
+| #33 (en parte) | Backlog, con lo editorial pendiente | `v37` |
+| #28 | Done | `v37` (sin shell) |
+| #26 | Backlog, fuera por tamaño | — |
+
+Gates al cierre (`main` en `2aea342`): `validar.js` sin errores (61 avisos, los mismos que al empezar), `node --test` 68/68 (63 al empezar) y `verificar-offline.js` en verde con 666 vistas móviles (66 al empezar).
+
+**Lecciones:**
+- `overflow-wrap: anywhere` en un contenedor aplasta tablas y botones → trampa en `estado.md`.
+- Los datos de preguntas son shell y su cambio sube `VERSION` → trampa en `estado.md`, y propuesta de rule para el usuario (abajo).
+- La revisión fresca encontró bloqueantes en 3 de los 6 PRs: una pérdida de datos con el sync (#14), un aplastamiento de tablas (#70) y enlaces a un tema inexistente (#28). Ninguno lo cazaba un gate mecánico.
+- Delegar la investigación contra fuentes (#18) y la propuesta masiva de cambios (#28) en subagentes de solo lectura, con pares exactos que aplica el principal, ahorró el grueso del tiempo de contenido sin ceder las ediciones.
+
+**Propuesta de rule (decide el usuario):** en «Cómo se despliega», cambiar «Si el cambio toca `sw.js` o el shell, subir `VERSION`» por «… o el shell (módulos, CSS y los datos `tutorials/manifest.js`, `quizzes.js` y `checks.js`), subir `VERSION`».
+
+**Issues nuevos:** #77 (desborde y solape en escritorio que ya estaban en `main`) y #78 (tests de `validar.js`).
+
+**Preguntas que esperan al usuario:** ninguna nueva. Siguen #16, #22, #25, #27 y lo que queda de #33.

@@ -1,6 +1,6 @@
 # Estado del proyecto
 
-Última actualización: **2026-10-07**.
+Última actualización: **2026-10-11**.
 
 Este fichero se lee al empezar cada sesión y está pensado para leerse **entero**.
 Lo cerrado vive en `archivo/`; si algo de aquí crece demasiado, se archiva.
@@ -109,23 +109,44 @@ forma de trabajar:
 A partir de aquí, todo lo que venga es **contenido nuevo o funcionalidad
 nueva**, sin plan previo que consultar.
 
-## Para retomar (2026-10-07)
+**Tanda del 2026-10-11:** #69, #70, #14, #18, #33 (parcial) y #28, con el
+contrato y el registro en `plan-tanda-2026-10-11.md`. Lo que cambió:
+- **Móvil:** ningún tutorial desborda a 320 ni a 375 px, y `verificar-offline.js`
+  lo comprueba en los 300 (666 vistas, ~2,5 min en CI). Espera a que cada vista
+  esté pintada en vez de dormir 600 ms.
+- **`validar.js` da ERROR** ante un `.nav-drawer` escrito en el HTML, un
+  `<table>` sin `.table-wrap` o un `reviewed` que no sea una fecha real.
+- **Reiniciar progreso** (curso y lección) ofrece «Deshacer» 8 s (`ui-undo.js`).
+  Restaura exacto y registra el alta en `academia-cambios` para que el sync no
+  vuelva a borrarlo.
+- **`reviewed`** en el manifest: las 38 lecciones de IA lo llevan. Es la fecha
+  que mira la revisión de frescura.
+- **Contenido:** 9 lecciones corregidas contra fuentes y 188 enlaces entre
+  lecciones (de 200 a 83 piezas sin enlace entrante).
 
-`main` en `3228ec5`, producción en `v33`, tablero sano. No hay ningún PR abierto ni trabajo a medias. La última tanda está cerrada en `plan-tanda-2026-10-07.md`.
+## Para retomar (2026-10-11)
 
-**Tomables sin decisión del usuario**, por orden sugerido:
-1. **#70 (P1).** Scroll horizontal en unos 104 tutoriales a 320 px. Ampliar el paso de `verificar-offline.js` a los tutoriales.
-2. **#69 (P2).** Drawer estático muerto en 42 páginas de Python y Rust.
-3. **#18 (P1).** Errores técnicos de nueve lecciones. Repaso editorial contra fuentes, como #60.
+`main` en `2aea342`, producción en `v37`. Ningún PR abierto.
+
+**Tomables sin decisión del usuario:**
+1. **#26 (P2).** Carga bajo demanda de quizzes, checks y práctica. Quedó fuera
+   de la tanda por tamaño. Sus dos comentarios de refinado traen todo lo medido:
+   - hace falta un resumen generado con el total y la nota de corte por curso,
+     más los ids válidos para el contador «Repaso (N)» del menú;
+   - el criterio rebajado (~415 KB por lección) lo aprobó el usuario.
+2. **#77 (P3).** Desborde de 1 px en `sql-joins` y solape del `.flow` de `alerting`
+   en escritorio. Ya estaban en `main`.
+3. **#78 (P3).** Tests para las reglas de `validar.js`.
 
 **Esperan una decisión del usuario:**
-- **#14:** al reiniciar el progreso, ¿confirmación o deshacer?
 - **#16:** paleta para el contraste en oscuro. Desbloquea #17 y, a través de él, #32.
 - **#22:** qué recomendar en el inicio.
 - **#25:** criterio del distractor plausible.
 - **#27:** diseño de las páginas de rutas y cursos.
+- **#33 (lo que queda):** preguntas de escenario, orden de rutas, niveles y lecciones gemelas.
 
-Las épicas de curso #34-#38 van por `/implement-epic`.
+Las épicas de curso #34-#38 van por `/implement-epic`. #34 tiene anotado lo que
+las plantillas antiguas de Go, Python y Rust siguen haciendo mal en escritorio.
 
 ## Decisiones que no se reabren sin motivo nuevo
 
@@ -189,6 +210,15 @@ Cada una costó una depuración; están aquí para no repetirlas.
   `Read` no cubre `cat` por Bash») y la lección llegó a escribirse así; lo cazó
   el review leyendo la página oficial.
 
+- **`overflow-wrap: anywhere` en un contenedor aplasta tablas y botones.** Reduce
+  el min-content de todo lo que hay dentro: las tablas dejan de scrollear dentro
+  de su `.table-wrap` y se parten palabras normales («Cop/iar»). Pasó en #70: hubo
+  1957 palabras partidas a 320 px. Va solo en los flex items con tokens largos, y
+  para el texto corrido se usa `break-word`, que no toca el min-content.
+- **`quizzes.js`, `checks.js` y `manifest.js` están en el shell del SW.** Un PR de
+  contenido que cambia una pregunta también sube `VERSION`. A #18 se le pasó hasta
+  el final del PR.
+
 ## Rutina pendiente: revisión de frescura
 
 El validador vigila la estructura, no la verdad: el contenido caduca sin que
@@ -212,7 +242,7 @@ el resto del catálogo (SQL, OOP, Linux…) envejece a décadas, no a meses.
 | `node scripts/verificar-offline.js` | Comprueba el offline con el servidor apagado y el scroll horizontal a 320/375 px. Corre en CI |
 | `node --test 'scripts/tests/**/*.test.js'` | Tests de la lógica pura (`node:test` + `vm`, sin dependencias). Corre en CI |
 
-Al tocar `sw.js` o los módulos del shell, **subir `VERSION`** (va por `v33`). La
+Al tocar `sw.js` o el shell (módulos, CSS, `quizzes.js`, `checks.js`, `manifest.js`), **subir `VERSION`** (va por `v37`). La
 caché de contenido guardado (`academia-content`) ya no lleva versión: un
 despliegue no borra lo que el lector guardó para viajar.
 
