@@ -43,6 +43,27 @@ const tablasSinEnvolver = (html) => (html.match(TABLA) ?? []).length - (html.mat
 const tieneUnSoloMain = (html) =>
   (html.match(APERTURA_DE_MAIN) ?? []).length === 1 && (html.match(CIERRE_DE_MAIN) ?? []).length === 1;
 
+function puestoPorLongitud(pregunta) {
+  const longitudes = pregunta.o.map((opcion) => String(opcion).length);
+  const correcta = longitudes[pregunta.a];
+
+  return 1 + longitudes.filter((longitud) => longitud > correcta).length;
+}
+
+function puestoDominante(preguntas) {
+  const veces = new Map();
+
+  for (const pregunta of preguntas) {
+    const puesto = puestoPorLongitud(pregunta);
+
+    veces.set(puesto, (veces.get(puesto) ?? 0) + 1);
+  }
+
+  const [puesto, cuantas] = [...veces.entries()].sort((primero, segundo) => segundo[1] - primero[1])[0] ?? [0, 0];
+
+  return { puesto, porcentaje: preguntas.length ? Math.round((cuantas / preguntas.length) * 100) : 0 };
+}
+
 const nivelDeCurso = (nivelesDeLecciones) => nivelesDeLecciones[0];
 
 function problemasDeCargaDeDatos(fichero, html, paginasConDatosCompletos) {
@@ -55,4 +76,4 @@ function problemasDeCargaDeDatos(fichero, html, paginasConDatosCompletos) {
   return [...problemas, ...cargadosDeMas.map((nombre) => `${fichero}: carga ${nombre}.js, que se inyecta bajo demanda`)];
 }
 
-module.exports = { esFechaReal, diaLocal, problemasDeRevision, tieneDrawerEscrito, tablasSinEnvolver, tieneUnSoloMain, problemasDeCargaDeDatos, nivelDeCurso };
+module.exports = { esFechaReal, diaLocal, problemasDeRevision, tieneDrawerEscrito, tablasSinEnvolver, tieneUnSoloMain, problemasDeCargaDeDatos, nivelDeCurso, puestoPorLongitud, puestoDominante };

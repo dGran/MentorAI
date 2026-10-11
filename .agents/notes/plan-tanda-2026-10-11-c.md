@@ -36,6 +36,8 @@ Sin otros tracks ni otras personas. Solapes internos, en serie y con `git pull` 
    - B5: patrones-diseno, terminal-linux, solid, phpunit, clean-code, docker (~140).
    - B6: oop, acceso-a-datos, apis-rest, testing, ci-cd, sql-aplicado, di-contenedores, git, framework-por-dentro (~150) + umbral a error.
 
+**Enmienda (2026-10-11, al medir B1):** igualar longitudes con la regla de «la más larga» deja la correcta como la **segunda** más larga en el 56-87 % de las preguntas: un truco nuevo. `validar.js` gana la regla «ningún puesto de longitud distinto del 1.º pasa del 45 %» por examen y por checks de cada curso, y el objetivo de cada bloque pasa a ser la más larga en un 10-25 % con los puestos repartidos. La regla destapa tres cursos que ya cumplían la antigua: `fundamentos` (piloto, 48-49 %) entra en B1, y `ia-por-dentro` y `metodo-con-agentes` (56-71 %) entran en B3.
+
 Después de la tanda, en el mismo loop: **#34** por `/implement-epic`, un curso por PR (decisión del usuario, § 6).
 
 ## 4. Límites y fuera de la tanda

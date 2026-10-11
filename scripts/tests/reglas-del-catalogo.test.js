@@ -124,3 +124,20 @@ test("a course takes the level of the lesson it starts with", () => {
   assert.equal(reglas.nivelDeCurso(["Intermedio", "Avanzado", "Avanzado"]), "Intermedio");
   assert.equal(reglas.nivelDeCurso(["Avanzado"]), "Avanzado");
 });
+
+const question = (options, answer) => ({ o: options, a: answer });
+
+test("the length rank counts the options strictly longer than the correct one", () => {
+  assert.equal(reglas.puestoPorLongitud(question(["aaaa", "bb", "c"], 0)), 1);
+  assert.equal(reglas.puestoPorLongitud(question(["aaaa", "bb", "c"], 1)), 2);
+  assert.equal(reglas.puestoPorLongitud(question(["aa", "bb", "c"], 1)), 1);
+  assert.equal(reglas.puestoPorLongitud(question(["aaaa", "bbb", "cc", "d"], 3)), 4);
+});
+
+test("the dominant length rank and its share are reported", () => {
+  const second = question(["aaaa", "bbb", "c"], 1);
+  const longest = question(["aaaa", "bbb", "c"], 0);
+
+  assert.deepEqual(reglas.puestoDominante([second, second, second, longest]), { puesto: 2, porcentaje: 75 });
+  assert.deepEqual(reglas.puestoDominante([]), { puesto: 0, porcentaje: 0 });
+});

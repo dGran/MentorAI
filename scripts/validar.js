@@ -209,6 +209,8 @@ const MAXIMO_MISMA_POSICION = 45;
 const MINIMO_PARA_MEDIR_GRUPO = 12;
 const MAXIMO_CORRECTA_MAS_LARGA = 40;
 const MINIMO_PARA_MEDIR_LONGITUD = 5;
+const MAXIMO_MISMO_PUESTO_DE_LONGITUD = 45;
+const PUESTO_DE_LA_MAS_LARGA = 1;
 const resumenDeLongitud = [];
 
 function laCorrectaEsLaMasLarga(pregunta) {
@@ -226,6 +228,17 @@ function avisarSiHaySesgoDeLongitud(nombre, masLargas, total) {
   aviso(
     `${nombre}: la respuesta correcta es la opción más larga en un ${porcentaje}% de ${total} preguntas ` +
       `(umbral ${MAXIMO_CORRECTA_MAS_LARGA}%). Se aprueba eligiendo la más larga: iguala los distractores.`
+  );
+}
+
+function avisarSiUnPuestoDeLongitudDomina(nombre, preguntas) {
+  const { puesto, porcentaje } = reglas.puestoDominante(preguntas);
+
+  if (puesto === PUESTO_DE_LA_MAS_LARGA || porcentaje <= MAXIMO_MISMO_PUESTO_DE_LONGITUD) return;
+
+  aviso(
+    `${nombre}: la correcta es la ${puesto}.ª opción más larga en un ${porcentaje}% de ${preguntas.length} preguntas ` +
+      `(umbral ${MAXIMO_MISMO_PUESTO_DE_LONGITUD}%). Se aprueba eligiendo por longitud: reparte qué opción es la larga.`
   );
 }
 
@@ -262,7 +275,7 @@ function validarPreguntas(nombre, entradas, contexto) {
     const grupo = contexto.agrupaEn(clave);
     const idsDelGrupo = new Set();
 
-    porGrupo[grupo] ??= { posiciones: {}, total: 0, masLargas: 0 };
+    porGrupo[grupo] ??= { posiciones: {}, total: 0, masLargas: 0, preguntas: [] };
 
     preguntas.forEach((pregunta, indice) => {
       const donde = `${nombre} «${clave}» #${indice}`;
@@ -282,6 +295,7 @@ function validarPreguntas(nombre, entradas, contexto) {
       posiciones[pregunta.a] = (posiciones[pregunta.a] ?? 0) + 1;
       porGrupo[grupo].posiciones[pregunta.a] = (porGrupo[grupo].posiciones[pregunta.a] ?? 0) + 1;
       porGrupo[grupo].total += 1;
+      if (Array.isArray(pregunta.o) && pregunta.o.length >= 2) porGrupo[grupo].preguntas.push(pregunta);
 
       if (laCorrectaEsLaMasLarga(pregunta)) {
         masLargas += 1;
@@ -304,6 +318,12 @@ function validarPreguntas(nombre, entradas, contexto) {
     if (datosDelGrupo.total < MINIMO_PARA_MEDIR_LONGITUD) continue;
 
     avisarSiHaySesgoDeLongitud(`${nombre} «${grupo}»`, datosDelGrupo.masLargas, datosDelGrupo.total);
+  }
+
+  for (const [grupo, datosDelGrupo] of Object.entries(porGrupo)) {
+    if (datosDelGrupo.total < MINIMO_PARA_MEDIR_GRUPO) continue;
+
+    avisarSiUnPuestoDeLongitudDomina(`${nombre} «${grupo}»`, datosDelGrupo.preguntas);
   }
 
   avisarSiHaySesgo(nombre, posiciones, total, true);
