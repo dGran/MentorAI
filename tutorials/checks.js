@@ -326,7 +326,7 @@ window.MENTORAI_CHECKS = {
       o: ["El cociente entre filas examinadas y filas devueltas", "El valor de la columna `type`, que indica el acceso", "El nombre del índice que ha elegido el motor"], a: 0,
       w: "Recorrer 400.000 para devolver 20 significa que el índice no hace su trabajo, aunque el motor diga que usa uno." },
     { id: "ceb61c3", q: "¿Por qué hay que probar con los parámetros reales del log?",
-      o: ["Porque con parámetros de ejemplo la consulta sale de la caché y parece rápida", "Porque el plan cambia según cuántas filas cree el optimizador que tocará", "Porque el log guarda los parámetros ya escapados"], a: 1,
+      o: ["Porque con parámetros de ejemplo EXPLAIN no puede estimar filas y devuelve un plan vacío", "Porque el plan cambia según cuántas filas cree el optimizador que tocará", "Porque el log guarda los parámetros ya escapados"], a: 1,
       w: "La misma consulta con un estado que cubre el 90 % de la tabla y con otro que cubre el 0,3 % puede tener planes distintos. Probar con el valor raro es cómo se despliega una consulta que arrasa." },
   ],
 
@@ -1228,7 +1228,7 @@ window.MENTORAI_CHECKS = {
 
   "ddd-que-es": [
     { id: "c8ec069", q: "En las reuniones dicen «póliza» y en el código la clase se llama `Contract`.",
-      o: ["Es normal: el código se escribe en inglés y el negocio habla en español, la traducción es inevitable","Es una fuga del lenguaje ubicuo: cada traducción es donde se cuelan malentendidos","Basta con documentar la equivalencia en un glosario del proyecto"], a: 1,
+      o: ["Es normal: el código va en inglés y el negocio habla en español, así que traducir es inevitable","Es una fuga del lenguaje ubicuo: cada traducción es donde se cuelan malentendidos","Basta con documentar la equivalencia en un glosario del proyecto"], a: 1,
       w: "El lenguaje ubicuo no es un glosario: es que el código hable el idioma del negocio para que no haya traducción constante." },
     { id: "c573076", q: "¿Qué NO es DDD?",
       o: ["Una forma de modelar el dominio con el negocio","Una manera de decidir dónde poner los límites","Una estructura de carpetas y un conjunto de clases base"], a: 2,
@@ -1261,7 +1261,7 @@ window.MENTORAI_CHECKS = {
       o: ["Por convención estética, igual que los métodos se nombran con verbos en infinitivo","Porque se procesan de forma asíncrona, después de que termine la petición","Porque describen un hecho consumado que nadie puede rechazar"], a: 2,
       w: "Un comando puede fallar; un evento ya ocurrió. De ahí que quien lo publica no espere respuesta." },
     { id: "c3d8d0a", q: "¿Qué ganas publicando un evento en vez de llamar directamente al otro servicio?",
-      o: ["Que quien publica no sabe quién escucha: añadir reacciones no le obliga a cambiar","Rendimiento, porque no hay que esperar a que el otro servicio responda","Garantía de entrega: el evento queda guardado y el otro servicio lo recibirá aunque esté caído"], a: 0,
+      o: ["Que quien publica no sabe quién escucha: añadir reacciones no le obliga a cambiar","Consistencia inmediata: el otro servicio ve el cambio en la misma transacción","Garantía de entrega: el evento queda guardado y el otro servicio lo recibirá aunque esté caído"], a: 0,
       w: "La garantía de entrega no viene gratis con el evento: eso lo aporta el transporte, y es otro problema." },
   ],
 
@@ -1270,13 +1270,13 @@ window.MENTORAI_CHECKS = {
       o: ["Sí: es lo que define el patrón, una base de datos para escribir y otra distinta para leer","No: en su versión simple son dos caminos en la misma aplicación y la misma base","Solo si usas Event Sourcing, porque los eventos necesitan su propio almacén aparte"], a: 1,
       w: "Confundirlo con la versión extrema es lo que hace que suene desproporcionado para casi todo." },
     { id: "c065e50", q: "¿Por qué separar el modelo de lectura del de escritura?",
-      o: ["Porque las lecturas son mucho más frecuentes que las escrituras y así se les da prioridad en la base","Para que las escrituras no tengan que validar invariantes","Porque sus necesidades son opuestas, ya que escribir quiere invariantes y leer, datos ya masticados"], a: 2,
+      o: ["Porque las lecturas son mucho más frecuentes que las escrituras y así se les da prioridad en la base","Para que las escrituras no tengan que validar invariantes","Porque tienen necesidades opuestas, invariantes al escribir y datos ya masticados al leer"], a: 2,
       w: "Separarlos permite desnormalizar el lado de lectura sin ensuciar el dominio." },
   ],
 
   "cqrs-event-sourcing": [
     { id: "c3450e7", q: "Con Event Sourcing, ¿dónde vive el estado actual de un agregado?",
-      o: ["En ningún sitio, se obtiene reproduciendo sus eventos","En una tabla de estado que se actualiza con cada evento","En la caché de la aplicación, junto a la última versión leída"], a: 0,
+      o: ["En ningún sitio: se obtiene reproduciendo sus eventos","En una tabla de estado: la actualiza cada evento nuevo","En la caché de la aplicación, junto a la última versión leída"], a: 0,
       w: "El estado deja de ser el dato y pasa a ser una consecuencia. Las proyecciones son estado derivado, y por eso se pueden regenerar." },
     { id: "c17b8a9", q: "¿Cuándo NO usar CQRS + Event Sourcing?",
       o: ["En sistemas con muchos usuarios, porque no escala","En un CRUD, porque multiplica el código sin resolver ningún problema que tuvieras","Cuando no se usa DDD en el resto del proyecto"], a: 1,
@@ -1394,7 +1394,7 @@ window.MENTORAI_CHECKS = {
       o: ["Si algo va mal en este momento","Cuántas peticiones por segundo recibes","Dónde está el fallo y por qué ocurre"], a: 2,
       w: "Cada pilar responde a una pregunta distinta. Con uno solo siempre te queda media investigación sin poder hacer." },
     { id: "c7f80c6", q: "¿Qué diferencia observabilidad de monitorización?",
-      o: ["La monitorización vigila lo previsto; la observabilidad, lo imprevisto","Son lo mismo; observabilidad es el nombre moderno del monitoring","La observabilidad es monitorización aplicada a microservicios"], a: 0,
+      o: ["La monitorización vigila lo previsto; la observabilidad, lo imprevisto","Son lo mismo; observabilidad es el nombre moderno de la monitorización","La observabilidad es monitorización aplicada a microservicios"], a: 0,
       w: "Por eso importa el contexto rico: sin él solo puedes contestar las preguntas que dejaste preparadas." },
   ],
 
@@ -1409,7 +1409,7 @@ window.MENTORAI_CHECKS = {
 
   "sentry-error-tracking": [
     { id: "c3108e3", q: "Un bug en un bucle genera diez mil notificaciones del mismo error.",
-      o: ["Hay que dejar que el fingerprinting los agrupe en un issue","Hay que muestrear y enviar solo un 1 % de los eventos a Sentry","Hay que desactivar Sentry en ese endpoint"], a: 0,
+      o: ["Hay que dejar que el fingerprinting los agrupe en un issue","Hay que asumir diez mil issues, uno por evento, y cerrarlos en bloque","Hay que desactivar Sentry en ese endpoint"], a: 0,
       w: "La huella se puede ajustar cuando agrupa de más (todo junto) o de menos (el mismo bug repartido en veinte issues)." },
     { id: "ca01213", q: "¿Qué captura Sentry además de la excepción?",
       o: ["Solo el stack trace y el mensaje de error","El contexto, con usuario, petición, release y breadcrumbs","Los logs completos que escribió el servidor en la última hora"], a: 1,
@@ -1457,7 +1457,7 @@ window.MENTORAI_CHECKS = {
       o: ["Indexa el contenido completo, así que busca más rápido","Indexa solo labels, no el texto, así que almacena barato","Guarda los logs en memoria para consultarlos al instante"], a: 1,
       w: "El precio es que las búsquedas por texto recorren los datos: hay que acotar bien por labels y por tiempo." },
     { id: "cd141f2", q: "Tu consulta LogQL tarda muchísimo.",
-      o: ["Hay que añadir más labels a los logs para indexarlos","Loki no escala: hay que migrar a Elasticsearch","No acotas por label y tiempo: recorre todo"], a: 2,
+      o: ["Faltan labels en los logs: Loki no tiene qué indexar","Loki no escala: con este volumen se necesita Elasticsearch","No acotas por label y tiempo: recorre todo"], a: 2,
       w: "Añadir labels sin criterio empeora las cosas: dispara la cardinalidad, que es el otro modo de tumbarlo." },
   ],
 
@@ -2604,7 +2604,7 @@ window.MENTORAI_CHECKS = {
   ],
   "maq-cpu": [
     { id: "c7368c5", q: "¿Sobre qué opera directamente la CPU?",
-      o: ["Sobre la RAM, leyendo y escribiendo cada dato en su sitio","Sobre sus registros, adonde los datos van y vuelven desde memoria","Sobre la caché L1, que es la memoria más rápida y cercana que tiene"], a: 1,
+      o: ["Sobre la RAM, leyendo y escribiendo cada dato en su sitio","Sobre sus registros, que traen datos de memoria y los devuelven","Sobre la caché L1, que es la memoria más rápida y cercana que tiene"], a: 1,
       w: "Los registros son la «mano» de la CPU: caben pocas cosas, pero lo que está en la mano se opera gratis." },
     { id: "c20a790", q: "¿Cuánto más cuesta ir a RAM que a la caché L1, en órdenes de magnitud?",
       o: ["El doble, más o menos (de ~4 a ~8 ciclos)","Unas 100 veces (de ~4 a ~200-300 ciclos)","Un millón de veces (de ciclos a milisegundos)"], a: 1,
@@ -2618,7 +2618,7 @@ window.MENTORAI_CHECKS = {
       o: ["Instrucciones de una máquina virtual, la Zend VM, que es una ISA inventada","Instrucciones nativas de tu CPU, que PHP genera al instalarse en la máquina","Tu fuente comprimida y sin comentarios, lista para leer rápido"], a: 0,
       w: "Por eso el bytecode viaja entre arquitecturas y el binario no: la VM que lo ejecuta es un programa, no silicio." },
     { id: "c4b4c6a", q: "¿Qué elimina exactamente OPcache?",
-      o: ["La ejecución de los opcodes, que pasa a ser código nativo","Las consultas repetidas a la BD entre unas peticiones y otras","Recompilar el fuente a opcodes en cada petición"], a: 2,
+      o: ["La ejecución de los opcodes, que pasa a ser código nativo","Las consultas repetidas a la BD entre unas peticiones y otras","La recompilación del fuente a opcodes en cada petición"], a: 2,
       w: "Es la vista desde la máquina de lo que ya conocías: cachear el paso caro que se repetía idéntico." },
     { id: "c2b2cd8", q: "¿Por qué la imagen Docker de un servicio Go puede partir de scratch y la de PHP no?",
       o: ["Porque Go comprime sus ficheros y la imagen apenas pesa","Porque Go compila a un binario estático y PHP necesita su intérprete en la imagen","Porque Docker trae de serie el runtime de Go dentro de la imagen scratch"], a: 1,
