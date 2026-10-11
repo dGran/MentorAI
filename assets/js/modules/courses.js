@@ -11,6 +11,11 @@
 
   const MentorAI = (window.MentorAI = window.MentorAI || {});
 
+  const LEVEL_ORDER = ["Principiante", "Intermedio", "Avanzado"];
+  const ALL_LEVELS = "all";
+  const ALL_LEVELS_LABEL = "Todos";
+  const LEVEL_FILTER_LABEL = "Filtrar cursos por nivel";
+
   const RESET_COURSE_MESSAGE = "Progreso del curso reiniciado.";
   const CHECK_SVG =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -123,7 +128,7 @@
         ? `${stats.total} lecciones`
         : `${stats.published} de ${stats.total} lecciones`;
 
-    return `<a class="course-card" href="curso.html?slug=${encodeURIComponent(course.slug)}">
+    return `<a class="course-card" href="curso.html?slug=${encodeURIComponent(course.slug)}" data-level="${escapeHtml(course.level ?? "")}">
       <div class="course-card__top">
         <span class="course-card__icon">${Icons.for(course.icon)}</span>
         <span class="course-card__progress">${stats.done} / ${stats.published}</span>
@@ -141,6 +146,33 @@
 
   /* ---------- Ficha de curso ---------- */
 
+  function routesOf(course) {
+    return (window.MENTORAI_PATHS ?? [])
+      .map((path) => {
+        const steps = path.steps ?? [];
+        const position = steps.findIndex((step) => step.type === "course" && step.ref === course.slug);
+
+        return position === -1 ? null : { path, position: position + 1, total: steps.length };
+      })
+      .filter(Boolean);
+  }
+
+  function routesHtml(course) {
+    const escapeHtml = MentorAI.escapeHtml;
+    const routes = routesOf(course);
+
+    if (routes.length === 0) return "";
+
+    const items = routes
+      .map(
+        ({ path, position, total }) =>
+          `<li><a href="rutas.html#ruta-${encodeURIComponent(path.slug)}">${escapeHtml(path.title)}</a> · paso ${position} de ${total}</li>`
+      )
+      .join("");
+
+    return `<div class="course-hero__routes"><span>${routes.length === 1 ? "En la ruta" : "En las rutas"}</span><ul>${items}</ul></div>`;
+  }
+
   function courseHeroHtml(course, stats) {
     const escapeHtml = MentorAI.escapeHtml;
     const resetButton = stats.done
@@ -157,6 +189,7 @@
         <span>${escapeHtml(course.level ?? "")}</span>
         <span>${stats.done} / ${stats.published} completadas</span>
       </div>
+      ${routesHtml(course)}
       <div class="course-hero__bar"><span style="width:${stats.percent}%"></span></div>
       <div class="course-hero__progress">
         <span class="course-hero__percent">${stats.percent}% completado</span>
@@ -227,6 +260,54 @@
     const manifest = manifestMap();
 
     host.innerHTML = courses.map((course) => courseCardHtml(course, manifest)).join("");
+    renderLevelFilter(host, courses);
+  }
+
+  function levelChipHtml(level, label, count, isActive) {
+    const escapeHtml = MentorAI.escapeHtml;
+
+    return `<button type="button" class="chip${isActive ? " is-active" : ""}" data-level-filter="${escapeHtml(level)}" aria-pressed="${isActive}">${escapeHtml(label)}<span class="chip__count">${count}</span></button>`;
+  }
+
+  function renderLevelFilter(host, courses) {
+    const counts = {};
+
+    for (const course of courses) {
+      if (course.level) counts[course.level] = (counts[course.level] ?? 0) + 1;
+    }
+
+    const levels = LEVEL_ORDER.filter((level) => counts[level]);
+
+    if (levels.length < 2) return;
+
+    const bar = document.createElement("div");
+    bar.className = "filters course-filters";
+    bar.setAttribute("role", "group");
+    bar.setAttribute("aria-label", LEVEL_FILTER_LABEL);
+    bar.innerHTML = [
+      levelChipHtml(ALL_LEVELS, ALL_LEVELS_LABEL, courses.length, true),
+      ...levels.map((level) => levelChipHtml(level, level, counts[level], false)),
+    ].join("");
+    host.before(bar);
+
+    bar.addEventListener("click", (event) => {
+      const chip = event.target.closest("[data-level-filter]");
+
+      if (!chip) return;
+
+      const selected = chip.dataset.levelFilter;
+
+      for (const other of bar.querySelectorAll("[data-level-filter]")) {
+        const isActive = other === chip;
+
+        other.classList.toggle("is-active", isActive);
+        other.setAttribute("aria-pressed", String(isActive));
+      }
+
+      for (const card of host.querySelectorAll(".course-card")) {
+        card.hidden = selected !== ALL_LEVELS && card.dataset.level !== selected;
+      }
+    });
   }
 
   /* ---------- API pública ---------- */
