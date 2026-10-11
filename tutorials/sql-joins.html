@@ -146,15 +146,10 @@ INNER JOIN clientes c ON c.id = p.cliente_id;
 -- INNER es opcional: JOIN a secas es INNER JOIN
 SELECT p.id, p.total, c.nombre
 FROM pedidos p
-JOIN clientes c ON c.id = p.cliente_id;
-
--- USING cuando el nombre de columna coincide en ambas tablas
-SELECT p.id, p.total, c.nombre
-FROM pedidos p
-JOIN clientes c USING (cliente_id);</code></pre>
+JOIN clientes c ON c.id = p.cliente_id;</code></pre>
           </div>
 
-          <p>La palabra <code>INNER</code> es optativa: <code>JOIN</code> a secas es siempre INNER JOIN. <code>USING</code> es azúcar sintáctico para cuando la columna tiene el mismo nombre en ambas tablas; produce la misma consulta.</p>
+          <p>La palabra <code>INNER</code> es optativa: <code>JOIN</code> a secas es siempre INNER JOIN. <code>USING (columna)</code> es azúcar sintáctico solo cuando la columna se llama igual en ambas tablas. Aquí no sirve: en <code>clientes</code> se llama <code>id</code> y en <code>pedidos</code>, <code>cliente_id</code>.</p>
 
           <div class="callout callout--tip">
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
@@ -192,6 +187,28 @@ WHERE p.id IS NULL;</code></pre>
 
           <p>El patrón <code>LEFT JOIN ... WHERE derecha.id IS NULL</code> es la forma estándar de encontrar filas huérfanas: registros de la tabla izquierda que no tienen correspondencia en la derecha.</p>
 
+          <p>Ojo con filtrar la tabla derecha en el <code>WHERE</code>: las filas sin pareja traen <code>NULL</code>, la condición las descarta y el LEFT JOIN se comporta como un INNER. Esa condición va en el <code>ON</code>. El único filtro de la derecha que sí va en el <code>WHERE</code> es el <code>IS NULL</code> deliberado de arriba.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">-- Mal: el WHERE descarta los NULL y el LEFT se convierte en INNER
+SELECT c.nombre, p.id AS pedido_id
+FROM clientes c
+LEFT JOIN pedidos p ON p.cliente_id = c.id
+WHERE p.total &gt; 100;
+
+-- Bien: la condición sobre la tabla derecha va en el ON
+SELECT c.nombre, p.id AS pedido_id
+FROM clientes c
+LEFT JOIN pedidos p ON p.cliente_id = c.id AND p.total &gt; 100;</code></pre>
+          </div>
+
           <h2 id="otros-joins">
             RIGHT, FULL OUTER y self-join
             <a href="#otros-joins" class="anchor" aria-hidden="true">#</a>
@@ -205,8 +222,26 @@ WHERE p.id IS NULL;</code></pre>
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <div class="callout__body">
               <p class="callout__title">MySQL no tiene FULL OUTER JOIN nativo</p>
-              <p>MySQL y MariaDB no implementan <code>FULL OUTER JOIN</code>. El workaround es un <code>UNION</code> de un LEFT JOIN y un RIGHT JOIN. PostgreSQL y SQL Server sí lo soportan directamente.</p>
+              <p>MySQL y MariaDB no implementan <code>FULL OUTER JOIN</code>. El workaround es un LEFT JOIN más un RIGHT JOIN que solo trae los huérfanos de la derecha, unidos con <code>UNION ALL</code>: un <code>UNION</code> a secas elimina las filas repetidas, también las legítimas. PostgreSQL y SQL Server sí lo soportan directamente.</p>
             </div>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">SELECT c.id AS cliente_id, c.nombre, p.id AS pedido_id
+FROM clientes c
+LEFT JOIN pedidos p ON p.cliente_id = c.id
+UNION ALL
+SELECT c.id, c.nombre, p.id
+FROM clientes c
+RIGHT JOIN pedidos p ON p.cliente_id = c.id
+WHERE c.id IS NULL;</code></pre>
           </div>
 
           <p><strong>Self-join</strong> es unir una tabla consigo misma, con alias distintos. El caso más frecuente en backend: una tabla con una clave foránea que apunta a la misma tabla, como empleados con su manager o categorías con subcategorías.</p>
@@ -314,13 +349,21 @@ WHERE EXISTS (
 );</code></pre>
           </div>
 
-          <p><code>EXISTS</code> cortocircuita en cuanto encuentra una fila: no importa cuántos pedidos tenga el cliente, el motor para al primero. <code>IN</code> con subconsulta funciona igual para conjuntos pequeños, pero <code>EXISTS</code> escala mejor y deja la intención más clara: "comprueba si existe, no me traigas los datos".</p>
+          <p><code>EXISTS</code> cortocircuita en cuanto encuentra una fila: no importa cuántos pedidos tenga el cliente, el motor para al primero. En motores modernos <code>IN (subconsulta)</code> y <code>EXISTS</code> suelen rendir igual: desde MySQL 8.0.16, <code>EXISTS</code> recibe las mismas transformaciones a semi-join que <code>IN</code>. Elige <code>EXISTS</code> porque deja la intención más clara: "comprueba si existe, no me traigas los datos".</p>
 
           <div class="callout callout--info">
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
             <div class="callout__body">
               <p class="callout__title">Los optimizadores son listos, pero tú más</p>
               <p>Los optimizadores modernos (MySQL 8+, PostgreSQL) frecuentemente convierten un <code>IN (subconsulta)</code> en un semi-join internamente, igualando el rendimiento. Aun así, escribe <code>EXISTS</code> cuando la intención sea "¿existe?": el código comunica mejor y no dependes del optimizador para evitar duplicados.</p>
+            </div>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title"><code>NOT IN</code> y los NULL</p>
+              <p><code>WHERE c.id NOT IN (SELECT p.cliente_id FROM pedidos p)</code> devuelve cero filas en cuanto algún <code>cliente_id</code> es <code>NULL</code>: <code>x NOT IN (…, NULL)</code> nunca da verdadero, solo falso o desconocido. Para "los que no tienen", usa <code>NOT EXISTS</code> o el patrón <code>LEFT JOIN … IS NULL</code>.</p>
             </div>
           </div>
 
