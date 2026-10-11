@@ -1,0 +1,17 @@
+const { abrir } = require("./cdp.js");
+const [BASE, OUT] = process.argv.slice(2);
+const orden = `[...document.querySelectorAll("main > section, main .home > section")].filter(e => e.offsetHeight > 0 && !e.hidden).map(e => e.id || e.className.split(" ").pop()).join(" → ")`;
+(async () => { const b = await abrir(9449); await b.ancho(1280, 900, false); const out = [];
+  await b.ir(`${BASE}/index.html`, 800); await b.evaluar("localStorage.clear(); 1"); await b.ir(`${BASE}/index.html`, 1500);
+  out.push("vacío · orden: " + await b.evaluar(orden));
+  out.push("vacío · empieza aquí: " + await b.evaluar(`[...document.querySelectorAll("#home-start .path-card__title")].map(t => t.textContent).join(" + ")`) + " · motivos " + await b.evaluar(`document.querySelectorAll("#home-start .start-route__reason").length`));
+  out.push("vacío · exámenes visible: " + await b.evaluar(`!document.getElementById("home-exams").hidden`) + " · métricas: " + await b.evaluar(`[...document.querySelectorAll(".stat")].map(s => s.textContent.trim().replace(/\\s+/g, " ")).join(" / ")`));
+  out.push("vacío · y de Empieza aquí: " + await b.evaluar(`Math.round(document.getElementById("home-start").getBoundingClientRect().top + scrollY)`) + " · y de Rutas: " + await b.evaluar(`Math.round(document.getElementById("rutas-home").getBoundingClientRect().top + scrollY)`) + " · y de Novedades: " + await b.evaluar(`Math.round(document.getElementById("home-new").getBoundingClientRect().top + scrollY)`));
+  if (OUT) await b.captura(`${OUT}/inicio-vacio.png`);
+  await b.evaluar(`localStorage.setItem("academia-progress", JSON.stringify(["git-comandos-esenciales"])); localStorage.setItem("academia-reading", JSON.stringify({ "git-ramas-y-flujo": { percent: 40, updatedAt: Date.now() } })); 1`);
+  await b.ir(`${BASE}/index.html`, 1500);
+  out.push("con progreso · orden: " + await b.evaluar(orden));
+  out.push("con progreso · empieza aquí oculto: " + await b.evaluar(`document.getElementById("home-start").hidden`) + " · continuar visible: " + await b.evaluar(`!document.getElementById("home-continue").hidden`) + " · exámenes visible: " + await b.evaluar(`!document.getElementById("home-exams").hidden`));
+  if (OUT) await b.captura(`${OUT}/inicio-con-progreso.png`);
+  out.push("errores de consola: " + (b.consola.length ? JSON.stringify(b.consola) : 0));
+  console.log(out.join("\n")); b.cerrar(); })();

@@ -1,0 +1,13 @@
+const { abrir } = require("./cdp.js");
+const [BASE] = process.argv.slice(2);
+(async () => { const b = await abrir(9451); await b.ancho(1280, 900, false); const out = [];
+  await b.ir(`${BASE}/index.html`, 800); await b.evaluar("localStorage.clear(); 1"); await b.ir(`${BASE}/index.html`, 1500);
+  await b.evaluar(`(() => { const i = document.getElementById("home-search"); i.value = "indice"; i.dispatchEvent(new Event("input")); return 1; })()`); await b.sleep(3500);
+  out.push("búsqueda: resultados y=" + await b.evaluar(`Math.round(document.getElementById("home-results").getBoundingClientRect().top + scrollY)`) + " · n=" + await b.evaluar(`document.querySelectorAll("#home-results .mini-card").length`) + " · empieza aquí oculto=" + await b.evaluar(`document.getElementById("home-start").hidden`));
+  await b.evaluar(`(() => { const i = document.getElementById("home-search"); i.value = ""; i.dispatchEvent(new Event("input")); return 1; })()`); await b.sleep(400);
+  out.push("búsqueda vaciada: empieza aquí visible=" + await b.evaluar(`!document.getElementById("home-start").hidden`) + " · resultados ocultos=" + await b.evaluar(`document.getElementById("home-results").hidden`));
+  await b.evaluar(`localStorage.setItem("academia-progress", JSON.stringify(["git-comandos-esenciales"])); MentorAI.Home.render(); 1`); await b.sleep(300);
+  out.push("tras progreso + Home.render (como el sync): empieza aquí oculto=" + await b.evaluar(`document.getElementById("home-start").hidden`) + " · continuar visible=" + await b.evaluar(`!document.getElementById("home-continue").hidden`));
+  out.push("encabezados: " + await b.evaluar(`[...document.querySelectorAll("main h1, main h2, main h3")].filter(h => h.offsetParent || h.classList.contains("visually-hidden")).map(h => h.tagName + ":" + h.textContent.trim().slice(0, 22)).slice(0, 12).join(" | ")`));
+  out.push("errores de consola: " + (b.consola.length ? JSON.stringify(b.consola) : 0));
+  console.log(out.join("\n")); b.cerrar(); })();
