@@ -11,10 +11,22 @@
 
   const MentorAI = (window.MentorAI = window.MentorAI || {});
 
+  const MINUTES_PER_HOUR = 60;
+  const START_ROUTES = [
+    {
+      slug: "el-grado-que-no-hiciste",
+      reason: "Si quieres la base completa y en orden: la carrera de backend de principio a fin, curso a curso.",
+    },
+    {
+      slug: "backend-cimientos",
+      reason: "Si prefieres empezar ya con algo corto: tres pasos para tener los cimientos antes de elegir hacia dónde seguir.",
+    },
+  ];
+
   const MIN_PERCENT = 5;
   const DONE_PERCENT = 90;
   const SHELF_LIMIT = 4;
-  const SHELVES = ["home-continue", "home-new", "home-popular", "home-route"];
+  const SHELVES = ["home-start", "home-continue", "home-new", "home-popular", "home-route"];
 
   /* ---------- Datos ---------- */
 
@@ -222,6 +234,7 @@
     const map = manifestMap();
     const list = publishedTutorials();
 
+    renderStart();
     renderContinue(map);
     renderNew(list);
     renderPopular(list);
@@ -333,6 +346,37 @@
     MentorAI.Search.alBuscar(input, applySearch);
   }
 
+  function hasLearnerActivity() {
+    return MentorAI.Progress.count() > 0 || MentorAI.Reading.list().length > 0;
+  }
+
+  function renderStart() {
+    const host = document.getElementById("home-start");
+    const paths = window.MENTORAI_PATHS;
+
+    if (!host || !Array.isArray(paths) || !MentorAI.Paths) return;
+
+    if (hasLearnerActivity()) {
+      host.hidden = true;
+      return;
+    }
+
+    const cards = START_ROUTES.map(({ slug, reason }) => {
+      const path = paths.find((candidate) => candidate.slug === slug);
+
+      if (!path) return "";
+
+      return `<div class="start-route">${MentorAI.Paths.cardHtml(path)}<p class="start-route__reason">${MentorAI.escapeHtml(reason)}</p></div>`;
+    }).join("");
+
+    host.innerHTML = `<div class="shelf__head">
+        <h2 class="shelf__title">Empieza aquí</h2>
+        <span class="shelf__hint">Dos maneras de arrancar según el tiempo que tengas</span>
+      </div>
+      <div class="start-routes">${cards}</div>`;
+    host.hidden = false;
+  }
+
   /* ---------- Contadores del hero ----------
      Viven en index.html; el catálogo está en su propia página, así que el
      conteo se fija aquí y no depende de Catalog.render. */
@@ -348,6 +392,20 @@
 
     if (courses && Array.isArray(window.MENTORAI_COURSES)) {
       courses.textContent = window.MENTORAI_COURSES.length;
+    }
+
+    const paths = document.querySelector("[data-stat-paths]");
+
+    if (paths && Array.isArray(window.MENTORAI_PATHS)) {
+      paths.textContent = window.MENTORAI_PATHS.length;
+    }
+
+    const hours = document.querySelector("[data-stat-hours]");
+
+    if (hours && Array.isArray(window.ACADEMIA_TUTORIALS)) {
+      const minutes = publishedTutorials().reduce((total, tutorial) => total + (Number(tutorial.minutes) || 0), 0);
+
+      hours.textContent = Math.round(minutes / MINUTES_PER_HOUR);
     }
   }
 

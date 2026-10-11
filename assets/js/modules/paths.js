@@ -206,5 +206,6 @@
     stepLessons,
     render: renderPaths,
     renderHome: () => renderInto("home-paths", pathCardHtml),
+    cardHtml: (path) => pathCardHtml(path, manifestMap()),
   };
 })();
