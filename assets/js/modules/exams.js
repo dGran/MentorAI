@@ -135,10 +135,10 @@
   }
 
   function hasStartedAnyCourse(courses) {
-    const read = new Set(MentorAI.Reading.list().map((entry) => entry.slug));
+    const readSlugs = new Set(MentorAI.Reading.list().map((entry) => entry.slug));
 
     return courses.some((course) =>
-      lessonsOf(course).some((slug) => MentorAI.Progress.has(slug) || read.has(slug))
+      lessonsOf(course).some((slug) => MentorAI.Progress.has(slug) || readSlugs.has(slug))
     );
   }
 

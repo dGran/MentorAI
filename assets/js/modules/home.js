@@ -26,7 +26,7 @@
   const MIN_PERCENT = 5;
   const DONE_PERCENT = 90;
   const SHELF_LIMIT = 4;
-  const SHELVES = ["home-continue", "home-new", "home-popular", "home-route"];
+  const SHELVES = ["home-start", "home-continue", "home-new", "home-popular", "home-route"];
 
   /* ---------- Datos ---------- */
 
@@ -234,6 +234,7 @@
     const map = manifestMap();
     const list = publishedTutorials();
 
+    renderStart();
     renderContinue(map);
     renderNew(list);
     renderPopular(list);
@@ -353,7 +354,12 @@
     const host = document.getElementById("home-start");
     const paths = window.MENTORAI_PATHS;
 
-    if (!host || !Array.isArray(paths) || !MentorAI.Paths || hasLearnerActivity()) return;
+    if (!host || !Array.isArray(paths) || !MentorAI.Paths) return;
+
+    if (hasLearnerActivity()) {
+      host.hidden = true;
+      return;
+    }
 
     const cards = START_ROUTES.map(({ slug, reason }) => {
       const path = paths.find((candidate) => candidate.slug === slug);
@@ -405,6 +411,6 @@
 
   /* ---------- API pública ---------- */
 
-  MentorAI.Home = { render, renderStart, initSearch };
+  MentorAI.Home = { render, initSearch };
   MentorAI.initHeroStat = initHeroStat;
 })();
