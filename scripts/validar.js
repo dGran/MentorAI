@@ -427,12 +427,16 @@ function bloqueNormalizado(html, etiqueta) {
   return bloque ? bloque[0].replace(/\s+/g, " ").trim() : null;
 }
 
-function validarCabecerasDeTutoriales() {
-  const plantilla = leer(PLANTILLA_DE_TUTORIAL);
-  const tutoriales = fs
+function htmlDeTutoriales() {
+  return fs
     .readdirSync(path.join(ROOT, "tutorials"))
     .filter((fichero) => fichero.endsWith(".html"))
     .map((fichero) => `tutorials/${fichero}`);
+}
+
+function validarCabecerasDeTutoriales() {
+  const plantilla = leer(PLANTILLA_DE_TUTORIAL);
+  const tutoriales = htmlDeTutoriales();
 
   for (const etiqueta of BLOQUES_COMUNES) {
     const canonico = bloqueNormalizado(plantilla, etiqueta);
@@ -444,6 +448,18 @@ function validarCabecerasDeTutoriales() {
       `${divergentes.length} tutoriales con un <${etiqueta}> distinto del de ${PLANTILLA_DE_TUTORIAL}: ${divergentes.join(", ")}`
     );
   }
+}
+
+const DRAWER_ESCRITO = /class=["'][^"']*\bnav-drawer(-backdrop)?\b(?!__)/;
+
+function validarDrawerSoloDinamico() {
+  const conDrawerEscrito = htmlDeTutoriales().filter((fichero) => DRAWER_ESCRITO.test(leer(fichero)));
+
+  if (conDrawerEscrito.length === 0) return;
+
+  error(
+    `${conDrawerEscrito.length} tutoriales traen un .nav-drawer escrito en el HTML (lo crea initMobileNav): ${conDrawerEscrito.join(", ")}`
+  );
 }
 
 /* ---------- 6. Coherencia de los <script> entre páginas ---------- */
@@ -598,6 +614,7 @@ validarTutoriales();
 validarHeroContraManifest();
 validarIdsDuplicados();
 validarCabecerasDeTutoriales();
+validarDrawerSoloDinamico();
 validarScripts();
 validarShell();
 validarListasDePaginas();
