@@ -4081,7 +4081,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-08-22",
-    reviewed: "2026-08-22",
+    reviewed: "2026-10-11",
   },
   {
     slug: "ia-structured-output",
