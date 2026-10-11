@@ -210,7 +210,7 @@ const MINIMO_PARA_MEDIR_GRUPO = 12;
 const MAXIMO_CORRECTA_MAS_LARGA = 40;
 const MINIMO_PARA_MEDIR_LONGITUD = 5;
 const MAXIMO_MISMO_PUESTO_DE_LONGITUD = 45;
-const PUESTO_DE_LA_MAS_LARGA = 1;
+const MAXIMO_CON_PISTA_DE_FORMA = 10;
 const resumenDeLongitud = [];
 
 function laCorrectaEsLaMasLarga(pregunta) {
@@ -232,13 +232,25 @@ function avisarSiHaySesgoDeLongitud(nombre, masLargas, total) {
 }
 
 function avisarSiUnPuestoDeLongitudDomina(nombre, preguntas) {
-  const { puesto, porcentaje } = reglas.puestoDominante(preguntas);
+  const { puesto, porcentaje } = reglas.puestoDominanteTrasLaMasLarga(preguntas);
 
-  if (puesto === PUESTO_DE_LA_MAS_LARGA || porcentaje <= MAXIMO_MISMO_PUESTO_DE_LONGITUD) return;
+  if (porcentaje <= MAXIMO_MISMO_PUESTO_DE_LONGITUD) return;
 
   aviso(
-    `${nombre}: la correcta es la ${puesto}.ª opción más larga en un ${porcentaje}% de ${preguntas.length} preguntas ` +
+    `${nombre}: la correcta es la ${puesto}.ª opción más larga en un ${Math.round(porcentaje)}% de ${preguntas.length} preguntas ` +
       `(umbral ${MAXIMO_MISMO_PUESTO_DE_LONGITUD}%). Se aprueba eligiendo por longitud: reparte qué opción es la larga.`
+  );
+}
+
+function avisarSiLaFormaDelataLaCorrecta(nombre, preguntas) {
+  const conPista = preguntas.filter((pregunta) => reglas.pistasDeForma(pregunta).length > 0);
+  const porcentaje = (conPista.length / preguntas.length) * 100;
+
+  if (porcentaje <= MAXIMO_CON_PISTA_DE_FORMA) return;
+
+  aviso(
+    `${nombre}: en ${conPista.length} de ${preguntas.length} preguntas la forma delata la correcta ` +
+      `(umbral ${MAXIMO_CON_PISTA_DE_FORMA}%; p. ej. ${conPista.slice(0, 3).map((pregunta) => pregunta.id).join(", ")}). Iguala el arranque y el estilo de las opciones.`
   );
 }
 
@@ -295,6 +307,7 @@ function validarPreguntas(nombre, entradas, contexto) {
       posiciones[pregunta.a] = (posiciones[pregunta.a] ?? 0) + 1;
       porGrupo[grupo].posiciones[pregunta.a] = (porGrupo[grupo].posiciones[pregunta.a] ?? 0) + 1;
       porGrupo[grupo].total += 1;
+
       if (Array.isArray(pregunta.o) && pregunta.o.length >= 2) porGrupo[grupo].preguntas.push(pregunta);
 
       if (laCorrectaEsLaMasLarga(pregunta)) {
@@ -324,6 +337,7 @@ function validarPreguntas(nombre, entradas, contexto) {
     if (datosDelGrupo.total < MINIMO_PARA_MEDIR_GRUPO) continue;
 
     avisarSiUnPuestoDeLongitudDomina(`${nombre} «${grupo}»`, datosDelGrupo.preguntas);
+    avisarSiLaFormaDelataLaCorrecta(`${nombre} «${grupo}»`, datosDelGrupo.preguntas);
   }
 
   avisarSiHaySesgo(nombre, posiciones, total, true);

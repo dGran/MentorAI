@@ -134,10 +134,31 @@ test("the length rank counts the options strictly longer than the correct one", 
   assert.equal(reglas.puestoPorLongitud(question(["aaaa", "bbb", "cc", "d"], 3)), 4);
 });
 
-test("the dominant length rank and its share are reported", () => {
+test("the dominant rank after the longest is found even when the longest is more frequent", () => {
   const second = question(["aaaa", "bbb", "c"], 1);
+  const third = question(["aaaa", "bbb", "c"], 2);
   const longest = question(["aaaa", "bbb", "c"], 0);
 
-  assert.deepEqual(reglas.puestoDominante([second, second, second, longest]), { puesto: 2, porcentaje: 75 });
-  assert.deepEqual(reglas.puestoDominante([]), { puesto: 0, porcentaje: 0 });
+  assert.deepEqual(reglas.puestoDominanteTrasLaMasLarga([longest, longest, longest, second, second, third]), { puesto: 2, porcentaje: (2 / 6) * 100 });
+  assert.deepEqual(reglas.puestoDominanteTrasLaMasLarga([longest]), { puesto: 0, porcentaje: 0 });
+  assert.deepEqual(reglas.puestoDominanteTrasLaMasLarga([]), { puesto: 0, porcentaje: 0 });
+});
+
+test("a share just over the limit is not rounded down", () => {
+  const second = question(["aaaa", "bbb", "c"], 1);
+  const third = question(["aaaa", "bbb", "c"], 2);
+  const share = reglas.puestoDominanteTrasLaMasLarga([...Array(5).fill(second), ...Array(6).fill(third)]).porcentaje;
+
+  assert.ok(share > 54 && share < 55);
+});
+
+test("a correct option with a different shape from the distractors is a form cue", () => {
+  assert.deepEqual(reglas.pistasDeForma(question(["Porque a", "Porque b", "C; d"], 2)), ["solo la correcta lleva «;»", "los distractores empiezan por «porque» y la correcta no"]);
+  assert.deepEqual(reglas.pistasDeForma(question(["Porque a", "Por b: c", "Porque d"], 1)), ["solo la correcta lleva «:»", "los distractores empiezan por «porque» y la correcta no"]);
+});
+
+test("options sharing their shape carry no form cue", () => {
+  assert.deepEqual(reglas.pistasDeForma(question(["Porque a", "Porque b", "Porque c"], 1)), []);
+  assert.deepEqual(reglas.pistasDeForma(question(["Sí: a", "No: b", "Sí: c"], 1)), []);
+  assert.deepEqual(reglas.pistasDeForma(question(["Uno", "Dos", "Tres"], 0)), []);
 });

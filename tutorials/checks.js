@@ -31,7 +31,7 @@ window.MENTORAI_CHECKS = {
 
   "pr-tls-handshake": [
     { id: "ca4a847", q: "¿Qué garantía da el intercambio de claves efímero?",
-      o: ["Que el handshake se completa con una ida y vuelta menos", "Que el servidor ya no necesita un certificado firmado", "Forward secrecy: robar la clave no descifra lo grabado"], a: 2,
+      o: ["Que el handshake se completa con una ida y vuelta menos", "Que el servidor ya no necesita un certificado firmado", "Que robar más tarde la clave no descifra lo grabado"], a: 2,
       w: "Cada sesión deriva su propia clave, y esa clave no se puede reconstruir a partir de la privada del servidor." },
     { id: "cb126cb", q: "¿Qué pierdes al poner `verify_peer => false`?",
       o: ["La autenticación del servidor al que te conectas", "Nada importante: los datos siguen viajando cifrados", "El cifrado: los datos pasan a viajar en claro"], a: 0,
@@ -58,7 +58,7 @@ window.MENTORAI_CHECKS = {
 
   "pr-grpc": [
     { id: "c5d0a23", q: "¿Por qué el streaming viene de serie en gRPC?",
-      o: ["Porque abre un WebSocket por debajo en cada llamada", "Porque Protobuf trae el streaming en su formato binario", "HTTP/2 multiplexa: es una firma más en el .proto"], a: 2,
+      o: ["Porque abre un WebSocket por debajo en cada llamada", "Porque Protobuf trae el streaming en su formato binario", "Porque HTTP/2 multiplexa y es otra firma en el .proto"], a: 2,
       w: "En REST, mantener un flujo abierto exige montar SSE o WebSockets aparte. Aquí es un modo más de llamada." },
     { id: "c24ab29", q: "¿Se puede llamar a gRPC desde un navegador?",
       o: ["Solo con gRPC-Web y un proxy, y con menos streaming", "Sí, directamente con fetch, que ya habla HTTP/2", "Solo si ambos extremos hablan HTTP/3"], a: 0,
@@ -79,16 +79,16 @@ window.MENTORAI_CHECKS = {
       o: ["La mitad del intervalo", "El intervalo completo, siempre", "Cero, si el servidor responde rápido"], a: 0,
       w: "Con un intervalo de 10 segundos, de media el usuario espera 5. Suficiente para la mayoría de lo que se pide «en tiempo real» en una aplicación de negocio." },
     { id: "c52208c", q: "¿Qué ventaja operativa tiene el polling que se olvida?",
-      o: ["Entrega los cambios antes que un WebSocket", "Sin estado: cualquier servidor atiende cada vez", "Consume menos ancho de banda que mantener un canal"], a: 1,
+      o: ["Entrega los cambios antes que un WebSocket", "No tiene estado y lo atiende cualquier servidor", "Consume menos ancho de banda que mantener un canal"], a: 1,
       w: "No hay conexiones que drenar al desplegar, ni presencia que caducar, ni fan-out que montar. Es la razón principal de que aguante tanto." },
   ],
 
   "pr-sse": [
     { id: "c142c86", q: "¿Cuáles son las dos limitaciones reales de SSE?",
-      o: ["No funciona en móviles y no se puede cifrar", "No reconecta solo y no admite autenticación", "Es unidireccional y solo transporta texto"], a: 2,
+      o: ["Va mal en móviles y tampoco se puede cifrar", "No reconecta solo y no admite autenticación", "Es unidireccional y solo transporta texto"], a: 2,
       w: "Lo de unidireccional casi nunca molesta —enviar es puntual y recibir continuo—. Para binario habría que codificar en base64, con un 33 % de sobrecoste." },
     { id: "cf77c9c", q: "En PHP, ¿por qué se cierra el flujo SSE a propósito cada minuto?",
-      o: ["Para liberar el worker: el navegador reconecta solo", "Porque EventSource cierra solo el flujo pasado un minuto", "Para renovar el token de sesión del usuario"], a: 0,
+      o: ["Para liberar el worker, ya que el navegador reconecta", "Porque EventSource cierra solo el flujo pasado un minuto", "Para renovar el token de sesión del usuario"], a: 0,
       w: "Aun así, para cientos de conexiones simultáneas la salida real es sacar el endpoint de FPM: un runtime asíncrono o un componente aparte." },
   ],
 
@@ -97,16 +97,16 @@ window.MENTORAI_CHECKS = {
       o: ["Una conexión abierta que nunca llegó a autenticarse", "Una que el servidor cree abierta y ya no tiene cliente", "Una que sigue viva pero lleva horas sin mandar mensajes"], a: 1,
       w: "Un móvil que entra en un túnel no manda ningún aviso. Crees que el usuario está conectado y le mandas mensajes que se pierden. Hace falta un ping con plazo de respuesta." },
     { id: "cfbdf4a", q: "La autorización de un WebSocket se comprueba en el saludo. ¿Qué problema tiene?",
-      o: ["Que añade latencia a cada mensaje que viaja por el canal", "Que el saludo no permite mandar un token OAuth al servidor", "Que dura horas: si revocan permisos, sigue recibiendo"], a: 2,
+      o: ["Que añade latencia a cada mensaje que viaja por el canal", "Que el saludo no permite mandar un token OAuth al servidor", "Que dura horas y, si revocan permisos, sigue recibiendo"], a: 2,
       w: "Hace falta revalidar periódicamente o cerrar la conexión cuando cambian los permisos del usuario." },
   ],
 
   "pr-elegir-transporte": [
     { id: "c0a8201", q: "¿Qué criterio decide en la práctica y casi nunca se discute?",
-      o: ["Quién va a operar la flota con estado", "La latencia teórica que promete cada protocolo", "La elegancia técnica de cada solución propuesta"], a: 0,
+      o: ["La duda de quién opera la flota con estado", "La latencia teórica que promete cada protocolo", "La elegancia técnica de cada solución propuesta"], a: 0,
       w: "Conexiones persistentes necesitan monitorización propia, despliegues que drenen y alguien que entienda por qué un servidor tiene el triple de conexiones. Sin eso, la decisión ya está tomada." },
     { id: "c3d2e64", q: "¿Es deuda técnica empezar por polling?",
-      o: ["Sí, siempre hay que hacerlo bien desde el principio", "No, si va detrás de una interfaz que permita cambiarlo", "Sí, porque migrar después es imposible"], a: 1,
+      o: ["Sí, siempre hay que hacerlo bien desde el principio", "No, si va detrás de una interfaz que permita cambiarlo", "No, porque el polling escala igual que un WebSocket"], a: 1,
       w: "Encapsular «suscribirse a cambios de X» permite cambiar el transporte de debajo sin tocar el resto de la aplicación." },
   ],
 
@@ -142,13 +142,13 @@ window.MENTORAI_CHECKS = {
       o: ["Ocupa bastante menos que el mismo JSON en un array", "Se genera más rápido que un JSON normal entero", "Se lee línea a línea con memoria constante"], a: 2,
       w: "Y si la conexión se corta a la mitad, todo lo recibido hasta la última línea completa sigue siendo válido." },
     { id: "c494d32", q: "El streaming funciona en local y en producción llega todo de golpe al final. ¿Por qué?",
-      o: ["Algo en el camino acumula: buffer de PHP, nginx o CDN", "El navegador acumula la respuesta", "Falta `Content-Length` y el cliente espera al cierre"], a: 0,
+      o: ["Un buffer del camino acumula, sea de PHP, nginx o CDN", "El navegador acumula la respuesta", "Falta `Content-Length` y el cliente espera al cierre"], a: 0,
       w: "Basta con que una sola pieza acumule para que el streaming desaparezca, y no da ningún error: solo deja de comportarse como esperabas." },
   ],
 
   "pr-cuando-no-tiempo-real": [
     { id: "cd4e4c1", q: "Detrás de «que se vea al momento», ¿qué suele haber?",
-      o: ["Un requisito de latencia medido", "No tener que recargar la página a mano", "Un problema de rendimiento del servidor"], a: 1,
+      o: ["Un requisito de latencia medido", "Un deseo de no recargar la página", "Un problema de rendimiento del servidor"], a: 1,
       w: "Refrescar cada diez segundos resuelve esa petición entera, sin flota con estado, sin fan-out y sin presencia que mantener." },
     { id: "c1198f5", q: "¿Cuándo el tiempo real no se discute?",
       o: ["Cuando el cliente lo pide como requisito explícito del contrato", "Cuando hay muchos usuarios mirando la misma pantalla", "Cuando personas interactúan dentro del sistema en vivo"], a: 2,
@@ -171,7 +171,7 @@ window.MENTORAI_CHECKS = {
       o: ["Reiniciar la máquina entera", "Volver a hacer `enable`", "`systemctl daemon-reload`"], a: 2,
       w: "Sin recargar, systemd sigue usando la versión anterior del fichero en memoria y te vuelves loco viendo que tu cambio no hace nada." },
     { id: "c78b320", q: "¿Por qué se pone `--time-limit` a un worker de PHP?",
-      o: ["Se recicla antes de acumular memoria y systemd lo relanza", "Para que no se atasque con un mensaje que tarda demasiado en procesarse", "Para limitar cuántos mensajes procesa en cada hora"], a: 0,
+      o: ["Para reciclarlo antes de que acumule memoria y que systemd lo relance", "Para que no se atasque con un mensaje que tarda demasiado en procesarse", "Para limitar cuántos mensajes procesa en cada hora"], a: 0,
       w: "Es reciclaje preventivo, no una limitación: el proceso sale limpiamente y arranca otro fresco sin que nadie note nada." },
   ],
 
@@ -189,7 +189,7 @@ window.MENTORAI_CHECKS = {
       o: ["Al directorio `public/`", "A la raíz del proyecto entero", "Al directorio del framework"], a: 0,
       w: "Si apunta a la raíz, cualquiera puede pedir `/.env` o los ficheros de configuración por HTTP: todo el repositorio es público." },
     { id: "c7b385c", q: "¿Por qué limitar la tasa en nginx y no solo en la aplicación?",
-      o: ["Porque nginx cuenta las peticiones con más precisión", "Rechazar ahí cuesta microsegundos; en PHP, un worker entero", "Porque la aplicación no puede limitar por IP, solo por usuario"], a: 1,
+      o: ["Porque nginx cuenta las peticiones con más precisión", "Porque rechazar ahí cuesta microsegundos, no un worker de PHP", "Porque la aplicación no puede limitar por IP, solo por usuario"], a: 1,
       w: "Son defensas complementarias: la de la aplicación sabe de usuarios, la de nginx aguanta cuando llegan diez mil peticiones por segundo." },
   ],
 
@@ -204,7 +204,7 @@ window.MENTORAI_CHECKS = {
 
   "inf-dns": [
     { id: "c588247", q: "¿Por qué no se puede poner un CNAME en la raíz del dominio?",
-      o: ["Porque los navegadores no resuelven CNAME en la raíz", "La raíz lleva NS y SOA, y un CNAME no admite convivir", "Porque el TTL de la raíz no puede bajar de un día"], a: 1,
+      o: ["Porque los navegadores no resuelven CNAME en la raíz", "Porque la raíz lleva NS y SOA, y un CNAME no convive con nada", "Porque el TTL de la raíz no puede bajar de un día"], a: 1,
       w: "Los proveedores lo resuelven con ALIAS o ANAME, que son extensiones propias: si cambias de proveedor, eso hay que rehacerlo." },
     { id: "cd7028b", q: "¿Cómo compruebas si tu cambio de DNS se guardó de verdad?",
       o: ["Esperando 48 horas a que se propague", "Con `dig` contra el resolutor 8.8.8.8", "Con `dig @ns1...` al autoritativo"], a: 2,
@@ -213,10 +213,10 @@ window.MENTORAI_CHECKS = {
 
   "inf-balanceo": [
     { id: "c10556c", q: "¿Qué decide el endpoint «vivo» frente al endpoint «listo»?",
-      o: ["«Vivo»: si reiniciar; «listo»: si recibe tráfico", "«Vivo» es para el balanceador y «listo» para el monitoreo", "Nada: son dos nombres de la misma comprobación"], a: 0,
+      o: ["«Vivo» decide si reiniciar y «listo», si recibe tráfico", "«Vivo» es para el balanceador y «listo» para el monitoreo", "Nada: son dos nombres de la misma comprobación"], a: 0,
       w: "La comprobación cara —base de datos, dependencias— va en «listo», para que una caída de la base de datos saque servidores del balanceo sin reiniciarlos en bucle." },
     { id: "c0a0b88", q: "¿Por qué la sesión pegajosa es una solución temporal?",
-      o: ["Porque añade latencia a cada petición del usuario", "Desequilibra y, al quitar un nodo, tira sus sesiones", "Porque deja de funcionar en cuanto pasas a HTTPS"], a: 1,
+      o: ["Porque añade latencia a cada petición del usuario", "Porque desequilibra y, al quitar un nodo, tira sus sesiones", "Porque deja de funcionar en cuanto pasas a HTTPS"], a: 1,
       w: "El arreglo de verdad es sacar el estado del servidor: sesiones en Redis, ficheros en almacenamiento de objetos. Entonces todo lo demás se vuelve trivial." },
   ],
 
@@ -231,19 +231,19 @@ window.MENTORAI_CHECKS = {
 
   "inf-orquestacion": [
     { id: "caefd2c", q: "¿Qué significa que un orquestador sea declarativo?",
-      o: ["Que describes los pasos en YAML y él los ejecuta", "Declaras el estado deseado y él lo persigue sin parar", "Que hay que declarar los recursos antes de usarlos"], a: 1,
+      o: ["Que describes los pasos en YAML y él los ejecuta", "Que declaras el estado deseado y él lo persigue sin parar", "Que hay que declarar los recursos antes de usarlos"], a: 1,
       w: "Esa diferencia es la que hace que la infraestructura se recupere sola en vez de esperar a que alguien ejecute algo." },
     { id: "c2f3c71", q: "¿Qué te quita un clúster gestionado por el proveedor?",
-      o: ["Todo el coste operativo: tú solo despliegas tus aplicaciones", "Solo el coste de comprar y mantener las máquinas", "El plano de control; red y depuración, tuyas"], a: 2,
+      o: ["Todo el coste operativo: tú solo despliegas tus aplicaciones", "Solo el coste de comprar y mantener las máquinas", "El plano de control, no la red ni la depuración"], a: 2,
       w: "Es la diferencia entre un coste alto y uno medio, no entre alto y cero." },
   ],
 
   "inf-despliegues-sin-caida": [
     { id: "cd0ee1d", q: "¿Cuál es la ventaja real de un despliegue canario?",
-      o: ["Un fallo real lo ve un 1 % y paras a tiempo", "Que despliega más rápido que un rolling update", "Que se salta las pruebas porque el tráfico ya prueba"], a: 0,
+      o: ["Que un fallo real lo ve un 1 % y paras a tiempo", "Que despliega más rápido que un rolling update", "Que se salta las pruebas porque el tráfico ya prueba"], a: 0,
       w: "Y exige métricas separadas por versión: sin eso, un canario es un despliegue lento y nada más." },
     { id: "cca2969", q: "¿Qué hace un interruptor de funcionalidad por tus reversiones?",
-      o: ["Las hacen más rápidas porque no hay que compilar", "Revertir pasa a ser un cambio de configuración", "Permite revertir también las migraciones de datos"], a: 1,
+      o: ["Las hace más rápidas porque no hay que compilar", "Revertir pasa a ser un cambio de configuración", "Permite revertir también las migraciones de datos"], a: 1,
       w: "Separar desplegar de activar es lo que hace que revertir sea aburrido, que es exactamente lo que quieres que sea." },
   ],
 
@@ -252,16 +252,16 @@ window.MENTORAI_CHECKS = {
       o: ["Por el formato: YAML o .env es configuración", "Si está en el repositorio, es código; si no, configuración", "Lo que cambia entre entornos es configuración"], a: 2,
       w: "Las rutas y el cableado del contenedor son código aunque estén en un YAML. Y un valor que no has cambiado en dos años es una constante, no flexibilidad." },
     { id: "ce87a7a", q: "¿Están cifrados los Secrets de Kubernetes por defecto?",
-      o: ["No: base64 es codificación, no cifrado", "Sí, etcd los guarda cifrados con AES", "Solo los de tipo TLS, que llevan claves"], a: 0,
+      o: ["No, base64 es codificación y no cifrado", "Sí, etcd los guarda cifrados con AES", "Solo los de tipo TLS, que llevan claves"], a: 0,
       w: "Cualquiera con permiso de lectura sobre ese objeto los ve en claro. Hay que activar el cifrado en reposo del almacén o integrar un gestor externo." },
   ],
 
   "inf-iac": [
     { id: "ca0ef91", q: "¿Qué capa cubre Terraform y cuál Ansible?",
-      o: ["Son intercambiables: cada uno cubre ambas capas igual de bien", "Terraform crea los recursos; Ansible configura las máquinas", "Terraform despliega la aplicación y Ansible la red"], a: 1,
+      o: ["Son intercambiables: cada uno cubre ambas capas igual de bien", "Terraform crea los recursos y Ansible configura las máquinas", "Terraform despliega la aplicación y Ansible la red"], a: 1,
       w: "Se comparan como si compitieran y en realidad se complementan: uno crea la máquina y el otro la configura." },
     { id: "ce00443", q: "¿Qué te dice `terraform plan` que hay que leer entero?",
-      o: ["El tiempo que tardará cada operación en aplicarse", "El coste mensual que tendrá el cambio en la nube", "Qué crea, cambia y, sobre todo, destruye"], a: 2,
+      o: ["Qué tiempo tardará cada operación en aplicarse", "Cuánto costará cada mes el cambio en la nube", "Qué crea, cambia y, sobre todo, destruye"], a: 2,
       w: "Un cambio aparentemente inocente como renombrar un recurso puede traducirse en «destruir la base de datos y crear otra»." },
   ],
 
@@ -270,16 +270,16 @@ window.MENTORAI_CHECKS = {
       o: ["Cuánto puedes estar caído, de localizar a verificar", "Cuántos datos puedes perder desde la última copia", "Cada cuánto debe ejecutarse la copia para cumplir el plan"], a: 0,
       w: "Si nunca has cronometrado una restauración completa, tu RTO es un número inventado." },
     { id: "c20bab9", q: "¿Qué protege el «1» de la regla 3-2-1?",
-      o: ["De que la copia esté corrupta sin que lo sepas", "De perder la instalación entera: incendio, ransomware", "De un fallo del tipo de soporte, como un disco"], a: 1,
+      o: ["De que la copia esté corrupta sin que lo sepas", "De perder la instalación entera por incendio o ransomware", "De un fallo del tipo de soporte, como un disco"], a: 1,
       w: "Por eso las copias deben ser inmutables o estar en una cuenta separada: si las credenciales del servidor pueden borrarlas, no tienes copias." },
   ],
 
   "inf-capacidad": [
     { id: "c2908bc", q: "¿Qué pasa con el rendimiento total pasado el punto de saturación?",
-      o: ["Se mantiene estable y solo sube la latencia", "Sigue subiendo, aunque cada vez más despacio", "Baja: se gasta en gestionar la contención"], a: 2,
+      o: ["Se mantiene estable y solo sube la latencia", "Sigue subiendo, aunque cada vez más despacio", "Baja, porque lo consume la contención"], a: 2,
       w: "Cambios de contexto, competencia por bloqueos y reintentos de clientes impacientes: el sistema atiende menos peticiones por segundo que cuando estaba al 80 %." },
     { id: "cc6d693", q: "¿Qué mide golpear diez mil veces el mismo endpoint con el mismo parámetro?",
-      o: ["Cuánto aguanta tu caché", "La capacidad real del sistema", "La latencia de red hasta el servidor"], a: 0,
+      o: ["La capacidad de tu caché", "La capacidad real del sistema", "La latencia de red hasta el servidor"], a: 0,
       w: "Una prueba útil recorre un escenario con datos variados: entrar, buscar, ver fichas distintas, añadir al carrito." },
   ],
 
@@ -478,7 +478,7 @@ window.MENTORAI_CHECKS = {
 
   "sd-outbox": [
     { id: "c1f42c8", q: "¿Arregla algo meter el `publicar` dentro de la transacción?",
-      o: ["Sí: si el COMMIT falla, el rollback deshace también la publicación del evento", "No: si publicar sale bien y luego falla el COMMIT, el evento ya salió", "Sí, siempre que publiques en la última línea, justo antes de hacer COMMIT"], a: 1,
+      o: ["Sí: si el COMMIT falla, el rollback deshace también la publicación del evento", "No: si publicar sale bien y luego falla el COMMIT, el evento ya salió", "Solo si publicas en la última línea, justo antes de hacer COMMIT"], a: 1,
       w: "Encima mantienes la transacción abierta durante una llamada de red, que es su propio problema. La transacción solo cubre la base de datos." },
     { id: "c7e3800", q: "¿Qué garantiza el outbox?",
       o: ["Que cada evento se publica exactamente una vez", "Que los eventos llegan en orden a todos los consumidores", "Que ningún evento se pierde, pero puede repetirse"], a: 2,
@@ -487,7 +487,7 @@ window.MENTORAI_CHECKS = {
 
   "sd-colas-y-topicos": [
     { id: "c2afb91", q: "¿Qué pasa con un mensaje después de leerlo?",
-      o: ["En una cola desaparece al confirmarlo; en un registro sigue ahí", "En los dos desaparece en cuanto el consumidor lo confirma", "En los dos sigue ahí hasta que vence el tiempo de retención"], a: 0,
+      o: ["En una cola desaparece al confirmarlo y en un registro sigue ahí", "En los dos desaparece en cuanto el consumidor lo confirma", "En los dos sigue ahí hasta que vence el tiempo de retención"], a: 0,
       w: "Esa es la diferencia de fondo entre RabbitMQ y Kafka, y de ella salen todas las demás: quién lleva la cuenta, si puedes rebobinar y cómo se decide el paralelismo." },
     { id: "c346a6a", q: "En Kafka, ¿qué topa el paralelismo de un grupo de consumidores?",
       o: ["El número de brokers del clúster de Kafka", "El número de particiones del topic", "La memoria del consumidor"], a: 1,
@@ -505,7 +505,7 @@ window.MENTORAI_CHECKS = {
 
   "sd-particionado": [
     { id: "c3471c7", q: "¿Qué problema resuelve particionar que replicar no resuelve?",
-      o: ["La latencia de las lecturas lejanas", "El volumen de escritura y el tamaño de los datos", "La tolerancia a fallos de un nodo"], a: 1,
+      o: ["La latencia de las lecturas lejanas", "La carga de escritura y el tamaño de los datos", "La tolerancia a fallos de un nodo"], a: 1,
       w: "Cada réplica sigue teniendo que aplicar todas las escrituras y almacenarlo todo. Cuando eso es lo que no cabe, replicar no ayuda." },
     { id: "c5bd084", q: "¿Qué tiene de malo `crc32($clave) % $numeroDeParticiones`?",
       o: ["Que crc32 reparte mal y amontona las claves en unas pocas particiones", "Que obliga a leer de todas las particiones en cada una de las consultas", "Que al añadir una máquina cambia de destino casi cada clave"], a: 2,
@@ -514,7 +514,7 @@ window.MENTORAI_CHECKS = {
 
   "sd-transacciones-distribuidas": [
     { id: "cce6723", q: "¿Qué significa que un participante vote «sí» en la primera fase?",
-      o: ["Que se compromete: debe poder confirmar aunque se reinicie", "Que puede cambiar de opinión antes de confirmar", "Que ya ha aplicado sus cambios y los demás pueden verlos"], a: 0,
+      o: ["Que se compromete a poder confirmar aunque se reinicie", "Que puede cambiar de opinión antes de confirmar", "Que ya ha aplicado sus cambios y los demás pueden verlos"], a: 0,
       w: "Ese compromiso es lo que hace correcto al protocolo, y también lo que lo bloquea: tras votar sí, el participante no puede decidir por su cuenta si el coordinador desaparece." },
     { id: "cbc8660", q: "¿Por qué 2PC no sirve con una pasarela de pagos?",
       o: ["Porque las pasarelas responden demasiado lento para mantener el bloqueo abierto", "Porque exige XA en todos los participantes, y una API HTTP no lo tiene", "Porque 2PC solo funciona entre bases de datos del mismo fabricante y versión"], a: 1,
@@ -529,7 +529,7 @@ window.MENTORAI_CHECKS = {
       o: ["Que la saga persiste su estado tras cada paso y se puede retomar", "Que la saga deshace cada paso con un rollback de la base de datos", "Que la saga corre en segundo plano, fuera de la petición del usuario"], a: 0,
       w: "Si el proceso muere entre el paso 2 y el 3, el estado guardado dice exactamente dónde estaba y un proceso de recuperación la retoma. Sin eso, se pierde." },
     { id: "c76d3c1", q: "¿Qué pierdes con una saga que sí tenías con una transacción?",
-      o: ["La durabilidad: un paso confirmado puede perderse", "El aislamiento: otras operaciones ven los estados intermedios", "La atomicidad de cada paso: un paso suelto puede quedar a medias"], a: 1,
+      o: ["Durabilidad: un paso confirmado puede perderse", "Aislamiento: otras operaciones ven los estados intermedios", "Atomicidad de cada paso: un paso suelto puede quedar a medias"], a: 1,
       w: "Otra operación concurrente puede ver que el stock está reservado y el pago hecho mientras el pedido «no existe» todavía. Se mitiga con estados explícitos que digan al resto que ahí no se toca." },
   ],
 
@@ -547,16 +547,16 @@ window.MENTORAI_CHECKS = {
       o: ["Para registrar métricas sin afectar al tráfico", "Para tantear con pocas peticiones antes de soltar toda la carga", "Para dejar pasar solo las peticiones críticas mientras dura el fallo"], a: 1,
       w: "Sin él tendrías que elegir entre quedarte abierto para siempre o volver de golpe al 100 % y tumbar otra vez lo que estaba recuperándose." },
     { id: "c384baf", q: "¿Deben contar los 404 y los 422 para abrir el circuito?",
-      o: ["Sí: cualquier error es señal de que algo va mal en el servicio al que llamas", "Sí, pero con la mitad de peso que un 500 o que un timeout del servicio llamado", "No: un cliente con peticiones mal formadas abriría el circuito a todos"], a: 2,
+      o: ["Sí: cualquier error es señal de que algo va mal en el servicio al que llamas", "Solo con la mitad de peso que un 500 o que un timeout del servicio llamado", "No: un cliente con peticiones mal formadas abriría el circuito a todos"], a: 2,
       w: "Los errores de cliente no dicen nada sobre la salud del servicio. Contarlos convierte el error de un usuario en una caída general." },
   ],
 
   "sd-dlq-y-reproceso": [
     { id: "ca1835b", q: "¿Qué distingue un fallo transitorio de uno permanente?",
-      o: ["Que el transitorio se arregla solo; el permanente fallará igual en una hora", "Lo dice el código HTTP: cualquier 4xx es permanente y cualquier 5xx, transitorio", "El número de intentos: a partir del quinto fallo seguido ya se da por permanente"], a: 0,
+      o: ["El tiempo: el transitorio se arregla solo, el permanente fallará igual", "Lo dice el código HTTP: cualquier 4xx es permanente y cualquier 5xx, transitorio", "El número de intentos: a partir del quinto fallo seguido ya se da por permanente"], a: 0,
       w: "Un JSON que no se puede deserializar no mejora con el tiempo: va a la cola de muertos en el primer intento, sin gastar cinco reintentos para nada." },
     { id: "c389aba", q: "¿Qué hay que vigilar en una cola de muertos?",
-      o: ["El espacio que ocupa en el disco del broker", "Una alerta cuando pasa de cero mensajes", "El ratio respecto al total procesado"], a: 1,
+      o: ["El espacio que ocupa en el disco del broker", "El primer mensaje que entra, con alerta", "El tiempo que tarda en purgarse sola cada noche"], a: 1,
       w: "No es un vertedero, es una bandeja de entrada. Si un mensaje llega ahí, hay trabajo de negocio sin hacer, y una gráfica que nadie mira no sirve de nada." },
   ],
 
@@ -574,13 +574,13 @@ window.MENTORAI_CHECKS = {
       o: ["Porque el líder antiguo se apaga solo al detectar la partición", "Porque dos mayorías del mismo conjunto comparten al menos un nodo", "Porque los relojes de los nodos están sincronizados con NTP"], a: 1,
       w: "Ese nodo compartido no puede votar dos decisiones contradictorias. Es aritmética, no un mecanismo: por eso el lado minoritario de una partición se para solo." },
     { id: "cd247d9", q: "¿Qué deberías hacer si necesitas consenso?",
-      o: ["Implementar Raft siguiendo el paper al pie de la letra", "Elegir líder con una fila en la base de datos y un latido periódico", "Usar una pieza probada: etcd, Consul o el de tu base de datos"], a: 2,
+      o: ["Implementar Raft siguiendo el paper al pie de la letra", "Elegir líder con una fila en la base de datos y un latido periódico", "Usar una pieza probada como etcd, Consul o el de tu base de datos"], a: 2,
       w: "Lo que hace correcto a un algoritmo de consenso vive en los casos extremos: mensajes viejos que reaparecen, nodos con registros divergentes, líderes que no saben que ya no lo son. Eso son años de pruebas." },
   ],
 
   "sd-locks-distribuidos": [
     { id: "c1c3508", q: "¿Por qué hay que comprobar el testigo antes de soltar el bloqueo?",
-      o: ["Porque si el tuyo caducó, el `del` borra el bloqueo de otro proceso", "Para registrar en los logs qué proceso tenía el bloqueo justo al soltarlo", "Para renovar la caducidad antes de que otro proceso pueda llegar a cogerlo"], a: 0,
+      o: ["Para no borrar con el `del` el bloqueo de otro proceso si el tuyo caducó", "Para registrar en los logs qué proceso tenía el bloqueo justo al soltarlo", "Para renovar la caducidad antes de que otro proceso pueda llegar a cogerlo"], a: 0,
       w: "Y entra un tercero. Ahora hay tres procesos en la sección crítica sin que el bloqueo haya «fallado» en ningún momento visible. La comprobación y el borrado tienen que ser atómicos." },
     { id: "c3a1a78", q: "¿Qué garantiza de verdad la exclusión mutua distribuida?",
       o: ["Redlock, con el bloqueo en la mayoría de cinco instancias de Redis", "Un token de barrera que el recurso valida, rechazando números viejos", "Una caducidad más larga que la pausa más larga que puedas sufrir"], a: 1,
@@ -589,7 +589,7 @@ window.MENTORAI_CHECKS = {
 
   "sd-trazas-distribuidas": [
     { id: "c70ae38", q: "¿Dónde se rompe casi siempre la propagación del contexto?",
-      o: ["En las llamadas HTTP entre servicios escritos en distintos lenguajes", "En las consultas a la base de datos, que no admiten cabeceras de traza", "En las colas: el contexto hay que meterlo en el mensaje a mano"], a: 2,
+      o: ["En las llamadas HTTP entre servicios escritos en distintos lenguajes", "En las consultas a la base de datos, que no admiten cabeceras de traza", "En las colas, donde el contexto se mete en el mensaje a mano"], a: 2,
       w: "En HTTP suele venir hecho por la librería. Si no lo haces en mensajería, todas tus trazas terminan justo donde empieza lo asíncrono, que es donde más falta te hacían." },
     { id: "cfbd33c", q: "¿Qué versión reducida resuelve buena parte del problema en una tarde?",
       o: ["Propagar un identificador de correlación y escribirlo en cada log", "Subir el nivel de detalle de los logs en todos los servicios a la vez", "Sincronizar los relojes con NTP para poder ordenar los logs por hora"], a: 0,
@@ -598,10 +598,10 @@ window.MENTORAI_CHECKS = {
 
   "sd-cuando-no-distribuir": [
     { id: "ce0ac72", q: "¿Qué es un monolito distribuido?",
-      o: ["Un monolito desplegado en varias máquinas tras un balanceador", "Servicios en cadena, con esquema compartido y despliegue conjunto", "Un monolito con módulos bien separados dentro del mismo proceso"], a: 1,
+      o: ["Un monolito desplegado en varias máquinas tras un balanceador", "Un sistema de servicios en cadena con esquema y despliegue comunes", "Un monolito con módulos bien separados dentro del mismo proceso"], a: 1,
       w: "Es el resultado más común de repartir por las razones malas: tienes las dos facturas y ninguna de las dos ventajas." },
     { id: "ccc6a01", q: "¿Qué ventaja tiene empezar por un monolito modular?",
-      o: ["Que escala mejor bajo carga que cualquier sistema repartido en varios servicios", "Que ahorra los tests de integración, porque todo vive dentro del mismo proceso", "Que valida fronteras gratis: si no se aísla dentro, tampoco como servicio"], a: 2,
+      o: ["Que escala mejor bajo carga que cualquier sistema repartido en varios servicios", "Que ahorra los tests de integración, porque todo vive dentro del mismo proceso", "Que valida las fronteras gratis, pues si no se aíslan dentro, tampoco fuera"], a: 2,
       w: "Y lo descubres sin desplegar nada. Da el 80 % del beneficio organizativo por el 5 % del coste operativo." },
   ],
 
@@ -1548,7 +1548,7 @@ window.MENTORAI_CHECKS = {
 
   "big-o": [
     { id: "c323b4c", q: "Duplicas los datos y tu algoritmo solo tarda un poco más, no el doble.",
-      o: ["Es O(n): crece en proporción, pero con una constante pequeña","Suena a O(log n): divide el problema a la mitad en cada paso","Es O(1): el tiempo no depende del tamaño de los datos"], a: 1,
+      o: ["Es O(n): crece en proporción, pero con una constante pequeña","Es O(log n): reduce el problema a la mitad en cada iteración","Es O(1): el tiempo no depende del tamaño de los datos"], a: 1,
       w: "Buscar en un millón de elementos ordenados son unas 20 comparaciones; en dos millones, 21." },
     { id: "c01780f", q: "Un bucle dentro de otro sobre la misma colección.",
       o: ["O(n log n), como una ordenación eficiente de la colección","O(2n): dos recorridos, que en la práctica es O(n)","O(n²): con 1.000 elementos, un millón de iteraciones"], a: 2,
@@ -1557,7 +1557,7 @@ window.MENTORAI_CHECKS = {
 
   "estructuras-datos": [
     { id: "cc22676", q: "Necesitas comprobar muchas veces si un elemento está en una colección grande.",
-      o: ["Un hashmap o un set: búsqueda O(1) en promedio","Un array ordenado, recorriéndolo hasta encontrarlo","Una lista enlazada ordenada"], a: 0,
+      o: ["Un hashmap o un set, que busca en O(1) de media","Un array ordenado, recorriéndolo hasta encontrarlo","Una lista enlazada ordenada"], a: 0,
       w: "El «en promedio» importa: con muchas colisiones degenera a O(n), y por eso la función hash y el factor de carga no son un detalle." },
     { id: "c8be5c9", q: "¿Qué gana una lista enlazada frente a un array?",
       o: ["Búsquedas más rápidas porque cada nodo apunta al siguiente", "Insertar y borrar en medio sin tener que desplazar el resto", "Mejor uso de la caché al recorrerla de principio a fin"], a: 1,
@@ -1569,7 +1569,7 @@ window.MENTORAI_CHECKS = {
       o: ["Mantiene las claves ordenadas y busca por bisección","Usa un índice B-tree interno, como una base de datos","La función hash calcula la posición donde mirar"], a: 2,
       w: "Por eso la clave tiene que ser hasheable e inmutable: si cambia después de insertarla, el mapa ya no la encuentra." },
     { id: "c093c16", q: "¿Qué es una colisión y por qué importa?",
-      o: ["Dos claves distintas con el mismo hash; muchas degradan a O(n)","Dos claves iguales insertadas: la segunda sobrescribe a la primera","Un fallo de la función hash que conviene corregir cambiándola"], a: 0,
+      o: ["Dos claves distintas con el mismo hash, y muchas degradan a O(n)","Dos claves iguales insertadas: la segunda sobrescribe a la primera","Un fallo de la función hash que conviene corregir cambiándola"], a: 0,
       w: "Es inevitable (hay infinitas claves y finitas posiciones); lo que importa es que la función reparta bien." },
   ],
 
@@ -1605,13 +1605,13 @@ window.MENTORAI_CHECKS = {
       o: ["El sistema operativo los serializa: los accesos nunca se pisan","Es una condición de carrera: comparten memoria","Cada uno tiene su copia, no pasa nada"], a: 1,
       w: "Compartir memoria es lo que hace a los hilos baratos y peligrosos: comunicarse es gratis, coordinarse es tu problema." },
     { id: "c22196b", q: "¿Por qué PHP-FPM usa procesos y no hilos?",
-      o: ["Porque los hilos no pueden atender peticiones HTTP en paralelo","Porque en Linux los procesos son más rápidos de crear que los hilos","Por el shared-nothing: cada petición arranca con estado limpio"], a: 2,
+      o: ["Porque los hilos no pueden atender peticiones HTTP en paralelo","Porque en Linux los procesos son más rápidos de crear que los hilos","Porque es shared-nothing y cada petición arranca con estado limpio"], a: 2,
       w: "Es lo que hace que PHP perdone tantos errores de estado global, y también lo que hay que replantearse al pasar a workers." },
   ],
 
   "concurrencia": [
     { id: "c312cb1", q: "Un bug solo aparece en producción bajo carga y no hay forma de reproducirlo en local.",
-      o: ["Huele a carrera: depende de cómo se intercalen las operaciones", "Es una versión distinta de PHP entre local y producción", "Es un bug del framework que solo salta en modo producción"], a: 0,
+      o: ["Es una carrera que depende de cómo se intercalen las operaciones", "Es una versión distinta de PHP entre local y producción", "Es un bug del framework que solo salta en modo producción"], a: 0,
       w: "Por eso se resuelven con diseño (locks, operaciones atómicas) y no depurando: no puedes provocar el intercalado a voluntad." },
     { id: "c3ddc20", q: "Lees un contador, le sumas uno y lo guardas. ¿Qué falla con concurrencia?",
       o: ["Nada, mientras la operación sea lo bastante rápida","Dos procesos leen el mismo valor y se pierde un incremento","El valor se corrompe a medio escribir y queda un número inválido"], a: 1,
@@ -1641,13 +1641,13 @@ window.MENTORAI_CHECKS = {
       o: ["Problema de DNS: falla la resolución del nombre a IP","Problema del servidor: está caído o no responde en el puerto 80","El certificado ha caducado y el navegador lo rechaza"], a: 0,
       w: "Muchos incidentes de «la web no va» son en realidad de DNS, con su caché y su TTL complicando el diagnóstico." },
     { id: "cedc3cc", q: "¿Qué parte de la URL NO llega al servidor?",
-      o: ["La query string, que el navegador guarda para sí","El fragmento tras la almohadilla (`#seccion`)","La ruta, porque el servidor solo recibe el dominio"], a: 1,
+      o: ["La query string, que el navegador guarda para sí","El fragmento tras la almohadilla (`#seccion`)","El dominio, porque solo se usa en la consulta DNS"], a: 1,
       w: "El fragmento lo resuelve el navegador. Por eso las SPA que lo usaban para rutas no aparecían en los logs del servidor." },
   ],
 
   "http-a-fondo": [
     { id: "c14753e", q: "¿Qué hace que una respuesta sea cacheable por un proxy intermedio?",
-      o: ["Que sea un GET: todos los GET se cachean por defecto","Que el cuerpo sea JSON o HTML y no lleve cookies de sesión","Las cabeceras de caché junto con un método seguro como GET"], a: 2,
+      o: ["Que sea un GET: todos los GET se cachean por defecto","Que el cuerpo sea JSON o HTML y no lleve cookies de sesión","Que incluya cabeceras de caché y un método seguro como GET"], a: 2,
       w: "Ser GET es condición necesaria pero no suficiente: sin cabeceras, cada proxy decide por su cuenta o no cachea." },
     { id: "c60856b", q: "¿Qué significa que GET sea «seguro» en HTTP?",
       o: ["Que no debe cambiar el estado del servidor al llamarlo","Que va cifrado por defecto, aunque no haya HTTPS","Que sus parámetros no se pueden interceptar"], a: 0,
@@ -1668,7 +1668,7 @@ window.MENTORAI_CHECKS = {
       o: ["Si la operación es idempotente, puedes reintentar sin miedo","Reintentar siempre: si no llegó, no se pierde nada por repetir","Asumir que llegó: si no hubo error, lo normal es que sí"], a: 0,
       w: "Es lo que hace viables los reintentos automáticos en redes poco fiables, y por eso importa tanto en sistemas distribuidos." },
     { id: "c08a132", q: "¿Qué métodos HTTP deberían ser idempotentes?",
-      o: ["Todos: repetir una petición HTTP nunca cambia el resultado","GET, PUT y DELETE; POST no, salvo con clave de idempotencia","Solo GET, porque es el único método que no modifica nada"], a: 1,
+      o: ["Todos: repetir una petición HTTP nunca cambia el resultado","GET, PUT y DELETE, pero POST solo con clave de idempotencia","Solo GET, porque es el único método que no modifica nada"], a: 1,
       w: "DELETE lo es aunque el segundo intento devuelva 404: el efecto final es el mismo, el recurso no está." },
   ],
 

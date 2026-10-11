@@ -38,6 +38,8 @@ Sin otros tracks ni otras personas. Solapes internos, en serie y con `git pull` 
 
 **Enmienda (2026-10-11, al medir B1):** igualar longitudes con la regla de «la más larga» deja la correcta como la **segunda** más larga en el 56-87 % de las preguntas: un truco nuevo. `validar.js` gana la regla «ningún puesto de longitud distinto del 1.º pasa del 45 %» por examen y por checks de cada curso, y el objetivo de cada bloque pasa a ser la más larga en un 10-25 % con los puestos repartidos. La regla destapa tres cursos que ya cumplían la antigua: `fundamentos` (piloto, 48-49 %) entra en B1, y `ia-por-dentro` y `metodo-con-agentes` (56-71 %) entran en B3.
 
+**Segunda enmienda (review de #102):** al igualar longitudes, la correcta quedaba con otra forma (telegráfica, «X; Y», o sin el «Porque…» de los distractores). `validar.js` gana el aviso «la forma delata la correcta» (más del 10 % de un examen o de los checks de un curso; las de sí/no no cuentan). La salida de cada bloque exige los tres avisos a 0 en sus cursos. En checks de 3 opciones, «la más corta» puede llegar al 40 % justo: es aritmética, no caben los otros topes. Los `artículos sueltos` (checks sin curso) entran en B6 por la regla de forma.
+
 Después de la tanda, en el mismo loop: **#34** por `/implement-epic`, un curso por PR (decisión del usuario, § 6).
 
 ## 4. Límites y fuera de la tanda

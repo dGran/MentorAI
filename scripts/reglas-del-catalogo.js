@@ -50,18 +50,44 @@ function puestoPorLongitud(pregunta) {
   return 1 + longitudes.filter((longitud) => longitud > correcta).length;
 }
 
-function puestoDominante(preguntas) {
+const PUESTO_DE_LA_MAS_LARGA = 1;
+
+function puestoDominanteTrasLaMasLarga(preguntas) {
   const veces = new Map();
 
   for (const pregunta of preguntas) {
     const puesto = puestoPorLongitud(pregunta);
+
+    if (puesto === PUESTO_DE_LA_MAS_LARGA) continue;
 
     veces.set(puesto, (veces.get(puesto) ?? 0) + 1);
   }
 
   const [puesto, cuantas] = [...veces.entries()].sort((primero, segundo) => segundo[1] - primero[1])[0] ?? [0, 0];
 
-  return { puesto, porcentaje: preguntas.length ? Math.round((cuantas / preguntas.length) * 100) : 0 };
+  return { puesto, porcentaje: preguntas.length ? (cuantas / preguntas.length) * 100 : 0 };
+}
+
+const SEPARADOR_DE_PALABRAS = /[\s:,;]+/;
+const ARRANQUES_DE_SI_O_NO = new Set(["sí", "si", "no"]);
+
+const primeraPalabra = (texto) => String(texto).trim().split(SEPARADOR_DE_PALABRAS)[0].toLowerCase();
+
+function pistasDeForma(pregunta) {
+  const correcta = String(pregunta.o[pregunta.a]);
+  const distractores = pregunta.o.filter((_, indice) => indice !== pregunta.a).map(String);
+  const arranques = distractores.map(primeraPalabra);
+  const pistas = [];
+
+  if (correcta.includes(";") && !distractores.some((opcion) => opcion.includes(";"))) pistas.push("solo la correcta lleva «;»");
+  if (correcta.includes(":") && !distractores.some((opcion) => opcion.includes(":"))) pistas.push("solo la correcta lleva «:»");
+  const esDeSiONo = [...arranques, primeraPalabra(correcta)].every((arranque) => ARRANQUES_DE_SI_O_NO.has(arranque));
+
+  if (!esDeSiONo && arranques.every((arranque) => arranque === arranques[0]) && primeraPalabra(correcta) !== arranques[0]) {
+    pistas.push(`los distractores empiezan por «${arranques[0]}» y la correcta no`);
+  }
+
+  return pistas;
 }
 
 const nivelDeCurso = (nivelesDeLecciones) => nivelesDeLecciones[0];
@@ -76,4 +102,4 @@ function problemasDeCargaDeDatos(fichero, html, paginasConDatosCompletos) {
   return [...problemas, ...cargadosDeMas.map((nombre) => `${fichero}: carga ${nombre}.js, que se inyecta bajo demanda`)];
 }
 
-module.exports = { esFechaReal, diaLocal, problemasDeRevision, tieneDrawerEscrito, tablasSinEnvolver, tieneUnSoloMain, problemasDeCargaDeDatos, nivelDeCurso, puestoPorLongitud, puestoDominante };
+module.exports = { esFechaReal, diaLocal, problemasDeRevision, tieneDrawerEscrito, tablasSinEnvolver, tieneUnSoloMain, problemasDeCargaDeDatos, nivelDeCurso, puestoPorLongitud, puestoDominanteTrasLaMasLarga, pistasDeForma };
