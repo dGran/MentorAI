@@ -608,6 +608,14 @@ function validarIndiceDeBusqueda() {
   }
 }
 
+function validarResumenDeExamenes() {
+  try {
+    execFileSync("node", [path.join(ROOT, "scripts/generar-resumen-examenes.js"), "--comprobar"], { stdio: "pipe" });
+  } catch {
+    error("el resumen de exámenes está desfasado respecto a quizzes.js. Ejecuta: node scripts/generar-resumen-examenes.js");
+  }
+}
+
 validarSintaxis();
 validarManifest();
 validarCursosYRutas();
@@ -643,6 +651,7 @@ validarShell();
 validarListasDePaginas();
 validarCss();
 validarIndiceDeBusqueda();
+validarResumenDeExamenes();
 
 console.log(`\n  Catálogo: ${manifest.length} tutoriales · ${cursos.length} cursos · ${rutas.length} rutas`);
 console.log(
