@@ -17,6 +17,8 @@
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   const RESET_SVG =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>';
+  const REPAINT_EVENT = "academia-repaint";
+  const RESET_LESSON_MESSAGE = "Progreso de la lección reiniciado.";
   const CHEVRON_SVG =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
 
@@ -63,24 +65,34 @@
 
     paint(MentorAI.Progress.has(slug));
     button.addEventListener("click", () => paint(MentorAI.Progress.toggle(slug)));
+    button.addEventListener(REPAINT_EVENT, () => paint(MentorAI.Progress.has(slug)));
 
     return button;
   }
 
-  function buildResetButton(slug, doneButton) {
+  function buildResetButton(slug, onChange) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "tutorial-action tutorial-action--reset";
     button.innerHTML = `${RESET_SVG}<span>Reiniciar</span>`;
 
     button.addEventListener("click", () => {
+      const hasProgress = MentorAI.Progress.has(slug) || Boolean(MentorAI.Reading.get(slug));
+
+      if (!hasProgress) return;
+
+      const progressBefore = MentorAI.Progress.list();
+      const readingBefore = MentorAI.Reading.all();
+
       MentorAI.Progress.remove([slug]);
       MentorAI.Reading.clear([slug]);
-      doneButton.click();
-
-      if (MentorAI.Progress.has(slug)) {
-        doneButton.click();
-      }
+      onChange();
+      MentorAI.offerUndo?.(RESET_LESSON_MESSAGE, () => {
+        MentorAI.Progress.restore(progressBefore);
+        MentorAI.Reading.restore(readingBefore);
+        onChange();
+        button.focus();
+      });
     });
 
     return button;
@@ -127,9 +139,9 @@
 
     return {
       el,
-      reset: () => {
-        shown = 0;
-        complete = false;
+      refresh: () => {
+        shown = MentorAI.Reading.get(slug)?.percent ?? 0;
+        complete = MentorAI.Progress.has(slug);
         render();
       },
       setComplete: (isComplete) => {
@@ -150,7 +162,11 @@
     actions.className = "tutorial-actions";
 
     const doneButton = buildDoneButton(slug);
-    const resetButton = buildResetButton(slug, doneButton);
+    const progress = buildReadingProgress(slug);
+    const resetButton = buildResetButton(slug, () => {
+      doneButton.dispatchEvent(new Event(REPAINT_EVENT));
+      progress.refresh();
+    });
 
     if (MentorAI.TutorialAudio?.isSupported()) {
       actions.appendChild(MentorAI.TutorialAudio.build(prose));
@@ -163,14 +179,11 @@
     }
 
     host.appendChild(actions);
-
-    const progress = buildReadingProgress(slug);
     host.appendChild(progress.el);
 
     doneButton.addEventListener("click", () =>
       progress.setComplete(MentorAI.Progress.has(slug))
     );
-    resetButton.addEventListener("click", progress.reset);
   }
 
   /* ---------- Punto de entrada ---------- */
