@@ -23,6 +23,7 @@ const PARES = [
   { texto: "--text-soft", fondos: ["--bg", "--surface", "--surface-2", "--surface-3"], minimo: TEXTO },
   { texto: "--on-brand", fondos: ["--brand-fill", "--brand-fill-2"], minimo: TEXTO },
   { texto: "--brand-text", fondos: ["--bg", "--surface", "--brand-soft"], minimo: TEXTO },
+  { texto: "--link-hover", fondos: ["--bg", "--surface", "--surface-2"], minimo: TEXTO },
   { texto: "--focus-ring", fondos: ["--bg", "--surface", "--surface-2", "--surface-3", "--brand-soft"], minimo: NO_TEXTO },
   { texto: "--focus-ring-on-code", fondos: ["--code-bg"], minimo: NO_TEXTO },
 ];
