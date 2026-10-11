@@ -1,0 +1,15 @@
+const { abrir } = require("./cdp.js");
+const [BASE] = process.argv.slice(2);
+(async () => { const b = await abrir(9450); await b.ancho(1280, 900, false); const out = [];
+  await b.ir(`${BASE}/cursos.html`, 1800);
+  await b.evaluar("[...document.querySelectorAll('.course-filters .chip')].find(c => c.dataset.levelFilter === 'Principiante').click(); 1"); await b.sleep(200);
+  out.push("filtro: wraps visibles " + await b.evaluar("[...document.querySelectorAll('.course-card-wrap')].filter(w => !w.hidden).length") + " / tarjetas visibles " + await b.evaluar("[...document.querySelectorAll('.course-card')].filter(c => !c.closest('[hidden]')).length") + " / botones offline visibles " + await b.evaluar("[...document.querySelectorAll('.course-card-wrap .offline-btn, .course-card-wrap button')].filter(x => !x.closest('[hidden]')).length"));
+  await b.evaluar("MentorAI.Courses.render(); MentorAI.Courses.render(); 1"); await b.sleep(200);
+  out.push("tras 2 repintados: barras " + await b.evaluar("document.querySelectorAll('.course-filters').length") + " · activo " + await b.evaluar("document.querySelector('.course-filters .chip.is-active').dataset.levelFilter") + " · visibles " + await b.evaluar("[...document.querySelectorAll('.course-card')].filter(c => !c.closest('[hidden]')).length"));
+  await b.ir(`${BASE}/rutas.html#ruta-diseno-oo`, 1200);
+  await b.evaluar("MentorAI.Paths.render(); 1"); await b.sleep(200);
+  out.push("rutas tras repintado: abierta sigue " + await b.evaluar("document.getElementById('ruta-diseno-oo').open") + " · nombre summary: " + await b.evaluar("document.querySelector('#ruta-diseno-oo summary').getAttribute('aria-labelledby')"));
+  await b.ir(`${BASE}/tutorials/composer.html`, 1200);
+  out.push("miga composer: " + await b.evaluar("(() => { const a = [...document.querySelectorAll('.breadcrumb a')].pop(); return a.textContent + ' → ' + a.getAttribute('href'); })()"));
+  out.push("errores de consola: " + (b.consola.length ? JSON.stringify(b.consola) : 0));
+  console.log(out.join("\n")); b.cerrar(); })();
