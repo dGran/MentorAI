@@ -329,6 +329,7 @@
     MentorAI.Perfil?.renderPage?.();
     MentorAI.Catalog?.render?.();
     MentorAI.Courses?.render?.();
+    MentorAI.Offline?.initCourseButtons?.();
     MentorAI.Courses?.renderCoursePage?.();
     MentorAI.Paths?.render?.();
     MentorAI.Paths?.renderHome?.();

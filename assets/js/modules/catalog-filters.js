@@ -15,6 +15,7 @@
   const SAVED = "saved";
   const DURATION_THRESHOLD = 15;
   const LEVEL_ORDER = ["Principiante", "Intermedio", "Avanzado"];
+  const CATEGORY_PARAM = "categoria";
 
   const CATEGORY_LABELS = {
     php: "PHP",
@@ -250,8 +251,16 @@
 
   /* ---------- API pública ---------- */
 
+  function selectCategory(category) {
+    state.category = category;
+    syncChips(category);
+  }
+
   MentorAI.CatalogFilters = {
+    LEVEL_ORDER,
+    CATEGORY_PARAM,
     labelFor,
+    selectCategory,
     chipsHtml,
     buildSubfilters,
     wireChips,

@@ -86,6 +86,10 @@
       if (host) Filters.buildSubfilters(host, tutorials);
     }
 
+    const requestedCategory = new URLSearchParams(window.location.search).get(MentorAI.CatalogFilters.CATEGORY_PARAM);
+
+    if (requestedCategory && counts[requestedCategory]) Filters.selectCategory(requestedCategory);
+
     paintPublishedStat(all);
     Filters.wireSearch();
     Filters.wireBookmarks(chipHosts[0]);

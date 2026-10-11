@@ -11,6 +11,11 @@
 
   const MentorAI = (window.MentorAI = window.MentorAI || {});
 
+  const PATH_ANCHOR_PREFIX = "ruta-";
+  const PATH_TITLE_PREFIX = "ruta-titulo-";
+
+  let isListeningToHash = false;
+
   const CHECK_SVG =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
 
@@ -119,25 +124,27 @@
       .map((step, index) => stepHtml(step, manifest, index + 1))
       .join("");
 
-    return `<section class="path" id="ruta-${encodeURIComponent(path.slug)}">
-      <header class="path__head">
-        <span class="path__icon">${Icons.for(path.icon)}</span>
-        <div class="path__headings">
-          <h2 class="path__title">${escapeHtml(path.title)}</h2>
-          <p class="path__summary">${escapeHtml(path.summary)}</p>
-        </div>
-        <span class="path__progress">${stats.done} / ${stats.published}</span>
-      </header>
-      <div class="path__bar"><span style="width:${stats.percent}%"></span></div>
+    return `<details class="path" id="${PATH_ANCHOR_PREFIX}${encodeURIComponent(path.slug)}">
+      <summary class="path__summary-row" aria-labelledby="${PATH_TITLE_PREFIX}${encodeURIComponent(path.slug)}">
+        <span class="path__head">
+          <span class="path__icon">${Icons.for(path.icon)}</span>
+          <span class="path__headings">
+            <h2 class="path__title" id="${PATH_TITLE_PREFIX}${encodeURIComponent(path.slug)}">${escapeHtml(path.title)}</h2>
+            <span class="path__summary">${escapeHtml(path.summary)}</span>
+          </span>
+          <span class="path__progress">${stats.done} / ${stats.published}</span>
+        </span>
+        <span class="path__bar"><span style="width:${stats.percent}%"></span></span>
+      </summary>
       <ol class="steps">${steps}</ol>
-    </section>`;
+    </details>`;
   }
 
   function pathCardHtml(path, manifest) {
     const { escapeHtml, Icons } = MentorAI;
     const stats = pathProgress(path, manifest);
 
-    return `<a class="path-card" href="rutas.html#ruta-${encodeURIComponent(path.slug)}">
+    return `<a class="path-card" href="rutas.html#${PATH_ANCHOR_PREFIX}${encodeURIComponent(path.slug)}">
       <div class="path-card__top">
         <span class="path-card__icon">${Icons.for(path.icon)}</span>
         <span class="path-card__progress">${stats.percent}%</span>
@@ -147,6 +154,38 @@
       <div class="path-card__bar"><span style="width:${stats.percent}%"></span></div>
       <span class="path-card__steps">${(path.steps ?? []).length} pasos</span>
     </a>`;
+  }
+
+  function openPathFromHash() {
+    const hash = decodeURIComponent(location.hash.slice(1));
+
+    if (!hash.startsWith(PATH_ANCHOR_PREFIX)) return;
+
+    const path = document.getElementById(hash);
+
+    if (!(path instanceof HTMLDetailsElement)) return;
+
+    path.open = true;
+    path.scrollIntoView({ block: "start" });
+  }
+
+  function renderPaths() {
+    const openIds = [...document.querySelectorAll("#paths details[open]")].map((path) => path.id);
+
+    renderInto("paths", pathHtml);
+
+    for (const id of openIds) {
+      const path = document.getElementById(id);
+
+      if (path) path.open = true;
+    }
+
+    openPathFromHash();
+
+    if (isListeningToHash) return;
+
+    window.addEventListener("hashchange", openPathFromHash);
+    isListeningToHash = true;
   }
 
   function renderInto(hostId, build) {
@@ -165,7 +204,7 @@
   MentorAI.Paths = {
     pathProgress,
     stepLessons,
-    render: () => renderInto("paths", pathHtml),
+    render: renderPaths,
     renderHome: () => renderInto("home-paths", pathCardHtml),
   };
 })();

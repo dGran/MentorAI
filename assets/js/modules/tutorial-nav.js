@@ -63,7 +63,12 @@
     const topicSpan = breadcrumb.querySelector("span");
     const separator = breadcrumb.querySelector("svg");
 
-    if (!course || !topicSpan || !separator) return;
+    if (!topicSpan || !separator) return;
+
+    if (!course) {
+      linkTopicToCategory(topicSpan, manifestBySlug()[slug]);
+      return;
+    }
 
     const link = document.createElement("a");
     link.href = courseHref(course);
@@ -71,6 +76,19 @@
 
     breadcrumb.insertBefore(link, topicSpan);
     breadcrumb.insertBefore(separator.cloneNode(true), topicSpan);
+    topicSpan.textContent = document.querySelector("h1")?.textContent.trim() ?? topicSpan.textContent;
+    topicSpan.setAttribute("aria-current", "page");
+  }
+
+  function linkTopicToCategory(topicSpan, tutorial) {
+    const category = tutorial?.categories?.[0];
+
+    if (!category) return;
+
+    const link = document.createElement("a");
+    link.href = `${MentorAI.basePath()}articulos.html?${MentorAI.CatalogFilters.CATEGORY_PARAM}=${encodeURIComponent(category)}`;
+    link.textContent = MentorAI.CatalogFilters.labelFor(category);
+    topicSpan.replaceWith(link);
   }
 
   /* ---------- Navegación de ruta ---------- */
