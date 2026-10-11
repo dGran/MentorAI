@@ -45,6 +45,7 @@ function loadDevice(localEntries) {
 const plain = (value) => JSON.parse(JSON.stringify(value));
 
 const RESET_AT = 5000;
+const SCROLL_AT = 7000;
 const UNDO_AT = 9000;
 const COURSE_LESSONS = ["git-intro", "git-ramas"];
 const PROGRESS_BEFORE = ["sql-joins", "git-intro", "regex", "git-ramas"];
@@ -115,6 +116,30 @@ test("a remote copy carrying the reset does not delete what was undone", () => {
 
   assert.deepEqual([...device.localStorage.read(PROGRESS_KEY)].sort(), [...PROGRESS_BEFORE].sort());
   assert.deepEqual(Object.keys(device.localStorage.read(READING_KEY)).sort(), Object.keys(READING_BEFORE).sort());
+});
+
+test("reading saved between the reset and the undo does not let the reset win the next sync", () => {
+  const remote = loadDevice({ [PROGRESS_KEY]: PROGRESS_BEFORE, [READING_KEY]: READING_BEFORE });
+
+  remote.setNow(RESET_AT);
+  resetCourse(remote);
+
+  const remoteAfterReset = {
+    [READING_KEY]: remote.localStorage.read(READING_KEY),
+    [CHANGES_KEY]: remote.localStorage.read(CHANGES_KEY),
+  };
+  const device = loadDevice({ [PROGRESS_KEY]: PROGRESS_BEFORE, [READING_KEY]: READING_BEFORE });
+
+  device.setNow(RESET_AT);
+  const undo = resetCourse(device);
+
+  device.setNow(SCROLL_AT);
+  device.MentorAI.Reading.save("git-ramas", 20);
+  device.setNow(UNDO_AT);
+  undo();
+  device.MentorAI.Perfil.importar(JSON.stringify({ version: 2, datos: plain(remoteAfterReset) }));
+
+  assert.deepEqual(device.localStorage.read(READING_KEY)["git-ramas"], READING_BEFORE["git-ramas"]);
 });
 
 test("restoring when nothing was removed records no change", () => {

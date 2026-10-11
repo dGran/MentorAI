@@ -77,6 +77,10 @@
     button.innerHTML = `${RESET_SVG}<span>Reiniciar</span>`;
 
     button.addEventListener("click", () => {
+      const hasProgress = MentorAI.Progress.has(slug) || Boolean(MentorAI.Reading.get(slug));
+
+      if (!hasProgress) return;
+
       const progressBefore = MentorAI.Progress.list();
       const readingBefore = MentorAI.Reading.all();
 

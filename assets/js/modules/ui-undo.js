@@ -21,6 +21,10 @@
     region.className = "undo-toast";
     region.innerHTML = `<span class="undo-toast__message" role="status"></span><button type="button" class="undo-toast__action" hidden>${UNDO_LABEL}</button>`;
     actionOf().addEventListener("click", undo);
+    region.addEventListener("focusin", pauseTimer);
+    region.addEventListener("mouseenter", pauseTimer);
+    region.addEventListener("focusout", startTimer);
+    region.addEventListener("mouseleave", startTimer);
     document.body.appendChild(region);
   }
 
@@ -33,9 +37,25 @@
     heading.focus();
   }
 
-  function dismiss() {
+  function pauseTimer() {
     clearTimeout(pendingTimer);
     pendingTimer = null;
+  }
+
+  function startTimer() {
+    pauseTimer();
+
+    if (!pendingUndo) return;
+
+    const isInside = region.contains(document.activeElement) || region.matches(":hover");
+
+    if (isInside) return;
+
+    pendingTimer = setTimeout(dismiss, UNDO_WINDOW_MS);
+  }
+
+  function dismiss() {
+    pauseTimer();
     pendingUndo = null;
 
     if (!region) return;
@@ -56,10 +76,6 @@
     onUndo?.();
   }
 
-  function isFocusLost() {
-    return !document.activeElement || document.activeElement === document.body;
-  }
-
   function offerUndo(message, onUndo) {
     ensureRegion();
     dismiss();
@@ -67,9 +83,8 @@
     region.classList.add(OPEN_CLASS);
     actionOf().hidden = false;
     requestAnimationFrame(() => (messageOf().textContent = message));
+    actionOf().focus();
     pendingTimer = setTimeout(dismiss, UNDO_WINDOW_MS);
-
-    if (isFocusLost()) actionOf().focus();
   }
 
   MentorAI.offerUndo = offerUndo;

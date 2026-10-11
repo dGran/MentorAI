@@ -181,8 +181,10 @@
       restore(previousMap) {
         const map = read();
 
+        const isUnchanged = (slug) => JSON.stringify(map[slug]) === JSON.stringify(previousMap[slug]);
+
         writeJson(KEY, previousMap);
-        recordChanges(KEY, Object.keys(previousMap).filter((slug) => !(slug in map)), false);
+        recordChanges(KEY, Object.keys(previousMap).filter((slug) => !isUnchanged(slug)), false);
       },
     };
   })();
