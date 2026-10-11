@@ -12,6 +12,8 @@
 
   const MentorAI = (window.MentorAI = window.MentorAI || {});
 
+  const CATEGORY_PARAM = "categoria";
+
   function standaloneTutorials(all) {
     const lessonSlugs = MentorAI.Courses.lessonSlugs();
 
@@ -85,6 +87,10 @@
 
       if (host) Filters.buildSubfilters(host, tutorials);
     }
+
+    const requestedCategory = new URLSearchParams(window.location.search).get(CATEGORY_PARAM);
+
+    if (requestedCategory && counts[requestedCategory]) Filters.selectCategory(requestedCategory);
 
     paintPublishedStat(all);
     Filters.wireSearch();

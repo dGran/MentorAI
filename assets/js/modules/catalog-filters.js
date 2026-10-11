@@ -250,8 +250,14 @@
 
   /* ---------- API pública ---------- */
 
+  function selectCategory(category) {
+    state.category = category;
+    syncChips(category);
+  }
+
   MentorAI.CatalogFilters = {
     labelFor,
+    selectCategory,
     chipsHtml,
     buildSubfilters,
     wireChips,
