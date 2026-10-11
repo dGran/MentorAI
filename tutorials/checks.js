@@ -1524,7 +1524,7 @@ window.MENTORAI_CHECKS = {
       o: ["Pasa a 256 y el valor ocupa ya dos bytes","Vuelve a 0: se desborda, 8 bits solo dan 256 valores","Se queda en 255: el valor se satura y no pasa de ahí"], a: 1,
       w: "De ahí salen los rangos que ves por todas partes: 0-255 sin signo, -128 a 127 con signo." },
     { id: "c3fbb25", q: "¿Por qué 1 KB no siempre son 1000 bytes?",
-      o: ["Por errores de redondeo al convertir de bits a bytes","Porque cada sistema de ficheros redondea al tamaño de su bloque","Por la potencia de 2: 1024, aunque los discos cuenten con 1000"], a: 2,
+      o: ["Por errores de redondeo al convertir de bits a bytes","Por el sistema de ficheros: cada uno redondea a su tamaño de bloque","Por la potencia de 2: 1024, aunque los discos cuenten con 1000"], a: 2,
       w: "Es la razón de que un disco de 1 TB muestre unos 931 GB en el sistema: no falta nada, se está midiendo distinto." },
   ],
 
@@ -1578,16 +1578,16 @@ window.MENTORAI_CHECKS = {
       o: ["Se usa igual: el orden de las columnas del índice no importa","No sirve: el índice solo se aprovecha por su prefijo izquierdo","Hay que reconstruirlo para que reconozca el nuevo filtro"], a: 1,
       w: "Es como buscar en la guía telefónica por nombre de pila: el orden no te ayuda si no empiezas por el primer campo." },
     { id: "caa4da7", q: "¿Por qué no se indexan todas las columnas por si acaso?",
-      o: ["Porque un índice solo sirve si la columna es clave primaria","El planificador se lía con tantos y acaba sin usar ninguno","Cada escritura los actualiza todos: aceleran leer y frenan escribir"], a: 2,
+      o: ["Porque un índice solo sirve si la columna es clave primaria","Por el planificador: con tantos índices acaba sin usar ninguno","Cada escritura los actualiza todos: aceleran leer y frenan escribir"], a: 2,
       w: "Un índice es una apuesta: pagas en escritura para cobrar en lectura. Sin consultas que lo usen, es solo coste." },
   ],
 
   "transacciones-acid": [
     { id: "c83aaa0", q: "Restas de una cuenta y falla la suma en la otra. ¿Qué letra de ACID te salva?",
-      o: ["Atomicidad: o se hace todo o no se hace nada","Consistencia: el saldo siempre cuadra","Durabilidad: lo escrito sobrevive aunque el servidor caiga"], a: 0,
+      o: ["Atomicidad: o se hace todo o no se hace nada","Consistencia: impide que un saldo quede negativo","Durabilidad: lo escrito sobrevive aunque el servidor caiga"], a: 0,
       w: "Sin ella podrías dejar el dinero desaparecido, que es el ejemplo con el que se explica desde siempre." },
     { id: "c9561f6", q: "Lees un dato de una transacción que luego se revierte.",
-      o: ["Es una lectura no repetible; REPEATABLE READ la evita","Es una lectura sucia, y READ COMMITTED ya la evita","Es una lectura fantasma; SERIALIZABLE la evita"], a: 1,
+      o: ["Es una lectura no repetible; REPEATABLE READ la evita","Es una lectura sucia; READ COMMITTED la evita","Es una lectura fantasma; SERIALIZABLE la evita"], a: 1,
       w: "Has decidido sobre datos que nunca existieron. Los niveles superiores atacan otras anomalías: no repetibles y fantasmas." },
   ],
 
@@ -1602,16 +1602,16 @@ window.MENTORAI_CHECKS = {
 
   "procesos-hilos": [
     { id: "ca8ae0e", q: "Dos hilos del mismo proceso escriben en la misma variable sin sincronizar.",
-      o: ["El sistema operativo serializa los accesos automáticamente","Es una condición de carrera: comparten memoria","Cada uno tiene su copia, no pasa nada"], a: 1,
+      o: ["No pasa nada: el sistema operativo serializa los accesos","Es una condición de carrera: comparten memoria","Cada uno tiene su copia, no pasa nada"], a: 1,
       w: "Compartir memoria es lo que hace a los hilos baratos y peligrosos: comunicarse es gratis, coordinarse es tu problema." },
     { id: "c22196b", q: "¿Por qué PHP-FPM usa procesos y no hilos?",
-      o: ["Porque el motor de PHP no puede ejecutar código en hilos","Porque en Linux los procesos son más rápidos de crear que los hilos","Por el shared-nothing: cada petición arranca con estado limpio"], a: 2,
+      o: ["Porque los hilos no pueden atender peticiones HTTP en paralelo","Porque en Linux los procesos son más rápidos de crear que los hilos","Por el shared-nothing: cada petición arranca con estado limpio"], a: 2,
       w: "Es lo que hace que PHP perdone tantos errores de estado global, y también lo que hay que replantearse al pasar a workers." },
   ],
 
   "concurrencia": [
     { id: "c312cb1", q: "Un bug solo aparece en producción bajo carga y no hay forma de reproducirlo en local.",
-      o: ["Huele a carrera: depende de cómo se intercalen las operaciones", "Es una fuga de memoria que en local no llega a notarse", "Es un bug del framework que solo se activa en el modo producción"], a: 0,
+      o: ["Huele a carrera: depende de cómo se intercalen las operaciones", "Es una versión distinta de PHP entre local y producción", "Es un bug del framework que solo se activa en el modo producción"], a: 0,
       w: "Por eso se resuelven con diseño (locks, operaciones atómicas) y no depurando: no puedes provocar el intercalado a voluntad." },
     { id: "c3ddc20", q: "Lees un contador, le sumas uno y lo guardas. ¿Qué falla con concurrencia?",
       o: ["Nada, mientras la operación sea lo bastante rápida","Dos procesos leen el mismo valor y se pierde un incremento","El valor se corrompe a medio escribir y queda un número inválido"], a: 1,
@@ -1623,7 +1623,7 @@ window.MENTORAI_CHECKS = {
       o: ["Solo se pausa esa tarea; las demás siguen su curso","El runtime la mueve a otro hilo para no bloquear","Se bloquea el bucle entero y nada más avanza"], a: 2,
       w: "El bucle es un solo hilo. Es el error más común al empezar con async, y por eso existen las versiones asíncronas de todo." },
     { id: "ce15206", q: "¿Para qué tipo de carga brilla el event loop?",
-      o: ["Muchas conexiones esperando I/O: red, disco, base de datos","Cálculo intensivo, repartido en muchas tareas concurrentes a la vez","Procesamiento de imágenes y vídeo en tiempo real"], a: 0,
+      o: ["Muchas conexiones esperando I/O: red, disco, base de datos","Cálculo intensivo: lo reparte en muchas tareas a la vez","Procesamiento de imágenes y vídeo en tiempo real"], a: 0,
       w: "Mientras se espera, el hilo atiende a otro. Con CPU pura no hay espera que aprovechar y el modelo se hunde." },
   ],
 
@@ -1632,13 +1632,13 @@ window.MENTORAI_CHECKS = {
       o: ["El stack es más grande y guarda los objetos; el heap, los números","El stack se libera solo al salir de la función; el heap, no","El heap es más rápido porque está siempre en caché"], a: 1,
       w: "El stack es rápido justo porque su gestión es trivial: crece y decrece con las llamadas. Por eso es también limitado." },
     { id: "c24f1a8", q: "¿Por qué recorrer un array es más rápido que recorrer una lista enlazada del mismo tamaño?",
-      o: ["Porque el array se recorre en O(1) y la lista en O(n)","Porque la lista tiene que reordenarse antes de recorrerla","Por la caché: el array está contiguo y se trae de golpe"], a: 2,
+      o: ["Por la complejidad: el array se recorre en O(1) y la lista en O(n)","Porque la lista tiene que reordenarse antes de recorrerla","Por la caché: el array está contiguo y se trae de golpe"], a: 2,
       w: "La localidad de referencia explica muchas diferencias de rendimiento que el Big-O no captura." },
   ],
 
   "url-a-fondo": [
     { id: "c6437d1", q: "Escribes una URL y el navegador no encuentra la página, pero la IP directa sí funciona.",
-      o: ["Problema de DNS: falla la resolución del nombre a IP","El servidor está caído o no responde en el puerto 80","El certificado ha caducado y el navegador lo rechaza"], a: 0,
+      o: ["Problema de DNS: falla la resolución del nombre a IP","Problema del servidor: está caído o no responde en el puerto 80","El certificado ha caducado y el navegador lo rechaza"], a: 0,
       w: "Muchos incidentes de «la web no va» son en realidad de DNS, con su caché y su TTL complicando el diagnóstico." },
     { id: "cedc3cc", q: "¿Qué parte de la URL NO llega al servidor?",
       o: ["La query string, que el navegador guarda para sí","El fragmento tras la almohadilla (`#seccion`)","La ruta, porque el servidor solo recibe el dominio"], a: 1,
@@ -1656,7 +1656,7 @@ window.MENTORAI_CHECKS = {
 
   "tcp-ip": [
     { id: "cafa30a", q: "¿Qué te da TCP que UDP no?",
-      o: ["Menos latencia, al no tener que esperar confirmaciones","Entrega ordenada y fiable: retransmite lo perdido","Cifrado de extremo a extremo de los datos"], a: 1,
+      o: ["Menos latencia: no tiene que esperar confirmaciones","Entrega ordenada y fiable: retransmite lo perdido","Cifrado de extremo a extremo de los datos"], a: 1,
       w: "El cifrado lo pone TLS por encima. Y esa fiabilidad cuesta latencia, que es justo por lo que UDP existe." },
     { id: "ca622db", q: "En una conexión HTTPS, ¿qué añade el certificado sobre el cifrado?",
       o: ["Nada: el certificado es la clave con la que se cifra","Compresión de los datos antes de cifrarlos","La identidad: acredita que hablas con quien crees"], a: 2,
@@ -1665,7 +1665,7 @@ window.MENTORAI_CHECKS = {
 
   "idempotencia": [
     { id: "c806a15", q: "No sabes si tu petición llegó porque se cortó la conexión.",
-      o: ["Si la operación es idempotente, puedes reintentar sin miedo","Consultar siempre antes de reintentar, sea cual sea la operación","Asumir que llegó: si no hubo error, lo normal es que sí"], a: 0,
+      o: ["Si la operación es idempotente, puedes reintentar sin miedo","Reintentar siempre: si no llegó, no se pierde nada por repetir","Asumir que llegó: si no hubo error, lo normal es que sí"], a: 0,
       w: "Es lo que hace viables los reintentos automáticos en redes poco fiables, y por eso importa tanto en sistemas distribuidos." },
     { id: "c08a132", q: "¿Qué métodos HTTP deberían ser idempotentes?",
       o: ["Todos: repetir una petición HTTP nunca cambia el resultado","GET, PUT y DELETE; POST no, salvo con clave de idempotencia","Solo GET, porque es el único método que no modifica nada"], a: 1,
@@ -1683,7 +1683,7 @@ window.MENTORAI_CHECKS = {
 
   "redis-cache": [
     { id: "c203b1a", q: "Cacheas el resultado de una consulta y los usuarios ven datos viejos tras una edición.",
-      o: ["Hay que bajar el TTL a cero para que siempre esté fresca","Falta invalidar al escribir: la caché es fácil, invalidarla no","Redis no sirve para cachear datos que cambian"], a: 1,
+      o: ["Falta un TTL a cero: así siempre estaría fresca","Falta invalidar al escribir: la caché es fácil, invalidarla no","Redis no sirve para cachear datos que cambian"], a: 1,
       w: "TTL cero es no cachear. Las estrategias son invalidar al escribir, escribir a la vez, o aceptar el desfase del TTL a sabiendas." },
     { id: "cc5d4ac", q: "¿Qué es una estampida de caché?",
       o: ["Que se escribe en Redis más rápido de lo que persiste a disco","Que la caché se llena y desaloja de golpe todas las claves","Que caduca una clave muy usada y todos van a recalcularla"], a: 2,
@@ -1692,10 +1692,10 @@ window.MENTORAI_CHECKS = {
 
   "hashing-vs-cifrado": [
     { id: "cca402b", q: "Necesitas poder recuperar el dato original más adelante.",
-      o: ["Cifrado: el hashing es unidireccional a propósito","Hashing con sal, que es reversible","Codificación base64, que es reversible y protege el dato"], a: 0,
+      o: ["Cifrado: el hashing es unidireccional a propósito","Hashing con sal: la sal permite revertirlo","Codificación base64, que es reversible y protege el dato"], a: 0,
       w: "Base64 no protege nada, es codificación. Y si puedes recuperar una contraseña de tu base, algo va mal en el diseño." },
     { id: "c2e70c5", q: "¿Por qué no vale SHA-256 para contraseñas?",
-      o: ["Porque tiene colisiones conocidas que permiten falsificarlo","Porque es rápido a propósito, y eso abarata la fuerza bruta","Porque no admite sal y dos contraseñas iguales dan el mismo hash"], a: 1,
+      o: ["Porque tiene colisiones conocidas que permiten falsificarlo","Porque es rápido a propósito, y eso abarata la fuerza bruta","Porque su salida de 256 bits es demasiado corta para una contraseña"], a: 1,
       w: "Los algoritmos de contraseñas (bcrypt, argon2) son lentos deliberadamente y llevan sal, para que cada intento cueste." },
   ],
 
@@ -1710,7 +1710,7 @@ window.MENTORAI_CHECKS = {
 
   "owasp": [
     { id: "c223f0f", q: "¿Qué tienen en común la inyección SQL y el XSS?",
-      o: ["Que los dos requieren tener antes algún acceso al servidor atacado","Que mezclan datos con instrucciones: el dato acaba siendo código","Que los dos se previenen sirviendo la web por HTTPS"], a: 1,
+      o: ["Que los dos requieren tener antes algún acceso al servidor atacado","Que mezclan datos con instrucciones: el dato acaba siendo código","Que los dos dependen del transporte: se previenen con HTTPS"], a: 1,
       w: "La solución es la misma en el fondo: separar ambos mundos. Consultas parametrizadas en un caso, escapado por contexto en el otro." },
     { id: "c0ca9da", q: "¿Por qué escapar a mano es peor que usar consultas parametrizadas?",
       o: ["Porque escapar es más lento que preparar la consulta","Porque las funciones de escape no funcionan con MySQL","Porque basta un caso olvidado para abrir el agujero"], a: 2,
