@@ -26,6 +26,12 @@ const PARES = [
   { texto: "--link-hover", fondos: ["--bg", "--surface", "--surface-2"], minimo: TEXTO },
   { texto: "--focus-ring", fondos: ["--bg", "--surface", "--surface-2", "--surface-3", "--brand-soft"], minimo: NO_TEXTO },
   { texto: "--focus-ring-on-code", fondos: ["--code-bg"], minimo: NO_TEXTO },
+  { texto: "--success-text", fondos: ["--bg", "--surface", "--success-soft"], minimo: TEXTO },
+  { texto: "--danger-text", fondos: ["--bg", "--surface", "--danger-soft"], minimo: TEXTO },
+  { texto: "--warning-text", fondos: ["--bg", "--surface"], minimo: TEXTO },
+  { texto: "--success", fondos: ["--surface", "--success-soft"], minimo: NO_TEXTO },
+  { texto: "--danger", fondos: ["--surface", "--danger-soft"], minimo: NO_TEXTO },
+  { texto: "--on-success", fondos: ["--success"], minimo: NO_TEXTO },
 ];
 
 const BLOQUES_DE_TEMA = {

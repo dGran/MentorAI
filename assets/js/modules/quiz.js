@@ -16,6 +16,10 @@
 
   const MentorAI = (window.MentorAI = window.MentorAI || {});
 
+  const GRADED_CLASS = "is-graded";
+  const CORRECT_OUTCOME = "correct";
+  const WRONG_OUTCOME = "wrong";
+
   const PASS_RATIO = 0.7;
 
   const escapeHtml = (text) => MentorAI.escapeHtml(text);
@@ -191,13 +195,15 @@
           <button type="submit" class="quiz__submit">Comprobar respuestas</button>
         </div>
       </form>
-      <div class="quiz__result" id="quiz-result" hidden></div>
+      <div class="quiz__result" id="quiz-result" tabindex="-1" hidden></div>
     </section>`;
   }
 
   /* ---------- Corrección ---------- */
 
   function gradeQuestion(questionEl, index, form) {
+    if (questionEl.classList.contains(GRADED_CLASS)) return questionEl.dataset.outcome === CORRECT_OUTCOME;
+
     const selected = form.querySelector(`input[name='q${index}']:checked`);
 
     if (!selected) return null;
@@ -215,6 +221,10 @@
     if (answer !== correct) {
       labels[answer].classList.add("quiz__option--wrong");
     }
+
+    MentorAI.markAnswer(labels, correct, answer);
+    questionEl.classList.add(GRADED_CLASS);
+    questionEl.dataset.outcome = answer === correct ? CORRECT_OUTCOME : WRONG_OUTCOME;
 
     const why = questionEl.querySelector(".quiz__why");
 
@@ -248,20 +258,22 @@
       event.preventDefault();
 
       const questions = [...form.querySelectorAll(".quiz__question")];
+      const isGradedBefore = questions.map((questionEl) => questionEl.classList.contains(GRADED_CLASS));
       const outcomes = questions.map((questionEl, index) =>
         gradeQuestion(questionEl, index, form)
       );
 
       outcomes.forEach((wasCorrect, index) => {
-        if (wasCorrect === null) return;
+        if (wasCorrect === null || isGradedBefore[index]) return;
 
         MentorAI.Repaso?.record(`q:${entry.course.slug}:${entry.quizData.questions[index].id}`, wasCorrect);
       });
 
       if (outcomes.includes(null)) {
         resultEl.innerHTML =
-          '<p class="quiz__warning">Responde todas las preguntas antes de comprobar.</p>';
+          '<p class="quiz__warning" role="alert">Responde todas las preguntas antes de comprobar.</p>';
         resultEl.hidden = false;
+        questions[outcomes.indexOf(null)].querySelector("input")?.focus();
         return;
       }
 
@@ -272,6 +284,7 @@
       form.querySelector(".quiz__actions").hidden = true;
       resultEl.innerHTML = resultHtml(score, total, threshold, passed);
       resultEl.hidden = false;
+      resultEl.focus();
 
       document.getElementById("quiz-retry")?.addEventListener("click", () => {
         mountQuiz(entry, lessonSlug, prose)?.scrollIntoView({
