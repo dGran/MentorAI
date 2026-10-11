@@ -171,3 +171,18 @@ test("causal and purpose connectors count as the same opening", () => {
 test("punctuation inside inline code is not a form cue", () => {
   assert.deepEqual(reglas.pistasDeForma(question(["Con `a := 1`", "Con b", "Con c"], 0)), []);
 });
+
+const CURRENT_STRUCTURE = '<section class="tutorial-hero"><div class="container"></div></section><p class="toc__title">En esta página</p><div class="code-block"><div class="code-block__head"></div><pre><code data-lang="go">x</code></pre></div><div class="callout callout--tip"><svg></svg><div class="callout__body"><p>a</p></div></div><div class="keypoints"></div>';
+
+test("a lesson with the current template has no structure problems", () => {
+  assert.deepEqual(reglas.problemasDeEstructura(CURRENT_STRUCTURE), []);
+});
+
+test("each piece of the old template is reported", () => {
+  const old = '<section class="tutorial-hero container"><div class="tutorial-actions"></div></section><p class="toc__title">En este tutorial</p><button class="toc__toggle"></button><pre><code>x</code></pre><div class="callout callout--warning">texto suelto</div><ul class="keypoints"><li>a</li></ul>';
+  const problems = reglas.problemasDeEstructura(old);
+
+  assert.equal(problems.length, 7);
+  assert.ok(problems.some((problem) => problem.includes("callout")));
+  assert.ok(problems.some((problem) => problem.includes("<pre>")));
+});

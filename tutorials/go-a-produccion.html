@@ -48,34 +48,57 @@
     <main>
     <section class="tutorial-hero">
       <div class="container">
-        <nav class="breadcrumb"><a href="../index.html">Inicio</a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><span>Go</span></nav>
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Go</span>
+        </nav>
         <h1 class="tutorial-hero__title">Go a producción: build, Docker y observabilidad</h1>
         <p class="tutorial-hero__lead">El superpower de Go en producción: un binario estático sin dependencias externas. Desplegarlo es copiar un fichero. La imagen Docker resultante puede ser de 10 MB con <code>FROM scratch</code>. Añade healthcheck, logging estructurado y métricas, y tienes un servicio listo.</p>
         <div class="tutorial-meta">
-          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>14 min</span>
-          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg>Intermedio</span>
-          <span>Go · DevOps</span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Intermedio
+          </span>
         </div>
       </div>
     </section>
-    <div class="container tutorial-layout">
-      <aside class="toc">
-        <p class="toc__title">En este tutorial</p>
-        <ol class="toc__list">
-          <li><a href="#build">Compilar para producción</a></li>
-          <li><a href="#dockerfile">Dockerfile multistage</a></li>
-          <li><a href="#config">Configuración con variables de entorno</a></li>
-          <li><a href="#logging">Logging estructurado</a></li>
-          <li><a href="#healthcheck">Healthcheck y métricas</a></li>
-          <li><a href="#graceful">Apagado graceful</a></li>
-          <li><a href="#resumen">Resumen</a></li>
-        </ol>
-      </aside>
-      <article class="prose">
-        <h2 id="build">Compilar para producción</h2>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#build">Compilar para producción</a></li>
+            <li><a href="#dockerfile">Dockerfile multistage</a></li>
+            <li><a href="#config">Configuración con variables de entorno</a></li>
+            <li><a href="#logging">Logging estructurado</a></li>
+            <li><a href="#healthcheck">Healthcheck y métricas</a></li>
+            <li><a href="#graceful">Apagado graceful</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+        <h2 id="build">
+            Compilar para producción
+            <a href="#build" class="anchor" aria-hidden="true">#</a>
+          </h2>
         <p>Go compila a un binario estático: todas las dependencias se incrustan en él. No necesita runtime instalado, ni <code>vendor</code>, ni intérprete.</p>
 
-        <pre><code data-lang="bash"># Build básico para el OS actual
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash"># Build básico para el OS actual
 go build -o bin/servidor ./cmd/servidor
 
 # Build para Linux desde Mac (cross-compilation)
@@ -85,27 +108,57 @@ GOOS=linux GOARCH=amd64 go build -o bin/servidor-linux ./cmd/servidor
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build -ldflags="-s -w" -o bin/servidor ./cmd/servidor
 </code></pre>
+          </div>
 
         <p><code>-s -w</code> elimina la tabla de símbolos y la información de debug. El binario resultante es más pequeño (típicamente un 30% menos). <code>CGO_ENABLED=0</code> desactiva CGo para garantizar el binario estático puro.</p>
 
         <p>Incrustar la versión en el binario con <code>ldflags</code>:</p>
 
-        <pre><code data-lang="bash">VERSION=$(git describe --tags --always)
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">VERSION=$(git describe --tags --always)
 go build -ldflags="-s -w -X main.version=${VERSION}" ./cmd/servidor
 </code></pre>
+          </div>
 
-        <pre><code data-lang="go">// en main.go
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">// en main.go
 var version = "dev"   // sobreescrito en build por ldflags
 
 func main() {
     fmt.Println("versión:", version)
 }
 </code></pre>
+          </div>
 
-        <h2 id="dockerfile">Dockerfile multistage</h2>
+        <h2 id="dockerfile">
+            Dockerfile multistage
+            <a href="#dockerfile" class="anchor" aria-hidden="true">#</a>
+          </h2>
         <p>El patrón estándar para Go: compilar en una imagen con Go instalado, copiar solo el binario a una imagen mínima:</p>
 
-        <pre><code data-lang="bash"># Dockerfile
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash"># Dockerfile
 FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
@@ -130,32 +183,62 @@ EXPOSE 8080
 
 ENTRYPOINT ["/servidor"]
 </code></pre>
+          </div>
 
         <p>Con <code>FROM scratch</code> la imagen tiene solo el binario y los certificados. Resultado típico: 10-15 MB frente a 500+ MB de una imagen PHP.</p>
 
         <div class="compare">
           <div>
             <p class="compare__label">PHP en Docker</p>
+            <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
             <pre><code data-lang="bash">FROM php:8.3-fpm-alpine
 # instalar extensiones, composer, dependencias...
 # imagen final: ~200-500 MB
 # necesita php-fpm + nginx
 </code></pre>
           </div>
+          </div>
           <div>
             <p class="compare__label">Go en Docker</p>
+            <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
             <pre><code data-lang="bash">FROM scratch
 COPY servidor /servidor
 # imagen final: ~10-15 MB
 # el binario es el servidor
 </code></pre>
           </div>
+          </div>
         </div>
 
-        <h2 id="config">Configuración con variables de entorno</h2>
+        <h2 id="config">
+            Configuración con variables de entorno
+            <a href="#config" class="anchor" aria-hidden="true">#</a>
+          </h2>
         <p>El patrón 12-factor: toda la configuración llega por variables de entorno. Sin ficheros de config que difieren entre entornos:</p>
 
-        <pre><code data-lang="go">type Config struct {
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">type Config struct {
     Puerto    string
     DatabaseURL string
     LogLevel  string
@@ -188,11 +271,23 @@ func requireEnv(clave string) string {
     return v
 }
 </code></pre>
+          </div>
 
-        <h2 id="logging">Logging estructurado</h2>
+        <h2 id="logging">
+            Logging estructurado
+            <a href="#logging" class="anchor" aria-hidden="true">#</a>
+          </h2>
         <p>Go 1.21 introdujo <code>log/slog</code>: logging estructurado en JSON, listo para ingestarse en cualquier sistema de observabilidad:</p>
 
-        <pre><code data-lang="go">import "log/slog"
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">import "log/slog"
 
 func main() {
     // En producción: JSON para ingestar en Loki, Datadog, etc.
@@ -208,17 +303,38 @@ func main() {
     slog.Warn("latencia alta", "duracion_ms", 1500, "endpoint", "/api/productos")
 }
 </code></pre>
+          </div>
 
         <p>Salida JSON:</p>
 
-        <pre><code data-lang="bash">{"time":"2026-07-05T10:30:00Z","level":"INFO","msg":"servidor arrancado","puerto":"8080"}
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">{"time":"2026-07-05T10:30:00Z","level":"INFO","msg":"servidor arrancado","puerto":"8080"}
 {"time":"2026-07-05T10:30:01Z","level":"ERROR","msg":"error de base de datos","error":"connection refused","query":"SELECT * FROM productos"}
 </code></pre>
+          </div>
 
-        <h2 id="healthcheck">Healthcheck y métricas</h2>
+        <h2 id="healthcheck">
+            Healthcheck y métricas
+            <a href="#healthcheck" class="anchor" aria-hidden="true">#</a>
+          </h2>
         <p>Dos endpoints que todo servicio en producción debe tener:</p>
 
-        <pre><code data-lang="go">func registrarEndpointsSistema(mux *http.ServeMux, db *sql.DB) {
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">func registrarEndpointsSistema(mux *http.ServeMux, db *sql.DB) {
     // Healthcheck: para el orquestador (Kubernetes, Fly.io, etc.)
     mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
         if err := db.PingContext(r.Context()); err != nil {
@@ -238,12 +354,24 @@ func main() {
     mux.Handle("GET /metrics", expvar.Handler())
 }
 </code></pre>
+          </div>
 
         <p>Para métricas más avanzadas, la librería estándar de facto es <code>github.com/prometheus/client_golang</code>. Pero para empezar, el paquete <code>expvar</code> de la stdlib expone variables en JSON sin dependencias.</p>
 
-        <h2 id="graceful">Apagado graceful</h2>
+        <h2 id="graceful">
+            Apagado graceful
+            <a href="#graceful" class="anchor" aria-hidden="true">#</a>
+          </h2>
 
-        <pre><code data-lang="go">func main() {
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">func main() {
     cfg := cargarConfig()
 
     mux := http.NewServeMux()
@@ -285,18 +413,48 @@ func main() {
     slog.Info("servidor apagado correctamente")
 }
 </code></pre>
+          </div>
 
-        <h2 id="resumen">Resumen</h2>
-        <ul class="keypoints">
-          <li><code>CGO_ENABLED=0 go build -ldflags="-s -w"</code> produce un binario estático sin dependencias externas, listo para copiar a cualquier servidor.</li>
-          <li>Dockerfile multistage: compila en <code>golang:alpine</code>, copia solo el binario a <code>FROM scratch</code>. Imagen final de ~10-15 MB.</li>
-          <li>Toda la configuración por variables de entorno (12-factor). Usa <code>log.Fatalf</code> para las requeridas si no están presentes.</li>
-          <li><code>log/slog</code> (Go 1.21+) para logging estructurado en JSON. Campos con <code>slog.Info("msg", "key", value)</code>.</li>
-          <li>Expón siempre <code>/health</code> (comprueba dependencias) y <code>/ready</code> (el proceso está vivo). Configura <code>ReadTimeout</code>, <code>WriteTimeout</code> e <code>IdleTimeout</code>.</li>
-          <li><code>signal.NotifyContext</code> + <code>server.Shutdown</code> para apagado graceful: las peticiones activas terminan antes de matar el proceso.</li>
-        </ul>
+        <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+        <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>CGO_ENABLED=0 go build -ldflags="-s -w"</code> produce un binario estático sin dependencias externas, listo para copiar a cualquier servidor.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Dockerfile multistage: compila en <code>golang:alpine</code>, copia solo el binario a <code>FROM scratch</code>. Imagen final de ~10-15 MB.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Toda la configuración por variables de entorno (12-factor). Usa <code>log.Fatalf</code> para las requeridas si no están presentes.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>log/slog</code> (Go 1.21+) para logging estructurado en JSON. Campos con <code>slog.Info("msg", "key", value)</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Expón siempre <code>/health</code> (comprueba dependencias) y <code>/ready</code> (el proceso está vivo). Configura <code>ReadTimeout</code>, <code>WriteTimeout</code> e <code>IdleTimeout</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>signal.NotifyContext</code> + <code>server.Shutdown</code> para apagado graceful: las peticiones activas terminan antes de matar el proceso.</span>
+              </li>
+            </ul>
+          </div>
       </article>
+      </div>
     </div>
+
     </main>
 
     <footer class="footer">

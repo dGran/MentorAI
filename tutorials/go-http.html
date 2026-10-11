@@ -48,34 +48,57 @@
     <main>
     <section class="tutorial-hero">
       <div class="container">
-        <nav class="breadcrumb"><a href="../index.html">Inicio</a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><span>Go</span></nav>
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Go</span>
+        </nav>
         <h1 class="tutorial-hero__title">HTTP sin framework: net/http</h1>
         <p class="tutorial-hero__lead">En PHP necesitas Apache, Nginx o el servidor embebido de PHP para servir HTTP. En Go, <code>net/http</code> es production-ready y va incluido en la stdlib. Un servidor que maneja peticiones concurrentes desde el primer <code>go run</code>, sin instalar nada.</p>
         <div class="tutorial-meta">
-          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>14 min</span>
-          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg>Intermedio</span>
-          <span>Go · APIs</span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Intermedio
+          </span>
         </div>
       </div>
     </section>
-    <div class="container tutorial-layout">
-      <aside class="toc">
-        <p class="toc__title">En este tutorial</p>
-        <ol class="toc__list">
-          <li><a href="#servidor-basico">Servidor básico</a></li>
-          <li><a href="#handler">La interfaz http.Handler</a></li>
-          <li><a href="#mux">ServeMux: el router de Go 1.22+</a></li>
-          <li><a href="#middleware">Middleware</a></li>
-          <li><a href="#timeouts">Timeouts de servidor</a></li>
-          <li><a href="#cliente">El cliente HTTP</a></li>
-          <li><a href="#resumen">Resumen</a></li>
-        </ol>
-      </aside>
-      <article class="prose">
-        <h2 id="servidor-basico">Servidor básico</h2>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#servidor-basico">Servidor básico</a></li>
+            <li><a href="#handler">La interfaz http.Handler</a></li>
+            <li><a href="#mux">ServeMux: el router de Go 1.22+</a></li>
+            <li><a href="#middleware">Middleware</a></li>
+            <li><a href="#timeouts">Timeouts de servidor</a></li>
+            <li><a href="#cliente">El cliente HTTP</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+        <h2 id="servidor-basico">
+            Servidor básico
+            <a href="#servidor-basico" class="anchor" aria-hidden="true">#</a>
+          </h2>
         <p>El servidor HTTP más simple posible en Go: 10 líneas, cero dependencias:</p>
 
-        <pre><code data-lang="go">package main
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">package main
 
 import (
     "fmt"
@@ -90,30 +113,60 @@ func main() {
     http.ListenAndServe(":8080", nil)
 }
 </code></pre>
+          </div>
 
         <p>Cada petición es manejada por una goroutine separada, de forma transparente. El servidor es concurrente por defecto: no necesitas configurar nada.</p>
 
-        <h2 id="handler">La interfaz http.Handler</h2>
+        <h2 id="handler">
+            La interfaz http.Handler
+            <a href="#handler" class="anchor" aria-hidden="true">#</a>
+          </h2>
         <p>Toda la maquinaria de <code>net/http</code> gira en torno a una interfaz de un solo método:</p>
 
-        <pre><code data-lang="go">type Handler interface {
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">type Handler interface {
     ServeHTTP(ResponseWriter, *Request)
 }
 </code></pre>
+          </div>
 
         <p>Cualquier tipo con ese método puede ser un handler HTTP. Esto es la implementación de <a href="go-interfaces.html">interfaces implícitas</a> aplicada al servidor web. <code>HandlerFunc</code> es un adaptador que convierte una función ordinaria en un <code>Handler</code>:</p>
 
-        <pre><code data-lang="go">// http.HandlerFunc es simplemente:
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">// http.HandlerFunc es simplemente:
 type HandlerFunc func(ResponseWriter, *Request)
 func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *Request) { f(w, r) }
 
 // Por eso http.HandleFunc acepta funciones directamente:
 http.HandleFunc("/productos", listarProductos)
 </code></pre>
+          </div>
 
         <p>Los objetos más útiles del handler:</p>
 
-        <pre><code data-lang="go">func miHandler(w http.ResponseWriter, r *http.Request) {
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">func miHandler(w http.ResponseWriter, r *http.Request) {
     // Request: datos de la petición
     fmt.Println(r.Method)          // GET, POST, etc.
     fmt.Println(r.URL.Path)        // /productos/42
@@ -127,11 +180,23 @@ http.HandleFunc("/productos", listarProductos)
     w.Write([]byte(`{"id": 42}`))
 }
 </code></pre>
+          </div>
 
-        <h2 id="mux">ServeMux: el router de Go 1.22+</h2>
+        <h2 id="mux">
+            ServeMux: el router de Go 1.22+
+            <a href="#mux" class="anchor" aria-hidden="true">#</a>
+          </h2>
         <p>Go 1.22 mejoró significativamente el <code>ServeMux</code> incorporando rutas con patrones de método y parámetros de path:</p>
 
-        <pre><code data-lang="go">mux := http.NewServeMux()
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">mux := http.NewServeMux()
 
 // Método + ruta: "GET /productos" — solo responde a GET
 mux.HandleFunc("GET /productos", listarProductos)
@@ -148,11 +213,23 @@ mux.HandleFunc("/archivos/", servirArchivos)
 
 http.ListenAndServe(":8080", mux)
 </code></pre>
+          </div>
 
-        <h2 id="middleware">Middleware</h2>
+        <h2 id="middleware">
+            Middleware
+            <a href="#middleware" class="anchor" aria-hidden="true">#</a>
+          </h2>
         <p>El patrón de middleware en Go es elegante: una función que recibe un <code>Handler</code> y devuelve otro <code>Handler</code>. Los middlewares se encadenan envolviendo los handlers:</p>
 
-        <pre><code data-lang="go">func logger(next http.Handler) http.Handler {
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">func logger(next http.Handler) http.Handler {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
         start := time.Now()
 
@@ -179,11 +256,23 @@ func autenticar(next http.Handler) http.Handler {
 handler := logger(autenticar(mux))
 http.ListenAndServe(":8080", handler)
 </code></pre>
+          </div>
 
-        <h2 id="timeouts">Timeouts de servidor</h2>
+        <h2 id="timeouts">
+            Timeouts de servidor
+            <a href="#timeouts" class="anchor" aria-hidden="true">#</a>
+          </h2>
         <p>El servidor por defecto de <code>http.ListenAndServe</code> no tiene timeouts: un cliente lento puede bloquear una goroutine indefinidamente. En producción, siempre configura timeouts:</p>
 
-        <pre><code data-lang="go">servidor := &amp;http.Server{
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">servidor := &amp;http.Server{
     Addr:         ":8080",
     Handler:      handler,
     ReadTimeout:  5 * time.Second,   // leer la petición completa
@@ -193,10 +282,19 @@ http.ListenAndServe(":8080", handler)
 
 servidor.ListenAndServe()
 </code></pre>
+          </div>
 
         <p>Apagado graceful (espera a que las peticiones activas terminen):</p>
 
-        <pre><code data-lang="go">ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 defer stop()
 
 go servidor.ListenAndServe()
@@ -208,11 +306,23 @@ defer cancel()
 
 servidor.Shutdown(shutdownCtx)
 </code></pre>
+          </div>
 
-        <h2 id="cliente">El cliente HTTP</h2>
+        <h2 id="cliente">
+            El cliente HTTP
+            <a href="#cliente" class="anchor" aria-hidden="true">#</a>
+          </h2>
         <p>El cliente HTTP también va en la stdlib, con soporte nativo para contextos y timeouts:</p>
 
-        <pre><code data-lang="go">// Nunca uses http.DefaultClient en producción: no tiene timeout
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">// Nunca uses http.DefaultClient en producción: no tiene timeout
 // Define siempre tu propio cliente:
 cliente := &amp;http.Client{Timeout: 10 * time.Second}
 
@@ -242,18 +352,48 @@ if resp.StatusCode != http.StatusOK {
 // Leer el cuerpo
 cuerpo, err := io.ReadAll(resp.Body)
 </code></pre>
+          </div>
 
-        <h2 id="resumen">Resumen</h2>
-        <ul class="keypoints">
-          <li><code>net/http</code> es un servidor HTTP production-ready incluido en la stdlib. Cada petición se maneja en su propia goroutine automáticamente.</li>
-          <li>La interfaz central es <code>http.Handler</code> con el método <code>ServeHTTP(w, r)</code>. <code>HandlerFunc</code> adapta funciones a esa interfaz.</li>
-          <li>Go 1.22+: <code>ServeMux</code> soporta métodos (<code>"GET /ruta"</code>) y parámetros de path (<code>{id}</code>), accesibles con <code>r.PathValue</code>.</li>
-          <li>El patrón de middleware es una función <code>func(Handler) Handler</code> que envuelve el handler original.</li>
-          <li>Configura siempre <code>ReadTimeout</code>, <code>WriteTimeout</code> e <code>IdleTimeout</code> en el servidor. Usa <code>Shutdown</code> para apagado graceful.</li>
-          <li>Define tu propio <code>http.Client</code> con timeout; nunca uses <code>http.DefaultClient</code> en producción.</li>
-        </ul>
+        <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+        <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>net/http</code> es un servidor HTTP production-ready incluido en la stdlib. Cada petición se maneja en su propia goroutine automáticamente.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La interfaz central es <code>http.Handler</code> con el método <code>ServeHTTP(w, r)</code>. <code>HandlerFunc</code> adapta funciones a esa interfaz.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Go 1.22+: <code>ServeMux</code> soporta métodos (<code>"GET /ruta"</code>) y parámetros de path (<code>{id}</code>), accesibles con <code>r.PathValue</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El patrón de middleware es una función <code>func(Handler) Handler</code> que envuelve el handler original.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Configura siempre <code>ReadTimeout</code>, <code>WriteTimeout</code> e <code>IdleTimeout</code> en el servidor. Usa <code>Shutdown</code> para apagado graceful.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Define tu propio <code>http.Client</code> con timeout; nunca uses <code>http.DefaultClient</code> en producción.</span>
+              </li>
+            </ul>
+          </div>
       </article>
+      </div>
     </div>
+
     </main>
 
     <footer class="footer">

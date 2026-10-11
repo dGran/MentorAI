@@ -101,6 +101,28 @@ function pistasDeForma(pregunta) {
   return pistas;
 }
 
+const BLOQUE_DE_CODIGO = /<div class="code-block">[\s\S]*?<\/pre>\s*<\/div>/g;
+const APERTURA_DE_CALLOUT = /<div class="callout callout--\w+">/g;
+const ESTRUCTURA_ANTIGUA = [
+  [/class="toc__title">En este tutorial/, "el índice se titula «En este tutorial» y no «En esta página»"],
+  [/class="tutorial-hero container"/, "el hero no tiene un .container dentro (las acciones del tutorial no se inyectan)"],
+  [/class="tutorial-actions"/, "lleva .tutorial-actions escritas a mano (sus botones no los escucha ningún JS)"],
+  [/class="toc__toggle"/, "lleva el botón del índice escrito a mano (el JS añade otro)"],
+  [/<ul class="keypoints"/, "los puntos clave van en <ul class=\"keypoints\"> y no en el bloque de la plantilla"],
+];
+
+function problemasDeEstructura(html) {
+  const problemas = ESTRUCTURA_ANTIGUA.filter(([patron]) => patron.test(html)).map(([, problema]) => problema);
+
+  if (/<pre[\s>]/.test(html.replace(BLOQUE_DE_CODIGO, ""))) problemas.push("tiene <pre> fuera de un .code-block");
+
+  const calloutsSinCuerpo = [...html.matchAll(APERTURA_DE_CALLOUT)].filter((apertura) => !html.slice(apertura.index, apertura.index + 600).includes("callout__body"));
+
+  if (calloutsSinCuerpo.length > 0) problemas.push(`${calloutsSinCuerpo.length} callout(s) sin .callout__body`);
+
+  return problemas;
+}
+
 const nivelDeCurso = (nivelesDeLecciones) => nivelesDeLecciones[0];
 
 function problemasDeCargaDeDatos(fichero, html, paginasConDatosCompletos) {
@@ -113,4 +135,4 @@ function problemasDeCargaDeDatos(fichero, html, paginasConDatosCompletos) {
   return [...problemas, ...cargadosDeMas.map((nombre) => `${fichero}: carga ${nombre}.js, que se inyecta bajo demanda`)];
 }
 
-module.exports = { esFechaReal, diaLocal, problemasDeRevision, tieneDrawerEscrito, tablasSinEnvolver, tieneUnSoloMain, problemasDeCargaDeDatos, nivelDeCurso, puestoPorLongitud, puestoDominanteTrasLaMasLarga, pistasDeForma };
+module.exports = { esFechaReal, diaLocal, problemasDeRevision, tieneDrawerEscrito, tablasSinEnvolver, tieneUnSoloMain, problemasDeCargaDeDatos, nivelDeCurso, puestoPorLongitud, puestoDominanteTrasLaMasLarga, pistasDeForma, problemasDeEstructura };
