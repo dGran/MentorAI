@@ -43,18 +43,7 @@ const tablasSinEnvolver = (html) => (html.match(TABLA) ?? []).length - (html.mat
 const tieneUnSoloMain = (html) =>
   (html.match(APERTURA_DE_MAIN) ?? []).length === 1 && (html.match(CIERRE_DE_MAIN) ?? []).length === 1;
 
-function nivelDeCurso(nivelesDeLecciones) {
-  const veces = new Map();
-
-  for (const nivel of nivelesDeLecciones) veces.set(nivel, (veces.get(nivel) ?? 0) + 1);
-
-  const maximo = Math.max(...veces.values());
-  const empatados = [...veces.keys()].filter((nivel) => veces.get(nivel) === maximo);
-
-  if (empatados.length === 1) return empatados[0];
-
-  return nivelesDeLecciones.find((nivel) => empatados.includes(nivel));
-}
+const nivelDeCurso = (nivelesDeLecciones) => nivelesDeLecciones[0];
 
 function problemasDeCargaDeDatos(fichero, html, paginasConDatosCompletos) {
   const problemas = DATOS_SIEMPRE.filter((script) => !html.includes(script)).map((script) => `${fichero}: no carga ${script}`);

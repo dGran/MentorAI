@@ -212,7 +212,7 @@ window.MENTORAI_COURSES = [
     title: "Go desde cero",
     summary:
       "Aprende Go de principio a fin: el entorno dockerizado, los fundamentos del lenguaje, el modelo de interfaces y composición, la concurrencia con goroutines y channels, y cómo construir un servicio HTTP real. Con ejemplos prácticos y contraste constante con PHP.",
-    level: "Intermedio",
+    level: "Principiante",
     icon: "code",
     modules: [
       {
@@ -308,7 +308,7 @@ window.MENTORAI_COURSES = [
     title: "Git: control de versiones",
     summary:
       "Git de principio a fin, también como referencia: los comandos del día a día con su explicación y ejemplo, cómo trabajar con ramas (merge vs rebase, conflictos, pull requests) y cómo salir de cualquier lío deshaciendo y rescatando.",
-    level: "Intermedio",
+    level: "Principiante",
     icon: "code",
     lessons: [
       "git-comandos-esenciales",
@@ -351,7 +351,7 @@ window.MENTORAI_COURSES = [
     title: "Docker para desarrollo",
     summary:
       "Containerizar tu servicio de principio a fin: imagen vs contenedor y por qué no es una VM, el Dockerfile y la caché de capas, docker-compose para levantar el entorno entero, imágenes pequeñas y seguras con multi-stage, y el montaje real de PHP con nginx y php-fpm.",
-    level: "Intermedio",
+    level: "Principiante",
     icon: "code",
     lessons: [
       "docker-imagen-vs-contenedor",
@@ -380,7 +380,7 @@ window.MENTORAI_COURSES = [
     title: "Programación orientada a objetos",
     summary:
       "Los fundamentos de la OOP en PHP, de cero: clases y objetos, encapsulación, herencia, polimorfismo, interfaces y clases abstractas, hasta saber elegir el tipo de clase adecuado. La base que SOLID y el diseño asumen por sabida.",
-    level: "Intermedio",
+    level: "Principiante",
     icon: "code",
     lessons: [
       "oop-clases-y-objetos",
@@ -515,7 +515,7 @@ window.MENTORAI_COURSES = [
     title: "Observabilidad y monitoring",
     summary:
       "Logs, métricas y trazas — los tres pilares — con el stack de facto: Sentry para errores, Prometheus y PromQL para métricas, Loki y LogQL para logs, Grafana para dashboards y Alertmanager para alertas que se atienden.",
-    level: "Avanzado",
+    level: "Intermedio",
     icon: "signal",
     modules: [
       {
@@ -566,7 +566,7 @@ window.MENTORAI_COURSES = [
     title: "Programar con IA",
     summary:
       "Trabajar con modelos y agentes sin perder el criterio: cómo piensa un LLM, prompting para código, el flujo con agentes y la gestión de los riesgos de lo generado.",
-    level: "Intermedio",
+    level: "Principiante",
     icon: "signal",
     lessons: [
       "conceptos-ia",
@@ -781,7 +781,7 @@ window.MENTORAI_COURSES = [
     title: "Rust desde cero",
     summary:
       "Aprende Rust de principio a fin: el entorno dockerizado, los fundamentos del lenguaje, el sistema de ownership que lo hace único, la concurrencia sin data races y cómo construir un servicio web con Axum. Con ejemplos prácticos y contraste constante con PHP y Go.",
-    level: "Intermedio",
+    level: "Principiante",
     icon: "code",
     modules: [
       {

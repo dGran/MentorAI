@@ -174,7 +174,7 @@ function validarNivelDeCurso(curso, lecciones) {
 
   if (curso.level === esperado) return;
 
-  aviso(`courses: «${curso.slug}» es «${curso.level}», pero el nivel de la mayoría de sus lecciones es «${esperado}» (si empatan, el de la primera)`);
+  aviso(`courses: «${curso.slug}» es «${curso.level}», pero empieza en una lección «${esperado}»: el nivel de un curso es desde dónde se puede empezar`);
 }
 
 function validarCursosYRutas() {
