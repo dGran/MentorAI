@@ -183,6 +183,18 @@ test("each piece of the old template is reported", () => {
   const problems = reglas.problemasDeEstructura(old);
 
   assert.equal(problems.length, 7);
-  assert.ok(problems.some((problem) => problem.includes("callout")));
-  assert.ok(problems.some((problem) => problem.includes("<pre>")));
+
+  for (const piece of ["En este tutorial", ".container", ".tutorial-actions", "índice", "keypoints", "<pre>", "callout"]) {
+    assert.ok(problems.some((problem) => problem.includes(piece)), piece);
+  }
+});
+
+test("a callout without body is caught even when a correct one follows it", () => {
+  const html = '<div class="callout callout--tip"><p>x</p></div><div class="callout callout--info"><svg></svg><div class="callout__body"><p>y</p></div></div>';
+
+  assert.deepEqual(reglas.problemasDeEstructura(html), ["1 callout(s) sin .callout__body"]);
+});
+
+test("a callout with extra classes or attributes is still checked", () => {
+  assert.deepEqual(reglas.problemasDeEstructura('<div class="callout callout--tip extra" id="a"><p>x</p></div>'), ["1 callout(s) sin .callout__body"]);
 });

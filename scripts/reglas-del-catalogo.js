@@ -102,7 +102,8 @@ function pistasDeForma(pregunta) {
 }
 
 const BLOQUE_DE_CODIGO = /<div class="code-block">[\s\S]*?<\/pre>\s*<\/div>/g;
-const APERTURA_DE_CALLOUT = /<div class="callout callout--\w+">/g;
+const APERTURA_DE_CALLOUT = /<div class="callout callout--\w+[^"]*"[^>]*>/g;
+const CALLOUT_CON_CUERPO = /^<div class="callout callout--\w+[^"]*"[^>]*>\s*<svg[\s\S]*?<\/svg>\s*<div class="callout__body">/;
 const ESTRUCTURA_ANTIGUA = [
   [/class="toc__title">En este tutorial/, "el índice se titula «En este tutorial» y no «En esta página»"],
   [/class="tutorial-hero container"/, "el hero no tiene un .container dentro (las acciones del tutorial no se inyectan)"],
@@ -116,7 +117,7 @@ function problemasDeEstructura(html) {
 
   if (/<pre[\s>]/.test(html.replace(BLOQUE_DE_CODIGO, ""))) problemas.push("tiene <pre> fuera de un .code-block");
 
-  const calloutsSinCuerpo = [...html.matchAll(APERTURA_DE_CALLOUT)].filter((apertura) => !html.slice(apertura.index, apertura.index + 600).includes("callout__body"));
+  const calloutsSinCuerpo = [...html.matchAll(APERTURA_DE_CALLOUT)].filter((apertura) => !CALLOUT_CON_CUERPO.test(html.slice(apertura.index)));
 
   if (calloutsSinCuerpo.length > 0) problemas.push(`${calloutsSinCuerpo.length} callout(s) sin .callout__body`);
 
