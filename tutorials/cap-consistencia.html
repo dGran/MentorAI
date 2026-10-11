@@ -251,7 +251,7 @@
                 les llama <strong>CP</strong> (por ejemplo, una BBDD relacional
                 con replicación síncrona, o etcd/ZooKeeper). A los que siguen
                 respondiendo asumiendo datos algo viejos, <strong>AP</strong>
-                (Cassandra o DynamoDB en su modo por defecto). No hay uno
+                (Cassandra con niveles de consistencia bajos, como <code>ONE</code>). No hay uno
                 «mejor»: dependen de lo que cueste cada error.
               </p>
             </div>
@@ -316,6 +316,14 @@
               </p>
             </div>
           </div>
+          <p>
+            La versión que más te vas a encontrar no es una partición, sino el
+            <strong>retraso de réplica</strong>: escribes en el primario y la siguiente
+            lectura va a una réplica que aún no ha aplicado el cambio. El usuario guarda
+            su perfil y, al recargar, ve el viejo. La garantía que falta se llama
+            <strong>read-your-writes</strong>: tras una escritura, lee del primario (o
+            espera a que la réplica alcance tu escritura) en las lecturas de ese usuario.
+          </p>
 
           <!-- ============ Espectro ============ -->
           <h2 id="espectro">
@@ -327,7 +335,10 @@
             «consistencia» y «disponibilidad» son <strong>graduables</strong>, y
             la decisión casi nunca es global: se toma <em>por operación</em>.
             Muchas bases de datos te dejan elegir el nivel en cada lectura o
-            escritura con el modelo de <strong>quórum</strong>.
+            escritura con el modelo de <strong>quórum</strong>. DynamoDB es un buen
+            ejemplo: sus lecturas son eventualmente consistentes por defecto, y basta
+            pedir <code>ConsistentRead</code> en una lectura para recibir el dato más
+            reciente. La eventual cuesta la mitad, y los índices globales solo admiten esa.
           </p>
 
           <div class="callout callout--info">
@@ -338,8 +349,11 @@
                 Con <code>N</code> réplicas, si exiges que cada escritura
                 confirme en <code>W</code> nodos y cada lectura consulte
                 <code>R</code> nodos, y haces que <code>R + W &gt; N</code>,
-                entonces lectura y escritura <strong>siempre se solapan</strong>
-                en al menos un nodo: lees lo último escrito. Subir <code>R</code>
+                entonces lectura y escritura <strong>se solapan</strong>
+                en al menos un nodo: la lectura toca alguno que tiene la última
+                escritura confirmada. No es consistencia fuerte gratis: con escrituras
+                concurrentes, escrituras que fallan a medias o relojes desincronizados
+                (last-write-wins) aún puedes leer valores inesperados. Subir <code>R</code>
                 y <code>W</code> da más consistencia; bajarlos, más disponibilidad
                 y velocidad. Ajustas el dial, no eliges un extremo.
               </p>
