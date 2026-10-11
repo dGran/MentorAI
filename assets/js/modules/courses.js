@@ -316,7 +316,7 @@
     for (const card of host.querySelectorAll(".course-card")) {
       const isHidden = selectedLevel !== ALL_LEVELS && card.dataset.level !== selectedLevel;
 
-      (card.closest(".course-card-wrap") ?? card).hidden = isHidden;
+      card.hidden = isHidden;
     }
   }
 

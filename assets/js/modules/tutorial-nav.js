@@ -9,7 +9,6 @@
 
   const MentorAI = (window.MentorAI = window.MentorAI || {});
 
-
   const escapeHtml = (text) => MentorAI.escapeHtml(text);
 
   function basename(href) {

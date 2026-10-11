@@ -12,7 +12,6 @@
 
   const MentorAI = (window.MentorAI = window.MentorAI || {});
 
-
   function standaloneTutorials(all) {
     const lessonSlugs = MentorAI.Courses.lessonSlugs();
 
