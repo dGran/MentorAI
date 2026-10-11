@@ -124,3 +124,50 @@ test("a course takes the level of the lesson it starts with", () => {
   assert.equal(reglas.nivelDeCurso(["Intermedio", "Avanzado", "Avanzado"]), "Intermedio");
   assert.equal(reglas.nivelDeCurso(["Avanzado"]), "Avanzado");
 });
+
+const question = (options, answer) => ({ o: options, a: answer });
+
+test("the length rank counts the options strictly longer than the correct one", () => {
+  assert.equal(reglas.puestoPorLongitud(question(["aaaa", "bb", "c"], 0)), 1);
+  assert.equal(reglas.puestoPorLongitud(question(["aaaa", "bb", "c"], 1)), 2);
+  assert.equal(reglas.puestoPorLongitud(question(["aa", "bb", "c"], 1)), 1);
+  assert.equal(reglas.puestoPorLongitud(question(["aaaa", "bbb", "cc", "d"], 3)), 4);
+});
+
+test("the dominant rank after the longest is found even when the longest is more frequent", () => {
+  const second = question(["aaaa", "bbb", "c"], 1);
+  const third = question(["aaaa", "bbb", "c"], 2);
+  const longest = question(["aaaa", "bbb", "c"], 0);
+
+  assert.deepEqual(reglas.puestoDominanteTrasLaMasLarga([longest, longest, longest, second, second, third]), { puesto: 2, porcentaje: (2 / 6) * 100 });
+  assert.deepEqual(reglas.puestoDominanteTrasLaMasLarga([longest]), { puesto: 0, porcentaje: 0 });
+  assert.deepEqual(reglas.puestoDominanteTrasLaMasLarga([]), { puesto: 0, porcentaje: 0 });
+});
+
+test("a share just over the limit is not rounded down", () => {
+  const second = question(["aaaa", "bbb", "c"], 1);
+  const third = question(["aaaa", "bbb", "c"], 2);
+  const share = reglas.puestoDominanteTrasLaMasLarga([...Array(5).fill(second), ...Array(6).fill(third)]).porcentaje;
+
+  assert.ok(share > 54 && share < 55);
+});
+
+test("a correct option with a different shape from the distractors is a form cue", () => {
+  assert.deepEqual(reglas.pistasDeForma(question(["Porque a", "Porque b", "C; d"], 2)), ["solo la correcta lleva «;»", "los distractores empiezan por «porque/para/por» y la correcta no"]);
+  assert.deepEqual(reglas.pistasDeForma(question(["Porque a", "Con b: c", "Porque d"], 1)), ["solo la correcta lleva «:»", "los distractores empiezan por «porque/para/por» y la correcta no"]);
+});
+
+test("options sharing their shape carry no form cue", () => {
+  assert.deepEqual(reglas.pistasDeForma(question(["Porque a", "Porque b", "Porque c"], 1)), []);
+  assert.deepEqual(reglas.pistasDeForma(question(["Sí: a", "No: b", "Sí: c"], 1)), []);
+  assert.deepEqual(reglas.pistasDeForma(question(["Uno", "Dos", "Tres"], 0)), []);
+});
+
+test("causal and purpose connectors count as the same opening", () => {
+  assert.deepEqual(reglas.pistasDeForma(question(["Porque a", "Para b", "C sin conector"], 2)), ["los distractores empiezan por «porque/para/por» y la correcta no"]);
+  assert.deepEqual(reglas.pistasDeForma(question(["Porque a", "Para b", "Porque c"], 2)), []);
+});
+
+test("punctuation inside inline code is not a form cue", () => {
+  assert.deepEqual(reglas.pistasDeForma(question(["Con `a := 1`", "Con b", "Con c"], 0)), []);
+});
