@@ -75,12 +75,13 @@
             <li><a href="#corrutinas">async/await en la práctica</a></li>
             <li><a href="#gather-taskgroup">gather y TaskGroup</a></li>
             <li><a href="#timeouts">Timeouts y cancelación</a></li>
-            <li><a href="#cuando-async">Cuándo elegir async, hilos o multiproceso</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">En PHP cada petición vive en su propio worker de FPM y, si espera a la base de datos, simplemente espera: hay otros workers para el resto. En Python async un único proceso atiende cientos de peticiones a la vez, pero solo mientras ninguna bloquee el hilo. Entender quién cede el control y cuándo te ahorra el bug más caro de async: un servidor entero congelado por una sola llamada síncrona.</p>
           <h2 id="event-loop">
             El event loop y las corrutinas
             <a href="#event-loop" class="anchor" aria-hidden="true">#</a>
@@ -236,6 +237,16 @@ asyncio.run(main())</code></pre>
           </div>
           <p>La diferencia práctica: con <code>gather</code> y <code>return_exceptions=False</code>, el primer fallo propaga la excepción pero las otras corrutinas continúan ejecutándose en segundo plano sin supervisión. Con <code>TaskGroup</code>, el fallo de cualquier tarea cancela todas las demás inmediatamente, sin tareas huérfanas.</p>
 
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos con async/await</p>
+              <p><strong>Llamar a una corrutina sin <code>await</code>.</strong> <code>obtener_usuario(1)</code> devuelve un objeto corrutina, no el usuario. El código sigue, falla más adelante con un error que no apunta al origen y Python solo deja un <code>RuntimeWarning: coroutine ... was never awaited</code>.</p>
+              <p><strong>Bloquear el event loop.</strong> <code>time.sleep()</code>, <code>requests.get()</code> o un driver síncrono dentro de <code>async def</code> congelan todas las corrutinas del proceso, no solo la tuya. Usa <code>await asyncio.sleep()</code>, un cliente async como <code>httpx.AsyncClient</code> o delega con <code>asyncio.to_thread()</code>.</p>
+              <p><strong>Lanzar <code>asyncio.create_task()</code> y olvidar la tarea.</strong> El event loop solo guarda una referencia débil: si no la conservas tú, la tarea puede desaparecer a mitad de ejecución y sus excepciones se pierden. Guárdala o, mejor, usa un <code>TaskGroup</code>.</p>
+            </div>
+          </div>
+
           <h2 id="timeouts">
             Timeouts y cancelación
             <a href="#timeouts" class="anchor" aria-hidden="true">#</a>
@@ -316,9 +327,9 @@ async def tarea_con_recursos() -&gt; None:
         await conexion.close()</code></pre>
           </div>
 
-          <h2 id="cuando-async">
-            Cuándo elegir async, hilos o multiproceso
-            <a href="#cuando-async" class="anchor" aria-hidden="true">#</a>
+                    <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
           </h2>
           <p>Async no es la solución universal a todos los problemas de rendimiento. La elección depende de dónde está el cuello de botella:</p>
           <div class="table-wrap">
@@ -389,6 +400,25 @@ async def main() -&gt; None:
 asyncio.run(main())</code></pre>
           </div>
           <p>Llamar directamente a una función bloqueante desde una corrutina sin <code>run_in_executor</code> paraliza todo el event loop: ninguna otra corrutina puede avanzar hasta que esa llamada síncrona termine.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Ve a async cuando…</h4>
+              <ul>
+                <li>El servicio pasa casi todo su tiempo esperando red o base de datos: APIs que agregan otras APIs, websockets, consumidores de colas</li>
+                <li>Mantienes muchas conexiones simultáneas y lentas abiertas a la vez</li>
+                <li>Todo el camino tiene driver async: FastAPI, asyncpg, httpx</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Quédate en síncrono cuando…</h4>
+              <ul>
+                <li>Una librería crítica es síncrona y no tiene alternativa: acabarás envolviéndolo todo en hilos</li>
+                <li>El trabajo es de CPU: async no paraleliza nada</li>
+                <li>Es un script o un comando que hace una cosa detrás de otra</li>
+              </ul>
+            </div>
+          </div>
+          <p>Ten en cuenta que async es contagioso: una función que hace <code>await</code> obliga a que quien la llama también sea <code>async</code>, hasta el punto de entrada. Decídelo por servicio, no función a función.</p>
 
           <h2 id="resumen">
             Resumen

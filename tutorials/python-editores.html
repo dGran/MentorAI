@@ -75,11 +75,13 @@
             <li><a href="#pycharm">PyCharm</a></li>
             <li><a href="#ruff">Ruff: linter y formatter</a></li>
             <li><a href="#docker-editor">Dev Containers y acceso al contenedor</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">Venir de PhpStorm acostumbra a un editor que entiende el código: renombra sin miedo, avisa de tipos y navega el proyecto. En Python esa experiencia no viene de serie: depende de que el editor encuentre el intérprete correcto y de que tengas un type checker y un linter configurados. Si falta una pieza, el editor subraya en rojo imports que funcionan o, peor, no avisa de nada.</p>
           <h2 id="pylance">
             Pylance en VS Code
             <a href="#pylance" class="anchor" aria-hidden="true">#</a>
@@ -231,6 +233,31 @@ ruff check --fix .</code></pre>
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
             <div class="callout__body">
               <p><strong>PyCharm + Docker</strong>: PyCharm Professional configura el intérprete remoto desde Settings → Project → Python Interpreter → Add → On Docker Compose. Seleccionas el servicio <code>app</code> y PyCharm ejecuta el código directamente en el contenedor, sin necesidad de Dev Containers.</p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <ul>
+            <li><strong>PyCharm Professional</strong> si vienes de PhpStorm y vas a pasar semanas en Python: los atajos, el refactoring y el intérprete remoto en Docker te ahorran la curva del editor y te dejan centrarte en el lenguaje.</li>
+            <li><strong>VS Code con Pylance</strong> si saltas entre varios lenguajes del día a día (Python, Go, Rust, PHP) y prefieres un único editor ligero con una extensión por lenguaje.</li>
+            <li><strong>Ruff siempre</strong>, desde el primer commit, en el editor y en CI. Añadirlo a un proyecto con dos años de código sin formatear genera un diff enorme que nadie quiere revisar.</li>
+            <li><strong><code>typeCheckingMode: "basic"</code></strong> para empezar y en código heredado sin anotar; sube a <code>"strict"</code> en código nuevo que ya escribes con type hints. Activar <code>strict</code> sobre un proyecto antiguo da cientos de avisos y el equipo acaba ignorándolos todos.</li>
+            <li><strong>Dev Containers</strong> si usas VS Code y el proyecto vive en Docker; con PyCharm, el intérprete remoto hace lo mismo sin abrir el editor dentro del contenedor.</li>
+          </ul>
+          <p>Lo que no conviene es mezclar: dos formatters (Black y Ruff, o el formateo propio del IDE) en el mismo proyecto se pisan en cada guardado y llenan los PR de ruido.</p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos al configurar el editor</p>
+              <ul>
+                <li><strong>Dejar el editor apuntando al Python del host.</strong> Los imports salen en rojo (<code>Import "fastapi" could not be resolved</code>) aunque la app arranque, porque las dependencias están en el contenedor o en el <code>.venv</code>. Elige ese intérprete antes de tocar nada más.</li>
+                <li><strong>Confiar en que Pylance protege en ejecución.</strong> Los avisos del editor no paran nada: Python ignora los type hints al ejecutar. Si mypy o Pyright no corren en CI, el error de tipos llega a producción igual.</li>
+                <li><strong>Tener una configuración de Ruff en el editor y otra en CI.</strong> Si las reglas viven en los ajustes del editor y no en <code>pyproject.toml</code>, cada persona ve avisos distintos y CI falla por cosas que nadie vio en local.</li>
+              </ul>
             </div>
           </div>
 

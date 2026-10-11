@@ -75,11 +75,13 @@
             <li><a href="#logging-estructurado">Logging estructurado con structlog</a></li>
             <li><a href="#healthcheck">Healthcheck endpoint</a></li>
             <li><a href="#metricas">Métricas con prometheus-client</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">Que tu API responda en <code>uvicorn --reload</code> no dice nada de cómo se comportará con cuatro núcleos, un orquestador que la reinicia y alguien de guardia preguntando por qué falla de madrugada. Pasar a producción es responder cuatro preguntas: cuántos procesos corren, qué cuentan los logs, cómo sabe el orquestador que estás sano y qué números miras para enterarte antes que tus usuarios.</p>
           <h2 id="uvicorn-gunicorn">
             Uvicorn y Gunicorn: cuándo usar cada uno
             <a href="#uvicorn-gunicorn" class="anchor" aria-hidden="true">#</a>
@@ -101,7 +103,7 @@
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
-            <pre><code data-lang="bash">pip install uvicorn[standard] gunicorn</code></pre>
+            <pre><code data-lang="bash">pip install uvicorn[standard] uvicorn-worker gunicorn</code></pre>
           </div>
           <p>Uvicorn solo (desarrollo o un único proceso):</p>
           <div class="code-block">
@@ -124,7 +126,7 @@
               </button>
             </div>
             <pre><code data-lang="bash">gunicorn main:app \
-  --worker-class uvicorn.workers.UvicornWorker \
+  --worker-class uvicorn_worker.UvicornWorker \
   --workers 4 \
   --bind 0.0.0.0:8000 \
   --timeout 30 \
@@ -391,16 +393,18 @@ async def metricas_middleware(request: Request, call_next):
     inicio = time.perf_counter()
     respuesta = await call_next(request)
     duracion = time.perf_counter() - inicio
+    ruta = request.scope.get("route")
+    plantilla = ruta.path if ruta else "sin-ruta"
 
     PETICIONES_TOTAL.labels(
         method=request.method,
-        path=request.url.path,
+        path=plantilla,
         status_code=respuesta.status_code,
     ).inc()
 
     DURACION_PETICION.labels(
         method=request.method,
-        path=request.url.path,
+        path=plantilla,
     ).observe(duracion)
 
     return respuesta
@@ -443,6 +447,42 @@ async def completar_pedido(pedido_id: int, metodo_pago: str) -&gt; dict:
     except PagoRechazadoError as error:
         PEDIDOS_FALLIDOS.labels(motivo="pago_rechazado").inc()
         raise</code></pre>
+          </div>
+
+                    <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Aplícalo cuando…</h4>
+              <ul>
+                <li><strong>Gunicorn + UvicornWorker</strong>: despliegas en una máquina o VM donde tú gestionas los procesos</li>
+                <li><strong>Logging JSON</strong>: los logs acaban en un agregador (Loki, Elasticsearch, CloudWatch)</li>
+                <li><strong>/health y /ready</strong>: hay un orquestador o un balanceador que decide a quién mandar tráfico</li>
+                <li><strong>Métricas</strong>: el servicio lo va a operar alguien que necesita alertas, no intuiciones</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Y elige otra cosa cuando…</h4>
+              <ul>
+                <li>Corres en Kubernetes con autoescalado: un solo proceso uvicorn por contenedor y más réplicas suele ser más simple, porque el orquestador ya gestiona los procesos</li>
+                <li>Estás en desarrollo: el JSON es ilegible en una terminal; usa la salida de consola de structlog</li>
+                <li>Ya tienes OpenTelemetry o un APM instrumentando: no dupliques las métricas HTTP con un middleware propio</li>
+              </ul>
+            </div>
+          </div>
+          <p>La fórmula <code>2 * núcleos + 1</code> es un punto de partida, no un número cerrado: cada worker carga la aplicación entera, así que mide con carga real y vigila la memoria antes de subirla.</p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos al operar en producción</p>
+              <p><strong>Un <code>/health</code> que consulta la base de datos.</strong> Si la base de datos cae, falla el liveness y el orquestador reinicia todos los pods a la vez, que no arreglan nada y además tardan en volver. Las dependencias se comprueban solo en <code>/ready</code>.</p>
+              <p><strong>Etiquetas de métricas con alta cardinalidad.</strong> Cada valor distinto de una etiqueta es una serie temporal nueva. Usar la URL real (<code>/pedidos/8123</code>) o un id de usuario como etiqueta crea una serie por pedido y acaba tumbando Prometheus: etiqueta con la plantilla de la ruta (<code>/pedidos/{id}</code>).</p>
+              <p><strong>prometheus-client con varios workers sin modo multiproceso.</strong> Cada worker de Gunicorn guarda sus contadores en su memoria y cada scrape cae en uno distinto, así que los números saltan. Activa el modo multiproceso con <code>PROMETHEUS_MULTIPROC_DIR</code>.</p>
+              <p><strong>Meter los datos en el mensaje del log.</strong> <code>log.info(f"pedido {pedido_id} creado")</code> te deja texto libre otra vez. Lo estructurado es <code>log.info("pedido_creado", pedido_id=pedido_id)</code>: el campo se puede filtrar y agregar.</p>
+            </div>
           </div>
 
           <h2 id="resumen">

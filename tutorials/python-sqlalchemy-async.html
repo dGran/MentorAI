@@ -76,11 +76,13 @@
             <li><a href="#queries">Queries con select(), filtros y joins</a></li>
             <li><a href="#relaciones">Relaciones y lazy loading en async</a></li>
             <li><a href="#alembic">Migraciones con Alembic</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">Doctrine te ha acostumbrado a que <code>$pedido-&gt;getUsuario()</code> lance la query sin que te enteres. En SQLAlchemy async esa comodidad desaparece: cada viaje a la base de datos tiene que ser un <code>await</code> explícito, y entender por qué es lo que separa un servicio que aguanta carga de uno que revienta con <code>MissingGreenlet</code> en la primera relación.</p>
           <h2 id="engine-async">
             Engine async y session factory
             <a href="#engine-async" class="anchor" aria-hidden="true">#</a>
@@ -411,6 +413,31 @@ alembic history --verbose</code></pre>
               <p><strong>No confíes ciegamente en autogenerate</strong>: Alembic no detecta todos los cambios automáticamente. Los índices parciales, las restricciones personalizadas y algunas columnas computadas pueden requerir que escribas la migración a mano. Revisa siempre el script generado antes de aplicarlo en producción.</p>
             </div>
           </div>
+
+                    <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Async no hace más rápida ninguna query: hace que, mientras una espera a la base de datos, el mismo proceso atienda otras peticiones. Si tu aplicación no tiene esa concurrencia, pagas la complejidad sin cobrar nada a cambio.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Úsalo cuando…</h4>
+              <ul>
+                <li>Tu aplicación es ASGI (FastAPI, Starlette) y el resto del stack ya es async</li>
+                <li>Atiendes muchas peticiones simultáneas que pasan casi todo el tiempo esperando a la base de datos</li>
+                <li>Quieres un ORM con unidad de trabajo y migraciones versionadas con Alembic, lo más parecido a Doctrine</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Quédate en síncrono cuando…</h4>
+              <ul>
+                <li>Escribes scripts, comandos o workers de cola que hacen una cosa detrás de otra: SQLAlchemy síncrono es más simple y no pierdes nada</li>
+                <li>Generas informes pesados: el cuello de botella está en la base de datos, no en el driver</li>
+                <li>El equipo no domina la carga explícita de relaciones: cada acceso perezoso olvidado es un error en producción</li>
+              </ul>
+            </div>
+          </div>
+          <p>Dos matices de criterio. Para consultas analíticas complejas, SQLAlchemy Core o <code>text()</code> con SQL escrito a mano suele ser más claro que forzar el ORM. Y una <code>AsyncSession</code> pertenece a una sola tarea: si lanzas trabajo concurrente con <code>gather</code> o <code>TaskGroup</code>, cada tarea abre su propia sesión desde la factoría.</p>
 
           <h2 id="resumen">
             Resumen

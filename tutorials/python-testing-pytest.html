@@ -76,11 +76,13 @@
             <li><a href="#mocking">Mocking con pytest-mock</a></li>
             <li><a href="#async-tests">Tests async con anyio</a></li>
             <li><a href="#conftest">conftest.py y cobertura con pytest-cov</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">PHPUnit te pide una clase, heredar de <code>TestCase</code> y un <code>setUp</code> para preparar cada caso. pytest quita toda esa ceremonia: un test es una función con un <code>assert</code>, y lo que necesita le llega por nombre como parámetro. Esa sencillez engaña, porque son las fixtures y sus scopes los que deciden si tu suite es rápida y fiable o lenta y llena de tests que dependen del orden.</p>
           <h2 id="fixtures">
             Fixtures: setup sin clases
             <a href="#fixtures" class="anchor" aria-hidden="true">#</a>
@@ -343,7 +345,18 @@ def anyio_backend():
           <div class="callout callout--info">
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
             <div class="callout__body">
-              <p><strong>anyio_mode = auto</strong>: si añades <code>anyio_mode = auto</code> en <code>pytest.ini</code>, no necesitas decorar cada test con <code>@pytest.mark.anyio</code>. Todas las funciones <code>async def test_*</code> se ejecutan automáticamente con anyio.</p>
+              <p><strong>Sin decorar cada test</strong>: el plugin de anyio no tiene modo automático, pero puedes marcar el módulo entero con <code>pytestmark = pytest.mark.anyio</code> al principio del fichero. Si usas pytest-asyncio en lugar de anyio, su equivalente es <code>asyncio_mode = auto</code> en <code>pytest.ini</code>.</p>
+            </div>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos al empezar con pytest</p>
+              <p><strong>Parchear donde se define y no donde se usa.</strong> <code>from app.notificaciones import enviar</code> copia la referencia al módulo que importa. Si parcheas <code>app.notificaciones.enviar</code>, tu servicio sigue llamando a la función original.</p>
+              <p><strong>Escribir aserciones dentro de <code>with pytest.raises(...)</code>.</strong> En cuanto salta la excepción, el resto del bloque no se ejecuta. Las comprobaciones sobre el error van fuera, usando el <code>as info</code> del gestor de contexto.</p>
+              <p><strong>Un test <code>async def</code> sin marcador.</strong> Sin <code>@pytest.mark.anyio</code> (o el plugin configurado en modo automático), pytest no sabe esperar la corrutina: el cuerpo no llega a ejecutarse y no estás probando nada.</p>
+              <p><strong>Fixtures de scope amplio que devuelven objetos mutables.</strong> Un test modifica la lista o el cliente compartido y el siguiente hereda el cambio. La suite pasa en local y falla en CI cuando cambia el orden.</p>
             </div>
           </div>
 
@@ -405,8 +418,7 @@ async def session(engine):
             </div>
             <pre><code data-lang="ini">[pytest]
 addopts = --strict-markers -q
-testpaths = tests
-anyio_mode = auto</code></pre>
+testpaths = tests</code></pre>
           </div>
           <p>Para medir la cobertura de código instala <code>pytest-cov</code> y pásale el paquete a analizar:</p>
           <div class="code-block">
@@ -423,6 +435,32 @@ pytest --cov=app --cov-report=html tests/</code></pre>
           </div>
           <p><code>--cov-report=term-missing</code> imprime en consola las líneas no cubiertas. <code>--cov-report=html</code> genera un informe HTML en <code>htmlcov/index.html</code> que muestra el código coloreado por cobertura.</p>
           <p>Para excluir del análisis código que no merece cobertura (scripts de arranque, migraciones, stubs de tipos), añade comentarios <code># pragma: no cover</code> en las líneas o configura <code>omit</code> en la sección <code>[coverage:run]</code> del <code>pyproject.toml</code>.</p>
+
+                    <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>pytest es el estándar de facto en Python y ejecuta también los tests escritos con <code>unittest</code>, así que la pregunta no es si usarlo, sino cuándo tirar de cada herramienta.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Tira de cada pieza cuando…</h4>
+              <ul>
+                <li><strong>Fixture</strong>: varios tests comparten la misma preparación o un recurso con limpieza</li>
+                <li><strong>parametrize</strong>: el mismo comportamiento se comprueba con varias entradas y la misma aserción</li>
+                <li><strong>mocker</strong>: el código toca una frontera que no controlas, como la red, el reloj o un servicio externo</li>
+                <li><strong>conftest.py</strong>: una fixture la necesitan tests de más de un módulo</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Y no la fuerces cuando…</h4>
+              <ul>
+                <li>Mockear tu propio código interno: acoplas el test a la implementación y deja de avisarte cuando algo se rompe de verdad</li>
+                <li>Parametrizar casos que necesitan un <code>if</code> dentro del test: son tests distintos con nombres distintos</li>
+                <li>Subir a <code>scope="session"</code> una fixture con estado mutable solo para ganar velocidad</li>
+              </ul>
+            </div>
+          </div>
+          <p>Para la persistencia, la alternativa a mockear el ORM es una base de datos real en un contenedor con rollback por test, como la del <code>conftest.py</code> de esta lección: prueba las queries de verdad y sigue siendo rápida.</p>
 
           <h2 id="resumen">
             Resumen

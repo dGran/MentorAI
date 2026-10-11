@@ -76,11 +76,13 @@
             <li><a href="#herencia">Herencia y clases abstractas</a></li>
             <li><a href="#dataclasses">@dataclass</a></li>
             <li><a href="#dunders">Métodos dunder</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">Si vienes de PHP, tu primer impulso será escribir una clase por fichero, con getters, setters y métodos estáticos de utilidad. En Python eso funciona, pero se lee como PHP traducido. Aquí verás qué te da el lenguaje para que la clase haga solo lo que justifica su existencia.</p>
           <h2 id="clases">
             class, __init__ y self
             <a href="#clases" class="anchor" aria-hidden="true">#</a>
@@ -338,6 +340,45 @@ print(v1[0])       # 1.0</code></pre>
                 <tr><td><code>__call__</code></td><td><code>obj(args)</code></td><td>Objeto invocable</td></tr>
               </tbody>
             </table>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una clase se gana su sitio cuando agrupa <strong>estado y las reglas que lo protegen</strong>. Si solo hay datos o solo hay comportamiento, Python tiene herramientas más ligeras.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Usa una clase cuando…</h4>
+              <ul>
+                <li>El objeto tiene invariantes que validar (un saldo que no baja de cero)</li>
+                <li>Varios métodos comparten y modifican el mismo estado</li>
+                <li>Es un contenedor de datos: entonces <code>@dataclass</code>, con <code>frozen=True</code> si es un valor</li>
+                <li>Quieres que el objeto encaje con operadores o <code>with</code> vía dunders</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Evítala cuando…</h4>
+              <ul>
+                <li>Solo agrupas funciones sin estado: en Python eso es un <strong>módulo</strong>, no una clase de <code>@staticmethod</code></li>
+                <li>Escribes <code>get_x()</code>/<code>set_x()</code> sin lógica: deja el atributo público y pásalo a <code>@property</code> el día que la necesite</li>
+                <li>Encadenas tres niveles de herencia para reutilizar código: compón</li>
+                <li>Solo pasas un diccionario con forma fija: un <code>TypedDict</code> o una dataclass bastan</li>
+              </ul>
+            </div>
+          </div>
+          <p>La regla práctica: empieza por una función o una dataclass y sube a una clase con métodos cuando aparezca un invariante que proteger. Cambiar un atributo público por una <code>@property</code> no rompe a quien lo usa, así que no hace falta blindarlo todo desde el primer día como en PHP.</p>
+
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos al llegar de PHP</p>
+              <p><strong>Un atributo de clase mutable se comparte.</strong> <code>etiquetas: list[str] = []</code> en el cuerpo de una clase normal es <em>una</em> lista para todas las instancias: lo que añade una lo ven las demás. Inicialízala en <code>__init__</code> o usa <code>field(default_factory=list)</code> en una dataclass.</p>
+              <p><strong>El valor por defecto mutable de un parámetro.</strong> <code>def __init__(self, items=[])</code> evalúa esa lista una sola vez, al definir la función, y la reutiliza en cada llamada. Usa <code>None</code> y crea la lista dentro.</p>
+              <p><strong>Creer que <code>_saldo</code> es privado.</strong> Es una convención, no un control de acceso como <code>private</code>. <code>__saldo</code> solo renombra el atributo (<em>name mangling</em>) para evitar choques en subclases; tampoco lo oculta.</p>
+              <p><strong>Definir <code>__eq__</code> y perder el hash.</strong> Al definir <code>__eq__</code> sin <code>__hash__</code>, Python pone <code>__hash__ = None</code> y la instancia deja de poder ir en un <code>set</code> o como clave de diccionario. <code>@dataclass(frozen=True)</code> resuelve los dos a la vez.</p>
+            </div>
           </div>
 
           <h2 id="resumen">

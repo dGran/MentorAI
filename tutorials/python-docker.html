@@ -75,11 +75,13 @@
             <li><a href="#dockerfile-fastapi">Dockerfile multistage para FastAPI</a></li>
             <li><a href="#compose">docker-compose con PostgreSQL y Redis</a></li>
             <li><a href="#variables-entorno">Variables de entorno y secretos</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">En PHP la imagen suele ser <code>php-fpm</code> con un Nginx delante y poco más que decidir. En Python, la imagen base, el orden de las capas y la forma de arrancar el proceso marcan la diferencia entre una imagen de casi 1 GB y otra de unos 150 MB, entre reinstalar dependencias en cada cambio o reutilizar la caché, y entre un contenedor que para limpio y otro que Docker tiene que matar.</p>
           <h2 id="imagen-base">
             Elegir imagen base: slim, alpine y distroless
             <a href="#imagen-base" class="anchor" aria-hidden="true">#</a>
@@ -154,13 +156,13 @@ FROM python:3.12-slim
 RUN useradd -m -u 1000 appuser
 WORKDIR /app
 
-COPY --from=builder /root/.local /root/.local
+COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
 COPY . .
 
 RUN chown -R appuser:appuser /app
 USER appuser
 
-ENV PATH=/root/.local/bin:$PATH
+ENV PATH=/home/appuser/.local/bin:$PATH
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
@@ -268,6 +270,17 @@ docker compose exec api python -m pytest
 docker compose down -v</code></pre>
           </div>
 
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos al dockerizar Python</p>
+              <p><strong>Escuchar en <code>127.0.0.1</code>.</strong> Es el host por defecto de uvicorn, y dentro del contenedor es el loopback del propio contenedor: el puerto publicado no llega a la aplicación. Arranca con <code>--host 0.0.0.0</code>.</p>
+              <p><strong><code>CMD</code> en forma shell.</strong> Con <code>CMD uvicorn main:app ...</code> el proceso puede quedar bajo <code>/bin/sh -c</code>, que no reenvía <code>SIGTERM</code>: <code>docker stop</code> espera el plazo de gracia y lo mata con <code>SIGKILL</code>, sin cierre ordenado. Usa la forma exec, <code>CMD ["uvicorn", ...]</code>.</p>
+              <p><strong>Olvidar el <code>.dockerignore</code>.</strong> Sin él, <code>COPY . .</code> mete en la imagen el <code>.env</code>, el <code>.git</code> y tu <code>.venv</code> local: más tamaño, caché invalidada en cada cambio y secretos dentro de una capa.</p>
+              <p><strong>Desplegar el compose de desarrollo.</strong> El volumen <code>.:/app</code> sustituye el código de la imagen por el de tu disco. En producción lo que se despliega es la imagen, tal cual se construyó.</p>
+            </div>
+          </div>
+
           <h2 id="variables-entorno">
             Variables de entorno y secretos
             <a href="#variables-entorno" class="anchor" aria-hidden="true">#</a>
@@ -319,6 +332,31 @@ class Settings(BaseSettings):
           </div>
           <p>En producción, las variables se inyectan directamente en el entorno del contenedor o desde un gestor de secretos (AWS Secrets Manager, HashiCorp Vault). El código no cambia: pydantic-settings las recoge del entorno del proceso.</p>
           <p>Nunca uses <code>ENV SECRET_KEY=valor_real</code> en el Dockerfile: ese valor queda grabado en el historial de capas de la imagen y cualquiera con acceso al registro puede extraerlo con <code>docker history</code>.</p>
+
+                    <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Contenedoriza cuando…</h4>
+              <ul>
+                <li>El entorno tiene varios servicios (API, PostgreSQL, Redis) que todo el equipo debe levantar igual</li>
+                <li>Despliegas en algo que consume imágenes: Kubernetes, ECS, Cloud Run o un servidor con compose</li>
+                <li>Tienes dependencias con extensiones C o librerías de sistema que no quieres pelear en cada portátil</li>
+                <li>El build necesita compiladores que no quieres en producción: ahí entra el multistage</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No hace falta, o elige otra cosa, cuando…</h4>
+              <ul>
+                <li>Es un script o una librería: un entorno virtual con <code>python -m venv</code> basta</li>
+                <li>Eliges alpine para ahorrar megas y dependes de paquetes con wheels solo para glibc</li>
+                <li>Quieres distroless pero aún necesitas entrar con un shell a depurar</li>
+              </ul>
+            </div>
+          </div>
+          <p>Un término medio que funciona bien en local: contenedores para lo que no es tuyo (la base de datos, la caché) y la API en el host con un venv y <code>uvicorn --reload</code>, que itera más rápido. El Dockerfile no deja de probarse: lo construye CI en cada push, y esa es la imagen que llega a producción.</p>
 
           <h2 id="resumen">
             Resumen

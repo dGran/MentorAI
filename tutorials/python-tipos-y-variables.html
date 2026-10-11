@@ -76,11 +76,13 @@
             <li><a href="#colecciones">Colecciones: list, tuple, dict, set</a></li>
             <li><a href="#mutabilidad">Mutabilidad e inmutabilidad</a></li>
             <li><a href="#type-hints">Type hints</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">En PHP aprendiste a desconfiar de las comparaciones y de las conversiones silenciosas. En Python esas sorpresas desaparecen, pero aparecen otras: listas que cambian «solas» porque dos nombres apuntan al mismo objeto, o diccionarios que rechazan una lista como clave. Casi todas salen de una sola idea: la variable es una etiqueta y el tipo vive en el objeto.</p>
           <h2 id="dinamico">
             Tipado dinámico y fuerte
             <a href="#dinamico" class="anchor" aria-hidden="true">#</a>
@@ -265,6 +267,19 @@ d[[1, 2]] = "lista como clave"  # TypeError: unhashable type: 'list'</code></pre
             </table>
           </div>
 
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos con tipos y mutabilidad</p>
+              <ul>
+                <li><strong>Creer que <code>b = a</code> copia.</strong> Con una lista o un diccionario, los dos nombres apuntan al mismo objeto y cambiar uno cambia «el otro». Copia con <code>a.copy()</code>, y con <code>copy.deepcopy(a)</code> si hay colecciones anidadas.</li>
+                <li><strong>Construir una matriz con <code>[[0] * 3] * 3</code>.</strong> Son tres referencias a la misma fila: asignar <code>matriz[0][0] = 1</code> cambia la primera columna entera. Usa una comprensión: <code>[[0] * 3 for _ in range(3)]</code>.</li>
+                <li><strong>Comparar valores con <code>is</code>.</strong> <code>is</code> mira si es el mismo objeto, no si vale lo mismo. Con enteros pequeños parece funcionar porque CPython los reutiliza, y falla con números grandes o con strings construidos en ejecución. <code>is</code> solo para <code>None</code>; para todo lo demás, <code>==</code>.</li>
+                <li><strong>Crear un <code>Decimal</code> desde un <code>float</code>.</strong> <code>Decimal(0.1)</code> hereda el error de redondeo del float; <code>Decimal("0.1")</code> es exacto.</li>
+              </ul>
+            </div>
+          </div>
+
           <h2 id="type-hints">
             Type hints
             <a href="#type-hints" class="anchor" aria-hidden="true">#</a>
@@ -305,6 +320,20 @@ def log(valor: Any) -&gt; None:
               <p><strong>Type hints y FastAPI</strong>: FastAPI lee los type hints de los parámetros de tus funciones en tiempo de ejecución para generar la validación automática y la documentación OpenAPI. En ese contexto, los type hints no son opcionales; son la API de FastAPI.</p>
             </div>
           </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>En PHP el array lo hace todo; en Python elegir la colección es elegir qué operaciones serán baratas y qué errores serán imposibles.</p>
+          <ul>
+            <li><strong><code>list</code></strong> para una secuencia ordenada que crece o cambia: los resultados que vas acumulando, una cola de trabajo pequeña.</li>
+            <li><strong><code>tuple</code></strong> para un registro fijo de pocos campos o una clave compuesta de diccionario. Si los campos merecen nombre, pasa a una <code>dataclass</code> o una <code>NamedTuple</code>: <code>usuario[2]</code> no le dice nada a quien lee.</li>
+            <li><strong><code>dict</code></strong> para buscar por clave. No lo uses como objeto con campos fijos que viaja por toda la aplicación, como el array asociativo de PHP: ahí una <code>dataclass</code> o un <code>TypedDict</code> te dan autocompletado y errores de tipo.</li>
+            <li><strong><code>set</code></strong> para pertenencia y para quitar duplicados: <code>x in conjunto</code> cuesta lo mismo con diez elementos que con un millón, mientras que en una lista recorre hasta encontrarlo. A cambio, no guarda orden.</li>
+            <li><strong><code>Decimal</code></strong>, no <code>float</code>, para importes: <code>0.1 + 0.2</code> no da <code>0.3</code> y en dinero ese céntimo acaba en una factura.</li>
+          </ul>
+          <p>Los type hints van siempre en las firmas de funciones que otros llaman. En variables locales, solo cuando el tipo no se deduce solo, como una lista que nace vacía: <code>pendientes: list[str] = []</code>.</p>
 
           <h2 id="resumen">
             Resumen

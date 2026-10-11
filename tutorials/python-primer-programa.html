@@ -75,11 +75,13 @@
             <li><a href="#scripts">Scripts .py</a></li>
             <li><a href="#venv">Virtual environments</a></li>
             <li><a href="#primer-programa">Primer programa útil</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">El primer choque al llegar desde PHP es que aquí no hay servidor web de por medio: un fichero <code>.py</code> se ejecuta solo, importa otros y carga sus dependencias desde un entorno que eliges tú. Entender bien esas tres piezas, el REPL, el script y el entorno virtual, ahorra la mitad de los «en mi máquina funciona» de las primeras semanas.</p>
           <h2 id="interprete">
             El intérprete interactivo
             <a href="#interprete" class="anchor" aria-hidden="true">#</a>
@@ -204,6 +206,18 @@ dev = [
 ]</code></pre>
           </div>
 
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos del primer día</p>
+              <ul>
+                <li><strong>Forzar <code>pip install</code> en el Python del sistema.</strong> En Ubuntu 24.04 o Debian 12 falla con <code>externally-managed-environment</code> (PEP 668) y es a propósito. <code>--break-system-packages</code> lo salta y puede romper herramientas del sistema escritas en Python: crea un entorno virtual o usa uv.</li>
+                <li><strong>«Lo instalé, pero dice <code>ModuleNotFoundError</code>».</strong> Instalaste con un Python y ejecutas con otro, normalmente porque el entorno no estaba activado. <code>python -m pip</code> instala en el mismo intérprete que ejecuta, y <code>uv run</code> elimina el problema.</li>
+                <li><strong>Llamar a tu script como un módulo de la biblioteca estándar.</strong> Un <code>json.py</code>, <code>random.py</code> o <code>http.py</code> en tu carpeta se importa antes que el original, porque el directorio del script va primero en la ruta de búsqueda. El error que sale, un <code>AttributeError</code> o un import circular, no apunta al nombre del fichero.</li>
+              </ul>
+            </div>
+          </div>
+
           <h2 id="primer-programa">
             Primer programa útil
             <a href="#primer-programa" class="anchor" aria-hidden="true">#</a>
@@ -253,6 +267,18 @@ if __name__ == "__main__":
             <li><strong><code>repo.get("description") or "Sin descripción"</code></strong>: <code>.get()</code> devuelve <code>None</code> si la clave no existe; el <code>or</code> proporciona el fallback.</li>
             <li><strong><code>f"{estrellas:&gt;5}"</code></strong>: formatea el número con alineación a la derecha en un campo de 5 caracteres, para que la columna quede alineada.</li>
           </ul>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <ul>
+            <li><strong>El REPL</strong> para comprobar en segundos cómo se comporta algo: un método de <code>str</code>, la forma de un JSON, un <code>help()</code>. En cuanto escribas lo mismo dos veces, pásalo a un script, porque el REPL no se versiona ni se repite.</li>
+            <li><strong>Un script con <code>if __name__ == "__main__":</code></strong> para cualquier fichero que se ejecute y que, además, quieras importar desde un test. Cuesta una línea y evita que el import dispare el programa entero.</li>
+            <li><strong>uv</strong> en proyectos nuevos: crea el entorno, fija versiones y ejecuta sin activar nada.</li>
+            <li><strong><code>venv</code> con pip</strong> cuando no puedes instalar uv (un servidor restringido, una imagen mínima) o el proyecto ya vive con <code>requirements.txt</code> y migrarlo no es la tarea de hoy. Viene con Python y funciona en todas partes.</li>
+          </ul>
+          <p>Lo que no hay que hacer nunca es instalar paquetes en el Python del sistema. Es el equivalente a meter librerías a mano en el <code>include_path</code> global de PHP: funciona hasta que dos proyectos piden versiones distintas, o hasta que una actualización del sistema operativo pisa lo que instalaste.</p>
 
           <h2 id="resumen">
             Resumen

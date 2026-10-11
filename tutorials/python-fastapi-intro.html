@@ -76,11 +76,13 @@
             <li><a href="#parametros">Path params, query params y body</a></li>
             <li><a href="#response-model">Response model con Pydantic</a></li>
             <li><a href="#docs-automaticas">Docs automáticas: Swagger y ReDoc</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">En Laravel, validar la petición, dar forma a la respuesta y documentar la API son tres piezas distintas que hay que mantener de acuerdo. FastAPI las deriva de una sola fuente: las anotaciones de tipo del handler. Si el tipo cambia, cambian a la vez la validación, la respuesta y la documentación.</p>
           <h2 id="que-es">
             Qué es FastAPI y cuándo elegirlo
             <a href="#que-es" class="anchor" aria-hidden="true">#</a>
@@ -218,6 +220,16 @@ docker run -p 8000:8000 -v $(pwd):/app mi-api</code></pre>
           </div>
           <p>Con <code>--reload</code>, uvicorn detecta cambios en el código y recarga el servidor automáticamente. El volumen <code>-v $(pwd):/app</code> monta el directorio local dentro del contenedor para que los cambios sean instantáneos sin rebuilds.</p>
           <p>Abre <code>http://localhost:8000</code> y verás la respuesta JSON. Abre <code>http://localhost:8000/docs</code> y verás la documentación interactiva generada automáticamente.</p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos al llegar de PHP-FPM</p>
+              <p><strong>Bloquear el event loop.</strong> Dentro de un <code>async def</code>, <code>time.sleep</code>, <code>requests.get</code> o un driver de BD síncrono paran el proceso entero y no solo esa petición. Usa librerías async (<code>httpx.AsyncClient</code>, <code>asyncpg</code>) o declara el handler con <code>def</code> normal: FastAPI lo ejecuta en un pool de hilos.</p>
+              <p><strong>Dar por hecho que cada petición empieza de cero.</strong> En PHP-FPM nada sobrevive al final de la petición; aquí el proceso es largo y las variables de módulo se comparten entre peticiones. Una lista global que vas llenando es una fuga de memoria y, con varios workers, además diverge entre ellos.</p>
+              <p><strong>Llevar <code>--reload</code> a producción.</strong> Es para desarrollo: vigila el disco y reinicia el servidor. En producción, uvicorn sin <code>--reload</code> y con el número de workers que toque.</p>
+            </div>
+          </div>
 
           <h2 id="parametros">
             Path params, query params y body
@@ -431,6 +443,34 @@ app = FastAPI(
     redoc_url=None if IS_PRODUCTION else "/redoc",
 )</code></pre>
           </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>FastAPI es una pieza para <strong>servir APIs</strong>, no un framework completo. Elegirlo bien depende más del proyecto que de la velocidad del benchmark.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Es buena elección cuando…</h4>
+              <ul>
+                <li>Construyes una API JSON o un microservicio sin vistas HTML</li>
+                <li>El trabajo es sobre todo I/O: BD, otras APIs, colas</li>
+                <li>Quieres contrato y docs OpenAPI sin mantenerlos a mano</li>
+                <li>Expones modelos o procesos de datos que ya viven en Python</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Mejor otra opción cuando…</h4>
+              <ul>
+                <li>Necesitas admin, auth, ORM y migraciones integrados: Django</li>
+                <li>Es una web con plantillas y formularios en servidor: Django o el stack que ya tienes</li>
+                <li>El equipo y el monolito ya están en Laravel y no hay una razón concreta para un servicio aparte</li>
+                <li>El cuello de botella es CPU: async no ayuda; usa workers o una cola</li>
+              </ul>
+            </div>
+          </div>
+          <p>Ten en cuenta lo que no trae: ORM, migraciones, colas y estructura de proyecto los eliges tú (SQLAlchemy, Alembic…). Esa libertad es buena para un servicio acotado y cara en una aplicación grande sin convenciones de equipo. Si el servicio va a ser el monolito de la empresa, Django te ahorra decisiones; si es una API concreta junto a lo que ya tienes, FastAPI es de lo más productivo.</p>
+
 
           <h2 id="resumen">
             Resumen

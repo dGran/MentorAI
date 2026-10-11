@@ -75,11 +75,13 @@
             <li><a href="#enter-exit">Implementar con __enter__ y __exit__</a></li>
             <li><a href="#contextlib">contextlib.contextmanager</a></li>
             <li><a href="#casos-reales">Casos reales</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">En PHP-FPM, si olvidas cerrar un fichero o liberar un lock, el fin de la petición lo arregla por ti. En un worker de Python que vive días, esa fuga se acumula hasta que se acaban los descriptores o las conexiones del pool. <code>with</code> es la forma de que la limpieza no dependa de tu memoria.</p>
           <h2 id="intro">
             Qué es un context manager y por qué <code>with</code>
             <a href="#intro" class="anchor" aria-hidden="true">#</a>
@@ -286,6 +288,34 @@ def cargar_config(ruta: str) -&gt; dict:
     return {}</code></pre>
           </div>
           <p>Si el fichero no existe o el JSON está malformado, <code>cargar_config</code> devuelve un diccionario vacío en lugar de propagar la excepción. Úsalo solo cuando suprimir esa excepción concreta sea el comportamiento correcto por diseño, no para ignorar errores inesperados.</p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Úsalo siempre que haya una pareja <strong>adquirir/liberar</strong> que deba cumplirse aunque algo falle por el medio.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Usa un context manager cuando…</h4>
+              <ul>
+                <li>Abres algo que hay que cerrar: ficheros, conexiones, sesiones de BD, clientes HTTP</li>
+                <li>Tomas algo que hay que devolver: locks, semáforos, una transacción</li>
+                <li>Cambias algo temporalmente y hay que restaurarlo: un mock, el directorio actual, una variable de entorno</li>
+                <li>La librería ya ofrece uno: úsalo antes de cerrar a mano</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No lo necesitas cuando…</h4>
+              <ul>
+                <li>No hay nada que liberar: envolver un cálculo en <code>with</code> solo añade sangría</li>
+                <li>El recurso vive lo que vive la aplicación (el pool de conexiones): se gestiona en el arranque y la parada</li>
+                <li>Quieres ignorar errores en general: <code>suppress</code> es para una excepción concreta y esperada</li>
+                <li>Solo aparece una vez: un <code>try/finally</code> es igual de claro</li>
+              </ul>
+            </div>
+          </div>
+          <p>Entre las dos formas de escribirlo: <code>@contextmanager</code> por defecto, clase cuando el objeto tiene más métodos además de abrir y cerrar. Si el número de recursos es dinámico (abrir N ficheros según la entrada), no anides <code>with</code> a mano: <code>contextlib.ExitStack</code> los registra y los cierra todos en orden inverso.</p>
+
 
           <h2 id="resumen">
             Resumen

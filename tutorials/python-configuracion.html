@@ -75,11 +75,13 @@
             <li><a href="#dotenv">Ficheros .env por entorno</a></li>
             <li><a href="#settings-singleton">Settings como singleton con lru_cache</a></li>
             <li><a href="#secretos">Secretos: variables de entorno vs vault</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">En PHP lo habitual es un <code>getenv()</code> aquí y un <code>$_ENV</code> allá, y un <code>.env</code> que carga el framework: el día que falta una variable te enteras en producción, en la petición que la usa. En Python la idea es la contraria: toda la configuración declarada en una clase y validada al arrancar, de modo que un despliegue mal configurado ni siquiera llega a levantarse.</p>
           <h2 id="pydantic-settings">
             pydantic-settings: el estándar moderno
             <a href="#pydantic-settings" class="anchor" aria-hidden="true">#</a>
@@ -348,6 +350,31 @@ class Settings(BaseSettings):
         if not self.secret_key:
             raise ValueError("secret_key no está configurada")</code></pre>
           </div>
+
+                    <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Aplícalo cuando…</h4>
+              <ul>
+                <li>El servicio se despliega en más de un entorno y cada uno tiene sus valores</li>
+                <li>Hay valores con formato que conviene validar: URLs de conexión, puertos, listas de orígenes</li>
+                <li>Manejas secretos que no deben aparecer en logs ni en trazas: <code>SecretStr</code></li>
+                <li>La configuración se lee desde muchos sitios y quieres sustituirla en tests: el singleton con <code>lru_cache</code></li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Evítalo cuando…</h4>
+              <ul>
+                <li>Quieres valores que cambien en caliente, como feature flags: la configuración se lee al arrancar; eso va en un servicio de flags o en la base de datos</li>
+                <li>Pones valores por defecto a secretos o a la URL de la base de datos: un default «de desarrollo» que llega a producción es peor que un arranque fallido</li>
+                <li>Montas un vault para un único servicio sin necesidad de rotación ni auditoría: las variables del orquestador bastan</li>
+              </ul>
+            </div>
+          </div>
+          <p>El criterio de fondo: el código define qué configuración existe y con qué tipo; el entorno decide sus valores. Si para cambiar de entorno tienes que tocar código, la frontera está mal puesta.</p>
 
           <h2 id="resumen">
             Resumen
