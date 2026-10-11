@@ -698,7 +698,7 @@ window.MENTORAI_CHECKS = {
       o: ["Que no se pueda instanciar","Que se herede pero sin sobrescribir métodos","Que no se pueda extender"], a: 2,
       w: "Es una declaración de intenciones: esta clase no se diseñó para heredarse, y quien quiera reutilizarla que la componga." },
     { id: "c59ed1c", q: "¿Qué ganas con un enum frente a un puñado de constantes de tipo string?",
-      o: ["Que los valores válidos son un tipo y uno imposible no compila","Que ocupa menos memoria que guardar los mismos valores como strings","Que puedes recorrer todos sus valores con un foreach, como un array"], a: 0,
+      o: ["Que los valores válidos son un tipo y uno imposible no compila","Que ocupa menos memoria que guardar los mismos valores como strings","Que se guarda en la base de datos sin necesidad de mapearlo a mano"], a: 0,
       w: "El error deja de descubrirse en un `if` olvidado y pasa a detectarse antes de ejecutar." },
     { id: "c15c2ae", q: "¿Cuándo tiene sentido un trait?",
       o: ["Como alternativa siempre preferible a las interfaces de PHP moderno","Para reutilizar código entre clases sin relación jerárquica","Para definir contratos que otras clases deben cumplir"], a: 1,
@@ -972,7 +972,7 @@ window.MENTORAI_CHECKS = {
 
   "rest-errores-y-validacion": [
     { id: "c1c974b", q: "El móvil pierde cobertura justo después de enviar un pago y reintenta. ¿Cómo evitas cobrar dos veces?",
-      o: ["Comprobando en el servidor si ya hay un pago con el mismo importe y fecha","Con una `Idempotency-Key` que el cliente repite y el servidor deduplica","Convirtiendo el POST en un PUT, que ya es idempotente por definición"], a: 1,
+      o: ["Comprobando en el servidor si ya hay un pago con el mismo importe y fecha","Con una `Idempotency-Key` que el cliente repite y el servidor deduplica","Reintentando solo si el servidor tarda más de un timeout fijo"], a: 1,
       w: "Es idempotencia añadida a un POST, que por definición no la tiene." },
     { id: "c558df8", q: "¿Qué aporta usar `problem+json` (RFC 9457) para los errores?",
       o: ["Respuestas de error más pequeñas, que viajan más rápido por la red","Compatibilidad directa con GraphQL y con los clientes que lo usan","Un formato conocido, y el cliente trata los errores de forma genérica"], a: 2,
@@ -2721,8 +2721,8 @@ window.MENTORAI_CHECKS = {
       o: ["Un cuantificador más estricto, como {5,5} en vez de {5}","Las anclas ^ y $, sin las que casa en medio del texto","La bandera /u, para tratar la entrada como Unicode"], a: 1,
       w: "Las anclas no consumen caracteres: exigen posición. Un validador sin ^...$ acepta basura alrededor de lo válido." },
     { id: "c119fb2", q: "Para extraer el contenido de <b>...</b>, ¿qué opción es la mejor y por qué?",
-      o: ["(.*) — greedy, toma todo lo que haya hasta el final","(.*?) — lazy, toma lo mínimo hasta encontrar el primer cierre","([^<]*) — la clase negada dice exactamente qué cabe dentro"], a: 2,
-      w: "`(.*)` se traga hasta el último `</b>` (\"uno</b> y <b>dos\"); `(.*?)` funciona, pero deja decidir al motor; `[^<]*` dice exactamente qué cabe dentro, sin backtracking, y documenta la intención." },
+      o: ["(.*) — greedy, toma todo lo que haya hasta el final","(.*?) — lazy, toma lo mínimo, pero el motor prueba carácter a carácter","([^<]*) — la clase negada dice exactamente qué cabe dentro"], a: 2,
+      w: "`(.*)` se traga hasta el último `</b>` («uno</b> y <b>dos»); `(.*?)` funciona, pero deja decidir al motor; `[^<]*` dice exactamente qué cabe dentro, sin backtracking, y documenta la intención." },
     { id: "c5908bb", q: "¿Qué es un ReDoS?",
       o: ["Un patrón ambiguo anidado cuyo backtracking explota con entradas largas","Un ataque que inyecta SQL a través de un patrón de búsqueda","Un error de sintaxis del regex que tumba el proceso de PHP"], a: 0,
       w: "Defensas: patrones sin ambigüedad anidada, comprobar el false de preg_match (el airbag de PCRE) y limitar la longitud de la entrada." },
