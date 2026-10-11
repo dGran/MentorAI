@@ -1602,7 +1602,7 @@ window.MENTORAI_CHECKS = {
 
   "procesos-hilos": [
     { id: "ca8ae0e", q: "Dos hilos del mismo proceso escriben en la misma variable sin sincronizar.",
-      o: ["No pasa nada: el sistema operativo serializa los accesos","Es una condición de carrera: comparten memoria","Cada uno tiene su copia, no pasa nada"], a: 1,
+      o: ["El sistema operativo los serializa: los accesos nunca se pisan","Es una condición de carrera: comparten memoria","Cada uno tiene su copia, no pasa nada"], a: 1,
       w: "Compartir memoria es lo que hace a los hilos baratos y peligrosos: comunicarse es gratis, coordinarse es tu problema." },
     { id: "c22196b", q: "¿Por qué PHP-FPM usa procesos y no hilos?",
       o: ["Porque los hilos no pueden atender peticiones HTTP en paralelo","Porque en Linux los procesos son más rápidos de crear que los hilos","Por el shared-nothing: cada petición arranca con estado limpio"], a: 2,
@@ -1683,7 +1683,7 @@ window.MENTORAI_CHECKS = {
 
   "redis-cache": [
     { id: "c203b1a", q: "Cacheas el resultado de una consulta y los usuarios ven datos viejos tras una edición.",
-      o: ["Falta un TTL a cero: así siempre estaría fresca","Falta invalidar al escribir: la caché es fácil, invalidarla no","Redis no sirve para cachear datos que cambian"], a: 1,
+      o: ["Falta poner el TTL a cero: así siempre estaría fresca","Falta invalidar al escribir: la caché es fácil, invalidarla no","Redis no sirve para cachear datos que cambian"], a: 1,
       w: "TTL cero es no cachear. Las estrategias son invalidar al escribir, escribir a la vez, o aceptar el desfase del TTL a sabiendas." },
     { id: "cc5d4ac", q: "¿Qué es una estampida de caché?",
       o: ["Que se escribe en Redis más rápido de lo que persiste a disco","Que la caché se llena y desaloja de golpe todas las claves","Que caduca una clave muy usada y todos van a recalcularla"], a: 2,

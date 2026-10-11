@@ -1419,7 +1419,7 @@ window.MENTORAI_QUIZZES = {
       w: "Un hash no se deshace: por eso sirve para contraseñas e integridad, donde nunca necesitas el original. Si necesitas recuperar el dato, lo que buscas es cifrado, con su clave y su gestión.",
       lesson: "hashing-vs-cifrado" },
     { id: "qebd350", q: "¿Por qué no se deben almacenar contraseñas con MD5 o SHA-256 directamente?",
-      o: ["Porque son rápidos y abaratan la fuerza bruta, y por eso se usa bcrypt","Porque PHP no soporta esos algoritmos en versiones modernas","Porque producen colisiones demasiado frecuentes con cadenas cortas como las contraseñas","Porque no son estándares aprobados por la industria para contraseñas"], a: 0,
+      o: ["Porque al ser rápidos abaratan la fuerza bruta, y bcrypt es lento a propósito","Porque PHP no soporta esos algoritmos en versiones modernas","Porque producen colisiones demasiado frecuentes con cadenas cortas como las contraseñas","Porque no son estándares aprobados por la industria para contraseñas"], a: 0,
       w: "Están diseñados para ser rápidos, y eso juega en tu contra: una GPU prueba miles de millones por segundo. Los algoritmos de contraseñas son lentos a propósito y llevan sal, para que cada intento cueste.",
       lesson: "hashing-vs-cifrado" },
     { id: "qb41eb4", q: "¿Qué es una inyección SQL y cómo se previene?",
