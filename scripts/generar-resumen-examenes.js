@@ -22,10 +22,11 @@ function resumen() {
       .map(([curso, examen]) => [curso, { total: examen.questions.length, passingScore: examen.passingScore ?? null }])
   );
 
-  return `window.MENTORAI_QUIZ_SUMMARY = ${JSON.stringify(porCurso, null, 2)};\n`;
+  return porCurso;
 }
 
-const contenido = resumen();
+const porCurso = resumen();
+const contenido = `window.MENTORAI_QUIZ_SUMMARY = ${JSON.stringify(porCurso, null, 2)};\n`;
 
 if (process.argv.includes(MODO_COMPROBAR)) {
   const actual = fs.existsSync(DESTINO) ? fs.readFileSync(DESTINO, "utf8") : "";
@@ -34,4 +35,4 @@ if (process.argv.includes(MODO_COMPROBAR)) {
 }
 
 fs.writeFileSync(DESTINO, contenido);
-console.log(`Resumen de exámenes: ${Object.keys(JSON.parse(contenido.slice(contenido.indexOf("{"), contenido.lastIndexOf("}") + 1))).length} cursos → ${path.relative(ROOT, DESTINO)}`);
+console.log(`Resumen de exámenes: ${Object.keys(porCurso).length} cursos → ${path.relative(ROOT, DESTINO)}`);

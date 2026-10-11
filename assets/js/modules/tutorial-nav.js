@@ -210,14 +210,12 @@
 
   /* ---------- API pública ---------- */
 
-  function hasExamHere(slug) {
-    const course = courseOfSlug(slug);
-
-    return Boolean(course) && examIsOnThisLesson(course, slug);
+  function examCourseOf(slug) {
+    return (window.MENTORAI_COURSES ?? []).find((course) => examIsOnThisLesson(course, slug)) ?? null;
   }
 
   MentorAI.TutorialNav = {
-    hasExamHere,
+    examCourseOf,
     courseOfSlug,
     courseSequence,
     injectCourseCrumb,

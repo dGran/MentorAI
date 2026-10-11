@@ -18,6 +18,11 @@
     }
   };
 
+  const initLessonQuestions = () => {
+    ejecutarAislado(() => MentorAI.initChecks());
+    ejecutarAislado(() => MentorAI.initQuiz());
+  };
+
   document.addEventListener("DOMContentLoaded", () => {
     [
       () => MentorAI.initTheme(),
@@ -46,7 +51,7 @@
       () => MentorAI.initHeroStat(),
 
       () => MentorAI.initTutorialPage(),
-      () => MentorAI.loadLessonData(() => [() => MentorAI.initChecks(), () => MentorAI.initQuiz()].forEach(ejecutarAislado)),
+      () => MentorAI.loadLessonData(initLessonQuestions),
       () => MentorAI.initYear(),
       () => MentorAI.SyntaxHighlighter.run(),
       () => MentorAI.initHighlights?.(),

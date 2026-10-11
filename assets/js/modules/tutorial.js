@@ -205,18 +205,27 @@
     initTocToggle();
   }
 
+  function scrollToRequestedSection() {
+    const target = location.hash && document.getElementById(decodeURIComponent(location.hash.slice(1)));
+
+    target?.scrollIntoView();
+  }
+
   function loadLessonData(onLoaded) {
     const prose = document.querySelector("article.prose");
 
     if (!prose) return;
 
-    const isExamLesson = MentorAI.TutorialNav?.hasExamHere(currentTutorialSlug()) ?? false;
+    const examCourse = MentorAI.TutorialNav?.examCourseOf(currentTutorialSlug()) ?? null;
     const load = () =>
-      MentorAI.loadData(isExamLesson ? EXAM_LESSON_DATA : LESSON_DATA)
+      MentorAI.loadData(examCourse ? EXAM_LESSON_DATA : LESSON_DATA)
         .then(onLoaded)
+        .then(scrollToRequestedSection)
         .catch((error) => console.error(error));
 
-    if (isExamLesson || !("IntersectionObserver" in window)) {
+    if (examCourse) MentorAI.Quiz?.gateUntilPassed(examCourse.slug);
+
+    if (examCourse || location.hash || !("IntersectionObserver" in window)) {
       load();
       return;
     }

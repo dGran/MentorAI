@@ -374,5 +374,9 @@
   }
 
   MentorAI.initQuiz = initQuiz;
-  MentorAI.Quiz = { resultOf: loadResult };
+  function gateUntilPassed(courseSlug) {
+    if (!loadResult(courseSlug)?.passed) gateDoneButton();
+  }
+
+  MentorAI.Quiz = { resultOf: loadResult, gateUntilPassed };
 })();
