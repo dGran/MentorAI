@@ -1,0 +1,12 @@
+const { abrir } = require("./cdp.js");
+const [BASE, OUT, LECCION, ID_CHECK, LECCION_EXAMEN] = process.argv.slice(2);
+(async () => { const b = await abrir(9476); await b.ancho(1280, 900, false); const out = [];
+  await b.ir(`${BASE}/index.html`, 600); await b.evaluar("localStorage.clear(); 1");
+  await b.ir(`${BASE}/tutorials/${LECCION}.html#check`, 2500);
+  out.push(`${LECCION}: ` + await b.evaluar(`(() => { const datos = Object.values(window.MENTORAI_CHECKS || {}).flat().find(q => q.id === "${ID_CHECK}"); const items = [...document.querySelectorAll(".check__item")]; const item = items.find(i => i.textContent.includes(datos.q.slice(0, 30))); if (!item) return "sin check ${ID_CHECK}"; const ops = [...item.querySelectorAll(".check__option")]; const correcta = ops.find(o => o.textContent.trim() === datos.o[datos.a]); const pintadas = ops.map(o => o.textContent.trim()); correcta.click(); return "checks " + items.length + " · enunciado «" + datos.q.slice(0, 60) + "…» · opciones pintadas = datos: " + (pintadas.slice().sort().join("|") === datos.o.slice().sort().join("|")) + " · al pulsar la correcta: " + (correcta.classList.contains("check__option--correct") ? "marcada correcta" : "NO marcada"); })()`));
+  await b.captura(`${OUT}/check-${ID_CHECK}.png`);
+  await b.ir(`${BASE}/tutorials/${LECCION_EXAMEN}.html#quiz`, 2500);
+  out.push(`${LECCION_EXAMEN}: ` + await b.evaluar(`(() => { const preguntas = document.querySelectorAll("#quiz-form .quiz__question"); return "examen con " + preguntas.length + " preguntas · primera: «" + (preguntas[0]?.querySelector("legend, .quiz__q, p")?.textContent.trim().slice(0, 70) ?? "?") + "…»"; })()`));
+  await b.captura(`${OUT}/examen.png`);
+  out.push("errores de consola: " + (b.consola.length ? JSON.stringify(b.consola) : 0));
+  console.log(out.join("\n")); b.cerrar(); })();
