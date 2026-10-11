@@ -185,7 +185,8 @@ Backlog → In Progress → Code Review → QA → Ready for prod → Done
 - **Gate de calidad**: `node scripts/validar.js` y `node scripts/verificar-offline.js`
   (los mismos que corre CI en cada push y PR).
 - **Cómo se despliega**: GitHub Pages (build legacy desde `main`, raíz), automático
-  al mergear. Si el cambio toca `sw.js` o el shell, subir `VERSION`.
+  al mergear. Si el cambio toca `sw.js` o el shell (módulos, CSS y los datos
+  `tutorials/manifest.js`, `quizzes.js` y `checks.js`), subir `VERSION`.
 - **Desfase main↔producción**: no aplica, el despliegue es automático post-merge.
 - **Qué puede observar `/deploy-watch`**: el SHA desplegado con
   `gh api repos/dGran/MentorAI/pages/builds/latest` y la web en

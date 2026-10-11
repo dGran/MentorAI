@@ -124,7 +124,7 @@ Gates al cierre (`main` en `2aea342`): `validar.js` sin errores (61 avisos, los 
 - La revisión fresca encontró bloqueantes en 3 de los 6 PRs: una pérdida de datos con el sync (#14), un aplastamiento de tablas (#70) y enlaces a un tema inexistente (#28). Ninguno lo cazaba un gate mecánico.
 - Delegar la investigación contra fuentes (#18) y la propuesta masiva de cambios (#28) en subagentes de solo lectura, con pares exactos que aplica el principal, ahorró el grueso del tiempo de contenido sin ceder las ediciones.
 
-**Propuesta de rule (decide el usuario):** en «Cómo se despliega», cambiar «Si el cambio toca `sw.js` o el shell, subir `VERSION`» por «… o el shell (módulos, CSS y los datos `tutorials/manifest.js`, `quizzes.js` y `checks.js`), subir `VERSION`».
+**Rule aplicada el 2026-10-11 a petición del usuario:** en «Cómo se despliega», cambiar «Si el cambio toca `sw.js` o el shell, subir `VERSION`» por «… o el shell (módulos, CSS y los datos `tutorials/manifest.js`, `quizzes.js` y `checks.js`), subir `VERSION`».
 
 **Issues nuevos:** #77 (desborde y solape en escritorio que ya estaban en `main`) y #78 (tests de `validar.js`).
 
