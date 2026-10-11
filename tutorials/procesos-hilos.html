@@ -293,8 +293,10 @@ echo "Padre: contador = {$contador}" . PHP_EOL;</code></pre>
           <p>
             La ventaja es <strong>robustez y simplicidad</strong>: si una petición
             provoca un fallo fatal, muere ese worker y el resto sigue sirviendo. Y como
-            no hay memoria compartida entre peticiones, no tienes que preocuparte por
-            <em>race conditions</em> dentro de tu código PHP. El precio es que cada
+            no hay memoria compartida entre peticiones, dos peticiones nunca se pisan una
+            variable. Eso no te libra de las <em>race conditions</em>: dos workers que leen
+            y escriben a la vez la misma fila, la misma clave de Redis o el mismo fichero sí
+            se pisan, y ahí necesitas transacciones, locks u operaciones atómicas. El precio es que cada
             worker es pesado (su propio intérprete, su propia memoria), así que escalar
             es "más procesos" y eso consume RAM.
           </p>
@@ -304,20 +306,26 @@ echo "Padre: contador = {$contador}" . PHP_EOL;</code></pre>
               <ul>
                 <li>Aislamiento total entre peticiones</li>
                 <li>Un fallo no tumba a los demás workers</li>
-                <li>Sin race conditions en tu código</li>
+                <li>Sin carreras sobre memoria compartida (sí en BD, Redis o ficheros)</li>
                 <li>Cuesta más RAM por worker</li>
               </ul>
             </div>
             <div class="compare__col compare__col--bad">
-              <h4>Modelo multihilo (Java, Go, Swoole)</h4>
+              <h4>Modelo multihilo (Java, Go)</h4>
               <ul>
-                <li>Hilos ligeros, mucha concurrencia con poca RAM</li>
+                <li>Hilos ligeros (goroutines en Go, repartidas entre hilos del SO): mucha concurrencia con poca RAM</li>
                 <li>Estado compartido en memoria entre peticiones</li>
                 <li>Hay que sincronizar: locks, atomicidad</li>
                 <li>Un hilo que corrompe memoria afecta al proceso entero</li>
               </ul>
             </div>
           </div>
+          <p>
+            Swoole no encaja del todo en ninguna columna. Por defecto sigue siendo
+            multiproceso, pero cada worker vive mucho y atiende muchas peticiones con
+            corrutinas, así que el estado global sí se comparte entre las peticiones de ese
+            worker. Desde Swoole 6 hay además un modo multihilo opcional, que exige PHP ZTS.
+          </p>
           <p>
             Por eso, cuando en PHP necesitas estado compartido entre peticiones
             (un contador, una sesión, una caché), no lo guardas en una variable: lo
@@ -364,8 +372,10 @@ echo "Padre: contador = {$contador}" . PHP_EOL;</code></pre>
           </h2>
           <p>
             <strong>Creer que una variable global guarda estado entre peticiones en
-            PHP.</strong> No: cada petición es un proceso (o un worker reiniciado) con
-            su memoria limpia. Lo que escribes en una variable muere al acabar la
+            PHP.</strong> No: el worker de FPM no se reinicia entre peticiones (solo tras
+            <code>pm.max_requests</code>, que por defecto vale 0, es decir, nunca), pero PHP
+            libera todo el estado de la petición al terminarla y la siguiente empieza con la
+            memoria limpia. Lo que escribes en una variable muere al acabar la
             petición. Para persistir, Redis o base de datos.
           </p>
           <p>
@@ -408,7 +418,7 @@ echo "Padre: contador = {$contador}" . PHP_EOL;</code></pre>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>PHP-FPM es <strong>multiproceso</strong>: una petición por worker, sin memoria compartida. Robusto y sin race conditions, pero el estado compartido se externaliza a Redis o BBDD.</span>
+                <span>PHP-FPM es <strong>multiproceso</strong>: una petición por worker, sin memoria compartida. Robusto y sin carreras sobre memoria compartida (las de BD o Redis siguen siendo tuyas), pero el estado compartido se externaliza a Redis o BBDD.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
