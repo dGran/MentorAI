@@ -450,7 +450,7 @@ function validarCabecerasDeTutoriales() {
   }
 }
 
-const DRAWER_ESCRITO = /class="nav-drawer(-backdrop)?"/;
+const DRAWER_ESCRITO = /class=["'][^"']*\bnav-drawer(-backdrop)?\b(?!__)/;
 
 function validarDrawerSoloDinamico() {
   const conDrawerEscrito = htmlDeTutoriales().filter((fichero) => DRAWER_ESCRITO.test(leer(fichero)));
