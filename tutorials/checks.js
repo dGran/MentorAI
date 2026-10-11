@@ -22,25 +22,25 @@ window.MENTORAI_CHECKS = {
 
   "pr-http1-a-http3": [
     { id: "c15dc9b", q: "¿Qué persiguen las tres versiones de HTTP?",
-      o: ["Empujar el bloqueo por cabeza de línea una capa más abajo", "Reducir el tamaño de las cabeceras", "Mejorar el cifrado"], a: 0,
+      o: ["Bajar una capa el bloqueo por cabeza de línea", "Reducir lo que pesan las cabeceras de cada petición", "Hacer obligatorio el cifrado de las conexiones"], a: 0,
       w: "De la capa de aplicación en HTTP/1.1, a la de transporte en HTTP/2, y fuera de TCP con QUIC en HTTP/3." },
     { id: "c736dab", q: "Con HTTP/2, ¿qué pasa con un bundle único gigante de JavaScript?",
-      o: ["Sigue siendo lo óptimo", "Conviene partirlo: mejor caché y descargas en paralelo", "Hay que meterlo en base64"], a: 1,
+      o: ["Sigue siendo lo óptimo: una sola petición", "Conviene partirlo: mejor caché y descargas en paralelo", "Conviene incrustarlo en el HTML para ahorrar una petición"], a: 1,
       w: "Un fichero enorme invalida la caché entera por un cambio de una línea, y ya no hay límite de conexiones que justifique concatenarlo todo." },
   ],
 
   "pr-tls-handshake": [
     { id: "ca4a847", q: "¿Qué garantía da el intercambio de claves efímero?",
-      o: ["Que el handshake es más rápido", "Que no hace falta certificado", "Forward secrecy: robar la clave privada mañana no descifra el tráfico grabado ayer"], a: 2,
+      o: ["Que el handshake se completa con una ida y vuelta menos", "Que el servidor ya no necesita un certificado firmado", "Forward secrecy: robar la clave no descifra lo grabado"], a: 2,
       w: "Cada sesión deriva su propia clave, y esa clave no se puede reconstruir a partir de la privada del servidor." },
     { id: "cb126cb", q: "¿Qué pierdes al poner `verify_peer => false`?",
-      o: ["La autenticación: cualquiera en medio puede presentar su certificado y leerlo todo", "Nada, sigue cifrado", "El rendimiento"], a: 0,
+      o: ["La autenticación del servidor al que te conectas", "Nada importante: los datos siguen viajando cifrados", "El cifrado: los datos pasan a viajar en claro"], a: 0,
       w: "Conservas el beneficio menor y tiras el importante. Si el problema es un certificado interno, se añade tu autoridad al almacén de confianza." },
   ],
 
   "pr-cabeceras-que-importan": [
     { id: "c4841e9", q: "¿Cuándo dispara el navegador un preflight?",
-      o: ["Siempre que hay CORS", "Cuando la petición lleva JSON o cabeceras propias", "Solo en peticiones DELETE"], a: 1,
+      o: ["En cualquier petición que vaya a un dominio distinto", "Cuando la petición lleva JSON o cabeceras propias", "Solo en peticiones PUT y DELETE, nunca en POST"], a: 1,
       w: "Un GET o un POST de formulario van directos. El preflight añade una ida y vuelta que se puede cachear con `Access-Control-Max-Age`." },
     { id: "c18a194", q: "¿Qué cabecera de seguridad ya no hace falta poner?",
       o: ["`Content-Security-Policy`", "`X-Content-Type-Options`", "`X-XSS-Protection`"], a: 2,
@@ -49,37 +49,37 @@ window.MENTORAI_CHECKS = {
 
   "pr-serializacion": [
     { id: "c62dcd2", q: "¿Cómo debe viajar un importe en JSON?",
-      o: ["Como entero de céntimos o como cadena", "Como número decimal", "Como float con dos decimales"], a: 0,
+      o: ["Como entero de céntimos o como cadena", "Como número decimal tal cual", "Como float redondeado siempre a dos decimales"], a: 0,
       w: "JSON no tiene tipo decimal, así que un importe en coma flotante puede volver con un céntimo de menos tras cruzar dos lenguajes." },
     { id: "c723894", q: "¿Por qué el esquema importa más en colas que en HTTP?",
-      o: ["Porque las colas son más rápidas", "Porque los mensajes persisten y los releerán consumidores que hoy no existen", "Porque HTTP ya valida los tipos"], a: 1,
+      o: ["Porque en una cola cada mensaje se procesa una sola vez", "Porque los mensajes se releen con consumidores futuros", "Porque HTTP ya valida los tipos de cada petición"], a: 1,
       w: "Un evento publicado hoy puede releerse dentro de seis meses, y para entonces el esquema habrá cambiado. Por eso existen los registros de esquemas." },
   ],
 
   "pr-grpc": [
     { id: "c5d0a23", q: "¿Por qué el streaming viene de serie en gRPC?",
-      o: ["Porque usa WebSockets por debajo", "Porque Protobuf lo incluye", "Porque HTTP/2 multiplexa: es otra firma en el mismo fichero .proto"], a: 2,
+      o: ["Porque abre un WebSocket por debajo en cada llamada", "Porque Protobuf trae el streaming en su formato binario", "HTTP/2 multiplexa: es una firma más en el .proto"], a: 2,
       w: "En REST, mantener un flujo abierto exige montar SSE o WebSockets aparte. Aquí es un modo más de llamada." },
     { id: "c24ab29", q: "¿Se puede llamar a gRPC desde un navegador?",
-      o: ["Solo con gRPC-Web y un proxy que traduzca, perdiendo modos de streaming", "Sí, directamente", "Solo con HTTP/3"], a: 0,
+      o: ["Solo con gRPC-Web y un proxy, y con menos streaming", "Sí, directamente con fetch, que ya habla HTTP/2", "Solo si navegador y servidor hablan HTTP/3 entre ellos"], a: 0,
       w: "Los navegadores no exponen el control de HTTP/2 que gRPC necesita. Si tu consumidor principal es una web, gRPC te complica la vida." },
   ],
 
   "pr-compatibilidad": [
     { id: "c8a7468", q: "¿Qué compatibilidad necesitas al desplegar el servidor?",
-      o: ["Hacia adelante", "Hacia atrás: que un cliente viejo funcione con el servidor nuevo", "Las dos siempre"], a: 1,
+      o: ["Hacia adelante: el servidor viejo con el cliente nuevo", "Hacia atrás: un cliente viejo con el servidor nuevo", "Ninguna, si despliegas cliente y servidor juntos"], a: 1,
       w: "Hacia adelante la necesitas si el cliente se actualiza antes que el servidor, o durante un rolling update donde conviven las dos versiones." },
     { id: "c715deb", q: "¿Con qué se abre una versión nueva de una API?",
-      o: ["Con su documentación", "Con un anuncio a los clientes", "Con la fecha de retirada de la anterior ya decidida"], a: 2,
+      o: ["Con la documentación completa de la versión nueva", "Con un aviso a todos los clientes de la anterior", "Con la retirada de la anterior ya fechada"], a: 2,
       w: "Sin esa fecha, la v1 seguirá viva dentro de cinco años porque siempre habrá un cliente que no migró. Cada versión viva es mantenimiento duplicado." },
   ],
 
   "pr-polling": [
     { id: "c1ba465", q: "¿Cuál es la latencia media del polling?",
-      o: ["La mitad del intervalo", "El intervalo completo", "Cero"], a: 0,
+      o: ["La mitad del intervalo", "El intervalo completo", "Cero, si el servidor responde rápido"], a: 0,
       w: "Con un intervalo de 10 segundos, de media el usuario espera 5. Suficiente para la mayoría de lo que se pide «en tiempo real» en una aplicación de negocio." },
     { id: "c52208c", q: "¿Qué ventaja operativa tiene el polling que se olvida?",
-      o: ["Es más rápido", "Sin estado: cualquier servidor atiende, y si el cliente se va no hay nada que limpiar", "Consume menos ancho de banda"], a: 1,
+      o: ["Entrega los cambios antes que un WebSocket", "Sin estado: cualquier servidor atiende cada vez", "Consume menos ancho de banda que mantener un canal"], a: 1,
       w: "No hay conexiones que drenar al desplegar, ni presencia que caducar, ni fan-out que montar. Es la razón principal de que aguante tanto." },
   ],
 
@@ -88,43 +88,43 @@ window.MENTORAI_CHECKS = {
       o: ["No funciona en móviles y no se puede cifrar", "No reconecta y no soporta autenticación", "Es unidireccional y solo transporta texto"], a: 2,
       w: "Lo de unidireccional casi nunca molesta —enviar es puntual y recibir continuo—. Para binario habría que codificar en base64, con un 33 % de sobrecoste." },
     { id: "cf77c9c", q: "En PHP, ¿por qué se cierra el flujo SSE a propósito cada minuto?",
-      o: ["Para convertir el worker ocupado en un ciclo controlado, aprovechando la reconexión automática", "Porque el navegador lo exige", "Para renovar la autenticación"], a: 0,
+      o: ["Para liberar el worker: el navegador reconecta solo", "Porque EventSource cierra solo el flujo pasado un minuto", "Para renovar el token de sesión del usuario"], a: 0,
       w: "Aun así, para cientos de conexiones simultáneas la salida real es sacar el endpoint de FPM: un runtime asíncrono o un componente aparte." },
   ],
 
   "pr-websockets": [
     { id: "c3a9402", q: "¿Qué es una conexión zombi?",
-      o: ["Una conexión sin autenticar", "Una que parece abierta desde el servidor cuando el cliente ya no está", "Una que consume demasiada memoria"], a: 1,
+      o: ["Una conexión abierta que nunca llegó a autenticarse", "Una que el servidor cree abierta y ya no tiene cliente", "Una que sigue viva pero lleva horas sin mandar mensajes"], a: 1,
       w: "Un móvil que entra en un túnel no manda ningún aviso. Crees que el usuario está conectado y le mandas mensajes que se pierden. Hace falta un ping con plazo de respuesta." },
     { id: "cfbdf4a", q: "La autorización de un WebSocket se comprueba en el saludo. ¿Qué problema tiene?",
-      o: ["Que es lenta", "Que no soporta OAuth", "Que la conexión dura horas: si revocan permisos o expira el token, sigue recibiendo"], a: 2,
+      o: ["Que añade latencia a cada mensaje que viaja por el canal", "Que el saludo no permite enviar un token OAuth", "Que dura horas: si revocan permisos, sigue recibiendo"], a: 2,
       w: "Hace falta revalidar periódicamente o cerrar la conexión cuando cambian los permisos del usuario." },
   ],
 
   "pr-elegir-transporte": [
     { id: "c0a8201", q: "¿Qué criterio decide en la práctica y casi nunca se discute?",
-      o: ["Quién va a operar la flota con estado", "La latencia teórica de cada protocolo", "La elegancia de la solución"], a: 0,
+      o: ["Quién va a operar la flota con estado", "La latencia teórica que promete cada protocolo", "La elegancia de la solución"], a: 0,
       w: "Conexiones persistentes necesitan monitorización propia, despliegues que drenen y alguien que entienda por qué un servidor tiene el triple de conexiones. Sin eso, la decisión ya está tomada." },
     { id: "c3d2e64", q: "¿Es deuda técnica empezar por polling?",
-      o: ["Sí, siempre hay que hacerlo bien desde el principio", "No, si el transporte está detrás de una interfaz: es aplazar la decisión hasta tener datos", "Sí, porque migrar después es imposible"], a: 1,
+      o: ["Sí, siempre hay que hacerlo bien desde el principio", "No, si va detrás de una interfaz que permita cambiarlo", "Sí, porque migrar después obliga a reescribir el cliente"], a: 1,
       w: "Encapsular «suscribirse a cambios de X» permite cambiar el transporte de debajo sin tocar el resto de la aplicación." },
   ],
 
   "pr-escalar-tiempo-real": [
     { id: "c91c46e", q: "¿Por dónde se empieza para mandar un mensaje a un usuario conectado a otro servidor?",
-      o: ["Montando un directorio desde el principio", "Particionando por usuario", "Difundiendo a todos los servidores por pub/sub"], a: 2,
+      o: ["Montando un directorio desde el principio", "Particionando a los usuarios entre servidores por hash", "Difundiendo a todos los servidores por pub/sub"], a: 2,
       w: "Con diez servidores, mandar cada mensaje a los diez cuesta poco y te ahorra mantener un directorio que puede desincronizarse. El directorio llega cuando la difusión sea medible." },
     { id: "cd957d3", q: "¿Qué pasa en cada despliegue con conexiones persistentes?",
-      o: ["Se cierran todas y los clientes reconectan a la vez, pudiendo tumbar lo que acaba de arrancar", "Se mantienen abiertas", "Solo se cierran las inactivas"], a: 0,
+      o: ["Se cierran y todos reconectan a la vez, en avalancha", "Siguen abiertas: el balanceador las pasa al servidor nuevo", "Solo se cierran las que llevan tiempo inactivas"], a: 0,
       w: "Se maneja drenando, avisando al cliente antes de cerrar y sobre todo con jitter en el cliente, que es lo que reparte la avalancha." },
   ],
 
   "pr-webhooks": [
     { id: "c33a4e5", q: "¿Cómo se descartan los eventos duplicados?",
-      o: ["Comparando el contenido con el último recibido", "Con un índice único sobre el identificador del evento, devolviendo 200 al chocar", "Rechazándolos con un 409"], a: 1,
+      o: ["Comparando el cuerpo con el último evento recibido del emisor", "Con un índice único sobre su id, devolviendo 200 al chocar", "Con un índice único, rechazándolos con un 409 Conflict"], a: 1,
       w: "Se devuelve 200 porque para el emisor el evento está entregado; devolver error provocaría más reintentos del mismo duplicado." },
     { id: "c9bd955", q: "¿Por qué guardar el evento en crudo?",
-      o: ["Por requisitos legales", "Para ahorrar consultas", "Para reprocesar tras arreglar un bug y para ganar discusiones de «yo te lo mandé»"], a: 2,
+      o: ["Porque la ley obliga a conservar todos los eventos recibidos", "Para no tener que consultar la API del emisor", "Para reprocesar tras un bug y probar qué te mandaron"], a: 2,
       w: "Con su firma y sus cabeceras, para poder reverificar. Ojo con la retención si lleva datos personales y con que la tabla crezca sin límite." },
   ],
 
@@ -133,25 +133,25 @@ window.MENTORAI_CHECKS = {
       o: ["Dentro de lo que se firma", "En una cabecera aparte", "No hace falta marca de tiempo"], a: 0,
       w: "Si va aparte, un atacante la cambia y reutiliza la misma firma. Firmada, cualquier manipulación invalida la comprobación." },
     { id: "cd28472", q: "¿Cómo se rota un secreto compartido sin cortar?",
-      o: ["Avisando con un mes de antelación", "Aceptando el secreto nuevo y el anterior durante la transición", "Cambiándolo de madrugada"], a: 1,
+      o: ["Avisando al emisor con un mes de antelación del cambio", "Aceptando el nuevo y el anterior durante un tiempo", "Cambiándolo a la vez en emisor y receptor"], a: 1,
       w: "El receptor prueba con el actual y, si falla, con el anterior. Por eso los proveedores serios mandan varias firmas en la misma cabecera." },
   ],
 
   "pr-streaming-http": [
     { id: "c58d65a", q: "¿Qué problema resuelve NDJSON que un JSON grande no?",
-      o: ["Ocupa menos", "Es más rápido de generar", "Se puede consumir línea a línea con memoria constante, sin esperar al cierre del array"], a: 2,
+      o: ["Ocupa bastante menos que el mismo JSON en un array", "Se genera más rápido que un JSON normal", "Se lee línea a línea con memoria constante"], a: 2,
       w: "Y si la conexión se corta a la mitad, todo lo recibido hasta la última línea completa sigue siendo válido." },
     { id: "c494d32", q: "El streaming funciona en local y en producción llega todo de golpe al final. ¿Por qué?",
-      o: ["Alguna pieza del camino acumula: el buffer de PHP, `fastcgi_buffering` o la CDN", "El navegador lo acumula", "Falta `Content-Length`"], a: 0,
+      o: ["Algo en el camino acumula: buffer de PHP, nginx o CDN", "El navegador acumula la respuesta hasta recibirla entera", "Falta `Content-Length` y el cliente espera al cierre"], a: 0,
       w: "Basta con que una sola pieza acumule para que el streaming desaparezca, y no da ningún error: solo deja de comportarse como esperabas." },
   ],
 
   "pr-cuando-no-tiempo-real": [
     { id: "cd4e4c1", q: "Detrás de «que se vea al momento», ¿qué suele haber?",
-      o: ["Un requisito de latencia medido", "No tener que recargar la página a mano", "Un problema de rendimiento"], a: 1,
+      o: ["Un requisito de latencia medido", "No tener que recargar la página a mano", "Un problema de rendimiento del servidor"], a: 1,
       w: "Refrescar cada diez segundos resuelve esa petición entera, sin flota con estado, sin fan-out y sin presencia que mantener." },
     { id: "c1198f5", q: "¿Cuándo el tiempo real no se discute?",
-      o: ["Cuando lo pide el cliente", "Cuando hay muchos usuarios", "Cuando la interacción entre personas ocurre dentro del sistema y en el momento"], a: 2,
+      o: ["Cuando el cliente lo pide como requisito explícito del contrato", "Cuando hay muchos usuarios mirando la misma pantalla", "Cuando personas interactúan dentro del sistema en vivo"], a: 2,
       w: "Chat, edición colaborativa, juegos, subastas. Si lo que muestras es el avance de un proceso, casi siempre estás en el otro grupo." },
   ],
 
@@ -159,28 +159,28 @@ window.MENTORAI_CHECKS = {
 
   "inf-servidor-por-dentro": [
     { id: "c923b0c", q: "Un servicio desaparece sin dejar ninguna excepción en sus logs. ¿Dónde miras?",
-      o: ["En el log del núcleo, buscando al OOM killer", "En el log de nginx", "En el journal del servicio"], a: 0,
+      o: ["En el log del núcleo, buscando al OOM killer", "En el log de errores de nginx", "En el journal del servicio, con journalctl -u"], a: 0,
       w: "Cuando no queda memoria, el núcleo mata un proceso sin avisar a la aplicación. `dmesg -T | grep -i oom` lo confirma." },
     { id: "c89b01e", q: "Dentro de un contenedor con 512 MB de límite, ¿qué dice `free`?",
-      o: ["512 MB", "La memoria del anfitrión entero", "Cero"], a: 1,
+      o: ["Exactamente 512 MB, el límite", "La memoria de todo el anfitrión", "La parte libre de los 512 MB del límite"], a: 1,
       w: "El contenedor comparte núcleo, así que las herramientas ven la máquina completa. La cuota real está en los ficheros de cgroup." },
   ],
 
   "inf-systemd": [
     { id: "c83bd1c", q: "Editas una unidad y el cambio no surte efecto. ¿Qué falta?",
-      o: ["Reiniciar la máquina", "Volver a hacer `enable`", "`systemctl daemon-reload`"], a: 2,
+      o: ["Reiniciar la máquina entera", "Volver a hacer `enable`", "`systemctl daemon-reload`"], a: 2,
       w: "Sin recargar, systemd sigue usando la versión anterior del fichero en memoria y te vuelves loco viendo que tu cambio no hace nada." },
     { id: "c78b320", q: "¿Por qué se pone `--time-limit` a un worker de PHP?",
-      o: ["Porque los procesos de larga vida acumulan memoria: se recicla y systemd lo relanza", "Para que no procese mensajes muy largos", "Para limitar el número de mensajes"], a: 0,
+      o: ["Se recicla antes de acumular memoria y systemd lo relanza", "Para que no se atasque con un mensaje que tarda demasiado en procesarse", "Para limitar cuántos mensajes procesa en cada hora"], a: 0,
       w: "Es reciclaje preventivo, no una limitación: el proceso sale limpiamente y arranca otro fresco sin que nadie note nada." },
   ],
 
   "inf-hardening": [
     { id: "c0f13d9", q: "¿Qué haces antes de recargar SSH tras endurecer su configuración?",
-      o: ["Reiniciar la máquina", "Dejar una segunda sesión abierta y verificar el acceso desde otra terminal", "Hacer una copia del fichero"], a: 1,
+      o: ["Reiniciar la máquina para que se apliquen los cambios de SSH", "Probar el acceso desde otra sesión sin cerrar la actual", "Guardar una copia del fichero sshd_config"], a: 1,
       w: "Es el error que todo el mundo comete una vez: aplicar, cerrar la terminal y descubrir que tu clave no estaba donde creías." },
     { id: "cb2a5d5", q: "¿Qué aporta cambiar el puerto de SSH del 22 a otro?",
-      o: ["Impide los ataques de fuerza bruta", "Cifra mejor la conexión", "Reduce el ruido en los logs, no el riesgo"], a: 2,
+      o: ["Impide los ataques de fuerza bruta contra SSH", "Oculta el servicio a los escáneres de puertos", "Reduce el ruido en los logs, no el riesgo"], a: 2,
       w: "Un escaneo de puertos lo encuentra igual. Es cosmética útil; lo que sí aporta es limitar por IP de origen o entrar por VPN." },
   ],
 
@@ -189,106 +189,106 @@ window.MENTORAI_CHECKS = {
       o: ["Al directorio `public/`", "A la raíz del proyecto", "Al directorio del framework"], a: 0,
       w: "Si apunta a la raíz, cualquiera puede pedir `/.env` o los ficheros de configuración por HTTP: todo el repositorio es público." },
     { id: "c7b385c", q: "¿Por qué limitar la tasa en nginx y no solo en la aplicación?",
-      o: ["Porque nginx es más preciso", "Porque rechazar ahí cuesta microsegundos, y en PHP cuesta un worker, una conexión y el arranque del framework", "Porque la aplicación no puede hacerlo"], a: 1,
+      o: ["Porque nginx cuenta las peticiones con más precisión", "Rechazar ahí cuesta microsegundos; en PHP, un worker entero", "Porque la aplicación no puede limitar por IP, solo por usuario"], a: 1,
       w: "Son defensas complementarias: la de la aplicación sabe de usuarios, la de nginx aguanta cuando llegan diez mil peticiones por segundo." },
   ],
 
   "inf-tls": [
     { id: "cd27eec", q: "¿Qué prueba exactamente un certificado TLS válido?",
-      o: ["Que el sitio es de fiar", "Que la empresa está registrada", "Que quien lo presenta controla ese nombre de dominio"], a: 2,
+      o: ["Que el sitio es legítimo y de fiar", "Que la empresa que lo usa existe y está verificada", "Que quien lo presenta controla ese dominio"], a: 2,
       w: "Un sitio fraudulento puede tener un certificado válido perfectamente. Lo que no puede es presentar el de otro dominio." },
     { id: "c0ae824", q: "¿Qué riesgo tiene poner HSTS con `max-age` de un año desde el primer día?",
-      o: ["Que si tienes un problema con el certificado no puedes volver a HTTP mientras lo arreglas", "Ninguno: es lo recomendado", "Que ralentiza la primera visita"], a: 0,
+      o: ["No poder volver a HTTP si falla el certificado", "Ninguno: es lo recomendado desde el principio", "Que la primera visita tarda más por la redirección"], a: 0,
       w: "Esa instrucción vive en el navegador del usuario y no se puede retirar rápido. Se empieza con un valor pequeño y se sube cuando estás seguro." },
   ],
 
   "inf-dns": [
     { id: "c588247", q: "¿Por qué no se puede poner un CNAME en la raíz del dominio?",
-      o: ["Porque los navegadores no lo soportan", "Porque la raíz necesita registros NS y SOA, y un CNAME no admite convivir con nadie", "Porque el TTL sería demasiado alto"], a: 1,
+      o: ["Porque los navegadores no resuelven un CNAME en la raíz", "La raíz lleva NS y SOA, y un CNAME no admite convivir", "Porque el TTL de la raíz no puede bajar de un día"], a: 1,
       w: "Los proveedores lo resuelven con ALIAS o ANAME, que son extensiones propias: si cambias de proveedor, eso hay que rehacerlo." },
     { id: "cd7028b", q: "¿Cómo compruebas si tu cambio de DNS se guardó de verdad?",
-      o: ["Esperando 48 horas", "Vaciando la caché del navegador", "Preguntando al servidor autoritativo con `dig @ns1...`"], a: 2,
+      o: ["Esperando 48 horas a que se propague", "Con `dig` contra el resolutor 8.8.8.8", "Con `dig @ns1...` al autoritativo"], a: 2,
       w: "Saltarse las cachés intermedias es la única forma de distinguir «no se guardó» de «se guardó y aún no ha caducado la respuesta vieja»." },
   ],
 
   "inf-balanceo": [
     { id: "c10556c", q: "¿Qué decide el endpoint «vivo» frente al endpoint «listo»?",
-      o: ["«Vivo» decide si reiniciar el proceso; «listo» decide si mandarle tráfico", "«Vivo» es para el balanceador y «listo» para el monitoreo", "Son equivalentes"], a: 0,
+      o: ["«Vivo»: si reiniciar; «listo»: si recibe tráfico", "«Vivo» es para el balanceador y «listo» para el monitoreo", "Nada: son dos nombres para la misma comprobación"], a: 0,
       w: "La comprobación cara —base de datos, dependencias— va en «listo», para que una caída de la base de datos saque servidores del balanceo sin reiniciarlos en bucle." },
     { id: "c0a0b88", q: "¿Por qué la sesión pegajosa es una solución temporal?",
-      o: ["Porque es lenta", "Porque desequilibra el reparto y quitar un servidor tira las sesiones de todos sus usuarios", "Porque no funciona con HTTPS"], a: 1,
+      o: ["Porque añade latencia extra a cada petición del usuario", "Desequilibra y, al quitar un nodo, tira sus sesiones", "Porque deja de funcionar en cuanto pasas a HTTPS"], a: 1,
       w: "El arreglo de verdad es sacar el estado del servidor: sesiones en Redis, ficheros en almacenamiento de objetos. Entonces todo lo demás se vuelve trivial." },
   ],
 
   "inf-vm-contenedor-funcion": [
     { id: "cf3baaa", q: "¿Qué debe hacer un worker al recibir SIGTERM?",
-      o: ["Salir inmediatamente", "Ignorarlo", "Marcar una bandera, terminar el mensaje en curso y salir por su propio pie"], a: 2,
+      o: ["Salir de inmediato para no retrasar el despliegue", "Ignorarla y seguir hasta vaciar la cola", "Marcar una bandera, acabar el mensaje y salir"], a: 2,
       w: "Salir dentro del manejador de la señal es justo el fallo que intentas evitar: dejas el trabajo a medias que querías proteger." },
     { id: "cb10917", q: "¿Qué disciplina hace barato cambiar entre máquina, contenedor y función?",
-      o: ["Config por variables, logs a stdout, sin estado local y parada limpia", "Usar el mismo lenguaje en todas", "Tener tests unitarios"], a: 0,
+      o: ["Config en variables, logs a stdout, sin estado, parada limpia", "Usar el mismo lenguaje, framework y versión en todas las opciones", "Tener buena cobertura de tests unitarios y de integración"], a: 0,
       w: "No seguirla te ata a la opción que elegiste primero, aunque técnicamente pudieras moverte." },
   ],
 
   "inf-orquestacion": [
     { id: "caefd2c", q: "¿Qué significa que un orquestador sea declarativo?",
-      o: ["Que la configuración va en YAML", "Que declaras el estado deseado y él trabaja continuamente para que la realidad se le parezca", "Que hay que declarar los recursos antes de usarlos"], a: 1,
+      o: ["Que describes los pasos en YAML y él los ejecuta en orden", "Declaras el estado deseado y él lo persigue sin parar", "Que hay que declarar los recursos antes de usarlos"], a: 1,
       w: "Esa diferencia es la que hace que la infraestructura se recupere sola en vez de esperar a que alguien ejecute algo." },
     { id: "c2f3c71", q: "¿Qué te quita un clúster gestionado por el proveedor?",
-      o: ["Todo el coste operativo", "Solo el coste de las máquinas", "La parte más difícil —el plano de control—, dejándote la red, los recursos y la depuración"], a: 2,
+      o: ["Todo el coste operativo: tú solo despliegas tus aplicaciones", "Solo el coste de comprar y mantener las máquinas", "El plano de control; red y depuración siguen siendo tuyas"], a: 2,
       w: "Es la diferencia entre un coste alto y uno medio, no entre alto y cero." },
   ],
 
   "inf-despliegues-sin-caida": [
     { id: "cd0ee1d", q: "¿Cuál es la ventaja real de un despliegue canario?",
-      o: ["Que un fallo que solo aparece con tráfico real lo sufre el 1 % y tú lo ves antes de seguir", "Que es más rápido", "Que no necesita health checks"], a: 0,
+      o: ["Un fallo real lo ve un 1 % y paras a tiempo", "Que despliega más rápido que un rolling update", "Que se salta las pruebas porque el tráfico ya prueba"], a: 0,
       w: "Y exige métricas separadas por versión: sin eso, un canario es un despliegue lento y nada más." },
     { id: "cca2969", q: "¿Qué hace un interruptor de funcionalidad por tus reversiones?",
-      o: ["Las acelera un 50 %", "Las convierte en un cambio de configuración, sin desplegar", "Permite revertir migraciones"], a: 1,
+      o: ["Las hacen más rápidas porque no hay que compilar", "Revertir pasa a ser un cambio de configuración", "Permite revertir también las migraciones de datos"], a: 1,
       w: "Separar desplegar de activar es lo que hace que revertir sea aburrido, que es exactamente lo que quieres que sea." },
   ],
 
   "inf-configuracion-y-secretos": [
     { id: "c22295b", q: "¿Cómo distingues configuración de código?",
-      o: ["Por el formato del fichero", "Si está en el repositorio es código", "Si cambia entre entornos es configuración; si es igual en todos es código"], a: 2,
+      o: ["Por el formato: YAML o .env es configuración", "Si está en el repositorio, es código; si no, configuración", "Lo que cambia entre entornos es configuración"], a: 2,
       w: "Las rutas y el cableado del contenedor son código aunque estén en un YAML. Y un valor que no has cambiado en dos años es una constante, no flexibilidad." },
     { id: "ce87a7a", q: "¿Están cifrados los Secrets de Kubernetes por defecto?",
-      o: ["No: van en base64, que es codificación y no cifrado", "Sí, con AES", "Solo los de tipo TLS"], a: 0,
+      o: ["No: base64 es codificación, no cifrado", "Sí, etcd los guarda cifrados con AES", "Solo los de tipo TLS, que llevan claves"], a: 0,
       w: "Cualquiera con permiso de lectura sobre ese objeto los ve en claro. Hay que activar el cifrado en reposo del almacén o integrar un gestor externo." },
   ],
 
   "inf-iac": [
     { id: "ca0ef91", q: "¿Qué capa cubre Terraform y cuál Ansible?",
-      o: ["Son intercambiables", "Terraform los recursos del proveedor; Ansible lo de dentro de la máquina", "Terraform la aplicación; Ansible la red"], a: 1,
+      o: ["Son intercambiables: cada uno cubre ambas capas igual de bien", "Terraform crea los recursos; Ansible configura las máquinas", "Terraform despliega la aplicación y Ansible la red"], a: 1,
       w: "Se comparan como si compitieran y en realidad se complementan: uno crea la máquina y el otro la configura." },
     { id: "ce00443", q: "¿Qué te dice `terraform plan` que hay que leer entero?",
-      o: ["El tiempo estimado", "El coste mensual", "Qué va a crear, cambiar y sobre todo destruir"], a: 2,
+      o: ["El tiempo que tardará cada operación en aplicarse", "El coste mensual que tendrá el cambio", "Qué crea, cambia y, sobre todo, destruye"], a: 2,
       w: "Un cambio aparentemente inocente como renombrar un recurso puede traducirse en «destruir la base de datos y crear otra»." },
   ],
 
   "inf-backups": [
     { id: "cfe5708", q: "¿Qué mide el RTO?",
-      o: ["Cuánto puedes estar caído, contando localizar, descargar, importar y verificar", "Cuántos datos puedes perder", "Cada cuánto se hace la copia"], a: 0,
+      o: ["Cuánto puedes estar caído, de localizar a verificar", "Cuántos datos puedes perder desde la última copia", "Cada cuánto debe ejecutarse la copia para cumplir el plan"], a: 0,
       w: "Si nunca has cronometrado una restauración completa, tu RTO es un número inventado." },
     { id: "c20bab9", q: "¿Qué protege el «1» de la regla 3-2-1?",
-      o: ["De que la copia esté corrupta", "De que el desastre se lleve la instalación entera: incendio, borrado de cuenta, ransomware", "De un fallo del tipo de almacenamiento"], a: 1,
+      o: ["De que la copia esté corrupta y no lo descubras hasta restaurar", "De perder la instalación entera: incendio, ransomware", "De un fallo del tipo de soporte, como un disco"], a: 1,
       w: "Por eso las copias deben ser inmutables o estar en una cuenta separada: si las credenciales del servidor pueden borrarlas, no tienes copias." },
   ],
 
   "inf-capacidad": [
     { id: "c2908bc", q: "¿Qué pasa con el rendimiento total pasado el punto de saturación?",
-      o: ["Se mantiene y solo sube la latencia", "Sube más despacio", "Baja: los recursos se van en gestionar la contención"], a: 2,
+      o: ["Se mantiene estable y solo sube la latencia", "Sigue subiendo, aunque cada vez más despacio", "Baja: se gasta en gestionar la contención"], a: 2,
       w: "Cambios de contexto, competencia por bloqueos y reintentos de clientes impacientes: el sistema atiende menos peticiones por segundo que cuando estaba al 80 %." },
     { id: "cc6d693", q: "¿Qué mide golpear diez mil veces el mismo endpoint con el mismo parámetro?",
-      o: ["Tu caché", "La capacidad real del sistema", "La latencia de red"], a: 0,
+      o: ["Cuánto aguanta tu caché", "La capacidad real del sistema", "La latencia de red hasta el servidor"], a: 0,
       w: "Una prueba útil recorre un escenario con datos variados: entrar, buscar, ver fichas distintas, añadir al carrito." },
   ],
 
   "inf-guardias-y-postmortem": [
     { id: "cf9dc23", q: "¿Cuál es la prueba de que un runbook sirve?",
-      o: ["Que esté actualizado", "Que alguien que no lo escribió lo siga entero sin preguntar", "Que lo haya revisado el equipo"], a: 1,
+      o: ["Que esté actualizado y revisado cada mes", "Que alguien ajeno lo siga entero sin preguntar", "Que lo haya escrito quien mejor conoce el sistema"], a: 1,
       w: "Se escriben en frío y dan por hechas cosas que no lo son: rutas que cambiaron, permisos que no tienes, comandos que ya no existen." },
     { id: "c2c5f16", q: "Durante un incidente, ¿qué va primero?",
-      o: ["Encontrar la causa raíz", "Escribir el post mortem", "Mitigar y restaurar el servicio"], a: 2,
+      o: ["Encontrar la causa raíz del fallo", "Avisar a todo el equipo y abrir el post mortem", "Mitigar y restaurar el servicio"], a: 2,
       w: "Si revertir el despliegue devuelve el servicio, se revierte y luego se investiga con calma. La tentación de entender primero cuesta minutos de caída." },
   ],
 
@@ -433,7 +433,7 @@ window.MENTORAI_CHECKS = {
 
   "sd-falacias": [
     { id: "c835b72", q: "¿Por qué las ocho falacias se siguen cometiendo después de leerlas?",
-      o: ["Porque son el estado por defecto de todo código que no se escribió explícitamente en su contra", "Porque están mal explicadas en la literatura", "Porque solo afectan a sistemas muy grandes"], a: 0,
+      o: ["Porque son lo que asume por defecto todo código no escrito en su contra", "Porque se da por hecho que las librerías de red ya las resuelven", "Porque solo afectan a sistemas muy grandes, con cientos de servicios"], a: 0,
       w: "No son errores conceptuales que se corrijan una vez: dentro de un proceso las ocho son ciertas, y el código que las asume sigue funcionando hasta que cruza la red." },
     { id: "c8ee71f", q: "En latencia de red, ¿qué pesa más?",
       o: ["El tamaño de cada mensaje", "El número de saltos", "El lenguaje de programación"], a: 1,
@@ -442,10 +442,10 @@ window.MENTORAI_CHECKS = {
 
   "sd-fallos-parciales": [
     { id: "ceafa3b", q: "Ante un timeout, ¿cuántos de los cuatro escenarios posibles dejan el trabajo hecho?",
-      o: ["Ninguno", "Los cuatro", "Dos: si se procesó y murió al responder, o si la respuesta se perdió"], a: 2,
+      o: ["Ninguno: si hubo timeout, el servidor no llegó a procesarlo", "Uno: solo cuando el servidor lo procesó y la respuesta se perdió por el camino", "Dos: si se procesó y murió al responder, o si la respuesta se perdió"], a: 2,
       w: "Y desde el cliente los cuatro son indistinguibles. Por eso tratar el timeout como un fallo es lo que produce cobros duplicados." },
     { id: "ca03fe6", q: "¿Dónde suele estar el error de diseño de fondo?",
-      o: ["En el modelo de datos: un booleano `pagado` no tiene dónde guardar «no sé»", "En la configuración del cliente HTTP", "En la falta de logs"], a: 0,
+      o: ["En el modelo de datos: un booleano `pagado` no puede guardar «no sé»", "En la configuración del cliente HTTP: con más timeout no habría ninguna duda", "En la falta de logs: con trazas completas sabrías qué pasó"], a: 0,
       w: "Un enum con un estado incierto explícito sí lo tiene. Y ese estado necesita un proceso de conciliación que lo cierre, o solo es una forma elegante de perder dinero." },
   ],
 
@@ -460,25 +460,25 @@ window.MENTORAI_CHECKS = {
 
   "sd-sincrono-vs-asincrono": [
     { id: "ce723db", q: "¿Cuál es la pregunta que decide entre síncrono y asíncrono?",
-      o: ["¿Necesitas la respuesta para poder seguir?", "¿Cuántos mensajes por segundo hay?", "¿Tienes un broker desplegado?"], a: 0,
+      o: ["¿Necesitas la respuesta para poder seguir?", "¿Cuántos mensajes por segundo tiene que aguantar?", "¿Tienes un broker desplegado?"], a: 0,
       w: "Si el usuario espera el resultado para decidir, es síncrono. Si solo hace falta que alguien se entere de que pasó algo, es asíncrono. Casi todo lo demás son detalles." },
     { id: "ced8d84", q: "¿Qué hace más daño, un servicio caído o uno lento?",
-      o: ["Uno caído: no responde a nada", "Uno lento: consume tus workers fingiendo que todo va bien", "Los dos igual"], a: 1,
+      o: ["Uno caído: deja de responder y arrastra a quien lo llama", "Uno lento: consume tus workers fingiendo que todo va bien", "Los dos igual: en ambos casos la petición acaba fallando"], a: 1,
       w: "El caído falla rápido y tu código lo maneja. El lento agota el pool de workers esperando, y acabas sin responder ni a lo que no dependía de él." },
   ],
 
   "sd-garantias-de-entrega": [
     { id: "cf9182b", q: "Si confirmas el mensaje antes de procesarlo, ¿qué garantía tienes?",
-      o: ["At-least-once: puede repetirse", "Exactly-once", "At-most-once: si te caes en medio, se pierde"], a: 2,
+      o: ["At-least-once: si te caes, se repite", "Exactly-once: el broker ya no lo reenvía", "At-most-once: si te caes en medio, se pierde"], a: 2,
       w: "Confirmar antes pierde; confirmar después duplica. Casi siempre quieres duplicar, porque un duplicado se puede detectar y un mensaje perdido no." },
     { id: "ccb4501", q: "Entre «marca el pedido como enviado» y «suma uno al contador de envíos», ¿cuál aguanta duplicados?",
-      o: ["La primera: es un efecto absoluto", "La segunda: es más rápida", "Las dos igual"], a: 0,
+      o: ["La primera: fijar un valor es absoluto", "La segunda: es una operación atómica", "Las dos, si van dentro de una transacción"], a: 0,
       w: "Fijar un valor se puede repetir cien veces con el mismo resultado; incrementar, no. Cuando puedas elegir cómo expresar el efecto, elige la forma absoluta." },
   ],
 
   "sd-outbox": [
     { id: "c1f42c8", q: "¿Arregla algo meter el `publicar` dentro de la transacción?",
-      o: ["Sí: el rollback deshace la publicación", "No: si el publicar tiene éxito y el COMMIT falla después, el evento ya salió", "Sí, si el broker soporta XA"], a: 1,
+      o: ["Sí: si el COMMIT falla, el rollback deshace también la publicación del evento", "No: si publicar sale bien y luego falla el COMMIT, el evento ya salió", "Sí, siempre que publiques en la última línea, justo antes de hacer COMMIT"], a: 1,
       w: "Encima mantienes la transacción abierta durante una llamada de red, que es su propio problema. La transacción solo cubre la base de datos." },
     { id: "c7e3800", q: "¿Qué garantiza el outbox?",
       o: ["Que cada evento se publica exactamente una vez", "Que los eventos llegan en orden a todos los consumidores", "Que ningún evento se pierde, pero puede repetirse"], a: 2,
@@ -487,10 +487,10 @@ window.MENTORAI_CHECKS = {
 
   "sd-colas-y-topicos": [
     { id: "c2afb91", q: "¿Qué pasa con un mensaje después de leerlo?",
-      o: ["En una cola desaparece al confirmarlo; en un registro de eventos sigue ahí", "En los dos desaparece", "En los dos sigue ahí hasta que caduque"], a: 0,
+      o: ["En una cola desaparece al confirmarlo; en un registro sigue ahí", "En los dos desaparece en cuanto el consumidor lo confirma", "En los dos sigue ahí hasta que vence el tiempo de retención"], a: 0,
       w: "Esa es la diferencia de fondo entre RabbitMQ y Kafka, y de ella salen todas las demás: quién lleva la cuenta, si puedes rebobinar y cómo se decide el paralelismo." },
     { id: "c346a6a", q: "En Kafka, ¿qué topa el paralelismo de un grupo de consumidores?",
-      o: ["El número de brokers", "El número de particiones del topic", "La memoria del consumidor"], a: 1,
+      o: ["El número de brokers del clúster de Kafka", "El número de particiones del topic", "La memoria del consumidor"], a: 1,
       w: "Con 6 particiones, el séptimo consumidor se queda parado. Y ampliar particiones después rompe el orden por clave, así que conviene empezar con margen." },
   ],
 
@@ -499,109 +499,109 @@ window.MENTORAI_CHECKS = {
       o: ["Leer muchas veces seguidas el mismo dato", "Escribir dentro de una transacción larga", "Escribir y leer inmediatamente después"], a: 2,
       w: "La escritura va al líder y la lectura a una réplica que aún no la aplicó. El usuario ve el dato viejo justo después de guardarlo, recarga y ya sale bien: nadie reproduce el fallo." },
     { id: "c99c707", q: "¿Qué pierdes al promocionar un seguidor con replicación asíncrona?",
-      o: ["Las escrituras que el líder confirmó y no llegó a propagar", "Nada: la promoción es transparente", "Todo el historial de la tabla"], a: 0,
+      o: ["Las escrituras que el líder confirmó y no llegó a propagar", "Nada: el seguidor ya tenía todo lo que el líder había confirmado", "Los índices, que hay que reconstruir enteros en el nuevo líder"], a: 0,
       w: "Y si algún identificador de esos ya se lo diste a un sistema externo, ahora apunta a una fila que no existe. Por eso la semi-síncrona es el punto razonable para lo que no puedes perder." },
   ],
 
   "sd-particionado": [
     { id: "c3471c7", q: "¿Qué problema resuelve particionar que replicar no resuelve?",
-      o: ["La latencia de las lecturas", "El volumen de escritura y el tamaño de los datos", "La tolerancia a fallos"], a: 1,
+      o: ["La latencia de las lecturas lejanas", "El volumen de escritura y el tamaño de los datos", "La tolerancia a fallos cuando se cae un nodo entero"], a: 1,
       w: "Cada réplica sigue teniendo que aplicar todas las escrituras y almacenarlo todo. Cuando eso es lo que no cabe, replicar no ayuda." },
     { id: "c5bd084", q: "¿Qué tiene de malo `crc32($clave) % $numeroDeParticiones`?",
-      o: ["Que crc32 es criptográficamente débil", "Que no funciona con claves numéricas", "Que al añadir una máquina cambia el destino de casi todas las claves"], a: 2,
+      o: ["Que crc32 reparte mal y amontona las claves en unas pocas particiones", "Que obliga a leer de todas las particiones en cada consulta", "Que al añadir una máquina cambia de destino casi cada clave"], a: 2,
       w: "Pasar de 4 a 5 particiones obliga a mover casi todos los datos. El hashing consistente coloca claves y nodos en un anillo para que añadir un nodo solo mueva su fracción." },
   ],
 
   "sd-transacciones-distribuidas": [
     { id: "cce6723", q: "¿Qué significa que un participante vote «sí» en la primera fase?",
-      o: ["Que se compromete irrevocablemente: tiene que poder confirmar aunque se reinicie", "Que puede cambiar de opinión al confirmar", "Que ya ha aplicado los cambios"], a: 0,
+      o: ["Que se compromete: debe poder confirmar aunque se reinicie", "Que puede cambiar de opinión antes de confirmar", "Que ya ha aplicado sus cambios y los demás pueden verlos"], a: 0,
       w: "Ese compromiso es lo que hace correcto al protocolo, y también lo que lo bloquea: tras votar sí, el participante no puede decidir por su cuenta si el coordinador desaparece." },
     { id: "cbc8660", q: "¿Por qué 2PC no sirve con una pasarela de pagos?",
-      o: ["Porque son demasiado lentas", "Porque exige soporte XA en todos los participantes, y una API HTTP no lo tiene", "Porque cobran por operación"], a: 1,
+      o: ["Porque las pasarelas responden demasiado lento para mantener el bloqueo abierto", "Porque exige XA en todos los participantes, y una API HTTP no lo tiene", "Porque 2PC solo funciona entre bases de datos del mismo fabricante y versión"], a: 1,
       w: "Puedes hacer 2PC entre dos MySQL, pero no entre tu base de datos y Stripe. Y la mayoría de operaciones que te preocupan cruzan justo esa frontera." },
   ],
 
   "sd-sagas": [
     { id: "c198fa4", q: "¿Cuándo pasa de coreografía a orquestación?",
-      o: ["En cuanto hay más de dos servicios", "Nunca: la coreografía siempre escala mejor", "Cuando hay cinco o seis pasos con ramas y nadie sabe ya cuál es el flujo completo"], a: 2,
+      o: ["En cuanto participan más de dos servicios en la saga", "Nunca: la coreografía escala mejor porque no tiene punto central", "Cuando hay cinco o seis pasos con ramas y nadie ve ya el flujo"], a: 2,
       w: "Para tres pasos la coreografía va bien. El problema aparece cuando el flujo no está escrito en ningún sitio y hay que reconstruirlo leyendo suscripciones de seis repositorios." },
     { id: "c2ece4e", q: "¿Qué distingue una saga de un método largo con try/catch?",
-      o: ["Que la saga persiste su estado tras cada paso y se puede retomar", "Que la saga usa excepciones tipadas", "Que la saga corre en segundo plano"], a: 0,
+      o: ["Que la saga persiste su estado tras cada paso y se puede retomar", "Que la saga deshace cada paso con un rollback de la base de datos", "Que la saga corre en segundo plano, fuera de la petición del usuario"], a: 0,
       w: "Si el proceso muere entre el paso 2 y el 3, el estado guardado dice exactamente dónde estaba y un proceso de recuperación la retoma. Sin eso, se pierde." },
     { id: "c76d3c1", q: "¿Qué pierdes con una saga que sí tenías con una transacción?",
-      o: ["La durabilidad", "El aislamiento: los estados intermedios son visibles para otras operaciones", "La atomicidad de cada paso individual"], a: 1,
+      o: ["La durabilidad: un paso ya confirmado puede perderse si algo cae", "El aislamiento: otras operaciones ven los estados intermedios", "La atomicidad de cada paso: un paso suelto puede quedar a medias"], a: 1,
       w: "Otra operación concurrente puede ver que el stock está reservado y el pago hecho mientras el pedido «no existe» todavía. Se mitiga con estados explícitos que digan al resto que ahí no se toca." },
   ],
 
   "sd-timeouts-y-reintentos": [
     { id: "c69636e", q: "¿Cuál de estos NO se debe reintentar?",
-      o: ["Un 503", "Un timeout de conexión", "Un 422"], a: 2,
+      o: ["Un 503 Service Unavailable", "Un timeout de conexión", "Un 422 de datos inválidos"], a: 2,
       w: "Un error de cliente es determinista: la petición está mal formada y lo estará en el segundo intento. Reintentarlo multiplica la carga sin ninguna posibilidad de éxito." },
-    { id: "c3ffa94", q: "Cuatro capas reintentando 3 veces cada una, ¿cuántas peticiones llegan al fondo por cada una del usuario?",
-      o: ["27", "12", "3"], a: 0,
+    { id: "c3ffa94", q: "API → Pedidos → Facturación → base de datos, y cada una de las tres primeras capas reintenta 3 veces. ¿Cuántas peticiones llegan a la base de datos por cada una del usuario?",
+      o: ["27", "12", "Tres"], a: 0,
       w: "3×3×3 contra un sistema que ya estaba saturado. La regla es reintentar en una sola capa, la más cercana al fallo, y que las de arriba propaguen el error." },
   ],
 
   "sd-circuit-breaker": [
     { id: "c21464e", q: "¿Para qué sirve el estado medio abierto?",
-      o: ["Para registrar métricas sin afectar al tráfico", "Para probar con unas pocas peticiones antes de soltar toda la carga sobre un servicio que apenas se levanta", "Para permitir solo las peticiones críticas"], a: 1,
+      o: ["Para registrar métricas sin afectar al tráfico", "Para tantear con pocas peticiones antes de soltar toda la carga", "Para dejar pasar solo las peticiones críticas mientras dura el fallo"], a: 1,
       w: "Sin él tendrías que elegir entre quedarte abierto para siempre o volver de golpe al 100 % y tumbar otra vez lo que estaba recuperándose." },
     { id: "c384baf", q: "¿Deben contar los 404 y los 422 para abrir el circuito?",
-      o: ["Sí: cualquier error indica un problema", "Sí, pero con menos peso", "No: un cliente mandando peticiones mal formadas abriría el circuito para todos"], a: 2,
+      o: ["Sí: cualquier error es señal de que algo va mal en el servicio al que llamas", "Sí, pero contando la mitad que un 500 o un timeout", "No: un cliente con peticiones mal formadas abriría el circuito a todos"], a: 2,
       w: "Los errores de cliente no dicen nada sobre la salud del servicio. Contarlos convierte el error de un usuario en una caída general." },
   ],
 
   "sd-dlq-y-reproceso": [
     { id: "ca1835b", q: "¿Qué distingue un fallo transitorio de uno permanente?",
-      o: ["Que el transitorio volverá a funcionar solo y el permanente fallará igual dentro de una hora", "El código HTTP", "Cuántas veces ha fallado ya"], a: 0,
+      o: ["Que el transitorio se arregla solo; el permanente fallará igual en una hora", "Lo dice el código HTTP: cualquier 4xx es permanente y cualquier 5xx, transitorio", "El número de intentos: a partir del quinto fallo seguido es permanente"], a: 0,
       w: "Un JSON que no se puede deserializar no mejora con el tiempo: va a la cola de muertos en el primer intento, sin gastar cinco reintentos para nada." },
     { id: "c389aba", q: "¿Qué hay que vigilar en una cola de muertos?",
-      o: ["El tamaño en disco", "Una alerta cuando pasa de cero mensajes", "El ratio respecto al total procesado"], a: 1,
+      o: ["El espacio que ocupa en el disco del broker", "Una alerta cuando pasa de cero mensajes", "El ratio respecto al total procesado"], a: 1,
       w: "No es un vertedero, es una bandeja de entrada. Si un mensaje llega ahí, hay trabajo de negocio sin hacer, y una gráfica que nadie mira no sirve de nada." },
   ],
 
   "sd-backpressure": [
     { id: "c6a657c", q: "¿Qué pasa con la contrapresión al pasar de síncrono a asíncrono?",
-      o: ["Mejora: la cola absorbe todo", "No cambia", "Desaparece: el emisor publica y se olvida, y hay que reconstruirla"], a: 2,
+      o: ["Mejora: la cola absorbe cualquier pico y frena al emisor por sí sola", "No cambia: el broker la aplica igual que lo hacía el servidor síncrono", "Desaparece: el emisor publica y se olvida, y hay que reconstruirla"], a: 2,
       w: "En síncrono es automática: si tardas en responder, el cliente espera y no manda más. En asíncrono nada frena al emisor, así que las colas acotadas y los límites hay que ponerlos a mano." },
     { id: "c758ce9", q: "Bajo sobrecarga, ¿qué es mejor?",
-      o: ["Rechazar rápido con un 429 y `Retry-After`", "Aceptar todo y procesarlo cuando se pueda", "Escalar automáticamente sin límite"], a: 0,
+      o: ["Rechazar rápido con un 429 y `Retry-After`", "Aceptar todo y procesarlo cuando se pueda", "Escalar automáticamente sin ningún límite superior"], a: 0,
       w: "Aceptar, encolar, procesar treinta segundos después y devolver un timeout te cuesta todos los recursos del camino para acabar en el mismo sitio, con el sistema entero degradado." },
   ],
 
   "sd-consenso": [
     { id: "c90c6fb", q: "¿Por qué el quórum impide que haya dos líderes?",
-      o: ["Porque el líder viejo se apaga automáticamente", "Porque dos mayorías del mismo conjunto siempre comparten al menos un nodo", "Porque los relojes están sincronizados"], a: 1,
+      o: ["Porque el líder antiguo se apaga solo al detectar la partición", "Porque dos mayorías del mismo conjunto comparten al menos un nodo", "Porque los relojes de los nodos están sincronizados con NTP"], a: 1,
       w: "Ese nodo compartido no puede votar dos decisiones contradictorias. Es aritmética, no un mecanismo: por eso el lado minoritario de una partición se para solo." },
     { id: "cd247d9", q: "¿Qué deberías hacer si necesitas consenso?",
-      o: ["Implementar Raft siguiendo el paper", "Elegir líder con un campo en la base de datos", "Usar una pieza probada: etcd, Consul o el propio gestor de tu base de datos"], a: 2,
+      o: ["Implementar Raft siguiendo el paper al pie de la letra", "Elegir líder con una fila en la base de datos y un latido periódico", "Usar una pieza probada: etcd, Consul o el de tu base de datos"], a: 2,
       w: "Lo que hace correcto a un algoritmo de consenso vive en los casos extremos: mensajes viejos que reaparecen, nodos con registros divergentes, líderes que no saben que ya no lo son. Eso son años de pruebas." },
   ],
 
   "sd-locks-distribuidos": [
     { id: "c1c3508", q: "¿Por qué hay que comprobar el testigo antes de soltar el bloqueo?",
-      o: ["Porque si el tuyo caducó, el `del` borra el bloqueo de otro que sigue trabajando", "Para poder registrar quién lo tenía", "Para renovar la caducidad"], a: 0,
+      o: ["Porque si el tuyo caducó, el `del` borra el bloqueo de otro proceso", "Para registrar en los logs qué proceso tenía el bloqueo justo al soltarlo", "Para renovar la caducidad antes de que otro proceso lo coja"], a: 0,
       w: "Y entra un tercero. Ahora hay tres procesos en la sección crítica sin que el bloqueo haya «fallado» en ningún momento visible. La comprobación y el borrado tienen que ser atómicos." },
     { id: "c3a1a78", q: "¿Qué garantiza de verdad la exclusión mutua distribuida?",
-      o: ["Redlock con cinco instancias de Redis", "Un token de barrera que el recurso valida, rechazando números menores que el último aceptado", "Una caducidad suficientemente larga"], a: 1,
+      o: ["Redlock, con el bloqueo en la mayoría de cinco instancias de Redis", "Un token de barrera que el recurso valida, rechazando números viejos", "Una caducidad más larga que la pausa más larga que puedas sufrir"], a: 1,
       w: "El problema no está en dónde se guarda el bloqueo, sino en que un proceso pausado no puede saber si el suyo sigue vivo. La única salida es que el recurso también se defienda." },
   ],
 
   "sd-trazas-distribuidas": [
     { id: "c70ae38", q: "¿Dónde se rompe casi siempre la propagación del contexto?",
-      o: ["En las llamadas HTTP entre servicios", "En las consultas a la base de datos", "En las colas: hay que meter el contexto en el mensaje y recuperarlo a mano"], a: 2,
+      o: ["En las llamadas HTTP entre servicios escritos en distintos lenguajes", "En las consultas a la base de datos, que no admiten cabeceras de traza", "En las colas: el contexto hay que meterlo en el mensaje a mano"], a: 2,
       w: "En HTTP suele venir hecho por la librería. Si no lo haces en mensajería, todas tus trazas terminan justo donde empieza lo asíncrono, que es donde más falta te hacían." },
     { id: "cfbd33c", q: "¿Qué versión reducida resuelve buena parte del problema en una tarde?",
-      o: ["Propagar un identificador de correlación y meterlo en todos los logs", "Aumentar el nivel de detalle de los logs", "Sincronizar los relojes con NTP"], a: 0,
+      o: ["Propagar un identificador de correlación y escribirlo en cada log", "Subir el nivel de detalle de los logs en todos los servicios a la vez", "Sincronizar los relojes con NTP para poder ordenar los logs por hora"], a: 0,
       w: "No te da la jerarquía de tiempos, pero te deja filtrar los seis logs por un mismo valor y leer la historia en orden, que es el 70 % del dolor." },
   ],
 
   "sd-cuando-no-distribuir": [
     { id: "ce0ac72", q: "¿Qué es un monolito distribuido?",
-      o: ["Un monolito desplegado en varias máquinas", "Servicios que se llaman en cadena, comparten esquema y hay que desplegar juntos: el coste de lo distribuido con el acoplamiento del monolito", "Un monolito con módulos bien separados"], a: 1,
+      o: ["Un monolito desplegado en varias máquinas tras un balanceador", "Servicios en cadena, con esquema compartido y despliegue conjunto", "Un monolito con módulos bien separados dentro del mismo proceso"], a: 1,
       w: "Es el resultado más común de repartir por las razones malas: tienes las dos facturas y ninguna de las dos ventajas." },
     { id: "ccc6a01", q: "¿Qué ventaja tiene empezar por un monolito modular?",
-      o: ["Que es más rápido de ejecutar", "Que no necesita tests", "Que valida las fronteras gratis: si un módulo no se puede aislar dentro, tampoco funcionaría como servicio"], a: 2,
+      o: ["Que escala mejor bajo carga que cualquier sistema repartido en varios servicios", "Que ahorra los tests de integración, porque todo vive en el mismo proceso", "Que valida fronteras gratis: si no se aísla dentro, tampoco como servicio"], a: 2,
       w: "Y lo descubres sin desplegar nada. Da el 80 % del beneficio organizativo por el 5 % del coste operativo." },
   ],
 
