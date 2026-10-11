@@ -149,14 +149,14 @@ fn main() {
           </div>
 
           <h2 id="clone">Clone: copia explícita</h2>
-          <p>Cuando necesitas una copia real de un valor que no es Copy, usas <code>.clone()</code>. El clone es explícito: Rust no lo hace nunca automáticamente, porque puede ser costoso (implica alocar nueva memoria en el heap).</p>
+          <p>Cuando necesitas una copia real de un valor que no es Copy, usas <code>.clone()</code>. El clone es explícito: Rust no lo hace nunca automáticamente, porque puede ser costoso (en tipos como <code>String</code> implica alocar nueva memoria en el heap).</p>
           <pre><code data-lang="rust">fn main() {
     let s1 = String::from("hola");
     let s2 = s1.clone(); // copia profunda: nuevo String en el heap
 
     println!("{} y {}", s1, s2); // ambos válidos
 }</code></pre>
-          <p>Clone puede ser arbitrariamente costoso. Un <code>Vec&lt;String&gt;</code> con miles de elementos clona todos los Strings y todos los datos que contienen. Rust te hace escribir <code>.clone()</code> para que seas consciente de eso.</p>
+          <p>Clone puede ser arbitrariamente costoso. Un <code>Vec&lt;String&gt;</code> con miles de elementos clona todos los Strings y todos los datos que contienen. Rust te hace escribir <code>.clone()</code> para que seas consciente de eso. Ojo: lo que hace <code>clone()</code> lo decide cada tipo. En <code>String</code> o <code>Vec</code> es una copia profunda; en <code>Rc</code>/<code>Arc</code> solo copia el puntero e incrementa el contador de referencias: es barato, y ambos siguen apuntando al mismo dato.</p>
           <p>En PHP, <code>$s2 = $s1</code> hace una copia con copy-on-write: barata hasta que alguien modifica. En Rust, si quieres una copia, la declaras explícita con <code>.clone()</code>; si solo necesitas leer el dato, usas una referencia prestada (lo veremos en el siguiente tutorial).</p>
 
           <h2 id="funciones-y-ownership">Ownership y funciones</h2>
@@ -197,7 +197,7 @@ fn main() {
 } // aquí se llama drop automáticamente
 // Output: Usando la conexión
 //         Cerrando conexión a postgres://localhost/db</code></pre>
-          <p>En PHP, los recursos se liberan cuando el objeto es recogido por el GC o cuando se llama al destructor (<code>__destruct</code>), pero el momento no es determinista. En Rust, el drop ocurre exactamente cuando el dueño sale de scope: determinista, predecible, sin pausas de GC.</p>
+          <p>En PHP el momento también suele ser predecible: <code>__destruct</code> se ejecuta en cuanto el contador de referencias del objeto llega a cero. La excepción son los ciclos (dos objetos que se apuntan entre sí), que esperan al recolector de ciclos o al final de la petición. Rust no cuenta referencias: el compilador sabe en qué línea muere el dueño, y el drop ocurre exactamente ahí, sin pausas de GC.</p>
           <div class="callout callout--info">
             <strong>Por qué importa en servidores</strong>: una conexión de base de datos se devuelve al pool exactamente cuando el scope termina, no cuando el GC decida pasar. Esto hace que el comportamiento bajo carga sea más predecible y los recursos se reutilicen antes.
           </div>
@@ -207,8 +207,8 @@ fn main() {
             <li>Las tres reglas del ownership garantizan que no hay use-after-free, double-free ni dangling pointers: todo verificado por el compilador sin coste en runtime.</li>
             <li>La asignación mueve el ownership: la variable original deja de ser válida. Esto evita que dos variables sean dueñas del mismo dato en el heap.</li>
             <li>Los tipos Copy (enteros, bool, char, referencias inmutables) se copian automáticamente en lugar de moverse.</li>
-            <li><code>.clone()</code> hace una copia profunda explícita de tipos no-Copy. El compilador no lo hace automáticamente para que el coste sea visible.</li>
-            <li>La destrucción es determinista: el drop ocurre exactamente cuando el dueño sale de scope, sin GC. RAII garantiza que los recursos se liberan a tiempo.</li>
+            <li><code>.clone()</code> hace una copia explícita de tipos no-Copy: profunda en <code>String</code>/<code>Vec</code>, solo un incremento del contador en <code>Rc</code>/<code>Arc</code>. El compilador no lo hace automáticamente para que el coste sea visible.</li>
+            <li>La destrucción es determinista: el drop ocurre exactamente cuando el dueño sale de scope, sin GC. RAII libera los recursos al salir de scope, con dos excepciones que Rust considera seguras: <code>mem::forget</code> y los ciclos de <code>Rc</code>; no garantiza que un destructor se ejecute siempre.</li>
           </ul>
         </article>
       </div>
