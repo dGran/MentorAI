@@ -16,6 +16,10 @@
 
   const MentorAI = (window.MentorAI = window.MentorAI || {});
 
+  const GRADED_CLASS = "is-graded";
+  const CORRECT_OUTCOME = "correct";
+  const WRONG_OUTCOME = "wrong";
+
   const PASS_RATIO = 0.7;
 
   const escapeHtml = (text) => MentorAI.escapeHtml(text);
@@ -191,13 +195,15 @@
           <button type="submit" class="quiz__submit">Comprobar respuestas</button>
         </div>
       </form>
-      <div class="quiz__result" id="quiz-result" role="status" tabindex="-1" hidden></div>
+      <div class="quiz__result" id="quiz-result" tabindex="-1" hidden></div>
     </section>`;
   }
 
   /* ---------- Corrección ---------- */
 
   function gradeQuestion(questionEl, index, form) {
+    if (questionEl.classList.contains(GRADED_CLASS)) return questionEl.dataset.outcome === CORRECT_OUTCOME;
+
     const selected = form.querySelector(`input[name='q${index}']:checked`);
 
     if (!selected) return null;
@@ -217,6 +223,8 @@
     }
 
     MentorAI.markAnswer(labels, correct, answer);
+    questionEl.classList.add(GRADED_CLASS);
+    questionEl.dataset.outcome = answer === correct ? CORRECT_OUTCOME : WRONG_OUTCOME;
 
     const why = questionEl.querySelector(".quiz__why");
 
@@ -250,12 +258,13 @@
       event.preventDefault();
 
       const questions = [...form.querySelectorAll(".quiz__question")];
+      const wasGraded = questions.map((questionEl) => questionEl.classList.contains(GRADED_CLASS));
       const outcomes = questions.map((questionEl, index) =>
         gradeQuestion(questionEl, index, form)
       );
 
       outcomes.forEach((wasCorrect, index) => {
-        if (wasCorrect === null) return;
+        if (wasCorrect === null || wasGraded[index]) return;
 
         MentorAI.Repaso?.record(`q:${entry.course.slug}:${entry.quizData.questions[index].id}`, wasCorrect);
       });
@@ -264,7 +273,7 @@
         resultEl.innerHTML =
           '<p class="quiz__warning">Responde todas las preguntas antes de comprobar.</p>';
         resultEl.hidden = false;
-        resultEl.focus();
+        questions[outcomes.indexOf(null)].querySelector("input")?.focus();
         return;
       }
 

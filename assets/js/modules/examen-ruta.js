@@ -13,6 +13,10 @@
 
   const MentorAI = (window.MentorAI = window.MentorAI || {});
 
+  const CORREGIDA = "is-graded";
+  const ACERTADA = "correct";
+  const FALLADA = "wrong";
+
   const POR_CURSO = 4;
   const CORTE = 0.7;
 
@@ -191,7 +195,7 @@
           <button type="submit" class="quiz__submit">Comprobar respuestas</button>
         </div>
       </form>
-      <div class="quiz__result" id="examen-ruta-result" role="status" tabindex="-1" hidden></div>
+      <div class="quiz__result" id="examen-ruta-result" tabindex="-1" hidden></div>
     </section>`;
 
     const form = document.getElementById("examen-ruta-form");
@@ -202,13 +206,19 @@
 
       const bloques = [...form.querySelectorAll(".quiz__question")];
       let score = 0;
-      let faltan = false;
+      let primeraSinResponder = null;
 
       bloques.forEach((bloque, index) => {
         const elegida = form.querySelector(`input[name='r${index}']:checked`);
 
         if (!elegida) {
-          faltan = true;
+          primeraSinResponder ??= bloque;
+          return;
+        }
+
+        if (bloque.classList.contains(CORREGIDA)) {
+          if (bloque.dataset.resultado === ACERTADA) score += 1;
+
           return;
         }
 
@@ -229,17 +239,19 @@
         if (!isCorrect) opciones[respuesta].classList.add("quiz__option--wrong");
 
         MentorAI.markAnswer(opciones, correcta, respuesta);
+        bloque.classList.add(CORREGIDA);
+        bloque.dataset.resultado = isCorrect ? ACERTADA : FALLADA;
 
         const why = bloque.querySelector(".quiz__why");
 
         if (why) why.hidden = false;
       });
 
-      if (faltan) {
+      if (primeraSinResponder) {
         resultEl.innerHTML =
           '<p class="quiz__warning">Responde todas las preguntas antes de comprobar.</p>';
         resultEl.hidden = false;
-        resultEl.focus();
+        primeraSinResponder.querySelector("input")?.focus();
         return;
       }
 

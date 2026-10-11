@@ -28,6 +28,7 @@ const PARES = [
   { texto: "--focus-ring-on-code", fondos: ["--code-bg"], minimo: NO_TEXTO },
   { texto: "--success-text", fondos: ["--bg", "--surface", "--success-soft"], minimo: TEXTO },
   { texto: "--danger-text", fondos: ["--bg", "--surface", "--danger-soft"], minimo: TEXTO },
+  { texto: "--warning-text", fondos: ["--bg", "--surface"], minimo: TEXTO },
   { texto: "--success", fondos: ["--surface", "--success-soft"], minimo: NO_TEXTO },
   { texto: "--danger", fondos: ["--surface", "--danger-soft"], minimo: NO_TEXTO },
   { texto: "--on-success", fondos: ["--success"], minimo: NO_TEXTO },

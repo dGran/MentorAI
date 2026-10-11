@@ -76,7 +76,7 @@
     return `<li class="check__item" data-correct="${question.correct}">
       <p class="check__question">${escapeHtml(question.text)}</p>
       <div class="check__options">${options}</div>
-      <div class="check__feedback" role="status" tabindex="-1">
+      <div class="check__feedback" role="status">
         <p class="check__verdict"></p>
         <p class="check__why" hidden>${escapeHtml(question.why)}</p>
       </div>
@@ -94,7 +94,6 @@
   /* ---------- Interacción ---------- */
 
   function showVerdict(item, isCorrect, correctText) {
-    const feedback = item.querySelector(".check__feedback");
     const why = item.querySelector(".check__why");
 
     item.querySelector(".check__verdict").textContent = isCorrect
@@ -102,8 +101,6 @@
       : `${VERDICT_WRONG} «${correctText}».`;
 
     if (why?.textContent) why.hidden = false;
-
-    feedback.focus();
   }
 
   function wire(section, prepared, slug) {
@@ -130,11 +127,11 @@
       }
 
       for (const option of options) {
-        option.disabled = true;
+        option.setAttribute("aria-disabled", "true");
       }
 
       MentorAI.markAnswer(options, correct, chosen);
-      showVerdict(item, chosen === correct, options[correct].firstChild.textContent);
+      showVerdict(item, chosen === correct, prepared[index].options[correct]);
 
       item.classList.add("is-answered");
       results[index] = chosen === correct;
