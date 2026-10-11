@@ -449,7 +449,18 @@ async def completar_pedido(pedido_id: int, metodo_pago: str) -&gt; dict:
         raise</code></pre>
           </div>
 
-                    <h2 id="cuando">
+                    <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos al operar en producción</p>
+              <p><strong>Un <code>/health</code> que consulta la base de datos.</strong> Si la base de datos cae, falla el liveness y el orquestador reinicia todos los pods a la vez, que no arreglan nada y además tardan en volver. Las dependencias se comprueban solo en <code>/ready</code>.</p>
+              <p><strong>Etiquetas de métricas con alta cardinalidad.</strong> Cada valor distinto de una etiqueta es una serie temporal nueva. Usar la URL real (<code>/pedidos/8123</code>) o un id de usuario como etiqueta crea una serie por pedido y acaba tumbando Prometheus: etiqueta con la plantilla de la ruta (<code>/pedidos/{id}</code>).</p>
+              <p><strong>prometheus-client con varios workers sin modo multiproceso.</strong> Cada worker de Gunicorn guarda sus contadores en su memoria y cada scrape cae en uno distinto, así que los números saltan. Activa el modo multiproceso con <code>PROMETHEUS_MULTIPROC_DIR</code>.</p>
+              <p><strong>Meter los datos en el mensaje del log.</strong> <code>log.info(f"pedido {pedido_id} creado")</code> te deja texto libre otra vez. Lo estructurado es <code>log.info("pedido_creado", pedido_id=pedido_id)</code>: el campo se puede filtrar y agregar.</p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
             Cuándo aplicarlo
             <a href="#cuando" class="anchor" aria-hidden="true">#</a>
           </h2>
@@ -474,17 +485,6 @@ async def completar_pedido(pedido_id: int, metodo_pago: str) -&gt; dict:
             </div>
           </div>
           <p>La fórmula <code>2 * núcleos + 1</code> es un punto de partida, no un número cerrado: cada worker carga la aplicación entera, así que mide con carga real y vigila la memoria antes de subirla.</p>
-
-          <div class="callout callout--warning">
-            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            <div class="callout__body">
-              <p class="callout__title">Errores típicos al operar en producción</p>
-              <p><strong>Un <code>/health</code> que consulta la base de datos.</strong> Si la base de datos cae, falla el liveness y el orquestador reinicia todos los pods a la vez, que no arreglan nada y además tardan en volver. Las dependencias se comprueban solo en <code>/ready</code>.</p>
-              <p><strong>Etiquetas de métricas con alta cardinalidad.</strong> Cada valor distinto de una etiqueta es una serie temporal nueva. Usar la URL real (<code>/pedidos/8123</code>) o un id de usuario como etiqueta crea una serie por pedido y acaba tumbando Prometheus: etiqueta con la plantilla de la ruta (<code>/pedidos/{id}</code>).</p>
-              <p><strong>prometheus-client con varios workers sin modo multiproceso.</strong> Cada worker de Gunicorn guarda sus contadores en su memoria y cada scrape cae en uno distinto, así que los números saltan. Activa el modo multiproceso con <code>PROMETHEUS_MULTIPROC_DIR</code>.</p>
-              <p><strong>Meter los datos en el mensaje del log.</strong> <code>log.info(f"pedido {pedido_id} creado")</code> te deja texto libre otra vez. Lo estructurado es <code>log.info("pedido_creado", pedido_id=pedido_id)</code>: el campo se puede filtrar y agregar.</p>
-            </div>
-          </div>
 
           <h2 id="resumen">
             Resumen
