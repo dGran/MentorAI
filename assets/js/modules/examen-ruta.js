@@ -249,7 +249,7 @@
 
       if (primeraSinResponder) {
         resultEl.innerHTML =
-          '<p class="quiz__warning">Responde todas las preguntas antes de comprobar.</p>';
+          '<p class="quiz__warning" role="alert">Responde todas las preguntas antes de comprobar.</p>';
         resultEl.hidden = false;
         primeraSinResponder.querySelector("input")?.focus();
         return;

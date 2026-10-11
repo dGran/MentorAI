@@ -258,20 +258,20 @@
       event.preventDefault();
 
       const questions = [...form.querySelectorAll(".quiz__question")];
-      const wasGraded = questions.map((questionEl) => questionEl.classList.contains(GRADED_CLASS));
+      const isGradedBefore = questions.map((questionEl) => questionEl.classList.contains(GRADED_CLASS));
       const outcomes = questions.map((questionEl, index) =>
         gradeQuestion(questionEl, index, form)
       );
 
       outcomes.forEach((wasCorrect, index) => {
-        if (wasCorrect === null || wasGraded[index]) return;
+        if (wasCorrect === null || isGradedBefore[index]) return;
 
         MentorAI.Repaso?.record(`q:${entry.course.slug}:${entry.quizData.questions[index].id}`, wasCorrect);
       });
 
       if (outcomes.includes(null)) {
         resultEl.innerHTML =
-          '<p class="quiz__warning">Responde todas las preguntas antes de comprobar.</p>';
+          '<p class="quiz__warning" role="alert">Responde todas las preguntas antes de comprobar.</p>';
         resultEl.hidden = false;
         questions[outcomes.indexOf(null)].querySelector("input")?.focus();
         return;
