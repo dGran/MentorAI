@@ -254,6 +254,12 @@
       ].join(" ")
     );
 
+  function byRelevance(tutorials, query) {
+    const inTitle = (tutorial) => MentorAI.normalize(tutorial.title).includes(query);
+
+    return [...tutorials.filter(inTitle), ...tutorials.filter((tutorial) => !inTitle(tutorial))];
+  }
+
   function announce(mensaje) {
     const status = document.getElementById("home-search-status");
 
@@ -283,8 +289,9 @@
     }
 
     const Search = MentorAI.Search;
-    const enMetadatos = publishedTutorials().filter((tutorial) =>
-      haystack(tutorial).includes(query)
+    const enMetadatos = byRelevance(
+      publishedTutorials().filter((tutorial) => haystack(tutorial).includes(query)),
+      query
     );
     const yaEncontrados = new Set(enMetadatos.map((tutorial) => tutorial.slug));
     const enContenido = publishedTutorials().filter(
@@ -411,6 +418,6 @@
 
   /* ---------- API pública ---------- */
 
-  MentorAI.Home = { render, initSearch };
+  MentorAI.Home = { render, initSearch, byRelevance };
   MentorAI.initHeroStat = initHeroStat;
 })();
