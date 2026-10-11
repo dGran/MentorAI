@@ -783,7 +783,7 @@ window.MENTORAI_QUIZZES = {
       w: "Es el caso donde las window functions más brillan: numeras dentro de cada grupo y filtras por ese número. Con subconsultas correlacionadas se puede, pero es más lento y mucho menos legible.",
       lesson: "sql-window-functions" },
     { id: "q7a9003", q: "¿Qué ocurre si en GROUP BY seleccionas una columna no agregada que no está en el GROUP BY?",
-      o: ["MySQL añade esa columna al GROUP BY por su cuenta, sin avisar","El motor devuelve el valor máximo de esa columna en cada grupo","Con ONLY_FULL_GROUP_BY, activo por defecto, da error si no depende del grupo","El motor devuelve NULL en esa columna para todas las filas"], a: 2,
+      o: ["MySQL añade esa columna al GROUP BY por su cuenta, sin avisar","El motor devuelve el valor máximo de esa columna en cada grupo","Con ONLY_FULL_GROUP_BY da error si no depende del grupo","El motor devuelve NULL en esa columna para todas las filas"], a: 2,
       w: "Sin ese modo, MySQL elegía un valor cualquiera del grupo en silencio, que es peor que el error: el informe salía y era mentira. El error te obliga a decidir si quieres agregarla o agruparla.",
       lesson: "sql-agregacion" },
     { id: "q9932e7", q: "¿Cómo obtendrías los 3 empleados con mayor salario de cada departamento?",
