@@ -247,7 +247,7 @@ window.MENTORAI_QUIZZES = {
       w: "Si se convierte en cadena vacía, el fallo aparece tres horas después cuando alguien intente cobrar. Con un orquestador, además, el despliegue se detiene solo porque la instancia nunca pasa a «listo».",
       lesson: "inf-configuracion-y-secretos" },
     { id: "q9bce55", q: "¿Por qué el fichero de estado de Terraform va en almacenamiento remoto con bloqueo?",
-      o: ["Para que no ocupe espacio en cada portátil", "Porque Terraform no puede leer un estado local", "Porque dos apply simultáneos lo corrompen y guarda secretos", "Para que cada persona pueda editarlo a mano cuando lo necesite"], a: 2,
+      o: ["Para que no ocupe espacio en cada portátil", "Porque Terraform no puede leer un estado local", "Porque dos apply simultáneos lo corrompen, y el estado guarda secretos en claro", "Para que cada persona pueda editarlo a mano cuando lo necesite"], a: 2,
       w: "Y si se pierde, Terraform cree que no existe nada e intenta crearlo todo otra vez. Es la pieza más importante y más frágil del montaje.",
       lesson: "inf-iac" },
     { id: "q050b07", q: "¿Qué es la deriva y por qué duele tarde?",

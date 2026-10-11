@@ -153,8 +153,8 @@ test("a share just over the limit is not rounded down", () => {
 });
 
 test("a correct option with a different shape from the distractors is a form cue", () => {
-  assert.deepEqual(reglas.pistasDeForma(question(["Porque a", "Porque b", "C; d"], 2)), ["solo la correcta lleva «;»", "los distractores empiezan por «porque/para» y la correcta no"]);
-  assert.deepEqual(reglas.pistasDeForma(question(["Porque a", "Con b: c", "Porque d"], 1)), ["solo la correcta lleva «:»", "los distractores empiezan por «porque/para» y la correcta no"]);
+  assert.deepEqual(reglas.pistasDeForma(question(["Porque a", "Porque b", "C; d"], 2)), ["solo la correcta lleva «;»", "los distractores empiezan por «porque/para/por» y la correcta no"]);
+  assert.deepEqual(reglas.pistasDeForma(question(["Porque a", "Con b: c", "Porque d"], 1)), ["solo la correcta lleva «:»", "los distractores empiezan por «porque/para/por» y la correcta no"]);
 });
 
 test("options sharing their shape carry no form cue", () => {
@@ -164,7 +164,7 @@ test("options sharing their shape carry no form cue", () => {
 });
 
 test("causal and purpose connectors count as the same opening", () => {
-  assert.deepEqual(reglas.pistasDeForma(question(["Porque a", "Para b", "C sin conector"], 2)), ["los distractores empiezan por «porque/para» y la correcta no"]);
+  assert.deepEqual(reglas.pistasDeForma(question(["Porque a", "Para b", "C sin conector"], 2)), ["los distractores empiezan por «porque/para/por» y la correcta no"]);
   assert.deepEqual(reglas.pistasDeForma(question(["Porque a", "Para b", "Porque c"], 2)), []);
 });
 

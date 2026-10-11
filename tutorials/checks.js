@@ -1668,7 +1668,7 @@ window.MENTORAI_CHECKS = {
       o: ["Si la operación es idempotente, puedes reintentar sin miedo","Reintentar siempre: si no llegó, no se pierde nada por repetir","Asumir que llegó: si no hubo error, lo normal es que sí"], a: 0,
       w: "Es lo que hace viables los reintentos automáticos en redes poco fiables, y por eso importa tanto en sistemas distribuidos." },
     { id: "c08a132", q: "¿Qué métodos HTTP deberían ser idempotentes?",
-      o: ["Todos: repetir una petición HTTP nunca cambia el resultado","GET, PUT y DELETE, y POST no salvo con clave","Solo GET, porque es el único método que no modifica nada"], a: 1,
+      o: ["Todos: repetir una petición HTTP nunca cambia el resultado","GET, PUT y DELETE, y POST solo con clave idempotente","Solo GET, porque es el único método que no modifica nada"], a: 1,
       w: "DELETE lo es aunque el segundo intento devuelva 404: el efecto final es el mismo, el recurso no está." },
   ],
 

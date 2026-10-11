@@ -72,7 +72,7 @@ const SEPARADOR_DE_PALABRAS = /[\s:,;]+/;
 const CODIGO_EN_LINEA = /`[^`]*`/g;
 const ARRANQUES_DE_SI_O_NO = new Set(["sí", "si", "no"]);
 const CONECTORES_DE_CAUSA_O_FIN = new Set(["porque", "para", "por"]);
-const ARRANQUE_DE_CAUSA_O_FIN = "porque/para";
+const ARRANQUE_DE_CAUSA_O_FIN = "porque/para/por";
 
 const sinCodigo = (texto) => String(texto).replace(CODIGO_EN_LINEA, "");
 
