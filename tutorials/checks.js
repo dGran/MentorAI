@@ -2604,7 +2604,7 @@ window.MENTORAI_CHECKS = {
   ],
   "maq-cpu": [
     { id: "c7368c5", q: "¿Sobre qué opera directamente la CPU?",
-      o: ["Sobre la RAM, leyendo y escribiendo cada dato en su sitio","Sobre sus registros, que traen datos de memoria y los devuelven","Sobre la caché L1, que es la memoria más rápida y cercana que tiene"], a: 1,
+      o: ["Sobre la RAM, leyendo y escribiendo cada dato en su sitio","Sobre sus registros, adonde llegan y de donde vuelven los datos","Sobre la caché L1, que es la memoria más rápida y cercana que tiene"], a: 1,
       w: "Los registros son la «mano» de la CPU: caben pocas cosas, pero lo que está en la mano se opera gratis." },
     { id: "c20a790", q: "¿Cuánto más cuesta ir a RAM que a la caché L1, en órdenes de magnitud?",
       o: ["El doble, más o menos (de ~4 a ~8 ciclos)","Unas 100 veces (de ~4 a ~200-300 ciclos)","Un millón de veces (de ciclos a milisegundos)"], a: 1,
