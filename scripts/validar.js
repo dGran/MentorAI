@@ -91,6 +91,25 @@ function validarSintaxis() {
 
 /* ---------- 2. Manifiesto ---------- */
 
+const FECHA_ISO = /^\d{4}-\d{2}-\d{2}$/;
+
+function validarRevision(tutorial) {
+  if (tutorial.reviewed === undefined) return;
+
+  if (!FECHA_ISO.test(tutorial.reviewed) || Number.isNaN(Date.parse(tutorial.reviewed))) {
+    error(`manifest: «${tutorial.slug}» tiene reviewed «${tutorial.reviewed}», que no es una fecha AAAA-MM-DD`);
+    return;
+  }
+
+  if (tutorial.date && tutorial.reviewed < tutorial.date) {
+    error(`manifest: «${tutorial.slug}» tiene reviewed ${tutorial.reviewed}, anterior a su date ${tutorial.date}`);
+  }
+
+  if (Date.parse(tutorial.reviewed) > Date.now()) {
+    error(`manifest: «${tutorial.slug}» tiene reviewed ${tutorial.reviewed}, en el futuro`);
+  }
+}
+
 function validarManifest() {
   const vistos = new Set();
 
@@ -105,6 +124,8 @@ function validarManifest() {
     for (const campo of ["title", "description", "href", "categories"]) {
       if (!tutorial[campo]) error(`manifest: «${tutorial.slug}» sin ${campo}`);
     }
+
+    validarRevision(tutorial);
   }
 
   /* El badge "Nuevo" solo se pinta en el catálogo, y el catálogo deja fuera
