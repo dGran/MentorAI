@@ -88,3 +88,4 @@ Decididos por el usuario (§ 6):
 
 | Issue | PR | Merge | Review (subagente, contexto fresco) | QA |
 |---|---|---|---|---|
+| #78 tests de `validar.js` | #79 | `ddd4367` | aprobado; refactor con salida idéntica (`cmp`, también con errores inyectados) y 6 mutaciones cazadas. Menores aplicados: casos límite (`reviewed` = `date`, dos problemas a la vez) y `TZ` fija para que el test del día local discrimine en CI | `skip-qa` (tooling); producción sin cambio de shell |
