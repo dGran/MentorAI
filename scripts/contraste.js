@@ -7,12 +7,24 @@ const path = require("path");
 const ESTILOS = path.join(__dirname, "..", "assets", "css", "styles.css");
 const TEXTO = 4.5;
 const NO_TEXTO = 3;
+const UMBRAL_LINEAL = 0.03928;
+const DIVISOR_LINEAL = 12.92;
+const DESPLAZAMIENTO_GAMMA = 0.055;
+const ESCALA_GAMMA = 1.055;
+const EXPONENTE_GAMMA = 2.4;
+const PESO_ROJO = 0.2126;
+const PESO_VERDE = 0.7152;
+const PESO_AZUL = 0.0722;
+const DESPLAZAMIENTO_LUMINANCIA = 0.05;
+const MAXIMO_CANAL = 255;
 
 const PARES = [
   { texto: "--text-muted", fondos: ["--bg", "--surface", "--surface-2", "--surface-3", "--brand-soft"], minimo: TEXTO },
   { texto: "--text-soft", fondos: ["--bg", "--surface", "--surface-2", "--surface-3"], minimo: TEXTO },
   { texto: "--on-brand", fondos: ["--brand-fill", "--brand-fill-2"], minimo: TEXTO },
-  { texto: "--focus-ring", fondos: ["--bg", "--surface", "--surface-2"], minimo: NO_TEXTO },
+  { texto: "--brand-text", fondos: ["--bg", "--surface", "--brand-soft"], minimo: TEXTO },
+  { texto: "--focus-ring", fondos: ["--bg", "--surface", "--surface-2", "--surface-3", "--brand-soft"], minimo: NO_TEXTO },
+  { texto: "--focus-ring-on-code", fondos: ["--code-bg"], minimo: NO_TEXTO },
 ];
 
 const BLOQUES_DE_TEMA = {
@@ -44,24 +56,32 @@ function resolver(tokens, nombre, visitados = new Set()) {
   return resolver(tokens, referencia[1], visitados);
 }
 
+function canalLineal(valor) {
+  const fraccion = valor / MAXIMO_CANAL;
+
+  if (fraccion <= UMBRAL_LINEAL) return fraccion / DIVISOR_LINEAL;
+
+  return ((fraccion + DESPLAZAMIENTO_GAMMA) / ESCALA_GAMMA) ** EXPONENTE_GAMMA;
+}
+
 function luminancia(hex) {
   const numero = parseInt(hex.slice(1), 16);
-  const canal = (valor) => {
-    const fraccion = valor / 255;
+  const rojo = canalLineal(numero >> 16);
+  const verde = canalLineal((numero >> 8) & MAXIMO_CANAL);
+  const azul = canalLineal(numero & MAXIMO_CANAL);
 
-    return fraccion <= 0.03928 ? fraccion / 12.92 : ((fraccion + 0.055) / 1.055) ** 2.4;
-  };
-
-  return 0.2126 * canal(numero >> 16) + 0.7152 * canal((numero >> 8) & 255) + 0.0722 * canal(numero & 255);
+  return PESO_ROJO * rojo + PESO_VERDE * verde + PESO_AZUL * azul;
 }
 
 function ratioDeContraste(primero, segundo) {
-  const [claro, oscuro] = [luminancia(primero), luminancia(segundo)].sort((a, b) => b - a);
+  const [masClara, masOscura] = [luminancia(primero), luminancia(segundo)].sort((mayor, menor) => menor - mayor);
 
-  return (claro + 0.05) / (oscuro + 0.05);
+  return (masClara + DESPLAZAMIENTO_LUMINANCIA) / (masOscura + DESPLAZAMIENTO_LUMINANCIA);
 }
 
-const esHexCompleto = (valor) => /^#[0-9a-f]{6}$/i.test(valor ?? "");
+function esHexCompleto(valor) {
+  return /^#[0-9a-f]{6}$/i.test(valor ?? "");
+}
 
 function matrizDeContraste(css) {
   const filas = [];
