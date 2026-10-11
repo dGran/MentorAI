@@ -11,10 +11,12 @@
 
   const MentorAI = (window.MentorAI = window.MentorAI || {});
 
-  const LEVEL_ORDER = ["Principiante", "Intermedio", "Avanzado"];
   const ALL_LEVELS = "all";
   const ALL_LEVELS_LABEL = "Todos";
   const LEVEL_FILTER_LABEL = "Filtrar cursos por nivel";
+  const LEVEL_FILTER_CLASS = "course-filters";
+
+  let selectedLevel = ALL_LEVELS;
 
   const RESET_COURSE_MESSAGE = "Progreso del curso reiniciado.";
   const CHECK_SVG =
@@ -276,43 +278,52 @@
       if (course.level) counts[course.level] = (counts[course.level] ?? 0) + 1;
     }
 
-    const levels = LEVEL_ORDER.filter((level) => counts[level]);
+    const levels = MentorAI.CatalogFilters.LEVEL_ORDER.filter((level) => counts[level]);
 
     if (levels.length < 2) return;
 
+    host.parentElement.querySelector(`.${LEVEL_FILTER_CLASS}`)?.remove();
+
     const bar = document.createElement("div");
-    bar.className = "filters course-filters";
+    bar.className = `filters ${LEVEL_FILTER_CLASS}`;
     bar.setAttribute("role", "group");
     bar.setAttribute("aria-label", LEVEL_FILTER_LABEL);
     bar.innerHTML = [
-      levelChipHtml(ALL_LEVELS, ALL_LEVELS_LABEL, courses.length, true),
-      ...levels.map((level) => levelChipHtml(level, level, counts[level], false)),
+      levelChipHtml(ALL_LEVELS, ALL_LEVELS_LABEL, courses.length, selectedLevel === ALL_LEVELS),
+      ...levels.map((level) => levelChipHtml(level, level, counts[level], selectedLevel === level)),
     ].join("");
     host.before(bar);
+    applyLevelFilter(host, bar);
 
     bar.addEventListener("click", (event) => {
       const chip = event.target.closest("[data-level-filter]");
 
       if (!chip) return;
 
-      const selected = chip.dataset.levelFilter;
-
-      for (const other of bar.querySelectorAll("[data-level-filter]")) {
-        const isActive = other === chip;
-
-        other.classList.toggle("is-active", isActive);
-        other.setAttribute("aria-pressed", String(isActive));
-      }
-
-      for (const card of host.querySelectorAll(".course-card")) {
-        card.hidden = selected !== ALL_LEVELS && card.dataset.level !== selected;
-      }
+      selectedLevel = chip.dataset.levelFilter;
+      applyLevelFilter(host, bar);
     });
+  }
+
+  function applyLevelFilter(host, bar) {
+    for (const chip of bar.querySelectorAll("[data-level-filter]")) {
+      const isActive = chip.dataset.levelFilter === selectedLevel;
+
+      chip.classList.toggle("is-active", isActive);
+      chip.setAttribute("aria-pressed", String(isActive));
+    }
+
+    for (const card of host.querySelectorAll(".course-card")) {
+      const isHidden = selectedLevel !== ALL_LEVELS && card.dataset.level !== selectedLevel;
+
+      (card.closest(".course-card-wrap") ?? card).hidden = isHidden;
+    }
   }
 
   /* ---------- API pública ---------- */
 
   MentorAI.Courses = {
+    routesOf,
     lessonSlugs: () =>
       Object.fromEntries(
         (window.MENTORAI_COURSES ?? []).flatMap(lessonSlugsOf).map((slug) => [slug, true])

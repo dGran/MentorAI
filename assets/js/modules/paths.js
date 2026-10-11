@@ -12,6 +12,9 @@
   const MentorAI = (window.MentorAI = window.MentorAI || {});
 
   const PATH_ANCHOR_PREFIX = "ruta-";
+  const PATH_TITLE_PREFIX = "ruta-titulo-";
+
+  let isListeningToHash = false;
 
   const CHECK_SVG =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -122,11 +125,11 @@
       .join("");
 
     return `<details class="path" id="${PATH_ANCHOR_PREFIX}${encodeURIComponent(path.slug)}">
-      <summary class="path__summary-row">
+      <summary class="path__summary-row" aria-labelledby="${PATH_TITLE_PREFIX}${encodeURIComponent(path.slug)}">
         <span class="path__head">
           <span class="path__icon">${Icons.for(path.icon)}</span>
           <span class="path__headings">
-            <h2 class="path__title">${escapeHtml(path.title)}</h2>
+            <h2 class="path__title" id="${PATH_TITLE_PREFIX}${encodeURIComponent(path.slug)}">${escapeHtml(path.title)}</h2>
             <span class="path__summary">${escapeHtml(path.summary)}</span>
           </span>
           <span class="path__progress">${stats.done} / ${stats.published}</span>
@@ -167,9 +170,22 @@
   }
 
   function renderPaths() {
+    const openIds = [...document.querySelectorAll("#paths details[open]")].map((path) => path.id);
+
     renderInto("paths", pathHtml);
+
+    for (const id of openIds) {
+      const path = document.getElementById(id);
+
+      if (path) path.open = true;
+    }
+
     openPathFromHash();
+
+    if (isListeningToHash) return;
+
     window.addEventListener("hashchange", openPathFromHash);
+    isListeningToHash = true;
   }
 
   function renderInto(hostId, build) {

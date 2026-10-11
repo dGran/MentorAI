@@ -9,7 +9,6 @@
 
   const MentorAI = (window.MentorAI = window.MentorAI || {});
 
-  const CATEGORY_PARAM = "categoria";
 
   const escapeHtml = (text) => MentorAI.escapeHtml(text);
 
@@ -88,8 +87,8 @@
     if (!category) return;
 
     const link = document.createElement("a");
-    link.href = `${MentorAI.basePath()}articulos.html?${CATEGORY_PARAM}=${encodeURIComponent(category)}`;
-    link.textContent = topicSpan.textContent;
+    link.href = `${MentorAI.basePath()}articulos.html?${MentorAI.CatalogFilters.CATEGORY_PARAM}=${encodeURIComponent(category)}`;
+    link.textContent = MentorAI.CatalogFilters.labelFor(category);
     topicSpan.replaceWith(link);
   }
 

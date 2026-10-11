@@ -15,6 +15,7 @@
   const SAVED = "saved";
   const DURATION_THRESHOLD = 15;
   const LEVEL_ORDER = ["Principiante", "Intermedio", "Avanzado"];
+  const CATEGORY_PARAM = "categoria";
 
   const CATEGORY_LABELS = {
     php: "PHP",
@@ -256,6 +257,8 @@
   }
 
   MentorAI.CatalogFilters = {
+    LEVEL_ORDER,
+    CATEGORY_PARAM,
     labelFor,
     selectCategory,
     chipsHtml,
