@@ -133,7 +133,7 @@ async def main() -&gt; None:
 
 
 asyncio.run(main())</code></pre>
-          <p><code>asyncio.run()</code> crea el event loop, ejecuta la corrutina hasta que termina y luego destruye el loop. Es el punto de entrada de cualquier programa async y debe llamarse una sola vez, desde código síncrono.</p>
+          <p><code>asyncio.run()</code> crea el event loop, ejecuta la corrutina hasta que termina y luego destruye el loop. Es el punto de entrada habitual de un programa async y lo idóneo es llamarlo una sola vez, desde código síncrono. No puede llamarse si ya hay un event loop corriendo en ese hilo; si necesitas varias llamadas de nivel superior sobre el mismo loop, existe <code>asyncio.Runner</code> (3.11+).</p>
           <p>Dentro de una corrutina, <code>await</code> solo puede aplicarse a objetos <em>awaitable</em>: otras corrutinas, <code>asyncio.Task</code>, <code>asyncio.Future</code> o cualquier objeto que implemente <code>__await__</code>. Usar <code>await</code> fuera de una función <code>async def</code> es un error de sintaxis.</p>
 
           <h2 id="gather-taskgroup">gather y TaskGroup</h2>
@@ -230,7 +230,7 @@ async def main() -&gt; None:
         datos = {}
 
     print(datos)</code></pre>
-          <p>Cuando un timeout expira, asyncio cancela internamente la tarea lanzando <code>CancelledError</code>. Si tienes recursos que limpiar (conexiones, ficheros), atrapa <code>CancelledError</code> dentro de la corrutina, haz la limpieza y vuelve a lanzarlo para no silenciar la cancelación:</p>
+          <p>Cuando un timeout expira, asyncio cancela la tarea lanzando <code>CancelledError</code>. Para limpiar recursos (conexiones, ficheros) usa <code>try/finally</code>: el <code>finally</code> se ejecuta tanto si todo va bien como ante cualquier excepción o una cancelación. Si la librería ofrece <code>async with</code>, mejor aún. Y si alguna vez atrapas <code>CancelledError</code> explícitamente, relánzalo al terminar la limpieza para no silenciar la cancelación:</p>
           <pre><code data-lang="python">import asyncio
 
 
@@ -239,9 +239,8 @@ async def tarea_con_recursos() -&gt; None:
 
     try:
         await procesar(conexion)
-    except asyncio.CancelledError:
-        await conexion.close()
-        raise</code></pre>
+    finally:
+        await conexion.close()</code></pre>
 
           <h2 id="cuando-async">Cuándo elegir async, hilos o multiproceso</h2>
           <p>Async no es la solución universal a todos los problemas de rendimiento. La elección depende de dónde está el cuello de botella:</p>
@@ -274,7 +273,7 @@ async def tarea_con_recursos() -&gt; None:
           </table>
           </div>
           <div class="callout callout--info">
-            <strong>El GIL y los hilos:</strong> el GIL de Python impide que dos hilos ejecuten bytecode Python en paralelo, por eso threading no ayuda con código CPU-bound. Pero durante operaciones de I/O (red, disco), el GIL se libera, y ahí varios hilos sí avanzan en paralelo. Async hace lo mismo sin el coste de cambio de contexto de los hilos del SO.
+            <strong>El GIL y los hilos:</strong> el GIL de Python impide que dos hilos ejecuten bytecode Python en paralelo, por eso threading no ayuda con código CPU-bound. Pero durante operaciones de I/O (red, disco), el GIL se libera, y ahí varios hilos sí avanzan en paralelo. Async hace lo mismo sin el coste de cambio de contexto de los hilos del SO. Desde Python 3.13 existe además una build <em>free-threaded</em> sin GIL (PEP 703), con soporte oficial desde 3.14 (PEP 779); sigue siendo opcional: la build por defecto mantiene el GIL.
           </div>
           <p>Si necesitas ejecutar código síncrono bloqueante desde una corrutina sin paralizar el event loop, delégalo a un pool de hilos con <code>run_in_executor()</code>:</p>
           <pre><code data-lang="python">import asyncio
@@ -305,7 +304,7 @@ asyncio.run(main())</code></pre>
           <h2 id="resumen">Resumen</h2>
           <ul class="keypoints">
             <li>El event loop ejecuta corrutinas en un solo hilo; <code>await</code> es el punto de pausa cooperativa donde el loop puede reanudar otra corrutina pendiente.</li>
-            <li><code>asyncio.run()</code> crea el event loop y lo destruye al terminar: es el único punto de entrada de cualquier aplicación async y debe llamarse una sola vez desde código síncrono.</li>
+            <li><code>asyncio.run()</code> crea el event loop y lo destruye al terminar: es el punto de entrada habitual de una aplicación async y, idealmente, se llama una sola vez desde código síncrono.</li>
             <li><code>asyncio.gather()</code> lanza corrutinas concurrentes y devuelve sus resultados en orden; <code>TaskGroup</code> (3.11+) añade cancelación automática de todas las tareas si alguna falla, evitando tareas huérfanas.</li>
             <li><code>asyncio.timeout()</code> (3.11+) limita la duración de cualquier operación awaitable; <code>asyncio.wait_for()</code> cumple la misma función en versiones anteriores.</li>
             <li>Async no acelera código CPU-bound; para eso usa <code>ProcessPoolExecutor</code>. Una librería síncrona bloqueante dentro de una corrutina congela el event loop: delégala con <code>run_in_executor</code>.</li>
