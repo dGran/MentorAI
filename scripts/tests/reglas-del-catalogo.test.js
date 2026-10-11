@@ -89,3 +89,10 @@ test("only tables outside a table-wrap are counted", () => {
 test("an escaped table inside text is not a table", () => {
   assert.equal(reglas.tablasSinEnvolver("<p>Usa &lt;table&gt; solo para datos.</p>"), 0);
 });
+
+test("a tutorial needs exactly one main element", () => {
+  assert.equal(reglas.tieneUnSoloMain("<header></header><main><article></article></main><footer></footer>"), true);
+  assert.equal(reglas.tieneUnSoloMain("<header></header><article></article><footer></footer>"), false);
+  assert.equal(reglas.tieneUnSoloMain("<main></main><main></main>"), false);
+  assert.equal(reglas.tieneUnSoloMain("<main><article></article>"), false);
+});
