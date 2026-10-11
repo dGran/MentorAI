@@ -167,9 +167,9 @@ function validarManifest() {
 /* ---------- 3. Cursos y rutas ---------- */
 
 function validarNivelDeCurso(curso, lecciones) {
-  if (lecciones.length === 0 || !lecciones.every((slug) => slugs.has(slug))) return;
+  if (!slugs.has(lecciones[0])) return;
 
-  const nivelesDeLecciones = lecciones.map((slug) => manifest.find((tutorial) => tutorial.slug === slug).level);
+  const nivelesDeLecciones = lecciones.map((slug) => manifest.find((tutorial) => tutorial.slug === slug)?.level);
   const esperado = reglas.nivelDeCurso(nivelesDeLecciones);
 
   if (curso.level === esperado) return;
