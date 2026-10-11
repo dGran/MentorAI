@@ -166,6 +166,17 @@ function validarManifest() {
 
 /* ---------- 3. Cursos y rutas ---------- */
 
+function validarNivelDeCurso(curso, lecciones) {
+  if (lecciones.length === 0 || !lecciones.every((slug) => slugs.has(slug))) return;
+
+  const nivelesDeLecciones = lecciones.map((slug) => manifest.find((tutorial) => tutorial.slug === slug).level);
+  const esperado = reglas.nivelDeCurso(nivelesDeLecciones);
+
+  if (curso.level === esperado) return;
+
+  aviso(`courses: «${curso.slug}» es «${curso.level}», pero el nivel de la mayoría de sus lecciones es «${esperado}» (si empatan, el de la primera)`);
+}
+
 function validarCursosYRutas() {
   for (const curso of cursos) {
     const lecciones = leccionesDe(curso);
@@ -177,6 +188,8 @@ function validarCursosYRutas() {
 
       aviso(`courses: «${curso.slug}» tiene «${slug}» planificada (sin escribir todavía)`);
     }
+
+    validarNivelDeCurso(curso, lecciones);
   }
 
   for (const ruta of rutas) {

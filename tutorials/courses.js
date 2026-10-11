@@ -247,7 +247,7 @@ window.MENTORAI_COURSES = [
     title: "Terminal y Linux para desarrolladores",
     summary:
       "De cero al día a día en Linux: el sistema de ficheros y el árbol FHS, navegación y gestión de ficheros, permisos, usuarios y grupos, búsquedas con find y grep, pipes y redirección, scripting bash, paquetes y cron, y diagnóstico de procesos, SSH y red.",
-    level: "Intermedio",
+    level: "Principiante",
     icon: "bolt",
     lessons: [
       "linux-filesystem",
@@ -308,7 +308,7 @@ window.MENTORAI_COURSES = [
     title: "Git: control de versiones",
     summary:
       "Git de principio a fin, también como referencia: los comandos del día a día con su explicación y ejemplo, cómo trabajar con ramas (merge vs rebase, conflictos, pull requests) y cómo salir de cualquier lío deshaciendo y rescatando.",
-    level: "Principiante",
+    level: "Intermedio",
     icon: "code",
     lessons: [
       "git-comandos-esenciales",
@@ -380,7 +380,7 @@ window.MENTORAI_COURSES = [
     title: "Programación orientada a objetos",
     summary:
       "Los fundamentos de la OOP en PHP, de cero: clases y objetos, encapsulación, herencia, polimorfismo, interfaces y clases abstractas, hasta saber elegir el tipo de clase adecuado. La base que SOLID y el diseño asumen por sabida.",
-    level: "Principiante",
+    level: "Intermedio",
     icon: "code",
     lessons: [
       "oop-clases-y-objetos",
@@ -429,7 +429,7 @@ window.MENTORAI_COURSES = [
     title: "Inyección de dependencias y contenedores",
     summary:
       "De los fundamentos de la inyección de dependencias al contenedor por dentro: por qué una clase no fabrica sus colaboradores, y cómo un contenedor resuelve el grafo con autowiring, ciclo de vida, compilación y la memoria que eso implica.",
-    level: "Avanzado",
+    level: "Intermedio",
     icon: "code",
     lessons: [
       "inyeccion-dependencias",
@@ -470,8 +470,8 @@ window.MENTORAI_COURSES = [
         lessons: ["url-a-fondo", "http-a-fondo", "tcp-ip"],
       },
       {
-        title: "Sistemas distribuidos",
-        summary: "Coordinar varias máquinas: redes + concurrencia + consistencia.",
+        title: "Sistemas distribuidos y caché",
+        summary: "Coordinar varias máquinas: redes + concurrencia + consistencia, y la caché compartida que las alivia.",
         lessons: ["idempotencia", "cap-consistencia", "redis-cache"],
       },
       {
@@ -500,12 +500,12 @@ window.MENTORAI_COURSES = [
     slug: "testing",
     title: "TDD y fundamentos de testing",
     summary:
-      "Escribir código con red de seguridad: el ciclo de TDD, cómo organizar los tests en niveles, los dobles para aislar dependencias y cómo evitar los tests que estorban.",
+      "Escribir código con red de seguridad: cómo organizar los tests en niveles, el ciclo de TDD, los dobles para aislar dependencias y cómo evitar los tests que estorban.",
     level: "Intermedio",
     icon: "code",
     lessons: [
-      "tdd-ciclo",
       "tipos-de-test",
+      "tdd-ciclo",
       "test-doubles",
       "tests-que-no-estorban",
     ],
@@ -550,7 +550,7 @@ window.MENTORAI_COURSES = [
     title: "PHPUnit en profundidad",
     summary:
       "Del primer test a la suite completa: anatomía de un test, casos paramétricos con data providers, ciclo de vida de fixtures, stubs y mocks para aislar dependencias, testear excepciones y medir cobertura, y tests de integración con base de datos real.",
-    level: "Avanzado",
+    level: "Intermedio",
     icon: "code",
     lessons: [
       "phpunit-primeros-pasos",
@@ -720,7 +720,7 @@ window.MENTORAI_COURSES = [
     title: "Python desde cero",
     summary:
       "Aprende Python de principio a fin: el entorno dockerizado, los fundamentos del lenguaje, los patrones idiomáticos de Python (comprehensions, decoradores, generadores), y cómo construir una API real con FastAPI y SQLAlchemy.",
-    level: "Intermedio",
+    level: "Principiante",
     icon: "code",
     modules: [
       {
