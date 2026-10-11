@@ -1812,7 +1812,7 @@ window.MENTORAI_QUIZZES = {
   "k8s-para-devs": { questions: [
     { id: "q850a62", q: "La diferencia de fondo entre docker run y kubectl apply es…",
       o: ["La velocidad de arranque","El formato del fichero","Orden puntual contra declaración permanente: el clúster hace cumplir lo declarado para siempre (bucle de reconciliación)","Ninguna: hacen lo mismo"], a: 2,
-      w: "Muere un pod y renace sin que nadie reaccione. Toda la magia de k8s es ese bucle: comparar deseado con real y actuar.",
+      w: "Muere un pod y el Deployment crea otro sin que nadie reaccione. Toda la magia de k8s es ese bucle: comparar deseado con real y actuar.",
       lesson: "k8s-objetos" },
     { id: "q679cf5", q: "¿Qué papel juega el Service en la cadena del tráfico?",
       o: ["Ejecuta los contenedores","Da una IP y un DNS estables que balancean hacia los pods (volátiles) que casen con su selector","Enruta el tráfico HTTP externo por host y path","Almacena la configuración"], a: 1,

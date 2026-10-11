@@ -2671,7 +2671,7 @@ window.MENTORAI_CHECKS = {
       o: ["El Deployment es más rápido","docker run es una orden que se ejecuta una vez; el Deployment es una declaración que el clúster hace cumplir para siempre","Ninguna: son sinónimos"], a: 1,
       w: "Muere un pod y aparece otro sin que nadie reaccione: el bucle de reconciliación persigue el estado declarado, eternamente." },
     { id: "c6b01a7", q: "¿Por qué nunca apuntas a la IP de un pod?",
-      o: ["Los pods son ganado: efímeros y con IP nueva en cada renacimiento — para eso existe el Service, con IP y DNS estables","Porque las IPs de pods son secretas","Porque los pods no tienen IP"], a: 0,
+      o: ["Los pods son ganado: efímeros y con IP nueva en cada reemplazo; para eso existe el Service","Porque las IPs de los pods solo son accesibles desde el plano de control y no desde otros pods","Porque los pods no tienen IP"], a: 0,
       w: "Nombre estable delante de instancias volátiles: el mismo patrón de DNS y balanceadores, nativo en el clúster." },
     { id: "c97135d", q: "¿Cuál es la cadena completa del tráfico externo hasta tu contenedor?",
       o: ["Pod → Service → Ingress → Deployment","Deployment → Ingress → Pod → Service","Ingress enruta → Service nombra y balancea → los pods que mantiene el Deployment"], a: 2,
