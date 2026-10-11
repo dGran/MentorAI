@@ -255,9 +255,9 @@
     );
 
   function byRelevance(tutorials, query) {
-    const inTitle = (tutorial) => MentorAI.normalize(tutorial.title).includes(query);
+    const hasQueryInTitle = (tutorial) => MentorAI.normalize(tutorial.title).includes(query);
 
-    return [...tutorials.filter(inTitle), ...tutorials.filter((tutorial) => !inTitle(tutorial))];
+    return [...tutorials.filter(hasQueryInTitle), ...tutorials.filter((tutorial) => !hasQueryInTitle(tutorial))];
   }
 
   function announce(mensaje) {

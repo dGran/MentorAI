@@ -44,7 +44,9 @@ test("matches in the title come before matches elsewhere", () => {
 test("the title match ignores accents and case", () => {
   const { Home, normalize } = loadHome();
 
-  assert.deepEqual(slugsOf(Home.byRelevance(TUTORIALS, normalize("ÍNDICES"))).slice(0, 2), ["indices-btree", "indices-compuestos"]);
+  const ranked = slugsOf(Home.byRelevance(TUTORIALS, normalize("ÍNDICES")));
+
+  assert.deepEqual(ranked.slice(0, 2), ["indices-btree", "indices-compuestos"]);
 });
 
 test("without any title match the original order is kept", () => {
