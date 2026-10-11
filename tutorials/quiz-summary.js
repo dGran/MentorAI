@@ -24,7 +24,7 @@ window.MENTORAI_QUIZ_SUMMARY = {
     "passingScore": null
   },
   "solid": {
-    "total": 15,
+    "total": 18,
     "passingScore": null
   },
   "clean-code": {
@@ -84,7 +84,7 @@ window.MENTORAI_QUIZ_SUMMARY = {
     "passingScore": null
   },
   "fundamentos": {
-    "total": 20,
+    "total": 29,
     "passingScore": null
   },
   "diseno-y-arquitectura": {
@@ -92,7 +92,7 @@ window.MENTORAI_QUIZ_SUMMARY = {
     "passingScore": null
   },
   "go": {
-    "total": 12,
+    "total": 18,
     "passingScore": null
   },
   "rust": {

@@ -118,3 +118,9 @@ test("on-demand data loaded eagerly is reported except on full data pages", () =
   assert.equal(reglas.problemasDeCargaDeDatos("index.html", eager, FULL_DATA_PAGES).length, 2);
   assert.deepEqual(reglas.problemasDeCargaDeDatos("curso.html", eager, FULL_DATA_PAGES), []);
 });
+
+test("a course takes the level of the lesson it starts with", () => {
+  assert.equal(reglas.nivelDeCurso(["Principiante", "Intermedio", "Intermedio"]), "Principiante");
+  assert.equal(reglas.nivelDeCurso(["Intermedio", "Avanzado", "Avanzado"]), "Intermedio");
+  assert.equal(reglas.nivelDeCurso(["Avanzado"]), "Avanzado");
+});

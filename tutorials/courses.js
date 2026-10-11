@@ -212,7 +212,7 @@ window.MENTORAI_COURSES = [
     title: "Go desde cero",
     summary:
       "Aprende Go de principio a fin: el entorno dockerizado, los fundamentos del lenguaje, el modelo de interfaces y composición, la concurrencia con goroutines y channels, y cómo construir un servicio HTTP real. Con ejemplos prácticos y contraste constante con PHP.",
-    level: "Intermedio",
+    level: "Principiante",
     icon: "code",
     modules: [
       {
@@ -247,7 +247,7 @@ window.MENTORAI_COURSES = [
     title: "Terminal y Linux para desarrolladores",
     summary:
       "De cero al día a día en Linux: el sistema de ficheros y el árbol FHS, navegación y gestión de ficheros, permisos, usuarios y grupos, búsquedas con find y grep, pipes y redirección, scripting bash, paquetes y cron, y diagnóstico de procesos, SSH y red.",
-    level: "Intermedio",
+    level: "Principiante",
     icon: "bolt",
     lessons: [
       "linux-filesystem",
@@ -351,7 +351,7 @@ window.MENTORAI_COURSES = [
     title: "Docker para desarrollo",
     summary:
       "Containerizar tu servicio de principio a fin: imagen vs contenedor y por qué no es una VM, el Dockerfile y la caché de capas, docker-compose para levantar el entorno entero, imágenes pequeñas y seguras con multi-stage, y el montaje real de PHP con nginx y php-fpm.",
-    level: "Intermedio",
+    level: "Principiante",
     icon: "code",
     lessons: [
       "docker-imagen-vs-contenedor",
@@ -429,7 +429,7 @@ window.MENTORAI_COURSES = [
     title: "Inyección de dependencias y contenedores",
     summary:
       "De los fundamentos de la inyección de dependencias al contenedor por dentro: por qué una clase no fabrica sus colaboradores, y cómo un contenedor resuelve el grafo con autowiring, ciclo de vida, compilación y la memoria que eso implica.",
-    level: "Avanzado",
+    level: "Intermedio",
     icon: "code",
     lessons: [
       "inyeccion-dependencias",
@@ -470,8 +470,8 @@ window.MENTORAI_COURSES = [
         lessons: ["url-a-fondo", "http-a-fondo", "tcp-ip"],
       },
       {
-        title: "Sistemas distribuidos",
-        summary: "Coordinar varias máquinas: redes + concurrencia + consistencia.",
+        title: "Sistemas distribuidos y caché",
+        summary: "Coordinar varias máquinas: redes + concurrencia + consistencia, y la caché compartida que las alivia.",
         lessons: ["idempotencia", "cap-consistencia", "redis-cache"],
       },
       {
@@ -500,12 +500,12 @@ window.MENTORAI_COURSES = [
     slug: "testing",
     title: "TDD y fundamentos de testing",
     summary:
-      "Escribir código con red de seguridad: el ciclo de TDD, cómo organizar los tests en niveles, los dobles para aislar dependencias y cómo evitar los tests que estorban.",
+      "Escribir código con red de seguridad: cómo organizar los tests en niveles, el ciclo de TDD, los dobles para aislar dependencias y cómo evitar los tests que estorban.",
     level: "Intermedio",
     icon: "code",
     lessons: [
-      "tdd-ciclo",
       "tipos-de-test",
+      "tdd-ciclo",
       "test-doubles",
       "tests-que-no-estorban",
     ],
@@ -515,7 +515,7 @@ window.MENTORAI_COURSES = [
     title: "Observabilidad y monitoring",
     summary:
       "Logs, métricas y trazas — los tres pilares — con el stack de facto: Sentry para errores, Prometheus y PromQL para métricas, Loki y LogQL para logs, Grafana para dashboards y Alertmanager para alertas que se atienden.",
-    level: "Avanzado",
+    level: "Intermedio",
     icon: "signal",
     modules: [
       {
@@ -550,7 +550,7 @@ window.MENTORAI_COURSES = [
     title: "PHPUnit en profundidad",
     summary:
       "Del primer test a la suite completa: anatomía de un test, casos paramétricos con data providers, ciclo de vida de fixtures, stubs y mocks para aislar dependencias, testear excepciones y medir cobertura, y tests de integración con base de datos real.",
-    level: "Avanzado",
+    level: "Intermedio",
     icon: "code",
     lessons: [
       "phpunit-primeros-pasos",
@@ -566,7 +566,7 @@ window.MENTORAI_COURSES = [
     title: "Programar con IA",
     summary:
       "Trabajar con modelos y agentes sin perder el criterio: cómo piensa un LLM, prompting para código, el flujo con agentes y la gestión de los riesgos de lo generado.",
-    level: "Intermedio",
+    level: "Principiante",
     icon: "signal",
     lessons: [
       "conceptos-ia",
@@ -720,7 +720,7 @@ window.MENTORAI_COURSES = [
     title: "Python desde cero",
     summary:
       "Aprende Python de principio a fin: el entorno dockerizado, los fundamentos del lenguaje, los patrones idiomáticos de Python (comprehensions, decoradores, generadores), y cómo construir una API real con FastAPI y SQLAlchemy.",
-    level: "Intermedio",
+    level: "Principiante",
     icon: "code",
     modules: [
       {
@@ -781,7 +781,7 @@ window.MENTORAI_COURSES = [
     title: "Rust desde cero",
     summary:
       "Aprende Rust de principio a fin: el entorno dockerizado, los fundamentos del lenguaje, el sistema de ownership que lo hace único, la concurrencia sin data races y cómo construir un servicio web con Axum. Con ejemplos prácticos y contraste constante con PHP y Go.",
-    level: "Intermedio",
+    level: "Principiante",
     icon: "code",
     modules: [
       {

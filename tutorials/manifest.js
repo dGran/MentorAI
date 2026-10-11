@@ -1024,7 +1024,7 @@ window.ACADEMIA_TUTORIALS = [
     categories: ["python", "devops"],
     topic: "Python",
     tags: ["Docker", "Uvicorn", "uv", "Desarrollo"],
-    level: "Principiante",
+    level: "Intermedio",
     minutes: 9,
     icon: "code",
     status: "published",

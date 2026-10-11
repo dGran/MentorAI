@@ -43,6 +43,8 @@ const tablasSinEnvolver = (html) => (html.match(TABLA) ?? []).length - (html.mat
 const tieneUnSoloMain = (html) =>
   (html.match(APERTURA_DE_MAIN) ?? []).length === 1 && (html.match(CIERRE_DE_MAIN) ?? []).length === 1;
 
+const nivelDeCurso = (nivelesDeLecciones) => nivelesDeLecciones[0];
+
 function problemasDeCargaDeDatos(fichero, html, paginasConDatosCompletos) {
   const problemas = DATOS_SIEMPRE.filter((script) => !html.includes(script)).map((script) => `${fichero}: no carga ${script}`);
 
@@ -53,4 +55,4 @@ function problemasDeCargaDeDatos(fichero, html, paginasConDatosCompletos) {
   return [...problemas, ...cargadosDeMas.map((nombre) => `${fichero}: carga ${nombre}.js, que se inyecta bajo demanda`)];
 }
 
-module.exports = { esFechaReal, diaLocal, problemasDeRevision, tieneDrawerEscrito, tablasSinEnvolver, tieneUnSoloMain, problemasDeCargaDeDatos };
+module.exports = { esFechaReal, diaLocal, problemasDeRevision, tieneDrawerEscrito, tablasSinEnvolver, tieneUnSoloMain, problemasDeCargaDeDatos, nivelDeCurso };

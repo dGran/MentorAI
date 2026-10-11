@@ -60,6 +60,7 @@ window.MENTORAI_PATHS = [
       { type: "course", ref: "fundamentos" },
       { type: "course", ref: "la-maquina" },
       { type: "course", ref: "terminal-linux" },
+      { type: "article", ref: "regex" },
       { type: "course", ref: "oop" },
       { type: "course", ref: "solid" },
       { type: "course", ref: "clean-code" },
@@ -98,6 +99,8 @@ window.MENTORAI_PATHS = [
       { type: "course", ref: "acceso-a-datos" },
       { type: "course", ref: "sql-aplicado" },
       { type: "course", ref: "cache-y-rendimiento" },
+      { type: "article", ref: "redis-a-fondo" },
+      { type: "article", ref: "rabbitmq" },
       { type: "course", ref: "docker" },
       { type: "article", ref: "config-y-entornos" },
       { type: "course", ref: "ci-cd" },
@@ -110,9 +113,10 @@ window.MENTORAI_PATHS = [
     slug: "backend-cimientos",
     title: "Backend desde los cimientos",
     summary:
-      "El camino completo para un backend autodidacta: los fundamentos de informática, cómo trabajar con IA y cómo testear con criterio. Los tres cursos base.",
+      "El arranque corto para un backend autodidacta: la jerga que vas a oír, los fundamentos de informática, cómo trabajar con IA y cómo testear con criterio. El camino completo es «El grado que no hiciste».",
     icon: "signal",
     steps: [
+      { type: "article", ref: "jerga" },
       { type: "course", ref: "fundamentos" },
       { type: "course", ref: "programar-con-ia" },
       { type: "course", ref: "testing" },
@@ -136,7 +140,7 @@ window.MENTORAI_PATHS = [
     slug: "mas-alla-de-php",
     title: "Más allá de PHP",
     summary:
-      "Amplía tu stack aprendiendo lenguajes que abren puertas distintas: Go para servicios de alta concurrencia y Rust para sistemas con control total de memoria. Cada curso parte de cero y llega a producción.",
+      "Amplía tu stack aprendiendo lenguajes que abren puertas distintas: Go para servicios de alta concurrencia, Rust para sistemas con control total de memoria y Python, la lengua franca de datos e IA, hasta una API con FastAPI. Cada curso parte de cero y llega a producción.",
     icon: "code",
     steps: [
       { type: "course", ref: "go" },
