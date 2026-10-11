@@ -220,29 +220,29 @@ function laCorrectaEsLaMasLarga(pregunta) {
   return longitudes.filter((longitud) => longitud >= correcta).length === 1;
 }
 
-function avisarSiHaySesgoDeLongitud(nombre, masLargas, total) {
+function exigirLongitudesSinSesgo(nombre, masLargas, total) {
   const porcentaje = Math.round((masLargas / total) * 100);
 
   if (porcentaje <= MAXIMO_CORRECTA_MAS_LARGA) return;
 
-  aviso(
+  error(
     `${nombre}: la respuesta correcta es la opción más larga en un ${porcentaje}% de ${total} preguntas ` +
       `(umbral ${MAXIMO_CORRECTA_MAS_LARGA}%). Se aprueba eligiendo la más larga: iguala los distractores.`
   );
 }
 
-function avisarSiUnPuestoDeLongitudDomina(nombre, preguntas) {
+function exigirPuestosDeLongitudRepartidos(nombre, preguntas) {
   const { puesto, porcentaje } = reglas.puestoDominanteTrasLaMasLarga(preguntas);
 
   if (porcentaje <= MAXIMO_MISMO_PUESTO_DE_LONGITUD) return;
 
-  aviso(
+  error(
     `${nombre}: la correcta es la ${puesto}.ª opción más larga en un ${Math.round(porcentaje)}% de ${preguntas.length} preguntas ` +
       `(umbral ${MAXIMO_MISMO_PUESTO_DE_LONGITUD}%). Se aprueba eligiendo por longitud: reparte qué opción es la larga.`
   );
 }
 
-function avisarSiLaFormaDelataLaCorrecta(nombre, preguntas) {
+function exigirFormaQueNoDelate(nombre, preguntas) {
   if (preguntas.length === 0) return;
 
   const conPista = preguntas.filter((pregunta) => reglas.pistasDeForma(pregunta).length > 0);
@@ -250,7 +250,7 @@ function avisarSiLaFormaDelataLaCorrecta(nombre, preguntas) {
 
   if (porcentaje <= MAXIMO_CON_PISTA_DE_FORMA) return;
 
-  aviso(
+  error(
     `${nombre}: en ${conPista.length} de ${preguntas.length} preguntas la forma delata la correcta ` +
       `(umbral ${MAXIMO_CON_PISTA_DE_FORMA}%; p. ej. ${conPista.slice(0, 3).map((pregunta) => pregunta.id).join(", ")}). Iguala el arranque y el estilo de las opciones.`
   );
@@ -332,14 +332,14 @@ function validarPreguntas(nombre, entradas, contexto) {
   for (const [grupo, datosDelGrupo] of Object.entries(porGrupo)) {
     if (datosDelGrupo.total < MINIMO_PARA_MEDIR_LONGITUD) continue;
 
-    avisarSiHaySesgoDeLongitud(`${nombre} «${grupo}»`, datosDelGrupo.masLargas, datosDelGrupo.total);
+    exigirLongitudesSinSesgo(`${nombre} «${grupo}»`, datosDelGrupo.masLargas, datosDelGrupo.total);
   }
 
   for (const [grupo, datosDelGrupo] of Object.entries(porGrupo)) {
     if (datosDelGrupo.total < MINIMO_PARA_MEDIR_GRUPO) continue;
 
-    avisarSiUnPuestoDeLongitudDomina(`${nombre} «${grupo}»`, datosDelGrupo.preguntas);
-    avisarSiLaFormaDelataLaCorrecta(`${nombre} «${grupo}»`, datosDelGrupo.preguntas);
+    exigirPuestosDeLongitudRepartidos(`${nombre} «${grupo}»`, datosDelGrupo.preguntas);
+    exigirFormaQueNoDelate(`${nombre} «${grupo}»`, datosDelGrupo.preguntas);
   }
 
   avisarSiHaySesgo(nombre, posiciones, total, true);

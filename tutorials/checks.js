@@ -621,25 +621,25 @@ window.MENTORAI_CHECKS = {
 
   "git-ramas-y-flujo": [
     { id: "c97eb19", q: "Has hecho push de tu rama y un compañero ya trabaja sobre ella. ¿Puedes hacer rebase de esos commits?",
-      o: ["No: reescribiría commits que ya comparte y le romperías el historial","Sí, el rebase no afecta a otros","Sí, siempre que después hagas force push"], a: 0,
+      o: ["No, reescribiría commits que él ya tiene","Sí, el rebase solo cambia tu copia local de la rama","Sí, siempre que después hagas un force push"], a: 0,
       w: "Es la regla de oro del rebase. Reescribir cambia los hashes, y quien tuviera los originales se queda con dos historias que no casan." },
     { id: "c315d70", q: "En un fichero en conflicto, ¿qué hay entre `<<<<<<< HEAD` y `=======`?",
       o: ["Lo que traía la rama que estás integrando", "Lo que ya tenías en tu rama actual", "El ancestro común de las dos ramas"], a: 1,
       w: "Primero lo tuyo, después lo que entra. Y resolver no es elegir un lado sin mirar: es escribir la versión correcta y borrar los marcadores." },
     { id: "c4d49c9", q: "¿Qué aporta un pull request que git por sí solo no da?",
-      o: ["Una forma más rápida de hacer merge","La posibilidad de fusionar sin conflictos","Un sitio donde revisar, comentar y pasar CI antes de integrar"], a: 2,
+      o: ["Una forma más rápida y segura de hacer el merge","La posibilidad de fusionar ramas sin conflictos","Un sitio donde revisar, comentar y pasar CI"], a: 2,
       w: "El PR no es de git, es de la plataforma. Lo que aporta es el proceso alrededor del merge, no el merge en sí." },
   ],
 
   "git-deshacer": [
     { id: "c0d46fb", q: "Acabas de commitear y te has dejado un fichero fuera. Quieres rehacer ese commit.",
-      o: ["`git reset --soft HEAD~1`, que deshace el commit dejando los cambios en staging","`git reset --hard HEAD~1` y volver a escribirlo todo","`git revert HEAD`, que crea un commit inverso"], a: 0,
+      o: ["`git reset --soft HEAD~1`, que deja los cambios en staging","`git reset --hard HEAD~1`, que deshace el commit y también sus cambios","`git revert HEAD`, que crea un commit inverso"], a: 0,
       w: "`--soft` es el modo para rehacer: deshace el commit y te deja todo listo en staging. `--hard` habría descartado el trabajo, y `revert` es para lo ya compartido." },
     { id: "cc0f57e", q: "Has hecho `reset --hard` y has perdido un commit que sí necesitabas.",
-      o: ["Está perdido: `--hard` es irreversible", "`git reflog` guarda los movimientos de HEAD y te da el hash para volver", "Solo se recupera si habías hecho push"], a: 1,
+      o: ["Está perdido, porque `--hard` no se puede deshacer", "`git reflog` guarda los movimientos de HEAD y te da el hash", "Solo se recupera si antes habías hecho push"], a: 1,
       w: "El reflog es la red de seguridad de git: registra dónde ha estado HEAD aunque ese commit ya no cuelgue de ninguna rama." },
     { id: "c83cd29", q: "El commit erróneo ya está en el remoto y lo tiene todo el equipo. ¿`reset` o `revert`?",
-      o: ["`reset`: limpia la historia y luego force push","Cualquiera de los dos, es indiferente","`revert`: añade un commit que deshace, sin reescribir la historia"], a: 2,
+      o: ["`reset` y luego force push, que deja la historia limpia","Cualquiera de los dos, el resultado final es el mismo","`revert`, que deshace sin reescribir la historia"], a: 2,
       w: "Reescribir lo que ya tienen otros es el problema que `revert` evita: deja constancia de la marcha atrás en vez de fingir que nunca pasó." },
   ],
 
@@ -647,22 +647,22 @@ window.MENTORAI_CHECKS = {
 
   "oop-clases-y-objetos": [
     { id: "c23f6d3", q: "¿Qué significa encapsular bien una clase?",
-      o: ["Decidir qué promete la clase hacia fuera y proteger el resto para poder cambiarlo","Poner todas las propiedades en private","Añadir getters y setters para todas las propiedades"], a: 0,
+      o: ["Decidir qué promete la clase y proteger el resto para poder cambiarlo","Declarar todas las propiedades private, sin excepción","Poner las propiedades en private y darles a todas un getter y un setter"], a: 0,
       w: "Un getter y un setter por propiedad es la clase abierta de par en par con más ceremonia: el estado sigue siendo parte del contrato." },
     { id: "cd4a2a2", q: "¿Qué distingue a un objeto de su clase?",
-      o: ["Son lo mismo con distinto nombre","La clase es la plantilla; el objeto es una instancia concreta con su propio estado","La clase guarda datos y el objeto guarda comportamiento"], a: 1,
+      o: ["Ninguna; «objeto» y «clase» son dos nombres para lo mismo","La clase es el molde; el objeto, una instancia con estado propio","La clase guarda los datos y el objeto aporta el comportamiento que los usa"], a: 1,
       w: "De una clase salen N objetos, cada uno con sus valores. El comportamiento se define una vez, en la clase." },
   ],
 
   "herencia": [
     { id: "c3ca33f", q: "Llevas cuatro niveles de herencia y tocar la clase base rompe cosas por sitios que no esperabas.",
-      o: ["Es normal: la herencia profunda funciona así","Falta declarar más métodos como final","Es el problema de la clase base frágil; suele resolverse pasando a composición"], a: 2,
+      o: ["Es normal, la herencia profunda funciona así y hay que asumirlo","Falta marcar más métodos como final para que nadie los sobrescriba","Es la clase base frágil y se suele resolver pasando a composición"], a: 2,
       w: "Cada nivel hereda todo lo del anterior, necesite o no. Componer deja elegir qué comportamiento entra en vez de heredarlo entero." },
     { id: "c6706c8", q: "Defines un constructor en la clase hija. ¿Se ejecuta el del padre?",
       o: ["No, salvo que llames a `parent::__construct()`","Sí, PHP lo encadena automáticamente","Solo si el padre es abstracto"], a: 0,
       w: "Olvidarlo deja el objeto a medio inicializar, con propiedades del padre sin asignar y un fallo que aparece lejos del origen." },
     { id: "c3df11f", q: "¿Qué ganas al preferir composición sobre herencia?",
-      o: ["Menos código escrito", "Poder combinar comportamientos al construir el objeto, y probar cada pieza por separado", "Que el compilador detecte más errores"], a: 1,
+      o: ["Escribir menos código, porque no hace falta declarar clases hijas", "Combinar piezas al construir el objeto y probarlas aparte", "Ejecutar más rápido al evitar la cadena de herencia de clases"], a: 1,
       w: "La herencia fija la relación al escribir la clase; la composición la deja abierta hasta el momento de construir." },
   ],
 
@@ -677,7 +677,7 @@ window.MENTORAI_CHECKS = {
 
   "polimorfismo": [
     { id: "c06c1ca", q: "Tienes un `switch` por tipo repetido en cinco sitios y cada tipo nuevo te obliga a tocar los cinco.",
-      o: ["Es inevitable sin herencia múltiple", "Es lo que resuelve el polimorfismo: cada tipo responde a su manera tras una interfaz común", "Hay que extraer el switch a una función y ya está"], a: 1,
+      o: ["Es inevitable en PHP mientras no haya herencia múltiple", "Lo resuelve el polimorfismo, con cada tipo tras una interfaz común", "Se arregla extrayendo el switch a una única función que todos llamen"], a: 1,
       w: "Extraerlo a una función reduce la repetición pero no el problema: sigues editando código existente por cada tipo nuevo." },
     { id: "cca456c", q: "¿Qué es exactamente el polimorfismo?",
       o: ["Que una clase pueda tener varios constructores","Que un método acepte parámetros de varios tipos","Que objetos de distinto tipo respondan al mismo mensaje de forma distinta"], a: 2,
@@ -686,22 +686,22 @@ window.MENTORAI_CHECKS = {
 
   "clases-abstractas": [
     { id: "c0e1a07", q: "Una clase hija no implementa un método abstracto del padre. ¿Qué pasa?",
-      o: ["Error fatal: PHP no deja instanciarla","Se hereda vacío y devuelve null","Un warning y el método queda sin definir"], a: 0,
+      o: ["Un error fatal al declarar la clase","Se hereda vacío y devuelve null al llamarlo","Un warning y el método queda sin definir"], a: 0,
       w: "Es la gracia de declararlo abstracto: convierte el olvido en un fallo inmediato en vez de un comportamiento raro en producción." },
     { id: "c69e58e", q: "¿Qué puede tener una clase abstracta que una interfaz no?",
-      o: ["Métodos públicos", "Implementación parcial y estado", "Constantes"], a: 1,
+      o: ["Métodos públicos y estáticos", "Implementación parcial y estado", "Constantes de clase con su valor asignado"], a: 1,
       w: "La interfaz define qué se puede pedir; la abstracta además aporta cómo se hace una parte y puede guardar propiedades." },
   ],
 
   "tipos-de-clases-php": [
     { id: "c7e192f", q: "¿Qué consigues marcando una clase como `final`?",
-      o: ["Que no se pueda instanciar","Que sus métodos no se puedan sobrescribir pero sí extenderla","Que no se pueda extender"], a: 2,
+      o: ["Que no se pueda instanciar","Que se herede pero sin sobrescribir métodos","Que no se pueda extender"], a: 2,
       w: "Es una declaración de intenciones: esta clase no se diseñó para heredarse, y quien quiera reutilizarla que la componga." },
     { id: "c59ed1c", q: "¿Qué ganas con un enum frente a un puñado de constantes de tipo string?",
-      o: ["Que el conjunto de valores válidos pasa a ser un tipo, así que un valor imposible no compila","Que ocupa menos memoria","Que se puede recorrer con foreach"], a: 0,
+      o: ["Que los valores válidos son un tipo y uno imposible no compila","Que ocupa menos memoria que guardar los mismos valores como strings","Que puedes recorrer todos sus valores con un foreach, como un array"], a: 0,
       w: "El error deja de descubrirse en un `if` olvidado y pasa a detectarse antes de ejecutar." },
     { id: "c15c2ae", q: "¿Cuándo tiene sentido un trait?",
-      o: ["Como alternativa siempre preferible a las interfaces","Para reutilizar código entre clases sin relación jerárquica","Para definir contratos que otras clases deben cumplir"], a: 1,
+      o: ["Como alternativa siempre preferible a las interfaces de PHP moderno","Para reutilizar código entre clases sin relación jerárquica","Para definir contratos que otras clases deben cumplir"], a: 1,
       w: "Reutilización horizontal. El riesgo de abusar: el método aparece en la clase sin que se vea de dónde sale." },
   ],
 
@@ -827,22 +827,22 @@ window.MENTORAI_CHECKS = {
 
   "inyeccion-dependencias": [
     { id: "c002263", q: "¿Por qué se prefiere inyectar por constructor antes que por setter?",
-      o: ["Porque se escribe menos código","Porque los setters son más lentos","Porque si el objeto existe, está completo: sus dependencias son obligatorias y visibles en la firma"], a: 2,
+      o: ["Porque así se escribe menos código en cada una de las clases","Porque los setters son más lentos que el constructor al ejecutarse en PHP","Porque el objeto nace completo y sus dependencias quedan en la firma"], a: 2,
       w: "Con setters puedes tener un objeto a medio montar, y el fallo aparece al usarlo, lejos de donde se creó." },
     { id: "c53dd75", q: "¿Inyectar dependencias garantiza cumplir DIP?",
-      o: ["No: si lo que inyectas son clases concretas de infraestructura, sigues violándolo","Sí, es lo mismo con otro nombre","Sí, siempre que uses un contenedor"], a: 0,
+      o: ["No, si inyectas clases concretas sigues violándolo","Sí, porque inyectar ya es depender de abstracciones por definición","Sí, siempre que las dependencias las resuelva un contenedor DI"], a: 0,
       w: "DIP es el principio (depender de abstracciones); la inyección es solo la técnica de entrega." },
   ],
 
   "contenedor-di": [
     { id: "c3e5756", q: "Una clase pide sus dependencias llamando al contenedor desde dentro. ¿Cómo se llama eso?",
-      o: ["Autowiring","Service locator, y se considera antipatrón porque su firma miente sobre lo que necesita","Lazy loading"], a: 1,
+      o: ["Autowiring, porque el contenedor resuelve por sí solo todas las dependencias","Service locator, un antipatrón porque su firma oculta lo que necesita","Lazy loading, porque la dependencia se obtiene al usarla"], a: 1,
       w: "Parece que no depende de nada y en realidad depende de todo. Además ata el código al contenedor." },
     { id: "c9ee986", q: "Tu app pasa de PHP-FPM a un worker que vive horas. ¿Qué servicios se vuelven peligrosos?",
-      o: ["Los que hacen consultas a base de datos","Los que se declaran lazy","Los compartidos que guardan estado: pueden servírselo al siguiente usuario"], a: 2,
+      o: ["Los que lanzan consultas a la base de datos en cada petición HTTP","Los declarados lazy, que se instancian la primera vez que se usan","Los compartidos con estado, que filtran datos entre usuarios"], a: 2,
       w: "Es un fallo de seguridad, no de rendimiento. En FPM cada petición arrancaba limpia y eso lo tapaba." },
     { id: "c4f1a5e", q: "¿Por qué Symfony compila el contenedor?",
-      o: ["Para generar PHP con las llamadas `new` ya escritas y no pagar reflexión en cada petición","Para validar la configuración antes de desplegar","Para reducir el tamaño de la caché"], a: 0,
+      o: ["Para generar PHP con los `new` ya escritos y no pagar reflexión por petición","Para poder cambiar la configuración en producción sin tener que redesplegar","Para reducir el tamaño de la caché que se guarda en disco"], a: 0,
       w: "En producción, resolver un servicio acaba costando lo mismo que instanciarlo a mano." },
   ],
 
@@ -851,37 +851,37 @@ window.MENTORAI_CHECKS = {
       o: ["Que el código ya estaba bien, sigue adelante","Que o ya estaba implementado, o el test no comprueba lo que crees","Que el ciclo TDD se ha completado"], a: 1,
       w: "Por eso el rojo es un paso y no un accidente: demuestra que el test puede fallar, o sea que mide algo." },
     { id: "c83eb2f", q: "¿Cuándo tiene sentido escribir el test después del código?",
-      o: ["Nunca, rompe TDD","Cuando el equipo va con prisa","Cuando exploras una solución desconocida, o caracterizas código legado antes de tocarlo"], a: 2,
+      o: ["Nunca, porque escribir el test después rompe el ciclo rojo-verde-refactor","Cuando el equipo va con prisa y no queda tiempo para hacer el ciclo completo","Al explorar lo desconocido o caracterizar código legado antes de tocarlo"], a: 2,
       w: "TDD guía el diseño cuando ya sabes qué quieres; explorando, el test se convierte en lastre porque cambia con cada idea." },
   ],
 
   "tipos-de-test": [
     { id: "c10a656", q: "¿Por qué la pirámide propone pocos tests E2E y muchos unitarios?",
-      o: ["Por economía: los de arriba dan más confianza pero cuestan minutos y se rompen por cualquier cosa","Porque los E2E son menos fiables técnicamente","Porque los unitarios detectan más bugs"], a: 0,
+      o: ["Porque los E2E dan más confianza pero son lentos y se rompen por todo","Porque los E2E dan menos confianza que los unitarios al probar de forma indirecta","Porque los unitarios detectan más bugs que los E2E, al cubrir cada línea por separado"], a: 0,
       w: "Muchos unitarios te dan diagnóstico rápido; unos pocos E2E confirman que el conjunto encaja." },
     { id: "ccd1808", q: "¿Qué distingue de verdad a un test unitario de uno de integración?",
-      o: ["El número de líneas que ejecuta","Qué partes son reales: el unitario aísla con dobles, el de integración deja colaborar piezas reales","El framework con el que se escribe"], a: 1,
+      o: ["El tamaño, porque el de integración ejecuta muchas más líneas y clases que el unitario","El aislamiento, con dobles en el unitario y piezas reales en el de integración","El framework, porque cada tipo de test se escribe con una herramienta distinta"], a: 1,
       w: "El unitario aísla para que un fallo señale un culpable exacto; el de integración acepta lentitud a cambio de comprobar que encajan." },
   ],
 
   "test-doubles": [
     { id: "c923d8b", q: "¿Cuándo eliges un mock en vez de un stub?",
-      o: ["Siempre que la dependencia sea externa","Cuando necesitas devolver un valor concreto","Cuando el efecto que quieres verificar ES la llamada, como enviar un correo"], a: 2,
+      o: ["Siempre que la dependencia sea externa, como una API o una base de datos","Cuando necesitas devolver un valor concreto","Cuando el efecto a verificar ES la llamada, como enviar un correo"], a: 2,
       w: "Verificar la llamada acopla el test a cómo lo hace tu código. Para lo demás, un stub dice mejor lo que pretendes." },
     { id: "c8c810a", q: "Un stub que además verifica cuántas veces fue llamado, ¿sigue siendo un stub?",
-      o: ["No: en cuanto verifica comportamiento es un mock","Sí, el nombre es indiferente","Solo si lo verifica al final del test"], a: 0,
+      o: ["No, en cuanto verifica comportamiento es un mock","Sí, el nombre es indiferente","Solo si lo verifica al final del test"], a: 0,
       w: "El stub controla el estado (qué devuelve); el mock también el comportamiento (cómo fue llamado)." },
   ],
 
   "tests-que-no-estorban": [
     { id: "cd5bc54", q: "Un test se rompe cada vez que refactorizas, aunque el comportamiento externo no cambie.",
-      o: ["Es normal, hay que actualizarlo","Está probando detalles de implementación: te cobra dos veces sin darte seguridad","Falta añadir más aserciones"], a: 1,
+      o: ["Es normal, porque todo test se actualiza junto al código que prueba","Prueba detalles de implementación y te cobra dos veces cada refactor","Le faltan aserciones que fijen bien el comportamiento externo esperado"], a: 1,
       w: "Prueba lo observable desde fuera y el test seguirá valiendo cuando reescribas las tripas." },
     { id: "c762d44", q: "¿Qué hace que un test sea flaky y por qué importa tanto?",
-      o: ["Que tarda mucho; ralentiza el pipeline","Que depende de otro test; basta con reordenarlos","Que su resultado varía entre ejecuciones, y enseña al equipo a ignorar el rojo"], a: 2,
+      o: ["Que tarda mucho, y ralentiza tanto el pipeline que nadie quiere esperarlo","Que depende de otro test, y basta con reordenarlos para arreglarlo","Que su resultado varía entre ejecuciones y enseña a ignorar el rojo"], a: 2,
       w: "Un test inestable es peor que ninguno: a partir de ahí, el fallo real pasa desapercibido." },
     { id: "ce38e04", q: "Un test que no puede fallar nunca se llama tautológico. ¿De dónde suele salir?",
-      o: ["De aserciones vacías o de mockear tanto que no queda código real ejecutándose","De usar data providers","De probar métodos privados"], a: 0,
+      o: ["De aserciones vacías o de mockear tanto que no queda código real","De usar data providers con muchos casos que repiten la misma entrada","De probar métodos privados en vez de la interfaz pública de la clase"], a: 0,
       w: "Da una seguridad falsa, que es peor que no tener test. Si no falla al romper el comportamiento, sobra." },
   ],
 
@@ -942,91 +942,91 @@ window.MENTORAI_CHECKS = {
 
   "rest-que-es": [
     { id: "ccf2ad5", q: "Ves una ruta `/crearPedido` en una API que se llama REST.",
-      o: ["El verbo lo aporta HTTP: la URL debería nombrar el recurso, `/pedidos`","Está bien si el método es POST","Debería ser `/crear-pedido` por convención de guiones"], a: 0,
+      o: ["Sobra el verbo: lo aporta el método HTTP, y la URL nombra el recurso, `/pedidos`","Está bien mientras el método sea POST: el verbo de la URL solo documenta la acción","Debería ser `/crear-pedido`, porque la convención REST pide guiones"], a: 0,
       w: "El recurso es el sustantivo de la API. Si te sale un verbo en la URL, estás modelando acciones, no recursos." },
     { id: "c593c9b", q: "¿Qué implica que REST sea stateless?",
-      o: ["Que la API no puede guardar nada en base de datos","Que cada petición trae lo necesario para procesarse, sin sesión en el servidor","Que las respuestas no se pueden cachear"], a: 1,
+      o: ["Que la API no puede guardar nada en base de datos entre una petición y otra","Que cada petición trae lo necesario, sin sesión en el servidor","Que las respuestas no se pueden cachear porque cambian en cada petición"], a: 1,
       w: "El estado no desaparece: se mueve al cliente (un token) o a un almacén compartido. Es lo que permite poner N instancias detrás de un balanceador." },
   ],
 
   "rest-metodos-y-estados": [
     { id: "c11fde7", q: "Usas PUT para actualizar solo el email de un usuario y el resto de campos se quedan vacíos.",
-      o: ["Es un bug del framework","Hay que enviar los campos como null explícito","PUT reemplaza el recurso completo: para un cambio parcial es PATCH"], a: 2,
+      o: ["El framework no fusiona bien: falta configurarlo para que conserve los campos","Hay que enviar los demás campos como null explícito para que se conserven","PUT reemplaza el recurso entero: un cambio parcial va con PATCH"], a: 2,
       w: "Es el error clásico: PUT es idempotente justo porque manda el recurso entero." },
     { id: "c8077d7", q: "El cliente está autenticado pero no tiene permiso para ese recurso. ¿Qué devuelves?",
-      o: ["403 Forbidden","401 Unauthorized","404 Not Found para no revelar que existe"], a: 0,
+      o: ["403 Forbidden","401 Unauthorized","400 Bad Request"], a: 0,
       w: "401 es «no sé quién eres» y tiene sentido reintentar autenticándose; 403 es «sé quién eres y no puedes»." },
     { id: "ca1af82", q: "Acabas de crear un recurso con POST. ¿Qué respondes?",
-      o: ["200 OK con el cuerpo del recurso","201 Created, y conviene añadir un `Location` con su URL","204 No Content"], a: 1,
+      o: ["200 OK con el cuerpo del recurso creado","201 Created y un `Location` con su URL","204 No Content, sin cuerpo en la respuesta"], a: 1,
       w: "El 201 comunica que ahora existe algo que antes no; el `Location` dice dónde encontrarlo." },
   ],
 
   "rest-diseno-de-urls": [
     { id: "c926495", q: "Tienes `/usuarios/1/pedidos/5/lineas/2`. ¿Qué problema arrastra?",
-      o: ["Ninguno: refleja bien la jerarquía","Es demasiado larga para algunos navegadores","Acopla al cliente a tu modelo interno; si cambia, sus URLs se rompen"], a: 2,
+      o: ["Ninguno; refleja bien la jerarquía del dominio","Es demasiado larga: algunos navegadores y proxies truncan esas URLs","Acopla al cliente a tu modelo; si cambia, sus URLs se rompen"], a: 2,
       w: "Si la línea tiene identidad propia, `/lineas/2` basta. Anidar más de un nivel casi nunca compensa." },
     { id: "c862479", q: "Paginas con offset y los usuarios ven registros repetidos o se saltan alguno.",
-      o: ["Es inherente al offset cuando se insertan filas mientras paginas: el cursor lo evita","Hay que ordenar por id además de por fecha","Falta bloquear la tabla durante la paginación"], a: 0,
+      o: ["Es inherente al offset cuando entran filas mientras paginas, y el cursor lo evita","Es un problema de concurrencia que se arregla abriendo una transacción por petición","Falta bloquear la tabla durante toda la paginación de cada usuario"], a: 0,
       w: "Además `OFFSET 100000` obliga al motor a descartar cien mil filas. El cursor apunta a la última vista y sigue desde ahí." },
   ],
 
   "rest-errores-y-validacion": [
     { id: "c1c974b", q: "El móvil pierde cobertura justo después de enviar un pago y reintenta. ¿Cómo evitas cobrar dos veces?",
-      o: ["Comprobando por importe y fecha en el servidor","Con una `Idempotency-Key` que el cliente repite y el servidor deduplica","Convirtiendo el POST en PUT"], a: 1,
+      o: ["Comprobando en el servidor si ya hay un pago con el mismo importe y fecha","Con una `Idempotency-Key` que el cliente repite y el servidor deduplica","Convirtiendo el POST en un PUT, que ya es idempotente por definición"], a: 1,
       w: "Es idempotencia añadida a un POST, que por definición no la tiene." },
     { id: "c558df8", q: "¿Qué aporta usar `problem+json` (RFC 9457) para los errores?",
-      o: ["Respuestas más pequeñas","Compatibilidad con GraphQL","Un formato conocido, así que el cliente trata los errores de forma genérica en vez de parsear el JSON de cada API"], a: 2,
+      o: ["Respuestas de error más pequeñas, que viajan más rápido por la red","Compatibilidad directa con GraphQL y con los clientes que lo usan","Un formato conocido, y el cliente trata los errores de forma genérica"], a: 2,
       w: "Evita que cada servicio invente su propia forma de contar lo que ha salido mal." },
   ],
 
   "rest-vs-rpc-vs-graphql": [
     { id: "c5083c7", q: "Comunicación interna entre tus propios servicios, con foco en rendimiento y contratos estrictos.",
-      o: ["gRPC: controlas ambos extremos y ganas con binario y contratos generados","REST, por simplicidad","GraphQL, para que cada servicio pida lo que necesita"], a: 0,
+      o: ["gRPC: controlas ambos extremos, con binario y contratos generados","REST: es lo más simple y lo entiende cualquier herramienta","GraphQL: cada servicio pide justo los campos que necesita"], a: 0,
       w: "Hacia fuera pesa más que REST se depure con un navegador y lo entienda cualquiera sin herramientas." },
     { id: "c5da2af", q: "¿Qué pierdes al pasar de REST a GraphQL en cuanto a caché?",
-      o: ["Nada, GraphQL cachea igual","La caché HTTP intermedia: un solo endpoint, casi siempre POST","Solo la caché del navegador; la de los proxies y CDN sigue igual"], a: 1,
+      o: ["Nada; GraphQL cachea igual que REST en proxies y CDN","La caché HTTP intermedia, porque todo va a un endpoint, casi siempre POST","Solo la del navegador; la de los proxies y CDN sigue igual"], a: 1,
       w: "GraphQL lo compensa con caché en cliente, pero es caché que gestionas tú, no infraestructura que ya estaba." },
   ],
 
   "orm-vs-sql": [
     { id: "c6e1b99", q: "Necesitas un informe con window functions y CTEs. ¿ORM o SQL?",
-      o: ["ORM siempre, por consistencia","Depende del tamaño de la tabla","SQL a mano: es más claro y más rápido para eso"], a: 2,
+      o: ["ORM siempre: mezclar estilos complica todo","Depende del tamaño de las tablas implicadas","SQL a mano: es más claro y más rápido para eso"], a: 2,
       w: "No es traicionar al ORM: es usar cada herramienta donde gana. El ORM brilla en el CRUD, que es la mayoría del código." },
     { id: "cebb098", q: "¿Qué es el desajuste de impedancia entre objetos y tablas?",
-      o: ["Que objetos y tablas modelan las relaciones de forma distinta, y ninguna traducción es perfecta","Que las consultas son más lentas desde código","Que los tipos de datos no coinciden entre PHP y SQL"], a: 0,
+      o: ["Que objetos y tablas modelan las relaciones de forma distinta","Que el código accede a las tablas más despacio que el propio SQL","Que PHP y SQL usan codificaciones de texto distintas"], a: 0,
       w: "El ORM es precisamente la capa que absorbe esa fricción, con los costes que eso trae." },
   ],
 
   "active-record-vs-data-mapper": [
     { id: "cc37202", q: "Quieres poder probar el dominio sin levantar una base de datos.",
-      o: ["Active Record, si mockeas la conexión","Data Mapper: la entidad es pura y un mapper externo gestiona la persistencia","Da igual, depende del framework"], a: 1,
+      o: ["Active Record, mockeando la conexión a la base de datos","Data Mapper, con la entidad libre de persistencia","Cualquiera de los dos, porque depende del framework elegido"], a: 1,
       w: "En Active Record la entidad se persiste a sí misma, así que arrastra la base de datos allá donde vaya." },
     { id: "c23062d", q: "¿Qué gana Active Record a cambio?",
-      o: ["Mejor rendimiento en consultas","Independencia del motor de base de datos","Rapidez para escribir: menos ceremonia y todo a mano en la entidad"], a: 2,
+      o: ["Mejor rendimiento en las consultas","Independencia del motor de base de datos","Rapidez de escritura y menos ceremonia"], a: 2,
       w: "Eloquent y Doctrine son los ejemplos de cada escuela, y la elección es un intercambio, no una jerarquía." },
   ],
 
   "problema-n-mas-1": [
     { id: "cec11e1", q: "Iteras 500 posts y dentro del bucle accedes a `$post->comments`. ¿Cuántas consultas se lanzan?",
-      o: ["501: la de la lista más una por post","Una","500"], a: 0,
+      o: ["501, la de la lista y una por post","Una sola, con un JOIN que añade el ORM","500, una por cada post que recorres"], a: 0,
       w: "Con 10 filas no se nota; con 1.000 la página se cae, y el código es idéntico. Se detecta con un profiler, no leyendo." },
     { id: "cd34a4b", q: "¿Qué hace el eager loading y qué cuesta?",
-      o: ["Cachea las relaciones en memoria; cuesta RAM","Carga las relaciones por adelantado en 1-2 consultas; cuesta traer datos que quizá no uses","Difiere la carga hasta que se necesita; no cuesta nada"], a: 1,
+      o: ["Cachea las relaciones en memoria entre peticiones; cuesta RAM","Las carga antes, en 1-2 consultas; cuesta traer datos de más","Difiere la carga hasta que se usa la relación; no cuesta nada"], a: 1,
       w: "Es un intercambio consciente, no una optimización gratis. Lo que difiere la carga es el lazy loading, que es el origen del problema." },
   ],
 
   "migraciones-de-esquema": [
     { id: "c5a68f2", q: "Te has equivocado en una migración que ya aplicaron tus compañeros y producción.",
-      o: ["La editas y avisas al equipo de que vuelvan a ejecutarla","Haces rollback en todos los entornos","Añades una migración nueva que corrija: las aplicadas son inmutables"], a: 2,
+      o: ["La editas y pides al equipo que la vuelvan a ejecutar","Haces rollback en todos los entornos","Añades una migración nueva que corrija el error"], a: 2,
       w: "Editarla deja la base de los demás sin coincidir con el código, y nadie se entera hasta que algo falla." },
     { id: "c74c480", q: "¿Por qué en producción se prefiere «roll forward» al `down()`?",
-      o: ["Porque revertir un `DROP COLUMN` no devuelve los datos: el rollback suena bien y falla en la práctica","Porque es más rápido de ejecutar","Porque `down()` no está soportado en todos los ORM"], a: 0,
+      o: ["Porque revertir un `DROP COLUMN` no devuelve los datos","Porque avanzar es más rápido de ejecutar que deshacer el esquema","Porque `down()` no está soportado en todos los ORM del mercado"], a: 0,
       w: "Se avanza siempre, con una migración nueva que arregle, y se trata el rollback como algo excepcional." },
   ],
 
   "orm-transacciones-unit-of-work": [
     { id: "cc14d4c", q: "Llamas a `flush()` dentro de un bucle de 1.000 entidades.",
-      o: ["Es lo correcto para no acumular memoria","Pierdes el agrupamiento: pasas de una transacción a 1.000, con su coste de red y disco","No cambia nada, el ORM lo optimiza"], a: 1,
+      o: ["Es lo correcto, porque así no se acumula memoria","Pierdes el agrupamiento y pasas de una transacción a 1.000","No cambia nada, porque el ORM ya agrupa las escrituras"], a: 1,
       w: "Lo habitual es acumular y hacer `flush()` por lotes, equilibrando memoria y número de transacciones." },
     { id: "c8755f7", q: "¿`flush()` y `commit()` son lo mismo?",
       o: ["Sí, `flush()` es el nombre de Doctrine para commit","No: `commit()` solo aplica a transacciones explícitas y `flush()` a las implícitas","No: `flush()` manda el SQL, pero hasta el `commit()` nada es definitivo"], a: 2,
@@ -1083,37 +1083,37 @@ window.MENTORAI_CHECKS = {
 
   "ci-cd-que-es": [
     { id: "c8b85c5", q: "Una rama lleva tres semanas sin integrarse. ¿Por qué es un problema creciente?",
-      o: ["Porque git pierde rendimiento con ramas largas","Porque el CI caduca los artefactos","Porque los conflictos crecen más que linealmente y el fallo puede venir de cambios que nadie ha visto juntos"], a: 2,
+      o: ["Porque git pierde rendimiento al fusionar ramas con mucho historial","Porque el CI caduca los artefactos de las ramas inactivas","Porque los conflictos crecen más que linealmente con el tiempo de divergencia"], a: 2,
       w: "Integrar a menudo no es una manía de proceso: reduce el tamaño de cada problema." },
     { id: "ce2b9aa", q: "¿Qué diferencia hay entre integración continua y entrega continua?",
-      o: ["CI valida cada cambio al integrarlo; CD extiende la cinta hasta dejarlo listo para desplegar","Son sinónimos","CI es para código y CD para infraestructura"], a: 0,
+      o: ["CI valida cada cambio al integrarlo; CD lo deja listo para desplegar","Son sinónimos; las dos siglas nombran la misma práctica de automatización","CI es para el código de la aplicación; CD, para la infraestructura que lo ejecuta"], a: 0,
       w: "Se nombran juntas pero se adoptan por separado, y CI es la que da valor desde el primer día." },
   ],
 
   "pipeline-anatomia": [
     { id: "c07b482", q: "¿Por qué el linter va antes que los tests en el pipeline?",
-      o: ["Porque tarda menos en instalarse","Para fallar rápido: no gastas cinco minutos de tests si el código no pasa un check de un segundo","Porque los tests dependen del linter"], a: 1,
+      o: ["Porque el linter tarda menos en instalarse que PHPUnit","Para fallar rápido y no gastar minutos de tests en un error trivial","Porque los tests necesitan que el linter haya formateado antes el código"], a: 1,
       w: "Acorta la realimentación en el caso más común, que es el error tonto." },
     { id: "cbdd544", q: "¿Qué diferencia a un artefacto de una caché en CI?",
-      o: ["El artefacto se guarda más tiempo","La caché es para dependencias y el artefacto para logs","El artefacto es salida que quieres conservar o pasar a otro job; la caché es una optimización que puede fallar sin consecuencias"], a: 2,
+      o: ["El artefacto se guarda más tiempo; por lo demás, los dos funcionan igual","La caché guarda las dependencias; el artefacto, solo los logs del job","El artefacto es salida que pasas a otro job; la caché, una optimización prescindible"], a: 2,
       w: "Si tu pipeline se rompe cuando la caché no está, la estás usando como artefacto." },
   ],
 
   "ci-para-php": [
     { id: "cd60fad", q: "Los tests fallan en CI de forma intermitente al conectar con MySQL.",
-      o: ["Falta un healthcheck: el contenedor arranca antes de aceptar conexiones","Falta aumentar el timeout de conexión","El runner no tiene suficiente memoria"], a: 0,
+      o: ["Falta un healthcheck que espere a que MySQL acepte conexiones","Falta aumentar el timeout de conexión del cliente de MySQL","El runner no tiene suficiente memoria para levantar el contenedor"], a: 0,
       w: "Es una carrera de arranque, y de las causas clásicas de tests inestables en CI." },
     { id: "c11d5ba", q: "¿Qué hace `needs: [lint, test]` en un job de GitHub Actions?",
-      o: ["Instala lint y test como dependencias","Espera a que ambos terminen con éxito; si uno falla, el job ni se intenta","Ejecuta los tres en paralelo"], a: 1,
+      o: ["Instala las herramientas lint y test como dependencias antes de ejecutar el job","Hace que el job espere a que ambos terminen con éxito antes de arrancar","Ejecuta el job en paralelo con lint y test para acabar antes"], a: 1,
       w: "Es lo que convierte una lista de jobs en un grafo: sin `needs` correrían todos a la vez." },
   ],
 
   "despliegue-continuo": [
     { id: "c0b2118", q: "Vas a borrar una columna que la versión actual todavía usa, y el despliegue es gradual.",
-      o: ["Se despliega y se borra a la vez, es atómico","Se para el servicio durante la migración","Expand and contract: primero añades, migras, y solo cuando nadie usa la vieja, contraes"], a: 2,
+      o: ["Se despliega y se borra a la vez, porque la migración se aplica de forma atómica","Se para el servicio durante la migración para evitar inconsistencias en los datos","Se hace expand and contract y solo se borra cuando ninguna versión la usa"], a: 2,
       w: "Durante el despliegue conviven dos versiones contra la misma base. Borrar antes de tiempo rompe producción a mitad." },
     { id: "c374bb9", q: "¿Qué te da blue-green que no da un despliegue directo?",
-      o: ["Rollback instantáneo: basta con redirigir el tráfico al entorno anterior","Despliegues más rápidos","Menos consumo de recursos"], a: 0,
+      o: ["Rollback instantáneo, redirigiendo el tráfico al entorno anterior","Despliegues más rápidos, porque solo se sube al servidor lo que ha cambiado","Menor consumo de recursos, al reutilizar el mismo servidor para las dos versiones"], a: 0,
       w: "Tienes dos entornos idénticos y solo uno recibe tráfico; despliegas en el dormido y conmutas." },
   ],
 
@@ -1131,25 +1131,25 @@ window.MENTORAI_CHECKS = {
       o: ["`HAVING COUNT(*) > 5`","`WHERE COUNT(*) > 5`","`WHERE` con una subconsulta"], a: 0,
       w: "WHERE filtra filas antes de agrupar; HAVING filtra grupos ya formados. Por eso el agregado solo vale en HAVING." },
     { id: "cdbea81", q: "`COUNT(email)` te da menos que `COUNT(*)` sobre la misma tabla.",
-      o: ["Es un error del motor","Normal: `COUNT(columna)` no cuenta los NULL","Falta un DISTINCT"], a: 1,
+      o: ["Las estadísticas de la tabla están desactualizadas","`COUNT(email)` ignora las filas con email NULL","`COUNT(email)` solo cuenta los valores distintos"], a: 1,
       w: "Solo se nota cuando hay NULL, y entonces se nota mucho: es una fuente clásica de informes que no cuadran." },
   ],
 
   "sql-subqueries-ctes": [
     { id: "cf2a74c", q: "Una subconsulta referencia una columna de la consulta exterior y la query se degrada al crecer la tabla.",
-      o: ["Falta un índice en la subconsulta","Hay que convertirla en CTE y ya está resuelto","Es correlacionada: se evalúa una vez por fila de la exterior"], a: 2,
+      o: ["Falta un índice en la columna que filtra la subconsulta","Es lenta por ser subconsulta, y pasarla a CTE lo resuelve","Es correlacionada y se evalúa una vez por cada fila"], a: 2,
       w: "A veces el planificador la reescribe, pero es el sospechoso habitual cuando algo escala mal." },
     { id: "c4bfb13", q: "¿Qué ganas al pasar una subconsulta anidada a un CTE?",
-      o: ["Legibilidad: pasos con nombre que se leen de arriba abajo y se pueden reutilizar","Siempre más rendimiento","Que el motor la cachea entre ejecuciones"], a: 0,
+      o: ["Pasos con nombre que se leen de arriba abajo y se reutilizan","Más rendimiento siempre, porque el motor optimiza mejor los CTE","Un resultado que el motor cachea entre ejecuciones"], a: 0,
       w: "Ojo: en algunos motores el CTE actúa como barrera de optimización, así que legibilidad y plan no siempre van juntos." },
   ],
 
   "sql-window-functions": [
     { id: "c40a2ef", q: "Quieres el salario de cada empleado y, al lado, la media de su departamento, sin perder filas.",
-      o: ["GROUP BY departamento","`AVG(salario) OVER (PARTITION BY departamento)`","Un self-join de la tabla consigo misma"], a: 1,
+      o: ["`GROUP BY departamento` con `AVG(salario)`","`AVG(salario) OVER (PARTITION BY departamento)`","Un self-join de la tabla consigo misma"], a: 1,
       w: "Ahí está la diferencia: GROUP BY colapsa las filas, la window function conserva el detalle y añade el agregado al lado." },
     { id: "c6f89cc", q: "Necesitas los 3 mejores de cada categoría. ¿Dónde va el filtro `rn <= 3`?",
-      o: ["En el WHERE de la misma consulta","En un HAVING","Fuera, envolviendo en subconsulta o CTE: la window function se calcula después del WHERE"], a: 2,
+      o: ["En el WHERE de la misma consulta que calcula el número","En un HAVING, después de agrupar las filas por categoría","En una subconsulta o CTE que envuelva la consulta"], a: 2,
       w: "Es el orden de evaluación de SQL: cuando el WHERE actúa, el número de fila todavía no existe." },
   ],
 
@@ -1285,16 +1285,16 @@ window.MENTORAI_CHECKS = {
 
   "framework-ciclo-http": [
     { id: "cbf811b", q: "¿Qué te dice un 502 frente a un 500?",
-      o: ["Que la base de datos no responde","Que la ruta no existe","Que nginx no pudo hablar con PHP-FPM: tu código no llegó a ejecutarse"], a: 2,
+      o: ["Que PHP-FPM ejecutó tu código y este lanzó una excepción que nadie capturó","Que la base de datos no respondió a tiempo y la petición se quedó esperando","Que nginx no pudo hablar con PHP-FPM y tu código no llegó a ejecutarse"], a: 2,
       w: "El 500 significa que tu código corrió y falló. Distinguirlos te ahorra mirar en el sitio equivocado." },
     { id: "c0f04bc", q: "¿Qué aporta el front controller frente al PHP clásico de un fichero por página?",
-      o: ["Un único punto de entrada, y por eso puede haber arranque, enrutado y middlewares comunes","Mejor rendimiento","URLs más cortas"], a: 0,
+      o: ["Un único punto de entrada donde poner el arranque, el enrutado y los middlewares comunes","Un rendimiento mayor, porque PHP carga un solo fichero en cada petición","Un aislamiento mayor, porque cada página corre en su propio proceso de PHP"], a: 0,
       w: "Sin él cada script se apañaba solo, y no había dónde poner lo transversal." },
   ],
 
   "framework-extension-points": [
     { id: "c938ba5", q: "Necesitas enganchar a un evento desde una clase de una librería que no puedes modificar.",
-      o: ["Un Event Subscriber, que declara en sí mismo lo que escucha","Un Event Listener, que se configura desde fuera","Un compiler pass"], a: 1,
+      o: ["Un Event Subscriber, que declara en sí lo que escucha","Un Event Listener, que se configura fuera de la clase","Un compiler pass, que reescribe la clase al compilar"], a: 1,
       w: "El subscriber lleva su configuración dentro y se lee de un vistazo; el listener sirve justo cuando no puedes tocar la clase." },
     { id: "c129fc0", q: "¿Cuándo se ejecuta un compiler pass?",
       o: ["En cada petición, antes del controlador","Al arrancar cada worker","Una vez, al compilar el contenedor"], a: 2,
@@ -2292,82 +2292,82 @@ window.MENTORAI_CHECKS = {
 
   "config-y-entornos": [
     { id: "c3787bb", q: "¿Por qué la regla 12-factor dice que la configuración no es código?",
-      o: ["Porque cambia más a menudo","Porque varía entre entornos: el mismo build debe poder desplegarse en todos","Porque no se puede testear"], a: 1,
-      w: "La prueba es sencilla: si tuvieras que hacer público el repo mañana, ¿habría credenciales dentro? Si sí, hay configuración en el código." },
+      o: ["Porque cambia con mucha más frecuencia que el código de la aplicación","Porque varía entre entornos y el mismo build debe servir en todos","Porque no se puede cubrir con tests como el resto del código"], a: 1,
+      w: "Lo que cambia entre local, staging y producción (URLs, credenciales, flags) vive en el entorno, no en el código: así el mismo artefacto se despliega en todos sin recompilar. De paso, las credenciales no acaban en el repo." },
     { id: "c6326ad", q: "¿Qué papel tiene de verdad un fichero `.env`?",
-      o: ["Es el sitio donde va la configuración de producción","Un fichero de ejemplo que no se lee","Una comodidad para desarrollo: en producción las variables las pone la plataforma"], a: 2,
+      o: ["Es el sitio donde va la configuración real del entorno de producción","Es una plantilla de ejemplo que la aplicación nunca lee","Es una comodidad local y en producción las variables las pone la plataforma"], a: 2,
       w: "Por eso se versiona un `.env.example` con las claves y valores falsos, y nunca el `.env` real." },
   ],
 
   "composer": [
     { id: "c38b1f4", q: "¿Cuál es la diferencia entre `composer install` y `composer update`?",
-      o: ["`install` obedece al lock sin resolver nada; `update` re-resuelve y reescribe el lock","`install` es para producción y `update` para desarrollo","Son sinónimos"], a: 0,
+      o: ["`install` respeta el lock y `update` re-resuelve y reescribe el lock","`install` es para producción y `update` es la variante para desarrollo","`update` respeta el lock e `install` vuelve a resolver las versiones"], a: 0,
       w: "Por eso en CI y en producción siempre `install`: garantiza el mismo grafo de dependencias al byte." },
     { id: "c021db0", q: "¿Qué va al repositorio: `composer.lock` o `vendor/`?",
-      o: ["Los dos","El lock sí; `vendor/` va al .gitignore porque es regenerable","Solo vendor/, el lock se genera"], a: 1,
+      o: ["Los dos, para que cualquier entorno arranque sin instalar nada","El lock sí, y `vendor/` va al .gitignore porque se regenera","Solo `vendor/`, porque el lock se vuelve a generar al instalar"], a: 1,
       w: "Sin el lock, cada `install` resuelve por su cuenta y aparece el «en mi máquina funciona» de las dependencias." },
     { id: "cc23e90", q: "¿Qué permite `^1.2.3` según semver?",
-      o: ["Solo la 1.2.3 exacta","Cualquier versión 1.x o 2.x","Actualizaciones que no rompan compatibilidad: hasta la 2.0.0 sin llegar a ella"], a: 2,
+      o: ["Solo parches dentro de la 1.2, sin llegar a pasar a la 1.3","Cualquier versión superior, incluidas la 2.x y las siguientes","Cualquier versión desde la 1.2.3 hasta antes de la 2.0.0"], a: 2,
       w: "`~1.2.3` es más restrictivo: solo permite subir el parche. Y todo esto depende de que el autor respete semver." },
   ],
 
   "object-calisthenics": [
     { id: "c6c419f", q: "Una de las reglas es «no usar else». ¿Qué persigue?",
-      o: ["Reducir el anidamiento con retornos tempranos, que hace el flujo más plano y legible","Escribir menos líneas","Mejorar el rendimiento"], a: 0,
+      o: ["Reducir el anidamiento con retornos tempranos y un flujo plano","Escribir menos líneas quitando las ramas que sobran en cada método","Mejorar el rendimiento al evitar que el motor evalúe ramas"], a: 0,
       w: "Son ejercicios llevados al extremo a propósito: la idea no es cumplirlas siempre, es notar la incomodidad y aprender de ella." },
     { id: "cb36b10", q: "«Envolver los primitivos» propone cambiar un `int $edad` por un objeto `Edad`. ¿Qué se gana?",
-      o: ["Rendimiento","Que las reglas del valor (no negativa, máximo razonable) vivan en un sitio y no repartidas por todo el código","Menos memoria"], a: 1,
+      o: ["Que el código vaya más rápido al comparar objetos en lugar de enteros","Que las reglas del valor vivan en un solo sitio y no repartidas","Que ocupe menos memoria al compartirse en vez de copiarse"], a: 1,
       w: "Es la puerta de entrada a los value objects: el tipo pasa a garantizar lo que antes comprobabas a mano en cada uso." },
   ],
 
   "jerga": [
     { id: "c4a3fb0", q: "Alguien dice que un bug solo pasa en un «edge case».",
-      o: ["Que ocurre en el borde de la pantalla","Que está en el código del frontend","Que ocurre en un caso límite poco frecuente, no en el flujo habitual"], a: 2,
+      o: ["Que ocurre solo en el borde de la pantalla o en móviles","Que está en el código del frontend y no en el del backend o la API","Que ocurre en un caso límite poco frecuente, no en el habitual"], a: 2,
       w: "El caso límite es donde vive la mayor parte de los bugs de verdad: lista vacía, cero elementos, el último día del mes." },
     { id: "c406665", q: "¿Qué es la deuda técnica?",
-      o: ["El coste futuro de una decisión que hoy acelera: no es siempre mala, pero hay que saber que se contrae","El dinero que cuesta mantener el software","Los bugs pendientes de arreglar"], a: 0,
+      o: ["El coste futuro de un atajo que hoy acelera y no siempre es malo","El dinero que cuesta cada año mantener el software funcionando en producción","La lista de bugs conocidos que siguen pendientes de arreglar"], a: 0,
       w: "La metáfora funciona porque paga intereses: cuanto más tardas en devolverla, más caro sale cada cambio." },
   ],
 
   "extensiones-php": [
     { id: "c90ec83", q: "¿Qué es una extensión de PHP?",
-      o: ["Una librería instalada con Composer","Un módulo en C que se enchufa al motor y se carga al arrancar","Un fichero .php que se incluye automáticamente"], a: 1,
+      o: ["Una librería que se instala en el proyecto con Composer","Un módulo en C que se enchufa al motor al arrancar","Un fichero .php que el motor incluye automáticamente"], a: 1,
       w: "De ahí que se instalen en el sistema (o en la imagen Docker) y no con el gestor de paquetes del proyecto." },
     { id: "c37c5d8", q: "Tu código falla con «Class Redis not found» aunque instalaste el paquete de Composer.",
-      o: ["Falta el autoload","Hay que reiniciar el navegador","Probablemente falta la extensión del sistema: el cliente de Composer no la sustituye"], a: 2,
+      o: ["Falta regenerar el autoload de Composer después de instalar el paquete","Falta importar la clase con `use` en ese fichero","Falta la extensión del sistema, que Composer no sustituye"], a: 2,
       w: "Es la confusión habitual: `predis` es una implementación en PHP puro y `ext-redis` es la extensión en C. No son lo mismo." },
   ],
 
   "php-fpm": [
     { id: "cccd6f0", q: "¿Qué es un SAPI en PHP?",
-      o: ["La interfaz por la que el motor se comunica con su entorno: CLI, FPM, mod_php…","Un framework","Una extensión de rendimiento"], a: 0,
+      o: ["La interfaz entre el motor y su entorno, como CLI, FPM o mod_php","Un framework ligero que viene incluido con el propio PHP","Una extensión de rendimiento que cachea en memoria los scripts compilados"], a: 0,
       w: "Explica por qué el mismo script se comporta distinto por CLI que por web: cambia el SAPI, y con él límites y configuración." },
     { id: "c9b20ff", q: "¿Qué modo de pool de FPM conviene si la carga es estable y quieres latencia predecible?",
-      o: ["ondemand","static: procesos fijos, sin coste de arranque","dynamic siempre"], a: 1,
+      o: ["ondemand, que arranca procesos solo cuando llegan peticiones","static, con procesos fijos y sin coste de arranque","dynamic, que ajusta los procesos según la carga de cada momento"], a: 1,
       w: "`ondemand` ahorra memoria en servicios poco usados a cambio de pagar el arranque; `dynamic` es el término medio." },
   ],
 
   "memoria-php": [
     { id: "c8c0da4", q: "¿Qué limita de verdad `memory_limit`?",
-      o: ["La memoria del servidor","La de todos los procesos de FPM juntos","La que puede usar un único script en una petición"], a: 2,
+      o: ["La memoria total que puede usar el servidor","La de todos los procesos de FPM sumados","La de un único script en cada petición"], a: 2,
       w: "Por eso multiplicarlo por el número de procesos de FPM es la cuenta que hay que hacer para no quedarte sin RAM." },
     { id: "cebfda4", q: "¿Qué es copy-on-write en PHP?",
-      o: ["Que al asignar una variable no se copia el valor hasta que uno de los dos lo modifica","Un modo de escritura en disco","Una técnica de caché"], a: 0,
+      o: ["Que el valor no se copia al asignar hasta que uno de los dos lo cambia","Que cada asignación copia el valor entero en otra zona de memoria al momento","Que PHP escribe en disco las variables que no caben en memoria"], a: 0,
       w: "Es lo que hace que pasar arrays grandes por valor no sea tan caro como parece… hasta que la función los modifica." },
   ],
 
   "workers-php": [
     { id: "c6e28b1", q: "«Worker» significa dos cosas distintas en PHP. ¿Cuáles?",
-      o: ["Los hilos y los procesos","Los procesos de FPM que atienden peticiones, y los consumidores de una cola de trabajos","Los de desarrollo y los de producción"], a: 1,
+      o: ["Los hilos del motor y los procesos del sistema operativo","Los procesos de FPM que atienden peticiones y los consumidores de colas","Los procesos de desarrollo y los que se despliegan en producción"], a: 1,
       w: "Confundirlos genera conversaciones cruzadas: «subimos los workers» no significa lo mismo en cada caso." },
     { id: "c68366c", q: "Pasas de FPM a un worker long-running con Swoole o RoadRunner. ¿Qué deja de perdonarse?",
-      o: ["Los errores de sintaxis","Las consultas lentas","El estado global y los servicios con estado: ya no se limpian entre peticiones"], a: 2,
+      o: ["Los errores de sintaxis en el código que se despliega","Las consultas lentas a la base de datos en cada petición","El estado global y los servicios con estado"], a: 2,
       w: "En FPM cada petición arrancaba de cero. En un proceso que vive horas, lo que guardes puede acabar en la petición de otro usuario." },
   ],
 
   "redis-a-fondo": [
     { id: "cebb93d", q: "¿Por qué se dice que Redis es un servidor de estructuras de datos y no solo una caché?",
-      o: ["Porque ofrece listas, sets, sorted sets y hashes con operaciones atómicas sobre ellos","Porque persiste en disco","Porque admite SQL"], a: 0,
+      o: ["Porque ofrece listas, sets, sorted sets y hashes con operaciones atómicas","Porque guarda los datos en disco además de tenerlos en memoria","Porque admite consultas tipo SQL sobre las claves que guarda"], a: 0,
       w: "Un sorted set resuelve un ranking en una línea; una lista, una cola. Usarlo solo como almacén clave-valor desaprovecha la mitad." },
     { id: "c1d44e5", q: "¿Qué operación usarías para un contador de visitas concurrente?",
       o: ["GET, sumar en PHP y SET","INCR, que es atómico","Una transacción con MULTI"], a: 1,
@@ -2376,28 +2376,28 @@ window.MENTORAI_CHECKS = {
 
   "rabbitmq": [
     { id: "ce8cc22", q: "¿Quién decide a qué cola llega un mensaje en RabbitMQ?",
-      o: ["El productor, indicando la cola","El consumidor, al suscribirse","El exchange, según su tipo y los bindings"], a: 2,
+      o: ["El productor, que indica la cola de destino al publicar","El consumidor, al suscribirse a la cola que le interesa","El exchange, según su tipo y los bindings que tenga"], a: 2,
       w: "El productor publica en un exchange, no en una cola. Entenderlo es lo que permite fan-out y enrutado por clave." },
     { id: "c714d1d", q: "¿Qué hace falta para que un mensaje sobreviva a un reinicio del broker?",
-      o: ["Cola durable, mensaje persistente y confirmaciones del publicador: las tres cosas","Solo que la cola sea durable","Nada, RabbitMQ persiste siempre"], a: 0,
+      o: ["Cola durable, mensaje persistente y confirmaciones del publicador","Solo que la cola se declare como durable al crearla","Nada, porque RabbitMQ guarda siempre en disco lo que recibe"], a: 0,
       w: "Es el fallo clásico: cola durable pero mensajes no persistentes, y al reiniciar la cola sigue ahí… vacía." },
   ],
 
   "opcache": [
     { id: "c705775", q: "¿Qué cachea OPcache exactamente?",
-      o: ["El resultado de las consultas","Los opcodes compilados de tus ficheros PHP, en memoria compartida","El HTML generado"], a: 1,
+      o: ["Los resultados de las consultas a la base de datos","Los opcodes compilados de tus ficheros PHP, en memoria compartida","Las páginas HTML ya generadas para cada petición"], a: 1,
       w: "Sin él, PHP relee y recompila cada fichero en cada petición. Es la optimización de mayor impacto y menor esfuerzo que existe en PHP." },
     { id: "c2f7880", q: "Despliegas y los usuarios siguen viendo el código viejo.",
-      o: ["Falta limpiar la caché del navegador","Hay que reiniciar la base de datos","OPcache sigue sirviendo los opcodes anteriores: hay que invalidarla al desplegar"], a: 2,
+      o: ["Los navegadores guardan en caché la versión anterior de la página","La base de datos conserva la caché de consultas anterior","OPcache sigue sirviendo los opcodes viejos hasta invalidarla"], a: 2,
       w: "Con `validate_timestamps=0` en producción ganas rendimiento a cambio de tener que invalidar explícitamente en cada despliegue." },
   ],
 
   "preload": [
     { id: "cfe9803", q: "¿Qué añade preload sobre OPcache?",
-      o: ["Deja las clases cargadas y enlazadas en memoria desde el arranque, sin pasar por el autoload","Cachea también las consultas","Comprime los opcodes"], a: 0,
+      o: ["Deja las clases cargadas y enlazadas en memoria desde el arranque","Cachea también el resultado de las consultas más frecuentes","Comprime los opcodes para que ocupen menos en la memoria compartida de OPcache"], a: 0,
       w: "OPcache evita recompilar; preload evita además resolver y enlazar. Encaja bien con el código estable de un framework." },
     { id: "ccbf4b2", q: "¿Qué implica cambiar una clase precargada?",
-      o: ["Nada, se recarga sola","Hay que reiniciar PHP-FPM: lo precargado vive mientras vive el proceso","Hay que limpiar la caché del navegador"], a: 1,
+      o: ["Nada, porque OPcache detecta el cambio y la recarga sola","Hay que reiniciar PHP-FPM para recargarla","Hay que vaciar la caché de OPcache, sin reiniciar nada"], a: 1,
       w: "Por eso se precarga lo que no cambia (el framework) y no el código de tu aplicación en desarrollo." },
   ],
 
@@ -2718,16 +2718,16 @@ window.MENTORAI_CHECKS = {
   ],
   "regex": [
     { id: "cbc5d37", q: "¿Qué les falta a los validadores rotos del tipo /\\d{5}/ para un código postal?",
-      o: ["Más cuantificadores","Las anclas ^ y $: sin ellas, «abc12345xyz» valida porque el patrón casa en medio","La bandera /u"], a: 1,
+      o: ["Un cuantificador más estricto, como {5,5} en vez de {5}","Las anclas ^ y $, sin las que casa en medio del texto","La bandera /u, para tratar la entrada como Unicode"], a: 1,
       w: "Las anclas no consumen caracteres: exigen posición. Un validador sin ^...$ acepta basura alrededor de lo válido." },
     { id: "c119fb2", q: "Para extraer el contenido de <b>...</b>, ¿qué opción es la mejor y por qué?",
-      o: ["(.*) — greedy, toma lo máximo","(.*?) — lazy, toma lo mínimo","([^<]*) — la clase negada: dice exactamente qué puede haber dentro, sin ambigüedad ni backtracking"], a: 2,
-      w: "Cuanto menos ambiguo el patrón, más rápido y más correcto. El lazy funciona; la clase negada además documenta y no deja decisiones al motor." },
+      o: ["(.*) — greedy, toma todo lo que haya hasta el final","(.*?) — lazy, toma lo mínimo hasta encontrar el primer cierre","([^<]*) — la clase negada dice exactamente qué cabe dentro"], a: 2,
+      w: "`(.*)` se traga hasta el último `</b>` (\"uno</b> y <b>dos\"); `(.*?)` funciona, pero deja decidir al motor; `[^<]*` dice exactamente qué cabe dentro, sin backtracking, y documenta la intención." },
     { id: "c5908bb", q: "¿Qué es un ReDoS?",
-      o: ["Un patrón con cuantificadores ambiguos anidados + una entrada larga que casi casa: el backtracking explota y clava el worker al 100% de CPU","Un tipo de inyección SQL","Un error de sintaxis del regex"], a: 0,
+      o: ["Un patrón ambiguo anidado cuyo backtracking explota con entradas largas","Un ataque que inyecta SQL a través de un patrón de búsqueda","Un error de sintaxis del regex que tumba el proceso de PHP"], a: 0,
       w: "Defensas: patrones sin ambigüedad anidada, comprobar el false de preg_match (el airbag de PCRE) y limitar la longitud de la entrada." },
     { id: "c0b4efe", q: "¿Por qué parsear HTML con regex está condenado?",
-      o: ["Porque HTML usa caracteres especiales","Los lenguajes regulares no pueden contar anidamientos, y HTML anida sin límite: para estructura, parser (DOMDocument); el regex, dentro de valores ya extraídos","Porque es lento"], a: 1,
+      o: ["Porque HTML usa caracteres especiales que el regex no escapa","Porque HTML anida y un regex no cuenta niveles","Porque el regex es demasiado lento con documentos grandes"], a: 1,
       w: "Es el límite teórico con consecuencia práctica: el regex que «funciona» hoy muere con la primera etiqueta anidada rara." },
   ],
 
