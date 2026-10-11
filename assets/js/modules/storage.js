@@ -120,6 +120,12 @@
         );
         recordChanges(key, slugsToRemove.filter((slug) => slugs.includes(slug)), true);
       },
+      restore(previousSlugs) {
+        const slugs = read();
+
+        writeJson(key, previousSlugs);
+        recordChanges(key, previousSlugs.filter((slug) => !slugs.includes(slug)), false);
+      },
     };
   }
 
@@ -170,6 +176,13 @@
 
         writeJson(KEY, map);
         recordChanges(KEY, cleared, true);
+      },
+      all: () => read(),
+      restore(previousMap) {
+        const map = read();
+
+        writeJson(KEY, previousMap);
+        recordChanges(KEY, Object.keys(previousMap).filter((slug) => !(slug in map)), false);
       },
     };
   })();
