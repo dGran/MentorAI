@@ -58,7 +58,7 @@ window.MENTORAI_CHECKS = {
 
   "pr-grpc": [
     { id: "c5d0a23", q: "¿Por qué el streaming viene de serie en gRPC?",
-      o: ["Porque abre un WebSocket por debajo en cada llamada", "Porque Protobuf trae el streaming en su formato binario", "Porque HTTP/2 multiplexa y es otra firma en el .proto"], a: 2,
+      o: ["Porque abre un WebSocket por debajo en cada llamada", "Porque Protobuf trae el streaming en su formato binario", "Porque HTTP/2 multiplexa y basta una firma en el .proto"], a: 2,
       w: "En REST, mantener un flujo abierto exige montar SSE o WebSockets aparte. Aquí es un modo más de llamada." },
     { id: "c24ab29", q: "¿Se puede llamar a gRPC desde un navegador?",
       o: ["Solo con gRPC-Web y un proxy, y con menos streaming", "Sí, directamente con fetch, que ya habla HTTP/2", "Solo si ambos extremos hablan HTTP/3"], a: 0,
@@ -103,7 +103,7 @@ window.MENTORAI_CHECKS = {
 
   "pr-elegir-transporte": [
     { id: "c0a8201", q: "¿Qué criterio decide en la práctica y casi nunca se discute?",
-      o: ["La duda de quién opera la flota con estado", "La latencia teórica que promete cada protocolo", "La elegancia técnica de cada solución propuesta"], a: 0,
+      o: ["La pregunta de quién opera la flota con estado", "La latencia teórica que promete cada protocolo", "La elegancia técnica de cada solución propuesta"], a: 0,
       w: "Conexiones persistentes necesitan monitorización propia, despliegues que drenen y alguien que entienda por qué un servidor tiene el triple de conexiones. Sin eso, la decisión ya está tomada." },
     { id: "c3d2e64", q: "¿Es deuda técnica empezar por polling?",
       o: ["Sí, siempre hay que hacerlo bien desde el principio", "No, si va detrás de una interfaz que permita cambiarlo", "No, porque el polling escala igual que un WebSocket"], a: 1,
@@ -537,7 +537,7 @@ window.MENTORAI_CHECKS = {
     { id: "c69636e", q: "¿Cuál de estos NO se debe reintentar?",
       o: ["Un 503 Service Unavailable", "Un timeout de conexión", "Un 422 de datos inválidos"], a: 2,
       w: "Un error de cliente es determinista: la petición está mal formada y lo estará en el segundo intento. Reintentarlo multiplica la carga sin ninguna posibilidad de éxito." },
-    { id: "c3ffa94", q: "API → Pedidos → Facturación → base de datos, y cada una de las tres primeras capas reintenta 3 veces. ¿Cuántas peticiones llegan a la base de datos por cada una del usuario?",
+    { id: "c3ffa94", q: "API → Pedidos → Facturación → base de datos, y cada una de las tres primeras capas hace 3 intentos. ¿Cuántas peticiones llegan a la base de datos por cada una del usuario?",
       o: ["27", "12", "81"], a: 0,
       w: "3×3×3 contra un sistema que ya estaba saturado. La regla es reintentar en una sola capa, la más cercana al fallo, y que las de arriba propaguen el error." },
   ],
@@ -1668,7 +1668,7 @@ window.MENTORAI_CHECKS = {
       o: ["Si la operación es idempotente, puedes reintentar sin miedo","Reintentar siempre: si no llegó, no se pierde nada por repetir","Asumir que llegó: si no hubo error, lo normal es que sí"], a: 0,
       w: "Es lo que hace viables los reintentos automáticos en redes poco fiables, y por eso importa tanto en sistemas distribuidos." },
     { id: "c08a132", q: "¿Qué métodos HTTP deberían ser idempotentes?",
-      o: ["Todos: repetir una petición HTTP nunca cambia el resultado","GET, PUT y DELETE, pero POST solo con clave de idempotencia","Solo GET, porque es el único método que no modifica nada"], a: 1,
+      o: ["Todos: repetir una petición HTTP nunca cambia el resultado","GET, PUT y DELETE, y POST no salvo con clave","Solo GET, porque es el único método que no modifica nada"], a: 1,
       w: "DELETE lo es aunque el segundo intento devuelva 404: el efecto final es el mismo, el recurso no está." },
   ],
 

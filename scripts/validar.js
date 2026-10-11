@@ -243,6 +243,8 @@ function avisarSiUnPuestoDeLongitudDomina(nombre, preguntas) {
 }
 
 function avisarSiLaFormaDelataLaCorrecta(nombre, preguntas) {
+  if (preguntas.length === 0) return;
+
   const conPista = preguntas.filter((pregunta) => reglas.pistasDeForma(pregunta).length > 0);
   const porcentaje = (conPista.length / preguntas.length) * 100;
 

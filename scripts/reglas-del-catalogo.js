@@ -69,21 +69,32 @@ function puestoDominanteTrasLaMasLarga(preguntas) {
 }
 
 const SEPARADOR_DE_PALABRAS = /[\s:,;]+/;
+const CODIGO_EN_LINEA = /`[^`]*`/g;
 const ARRANQUES_DE_SI_O_NO = new Set(["sí", "si", "no"]);
+const CONECTORES_DE_CAUSA_O_FIN = new Set(["porque", "para", "por"]);
+const ARRANQUE_DE_CAUSA_O_FIN = "porque/para";
 
-const primeraPalabra = (texto) => String(texto).trim().split(SEPARADOR_DE_PALABRAS)[0].toLowerCase();
+const sinCodigo = (texto) => String(texto).replace(CODIGO_EN_LINEA, "");
+
+function arranqueDe(texto) {
+  const palabra = sinCodigo(texto).trim().split(SEPARADOR_DE_PALABRAS)[0].toLowerCase();
+
+  return CONECTORES_DE_CAUSA_O_FIN.has(palabra) ? ARRANQUE_DE_CAUSA_O_FIN : palabra;
+}
 
 function pistasDeForma(pregunta) {
-  const correcta = String(pregunta.o[pregunta.a]);
-  const distractores = pregunta.o.filter((_, indice) => indice !== pregunta.a).map(String);
-  const arranques = distractores.map(primeraPalabra);
+  const correcta = sinCodigo(pregunta.o[pregunta.a]);
+  const distractores = pregunta.o.filter((opcion, indice) => indice !== pregunta.a).map(sinCodigo);
+  const arranques = distractores.map(arranqueDe);
+  const arranqueDeLaCorrecta = arranqueDe(correcta);
+  const esDeSiONo = [...arranques, arranqueDeLaCorrecta].every((arranque) => ARRANQUES_DE_SI_O_NO.has(arranque));
   const pistas = [];
 
   if (correcta.includes(";") && !distractores.some((opcion) => opcion.includes(";"))) pistas.push("solo la correcta lleva «;»");
-  if (correcta.includes(":") && !distractores.some((opcion) => opcion.includes(":"))) pistas.push("solo la correcta lleva «:»");
-  const esDeSiONo = [...arranques, primeraPalabra(correcta)].every((arranque) => ARRANQUES_DE_SI_O_NO.has(arranque));
 
-  if (!esDeSiONo && arranques.every((arranque) => arranque === arranques[0]) && primeraPalabra(correcta) !== arranques[0]) {
+  if (correcta.includes(":") && !distractores.some((opcion) => opcion.includes(":"))) pistas.push("solo la correcta lleva «:»");
+
+  if (!esDeSiONo && arranques.every((arranque) => arranque === arranques[0]) && arranqueDeLaCorrecta !== arranques[0]) {
     pistas.push(`los distractores empiezan por «${arranques[0]}» y la correcta no`);
   }
 
