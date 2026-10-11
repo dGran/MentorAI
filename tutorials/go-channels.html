@@ -48,34 +48,57 @@
     <main>
     <section class="tutorial-hero">
       <div class="container">
-        <nav class="breadcrumb"><a href="../index.html">Inicio</a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><span>Go</span></nav>
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Go</span>
+        </nav>
         <h1 class="tutorial-hero__title">Channels: comunicación entre goroutines</h1>
         <p class="tutorial-hero__lead">El lema del equipo de Go: <em>«Do not communicate by sharing memory; instead, share memory by communicating»</em>. Los channels son la implementación de ese lema: tuberías tipadas que permiten enviar datos entre goroutines sin necesidad de locks explícitos.</p>
         <div class="tutorial-meta">
-          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>15 min</span>
-          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg>Intermedio</span>
-          <span>Go</span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Intermedio
+          </span>
         </div>
       </div>
     </section>
-    <div class="container tutorial-layout">
-      <aside class="toc">
-        <p class="toc__title">En este tutorial</p>
-        <ol class="toc__list">
-          <li><a href="#que-es">Qué es un channel</a></li>
-          <li><a href="#unbuffered">Channels sin buffer</a></li>
-          <li><a href="#buffered">Channels con buffer</a></li>
-          <li><a href="#range-close">Range y close</a></li>
-          <li><a href="#select">Select: multiplexar channels</a></li>
-          <li><a href="#patrones">Patrones habituales</a></li>
-          <li><a href="#resumen">Resumen</a></li>
-        </ol>
-      </aside>
-      <article class="prose">
-        <h2 id="que-es">Qué es un channel</h2>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#que-es">Qué es un channel</a></li>
+            <li><a href="#unbuffered">Channels sin buffer</a></li>
+            <li><a href="#buffered">Channels con buffer</a></li>
+            <li><a href="#range-close">Range y close</a></li>
+            <li><a href="#select">Select: multiplexar channels</a></li>
+            <li><a href="#patrones">Patrones habituales</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+        <h2 id="que-es">
+            Qué es un channel
+            <a href="#que-es" class="anchor" aria-hidden="true">#</a>
+          </h2>
         <p>Un channel es una tubería tipada con dos extremos: quien envía (<code>&lt;-ch</code>) y quien recibe (<code>ch &lt;-</code>). Sincroniza automáticamente el acceso: si el receptor llega antes que el emisor, espera. Si el emisor llega antes, espera. Así se evitan race conditions sin locks.</p>
 
-        <pre><code data-lang="go">// Crear un channel de strings (sin buffer)
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">// Crear un channel de strings (sin buffer)
 mensajes := make(chan string)
 
 // Enviar en una goroutine
@@ -87,11 +110,23 @@ go func() {
 msg := &lt;-mensajes   // bloquea hasta que alguien envíe
 fmt.Println(msg)    // "hola"
 </code></pre>
+          </div>
 
-        <h2 id="unbuffered">Channels sin buffer</h2>
+        <h2 id="unbuffered">
+            Channels sin buffer
+            <a href="#unbuffered" class="anchor" aria-hidden="true">#</a>
+          </h2>
         <p>El channel sin buffer es el más simple y el que garantiza sincronización más estricta: el envío bloquea hasta que hay un receptor, y el receptor bloquea hasta que hay un emisor. Son un punto de encuentro (rendezvous).</p>
 
-        <pre><code data-lang="go">func calcular(resultado chan&lt;- int) {   // chan&lt;-: solo puede enviar
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">func calcular(resultado chan&lt;- int) {   // chan&lt;-: solo puede enviar
     resultado &lt;- 42
 }
 
@@ -104,10 +139,19 @@ func main() {
     fmt.Println(valor)  // 42
 }
 </code></pre>
+          </div>
 
         <p>Los tipos direccionales (<code>chan&lt;-</code> y <code>&lt;-chan</code>) documentan la intención y el compilador los verifica:</p>
 
-        <pre><code data-lang="go">// solo puede enviar
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">// solo puede enviar
 func productor(ch chan&lt;- int) {
     ch &lt;- 1
 }
@@ -122,11 +166,23 @@ ch := make(chan int)
 go productor(ch)
 consumidor(ch)
 </code></pre>
+          </div>
 
-        <h2 id="buffered">Channels con buffer</h2>
+        <h2 id="buffered">
+            Channels con buffer
+            <a href="#buffered" class="anchor" aria-hidden="true">#</a>
+          </h2>
         <p>Un channel con buffer puede almacenar N valores sin bloquear al emisor. El emisor solo bloquea cuando el buffer está lleno; el receptor solo bloquea cuando el buffer está vacío.</p>
 
-        <pre><code data-lang="go">// buffer de 3 elementos
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">// buffer de 3 elementos
 ch := make(chan int, 3)
 
 ch &lt;- 1   // no bloquea (buffer tiene espacio)
@@ -138,13 +194,25 @@ fmt.Println(&lt;-ch)   // 1
 fmt.Println(&lt;-ch)   // 2
 fmt.Println(&lt;-ch)   // 3
 </code></pre>
+          </div>
 
         <p>Los channels con buffer son útiles para desacoplar productores de consumidores cuando tienen velocidades distintas, y en el patrón worker pool que <a href="goroutines.html">vimos en la lección anterior</a>.</p>
 
-        <h2 id="range-close">Range y close</h2>
+        <h2 id="range-close">
+            Range y close
+            <a href="#range-close" class="anchor" aria-hidden="true">#</a>
+          </h2>
         <p>Iterar un channel con <code>range</code> recibe valores hasta que el channel se cierra:</p>
 
-        <pre><code data-lang="go">func generarNumeros(ch chan&lt;- int, max int) {
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">func generarNumeros(ch chan&lt;- int, max int) {
     for i := 0; i &lt; max; i++ {
         ch &lt;- i
     }
@@ -158,6 +226,7 @@ for n := range ch {   // recibe hasta que ch se cierra
     fmt.Println(n)    // 0, 1, 2, 3, 4
 }
 </code></pre>
+          </div>
 
         <p>Reglas del <code>close</code>:</p>
         <ul>
@@ -169,7 +238,15 @@ for n := range ch {   // recibe hasta que ch se cierra
 
         <p>Para distinguir un valor real de un zero value de channel cerrado:</p>
 
-        <pre><code data-lang="go">valor, abierto := &lt;-ch
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">valor, abierto := &lt;-ch
 
 if !abierto {
     fmt.Println("channel cerrado")
@@ -178,11 +255,23 @@ if !abierto {
 
 fmt.Println("valor recibido:", valor)
 </code></pre>
+          </div>
 
-        <h2 id="select">Select: multiplexar channels</h2>
+        <h2 id="select">
+            Select: multiplexar channels
+            <a href="#select" class="anchor" aria-hidden="true">#</a>
+          </h2>
         <p><code>select</code> es como un <code>switch</code> para channels: ejecuta el primer caso que esté listo. Si varios están listos, elige uno al azar.</p>
 
-        <pre><code data-lang="go">func main() {
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">func main() {
     ch1 := make(chan string)
     ch2 := make(chan string)
 
@@ -199,22 +288,43 @@ fmt.Println("valor recibido:", valor)
     }
 }
 </code></pre>
+          </div>
 
         <p>El caso <code>default</code> en un select hace que no bloquee (non-blocking channel operations):</p>
 
-        <pre><code data-lang="go">select {
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">select {
 case msg := &lt;-ch:
     fmt.Println("recibido:", msg)
 default:
     fmt.Println("nada disponible, continúo")
 }
 </code></pre>
+          </div>
 
-        <h2 id="patrones">Patrones habituales</h2>
+        <h2 id="patrones">
+            Patrones habituales
+            <a href="#patrones" class="anchor" aria-hidden="true">#</a>
+          </h2>
 
         <p><strong>Done channel</strong>: señalar a una goroutine que debe detenerse:</p>
 
-        <pre><code data-lang="go">func trabajar(done &lt;-chan struct{}) {
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">func trabajar(done &lt;-chan struct{}) {
     for {
         select {
         case &lt;-done:
@@ -233,12 +343,21 @@ go trabajar(done)
 // Cuando quieras detener:
 close(done)   // todas las goroutines que escuchen done se enteran
 </code></pre>
+          </div>
 
         <p><code>chan struct{}</code> es idiomático para señales que no llevan datos: <code>struct{}{}</code> ocupa 0 bytes.</p>
 
         <p><strong>Fan-out</strong>: distribuir trabajo a múltiples goroutines desde un channel:</p>
 
-        <pre><code data-lang="go">trabajos := make(chan int, 100)
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">trabajos := make(chan int, 100)
 
 for i := 0; i &lt; 5; i++ {   // 5 workers leyendo del mismo channel
     go func() {
@@ -253,18 +372,48 @@ for i := 0; i &lt; 100; i++ {
 }
 close(trabajos)
 </code></pre>
+          </div>
 
-        <h2 id="resumen">Resumen</h2>
-        <ul class="keypoints">
-          <li>Un channel es una tubería tipada: <code>make(chan T)</code> sin buffer, <code>make(chan T, n)</code> con buffer de n elementos.</li>
-          <li>Sin buffer: el envío bloquea hasta que hay receptor, y viceversa. Sincronización estricta (rendezvous).</li>
-          <li>Con buffer: el envío no bloquea mientras haya espacio; el receptor no bloquea mientras haya elementos.</li>
-          <li><code>close(ch)</code> señala que no hay más valores. Solo el emisor cierra; iterar con <code>range</code> para sobre el close.</li>
-          <li><code>select</code> multiplexa operaciones sobre varios channels: ejecuta el primer caso listo.</li>
-          <li><code>chan struct{}</code> con <code>close</code> es el patrón idiomático para señales de cancelación o done.</li>
-        </ul>
+        <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+        <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un channel es una tubería tipada: <code>make(chan T)</code> sin buffer, <code>make(chan T, n)</code> con buffer de n elementos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Sin buffer: el envío bloquea hasta que hay receptor, y viceversa. Sincronización estricta (rendezvous).</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Con buffer: el envío no bloquea mientras haya espacio; el receptor no bloquea mientras haya elementos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>close(ch)</code> señala que no hay más valores. Solo el emisor cierra; iterar con <code>range</code> para sobre el close.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>select</code> multiplexa operaciones sobre varios channels: ejecuta el primer caso listo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>chan struct{}</code> con <code>close</code> es el patrón idiomático para señales de cancelación o done.</span>
+              </li>
+            </ul>
+          </div>
       </article>
+      </div>
     </div>
+
     </main>
 
     <footer class="footer">

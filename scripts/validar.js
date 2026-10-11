@@ -524,6 +524,12 @@ function validarMainDeTutoriales() {
   error(`${sinMain.length} tutoriales sin un único <main> que envuelva el contenido: ${sinMain.join(", ")}`);
 }
 
+function validarEstructuraDeTutoriales() {
+  for (const fichero of htmlDeTutoriales()) {
+    for (const problema of reglas.problemasDeEstructura(leer(fichero))) error(`${fichero}: ${problema} (plantilla actual en _PLANTILLA.html)`);
+  }
+}
+
 function validarTablasEnvueltas() {
   for (const fichero of htmlDeTutoriales()) {
     const sinEnvolver = reglas.tablasSinEnvolver(leer(fichero));
@@ -699,6 +705,7 @@ validarCabecerasDeTutoriales();
 validarDrawerSoloDinamico();
 validarTablasEnvueltas();
 validarMainDeTutoriales();
+validarEstructuraDeTutoriales();
 validarScripts();
 validarShell();
 validarListasDePaginas();

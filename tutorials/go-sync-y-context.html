@@ -48,34 +48,57 @@
     <main>
     <section class="tutorial-hero">
       <div class="container">
-        <nav class="breadcrumb"><a href="../index.html">Inicio</a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><span>Go</span></nav>
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Go</span>
+        </nav>
         <h1 class="tutorial-hero__title">sync y context: coordinación y cancelación</h1>
         <p class="tutorial-hero__lead">Cuando los channels no son la solución más limpia, el paquete <code>sync</code> ofrece primitivas clásicas: Mutex, RWMutex y Once. El paquete <code>context</code> resuelve el problema de cancelar operaciones en curso y propagar deadlines a través del call stack.</p>
         <div class="tutorial-meta">
-          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>14 min</span>
-          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01M7 20v-4"/><path d="M12 20v-8"/><path d="M17 20V8"/><path d="M22 4v16"/></svg>Intermedio</span>
-          <span>Go</span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Intermedio
+          </span>
         </div>
       </div>
     </section>
-    <div class="container tutorial-layout">
-      <aside class="toc">
-        <p class="toc__title">En este tutorial</p>
-        <ol class="toc__list">
-          <li><a href="#mutex">sync.Mutex</a></li>
-          <li><a href="#rwmutex">sync.RWMutex</a></li>
-          <li><a href="#once">sync.Once</a></li>
-          <li><a href="#context">context.Context</a></li>
-          <li><a href="#cancel">WithCancel y WithTimeout</a></li>
-          <li><a href="#propagacion">Propagación del contexto</a></li>
-          <li><a href="#resumen">Resumen</a></li>
-        </ol>
-      </aside>
-      <article class="prose">
-        <h2 id="mutex">sync.Mutex</h2>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#mutex">sync.Mutex</a></li>
+            <li><a href="#rwmutex">sync.RWMutex</a></li>
+            <li><a href="#once">sync.Once</a></li>
+            <li><a href="#context">context.Context</a></li>
+            <li><a href="#cancel">WithCancel y WithTimeout</a></li>
+            <li><a href="#propagacion">Propagación del contexto</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+        <h2 id="mutex">
+            sync.Mutex
+            <a href="#mutex" class="anchor" aria-hidden="true">#</a>
+          </h2>
         <p>Un mutex (mutual exclusion) garantiza que solo una goroutine accede a un bloque de código a la vez. El equivalente en PHP sería un lock de Redis en un sistema multi-proceso, pero aquí opera a nivel de goroutines en el mismo proceso.</p>
 
-        <pre><code data-lang="go">type Contador struct {
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">type Contador struct {
     mu    sync.Mutex
     valor int
 }
@@ -107,15 +130,30 @@ for i := 0; i &lt; 1000; i++ {
 wg.Wait()
 fmt.Println(contador.Valor())   // siempre 1000
 </code></pre>
+          </div>
 
         <div class="callout callout--tip">
-          Usa siempre <code>defer mu.Unlock()</code> inmediatamente después de <code>Lock()</code>. Así el unlock es seguro aunque la función haga un return anticipado o entre en pánico.
-        </div>
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p>Usa siempre <code>defer mu.Unlock()</code> inmediatamente después de <code>Lock()</code>. Así el unlock es seguro aunque la función haga un return anticipado o entre en pánico.</p>
+            </div>
+          </div>
 
-        <h2 id="rwmutex">sync.RWMutex</h2>
+        <h2 id="rwmutex">
+            sync.RWMutex
+            <a href="#rwmutex" class="anchor" aria-hidden="true">#</a>
+          </h2>
         <p>Cuando el acceso es mayoritariamente de lectura y la escritura es esporádica, <code>sync.RWMutex</code> permite lecturas concurrentes y escritura exclusiva:</p>
 
-        <pre><code data-lang="go">type Cache struct {
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">type Cache struct {
     mu    sync.RWMutex
     datos map[string]string
 }
@@ -135,13 +173,25 @@ func (c *Cache) Get(clave string) (string, bool) {
     return valor, existe
 }
 </code></pre>
+          </div>
 
         <p>Si tienes 100 goroutines leyendo, todas pueden hacerlo en paralelo con <code>RLock</code>. Solo cuando alguien llame a <code>Lock</code> se espera a que todas las lecturas terminen.</p>
 
-        <h2 id="once">sync.Once</h2>
+        <h2 id="once">
+            sync.Once
+            <a href="#once" class="anchor" aria-hidden="true">#</a>
+          </h2>
         <p><code>sync.Once</code> garantiza que una función se ejecuta exactamente una vez, aunque múltiples goroutines la llamen concurrentemente. Es el patrón para inicialización lazy segura:</p>
 
-        <pre><code data-lang="go">type ConexionDB struct {
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">type ConexionDB struct {
     once sync.Once
     db   *sql.DB
 }
@@ -159,34 +209,67 @@ func (c *ConexionDB) obtener() *sql.DB {
     return c.db
 }
 </code></pre>
+          </div>
 
         <p>Si mil goroutines llaman a <code>obtener()</code> simultáneamente, la función pasada a <code>Do</code> solo se ejecuta una vez. Las demás esperan y luego obtienen el mismo <code>db</code>.</p>
 
-        <h2 id="context">context.Context</h2>
+        <h2 id="context">
+            context.Context
+            <a href="#context" class="anchor" aria-hidden="true">#</a>
+          </h2>
         <p>En PHP, si el usuario cancela una petición HTTP el proceso sigue ejecutando hasta terminar. En Go, el contexto propaga la cancelación: todas las operaciones que reciben el contexto pueden detectar cuándo se cancela y detenerse.</p>
 
         <p><code>context.Context</code> es una interfaz con cuatro métodos:</p>
 
-        <pre><code data-lang="go">type Context interface {
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">type Context interface {
     Done() &lt;-chan struct{}      // se cierra cuando el contexto se cancela
     Err() error                 // nil o context.Canceled o context.DeadlineExceeded
     Deadline() (time.Time, bool) // cuándo vence, si tiene deadline
     Value(key any) any          // datos inmutables asociados al contexto
 }
 </code></pre>
+          </div>
 
         <p>La regla del contexto en Go: <strong>siempre es el primer parámetro de una función</strong>, y se llama <code>ctx</code>:</p>
 
-        <pre><code data-lang="go">func buscarUsuario(ctx context.Context, id int) (*Usuario, error) {
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">func buscarUsuario(ctx context.Context, id int) (*Usuario, error) {
     // pasar el contexto a operaciones que saben respetarlo
     return db.QueryContext(ctx, "SELECT * FROM usuarios WHERE id = $1", id)
 }
 </code></pre>
+          </div>
 
-        <h2 id="cancel">WithCancel y WithTimeout</h2>
+        <h2 id="cancel">
+            WithCancel y WithTimeout
+            <a href="#cancel" class="anchor" aria-hidden="true">#</a>
+          </h2>
         <p>Se crean contextos derivados del padre con funciones del paquete <code>context</code>:</p>
 
-        <pre><code data-lang="go">// WithCancel: cancelación manual
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">// WithCancel: cancelación manual
 ctx, cancel := context.WithCancel(context.Background())
 defer cancel()   // siempre defer cancel para liberar recursos
 
@@ -199,10 +282,19 @@ deadline := time.Now().Add(10 * time.Second)
 ctx, cancel = context.WithDeadline(context.Background(), deadline)
 defer cancel()
 </code></pre>
+          </div>
 
         <p>Ejemplo completo: petición HTTP que se cancela si tarda más de 3 segundos:</p>
 
-        <pre><code data-lang="go">func obtenerPrecio(productoID string) (float64, error) {
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">func obtenerPrecio(productoID string) (float64, error) {
     ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
     defer cancel()
 
@@ -224,11 +316,23 @@ defer cancel()
     return 0, nil
 }
 </code></pre>
+          </div>
 
-        <h2 id="propagacion">Propagación del contexto</h2>
+        <h2 id="propagacion">
+            Propagación del contexto
+            <a href="#propagacion" class="anchor" aria-hidden="true">#</a>
+          </h2>
         <p>El contexto forma un árbol: el contexto padre se propaga a los hijos. Cuando el padre se cancela, todos los hijos también se cancelan. Esto permite cancelar toda una cadena de operaciones con una sola llamada a <code>cancel()</code>.</p>
 
-        <pre><code data-lang="go">func procesarPedido(ctx context.Context, pedidoID int) error {
+        <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">go</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="go">func procesarPedido(ctx context.Context, pedidoID int) error {
     // Crear un contexto derivado con deadline más corto para esta operación
     ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
     defer cancel()
@@ -259,21 +363,51 @@ func procesarEnBucle(ctx context.Context) {
     }
 }
 </code></pre>
+          </div>
 
         <div class="callout callout--info">
-          <code>context.Background()</code> es el contexto raíz: nunca se cancela y no tiene deadline. Úsalo en <code>main</code> y en los puntos de entrada del programa. <code>context.TODO()</code> es para cuando aún no tienes el contexto correcto (marcar deuda técnica).
-        </div>
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p><code>context.Background()</code> es el contexto raíz: nunca se cancela y no tiene deadline. Úsalo en <code>main</code> y en los puntos de entrada del programa. <code>context.TODO()</code> es para cuando aún no tienes el contexto correcto (marcar deuda técnica).</p>
+            </div>
+          </div>
 
-        <h2 id="resumen">Resumen</h2>
-        <ul class="keypoints">
-          <li><code>sync.Mutex</code> protege secciones críticas con acceso exclusivo. Siempre <code>defer mu.Unlock()</code> justo después del <code>Lock()</code>.</li>
-          <li><code>sync.RWMutex</code> permite lecturas concurrentes (<code>RLock/RUnlock</code>) y escritura exclusiva (<code>Lock/Unlock</code>). Ideal para cachés de lectura intensiva.</li>
-          <li><code>sync.Once</code> ejecuta una función exactamente una vez aunque múltiples goroutines la invoquen. Patrón para inicialización lazy segura.</li>
-          <li><code>context.Context</code> propaga cancelación y deadlines por el call stack. Siempre es el primer parámetro, se llama <code>ctx</code>, y siempre se hace <code>defer cancel()</code>.</li>
-          <li><code>context.WithTimeout</code> y <code>context.WithDeadline</code> crean contextos que se cancelan automáticamente. El árbol de contextos: cancelar el padre cancela todos los hijos.</li>
-        </ul>
+        <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+        <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>sync.Mutex</code> protege secciones críticas con acceso exclusivo. Siempre <code>defer mu.Unlock()</code> justo después del <code>Lock()</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>sync.RWMutex</code> permite lecturas concurrentes (<code>RLock/RUnlock</code>) y escritura exclusiva (<code>Lock/Unlock</code>). Ideal para cachés de lectura intensiva.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>sync.Once</code> ejecuta una función exactamente una vez aunque múltiples goroutines la invoquen. Patrón para inicialización lazy segura.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>context.Context</code> propaga cancelación y deadlines por el call stack. Siempre es el primer parámetro, se llama <code>ctx</code>, y siempre se hace <code>defer cancel()</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>context.WithTimeout</code> y <code>context.WithDeadline</code> crean contextos que se cancelan automáticamente. El árbol de contextos: cancelar el padre cancela todos los hijos.</span>
+              </li>
+            </ul>
+          </div>
       </article>
+      </div>
     </div>
+
     </main>
 
     <footer class="footer">
