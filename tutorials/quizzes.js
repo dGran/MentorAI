@@ -1315,7 +1315,7 @@ window.MENTORAI_QUIZZES = {
       w: "Contra la de desarrollo, el test falla cuando alguien cambia un dato, y ensucia lo que estabas mirando. Con una base propia y controlada, el resultado depende solo del código.",
       lesson: "phpunit-integracion-bbdd" },
     { id: "q5ccc94", q: "¿Cuál es el riesgo de ejecutar tests de integración contra la BD de producción?",
-      o: ["Que los tests sean mucho más lentos por el enorme volumen de datos de producción", "Que los tests modifiquen, borren o inserten datos reales sin vuelta atrás", "Que PHPUnit no pueda conectarse a la BD de producción por restricciones de red", "Que PHPUnit deje la BD de producción en modo solo lectura al terminar"], a: 1,
+      o: ["Que los tests sean mucho más lentos por el enorme volumen de datos de producción", "Que los tests modifiquen, borren o inserten datos reales sin vuelta atrás", "Que PHPUnit no pueda conectarse a la BD de producción por restricciones de red", "Que PHPUnit no pueda usar transacciones contra una base de producción"], a: 1,
       w: "No hay deshacer. Basta un `TRUNCATE` de limpieza apuntando al sitio equivocado, y por eso la configuración de test nunca debería tener credenciales que alcancen producción.",
       lesson: "phpunit-integracion-bbdd" },
     { id: "q8443a6", q: "¿Qué estrategia garantiza que cada test de integración empieza con un estado conocido?",

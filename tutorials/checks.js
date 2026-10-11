@@ -800,7 +800,7 @@ window.MENTORAI_CHECKS = {
 
   "isp-segregacion-interfaces": [
     { id: "cb8f0e2", q: "Una interfaz `Dispositivo` obliga a la impresora a implementar `faxear()`. ¿Cuál es el problema real?",
-      o: ["Que la impresora escribe más código del que necesita","Que el nombre de la interfaz es demasiado genérico","Que acaba lanzando excepciones o vacío, lo que además rompe Liskov"], a: 2,
+      o: ["Que la impresora escribe más código del que necesita para poder imprimir","Que el nombre de la interfaz es demasiado genérico","Que acaba lanzando excepciones o sin hacer nada, y eso rompe Liskov"], a: 2,
       w: "La solución es partirla por roles y que cada dispositivo implemente solo lo que de verdad cumple." },
     { id: "ca68796", q: "¿Por qué te acopla un método de una interfaz que nunca llamas?",
       o: ["Porque si cambia su firma te toca reajustar igualmente","No te acopla, porque un método que no llamas no te afecta","Porque consume memoria en tiempo de ejecución aunque no lo llames"], a: 0,
@@ -1044,7 +1044,7 @@ window.MENTORAI_CHECKS = {
 
   "dockerfile-y-capas": [
     { id: "ce9d507", q: "Cambias una línea de código y el build reinstala todas las dependencias.",
-      o: ["Es inevitable, porque Docker no cachea la capa de dependencias","Falta añadir `--no-cache` al build para que respete la caché","El `COPY . .` va antes del `composer install`, y hay que copiar antes solo el composer.json"], a: 2,
+      o: ["Es inevitable, porque Docker no cachea la capa de dependencias","Falta añadir `--no-cache` para que Docker recalcule bien las capas","El `COPY . .` va antes del `composer install`, y hay que copiar antes solo el composer.json"], a: 2,
       w: "La caché es en cascada: si una capa cambia, todas las de abajo se invalidan. El orden del Dockerfile determina el tiempo de build." },
     { id: "c0c2fa4", q: "¿Qué invalida la caché de una capa?",
       o: ["Que esa capa cambie, y entonces también todas las siguientes","Que pase un tiempo desde el último build y la caché caduque","Que cambie cualquier capa del Dockerfile, esté antes o después de ella"], a: 0,
@@ -1195,7 +1195,7 @@ window.MENTORAI_CHECKS = {
       o: ["Strategy, que encapsula el algoritmo de la operación","Template Method, que fija los pasos de la operación","Command, que convierte la operación en un objeto"], a: 2,
       w: "Strategy responde a «cómo hacerlo»; Command a «qué hay que hacer», empaquetado." },
     { id: "c2b12cc", q: "¿Dónde reconoces Chain of Responsibility en Symfony o Laravel?",
-      o: ["En el middleware HTTP, donde cada eslabón decide si sigue","En el contenedor de servicios, que encadena las dependencias","En los eventos del kernel, que pasan de listener en listener"], a: 0,
+      o: ["En el middleware HTTP, donde cada eslabón decide si sigue","En el contenedor de servicios, que encadena las dependencias","En los eventos del kernel, que notifican a todos sus listeners"], a: 0,
       w: "Reconocerlo explica por qué el orden importa tanto, y por qué un middleware que no llama al siguiente corta la petición." },
   ],
 
@@ -1204,8 +1204,8 @@ window.MENTORAI_CHECKS = {
       o: ["Decorator, porque añade la carga diferida al servicio","Proxy, porque controla el acceso y crea la clase real al usarla","Factory, porque construye el servicio cuando hace falta"], a: 1,
       w: "El proxy cumple la misma interfaz y es barato de crear; controlar el acceso es exactamente la definición del patrón." },
     { id: "c4d8533", q: "¿Qué patrón hay detrás de los tagged services y por qué encaja con OCP?",
-      o: ["Service Locator: el consumidor pide al contenedor cada etiquetado por su nombre, uno a uno","Ninguno concreto, porque es solo una utilidad interna del contenedor para agrupar servicios","Strategy: el consumidor usa implementaciones que no conoce, y añadir una es etiquetarla"], a: 2,
-      w: "Es Strategy con registro automático: OCP implementado por el framework, y el mecanismo detrás de voters, gateways de pago y comandos." },
+      o: ["Decorator: cada servicio etiquetado envuelve al que tiene detrás y le añade su propia parte","Ninguno concreto, porque es solo una utilidad interna del contenedor para agrupar servicios","Strategy: el consumidor usa implementaciones que no conoce, y añadir una es etiquetarla"], a: 2,
+      w: "Es Strategy con registro automático: OCP implementado por el framework, y el mecanismo detrás de normalizadores, validadores y comandos." },
   ],
 
   "hexagonal": [
