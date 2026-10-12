@@ -1,6 +1,6 @@
 # Estado del proyecto
 
-Última actualización: **2026-10-11**.
+Última actualización: **2026-10-12**.
 
 Este fichero se lee al empezar cada sesión y está pensado para leerse **entero**.
 Lo cerrado vive en `archivo/`; si algo de aquí crece demasiado, se archiva.
@@ -164,17 +164,34 @@ enmiendas y el registro en `plan-tanda-2026-10-11-c.md`. Lo que cambió:
   el Deployment), `Cargo.lock` (guía de 2023), `flush()` de Doctrine,
   `readonly`, bytes y runes de Go.
 
-## Para retomar (2026-10-11)
+**Épica #34 (2026-10-12), cerrada en 4 PRs (#108-#111):** las 63 lecciones de
+Python, Go y Rust pasan a la plantilla actual (fase 0, por script y sin tocar el
+texto; arregló los botones muertos del hero en Python y Rust) y ganan entradilla,
+«Cuándo aplicarlo» y callout de errores típicos (fases 1-3). Los tres exámenes
+pasan a 18 preguntas con un 33 % de escenario. `validar.js` gana la regla
+`problemasDeEstructura` (ERROR global: índice antiguo, hero sin `.container`,
+acciones o toggle escritos a mano, `ul.keypoints`, `<pre>` sueltos, callouts sin
+cuerpo). Criterio de minutos acordado con el usuario: **≥ 60 palabras/min de
+prosa, sin código** (el p25 del catálogo). Salieron y se corrigieron ~90 errores
+de contenido (código que no compilaba, Go 1.22, `cmp.Ordered`, `Cargo.lock`,
+Pydantic v2, pytest 8.4, axum…).
 
-`main` en `9b8b382`, producción en `v54`. Ningún PR abierto.
+## Para retomar (2026-10-12)
 
-**Siguiente, decidido por el usuario («#34 tras la tanda»):** la épica #34
-(migrar Python, Go y Rust a la plantilla actual, un curso por PR) por
-`/implement-epic`. Después, #35-#38 (cursos nuevos) y #92-#100 (huecos, P3).
+`main` en `ef082b8`, producción en `v57`. Ningún PR abierto. **Pausa pedida por
+el usuario para limpiar contexto.**
 
-**Esperan al usuario:** ninguna pregunta. Para repasar a posteriori lo decidido
-con «criterio propio documentado» en #33 (regla de nivel por primera lección,
-rutas y gemelas): el refinado del issue.
+**Siguiente: épica #35** (curso «Seguridad aplicada al backend»). Las 8 lecciones
+ya están redactadas, sin integrar, en `.agents/tasks/35-seguridad-backend/`
+(gitignored): `STATE.md` tiene el siguiente paso concreto, los datos a contrastar
+en la review, y en `herramientas/` están los scripts de medición y aplicación
+(`medir-puesto.js`, `pistas-forma.js`, `aplicar.py`, `qa-34.js`, `cdp.js`…).
+Después vienen #36, #37 y #38 (decisión del usuario: «#35-#38 después, en ese
+orden»), y luego #92-#100 (huecos del catálogo, P3).
+
+**Pendiente sin issue:** 33 lecciones de otros cursos (Linux, PHPUnit, CI/CD, Git,
+clean code, SOLID, testing, jerga) sin «Cuándo aplicarlo»; y 43 lecciones con
+`h2` sin ancla.
 
 ## Decisiones que no se reabren sin motivo nuevo
 
@@ -260,6 +277,12 @@ Cada una costó una depuración; están aquí para no repetirlas.
 - **Arreglar un sesgo mecánico de las preguntas crea el siguiente.** Al igualar
   longitudes, la correcta pasó a ser la segunda más larga y luego a tener otra
   forma. Se mide el truco entero (longitud, puesto y forma), no solo el del issue.
+- **Los autores delegados escriben bien el contenido y mal los datos de versión.**
+  Cada lote de redacción destapó errores de la lección original (y alguno nuevo):
+  la review fresca contra la semántica real del lenguaje y la versión actual es la
+  que los caza. Pide a cada autor que liste lo que puso de memoria.
+- **Un script de migración de HTML comprueba que el texto visible no cambia**
+  antes de escribir. Así la fase 0 de #34 tocó 63 ficheros sin perder una palabra.
 - **`pgrep -f patrón` se encuentra a sí mismo** si el patrón aparece en la línea
   de comandos del shell que lo lanza: dio «viva» a una cola ya parada.
 - **El service worker sirve el HTML viejo en la primera visita tras subir
@@ -291,7 +314,7 @@ el resto del catálogo (SQL, OOP, Linux…) envejece a décadas, no a meses.
 | `node scripts/verificar-offline.js` | Comprueba el offline con el servidor apagado y el scroll horizontal a 320/375 px. Corre en CI |
 | `node --test 'scripts/tests/**/*.test.js'` | Tests de la lógica pura (`node:test` + `vm`, sin dependencias). Corre en CI |
 
-Al tocar `sw.js` o el shell (módulos, CSS, `quizzes.js`, `checks.js`, `manifest.js`), **subir `VERSION`** (va por `v54`). La
+Al tocar `sw.js` o el shell (módulos, CSS, `quizzes.js`, `checks.js`, `manifest.js`), **subir `VERSION`** (va por `v57`). La
 caché de contenido guardado (`academia-content`) ya no lleva versión: un
 despliegue no borra lo que el lector guardó para viajar.
 
