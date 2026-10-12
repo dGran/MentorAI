@@ -77,11 +77,13 @@
             <li><a href="#clone">Clone: copia explícita</a></li>
             <li><a href="#funciones-y-ownership">Ownership y funciones</a></li>
             <li><a href="#drop">Drop: destrucción determinista</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">En PHP nunca te preguntas quién libera la memoria de un string: el contador de referencias y el recolector lo hacen por ti, a cambio de algo de coste en runtime. Rust no tiene recolector, así que necesita saber en compilación quién es el responsable de cada valor. Esa regla, el ownership, explica la mayoría de errores que verás en tus primeras semanas con el compilador, y entenderla es lo que hace que dejen de parecer arbitrarios.</p>
           <h2 id="las-tres-reglas">
             Las tres reglas del ownership
             <a href="#las-tres-reglas" class="anchor" aria-hidden="true">#</a>
@@ -221,6 +223,17 @@ fn main() {
           <p>Clone puede ser arbitrariamente costoso. Un <code>Vec&lt;String&gt;</code> con miles de elementos clona todos los Strings y todos los datos que contienen. Rust te hace escribir <code>.clone()</code> para que seas consciente de eso. Ojo: lo que hace <code>clone()</code> lo decide cada tipo. En <code>String</code> o <code>Vec</code> es una copia profunda; en <code>Rc</code>/<code>Arc</code> solo copia el puntero e incrementa el contador de referencias: es barato, y ambos siguen apuntando al mismo dato.</p>
           <p>En PHP, <code>$s2 = $s1</code> hace una copia con copy-on-write: barata hasta que alguien modifica. En Rust, si quieres una copia, la declaras explícita con <code>.clone()</code>; si solo necesitas leer el dato, usas una referencia prestada (<a href="rust-borrowing.html">lo veremos en el siguiente tutorial</a>).</p>
 
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos al llegar de PHP</p>
+              <p><strong>Esperar que la asignación copie.</strong> En PHP, <code>$b = $a</code> deja las dos variables usables. En Rust, con un <code>String</code> o un <code>Vec</code>, <code>let b = a;</code> mueve el valor y usar <code>a</code> después no compila (<code>E0382</code>). El error señala la línea del move: ahí está la decisión que revisar.</p>
+              <p><strong>Recorrer un <code>Vec</code> y perderlo.</strong> <code>for item in pedidos</code> consume el vector: tras el bucle ya no existe. Si solo vas a leer, recorre <code>&amp;pedidos</code>.</p>
+              <p><strong>Poner <code>.clone()</code> hasta que compile.</strong> Funciona, pero oculta un diseño que pedía una referencia y paga una copia profunda en cada llamada. Antes de clonar, pregúntate si la función necesita ser dueña del dato.</p>
+              <p><strong>Suponer que tu struct es <code>Copy</code> porque sus campos lo son.</strong> Rust no lo deduce: hay que pedirlo con <code>#[derive(Clone, Copy)]</code>. Sin eso, asignarlo también lo mueve.</p>
+            </div>
+          </div>
+
           <h2 id="funciones-y-ownership">
             Ownership y funciones
             <a href="#funciones-y-ownership" class="anchor" aria-hidden="true">#</a>
@@ -290,6 +303,31 @@ fn main() {
               <p><strong>Por qué importa en servidores</strong>: una conexión de base de datos se devuelve al pool exactamente cuando el scope termina, no cuando el GC decida pasar. Esto hace que el comportamiento bajo carga sea más predecible y los recursos se reutilicen antes.</p>
             </div>
           </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El ownership no se activa o desactiva: está en todo el código. Lo que eliges en cada firma es <strong>cómo</strong> llega el valor a una función, y esa elección es el diseño.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Toma el valor (move) cuando…</h4>
+              <ul>
+                <li>La función lo guarda o lo consume: un constructor que lo mete en un struct, un hilo al que se lo envías, un método que lo transforma en otra cosa</li>
+                <li>Quien llama ya no lo va a necesitar, y así evitas una copia</li>
+                <li>El tipo es pequeño y <code>Copy</code> (ids, coordenadas, enums sin datos): pasarlo por valor es lo natural</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No lo tomes cuando…</h4>
+              <ul>
+                <li>La función solo lee: pide una referencia (<code>&amp;str</code>, <code>&amp;[T]</code>), lo verás en la siguiente lección</li>
+                <li>Te ves devolviendo el valor solo para «devolver la propiedad»: es la señal de que querías prestarlo</li>
+                <li>Haces <code>.clone()</code> para callar al compilador: clona solo cuando de verdad necesitas dos copias independientes</li>
+              </ul>
+            </div>
+          </div>
+          <p>Sobre <code>Copy</code>: derívalo en tipos de valor pequeños que nunca vayan a tener datos en el heap. Si mañana el tipo necesita un <code>String</code> y tienes que quitarle <code>Copy</code>, cada sitio que lo usaba tras asignarlo dejará de compilar.</p>
 
           <h2 id="resumen">
             Resumen

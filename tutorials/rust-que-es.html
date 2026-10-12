@@ -76,11 +76,13 @@
             <li><a href="#para-que">Para qué proyectos es ideal</a></li>
             <li><a href="#para-que-no">Para qué no encaja</a></li>
             <li><a href="#comparativa">Rust vs Go vs PHP</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">Tu API en PHP aguanta bien hasta que una pieza concreta —un parser de ficheros enormes, un worker que se come la CPU, un servicio donde manda el P99— empieza a pedir algo que PHP no da. Ahí entran Go y Rust en la conversación, y elegir mal cuesta meses. Antes de escribir una línea, conviene saber qué te da Rust exactamente y qué te cobra a cambio.</p>
           <h2 id="origen">
             El origen: memoria sin garbage collector
             <a href="#origen" class="anchor" aria-hidden="true">#</a>
@@ -136,6 +138,17 @@
             </div>
           </div>
 
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos al elegir Rust</p>
+              <p><strong>Reescribir el monolito entero.</strong> Una reescritura completa congela funcionalidades durante meses y casi nunca termina. Lo que funciona es extraer una pieza medida (un servicio, un worker, una librería) y dejar el resto en PHP.</p>
+              <p><strong>Esperar que arregle una latencia que viene de la E/S.</strong> Si casi todo el tiempo de la petición es esperar a MySQL, cambiar de lenguaje mueve poco el total. El perfil decide, no la intuición.</p>
+              <p><strong>Juzgarlo por la primera semana.</strong> Pelearse con el borrow checker al principio es lo normal: el compilador rechaza patrones que en PHP funcionan solo porque nadie los comprueba. No es señal de que el lenguaje no sirva.</p>
+              <p><strong>Confundir «seguro en memoria» con «sin bugs».</strong> Rust elimina una clase concreta de fallos (use-after-free, data races, nulos), pero no los errores de lógica, los deadlocks ni el pánico de un <code>unwrap()</code> sobre un valor ausente.</p>
+            </div>
+          </div>
+
           <h2 id="comparativa">
             Rust vs Go vs PHP
             <a href="#comparativa" class="anchor" aria-hidden="true">#</a>
@@ -164,6 +177,33 @@
             </table>
           </div>
           <p>Go y Rust no compiten directamente: Go optimiza el tiempo de los desarrolladores, Rust optimiza el tiempo de la máquina. Para un backend developer de PHP, Go es el siguiente paso natural; Rust es el paso después, cuando ya dominas Go o cuando el proyecto lo exige.</p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La pregunta útil no es «¿es Rust más rápido?» (lo es), sino «¿qué parte de mi sistema está limitada por algo que Rust arregla?». Si no puedes señalarla con una métrica, la respuesta suele ser Go o seguir en PHP.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Aplícalo cuando…</h4>
+              <ul>
+                <li>Tienes un cuello de botella <strong>medido</strong> de CPU o memoria en una pieza acotada: un parser, un proceso batch, un servicio de latencia crítica. Rust entra como componente, no como reescritura</li>
+                <li>Un fallo de memoria es caro o inaceptable: código que corre en máquinas ajenas, módulos WebAssembly, librerías que otros embeben</li>
+                <li>Quieres distribuir una herramienta de línea de comandos como un único binario, sin runtime que instalar</li>
+                <li>Las pausas del GC se ven en tus percentiles altos y ya has descartado ajustar el GC</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Y elige otra cosa cuando…</h4>
+              <ul>
+                <li>El tiempo se va esperando a la base de datos o a la red: Rust no acelera una query sin índice. Perfila antes</li>
+                <li>Es un CRUD, un backoffice o un prototipo: PHP o Go te llevan a producción mucho antes</li>
+                <li>El equipo no tiene margen para aprender: Go da binario único, concurrencia y buen rendimiento con una curva mucho más corta</li>
+                <li>Necesitas el ecosistema de un framework web maduro con todo hecho (colas, ORM, admin): ahí PHP sigue ganando</li>
+              </ul>
+            </div>
+          </div>
+
 
           <h2 id="resumen">
             Resumen

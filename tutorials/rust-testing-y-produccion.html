@@ -77,11 +77,15 @@
             <li><a href="#benchmarks">Benchmarks con Criterion</a></li>
             <li><a href="#compilacion-produccion">Compilación para producción</a></li>
             <li><a href="#docker-produccion">Docker multistage</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">
+            El compilador de Rust atrapa muchos fallos que en PHP solo descubre un test, pero no sabe si tu lógica de negocio hace lo que debe. Y cuando todo pasa, desplegar ya no es subir ficheros a un servidor con PHP-FPM: es un binario y una imagen que puede pesar menos que el <code>vendor/</code> de un proyecto Symfony.
+          </p>
           <h2 id="tests-unitarios">
             Tests unitarios
             <a href="#tests-unitarios" class="anchor" aria-hidden="true">#</a>
@@ -105,6 +109,7 @@ impl Carrito {
     }
 
     pub fn añadir(&amp;mut self, nombre: &amp;str, precio: f64) {
+        assert!(precio &gt;= 0.0, "precio negativo");
         self.items.push((nombre.to_string(), precio));
     }
 
@@ -132,7 +137,7 @@ mod tests {
         let mut carrito = Carrito::new();
         carrito.añadir("Teclado", 89.99);
         carrito.añadir("Ratón", 29.99);
-        assert_eq!(carrito.total(), 119.98);
+        assert!((carrito.total() - 119.98).abs() &lt; 1e-9);
     }
 
     #[test]
@@ -231,7 +236,7 @@ fn flujo_completo_de_compra() {
     carrito.añadir("Teclado", 89.99);
     carrito.añadir("Ratón", 29.99);
     assert!(!carrito.esta_vacio());
-    assert_eq!(carrito.total(), 119.98);
+    assert!((carrito.total() - 119.98).abs() &lt; 1e-9);
 }</code></pre>
           </div>
           <p>Para tests de integración de una API HTTP con Axum, se levanta el router directamente con <code>axum_test</code> o <code>tower::ServiceExt</code>:</p>
@@ -465,13 +470,13 @@ cargo build --release --target x86_64-unknown-linux-musl</code></pre>
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
-            <pre><code data-lang="bash">FROM rust:1.78-slim AS builder
+            <pre><code data-lang="bash">FROM rust:1.80-slim AS builder
 
 WORKDIR /app
 
 COPY Cargo.toml Cargo.lock ./
 
-RUN mkdir src &amp;&amp; echo "fn main() {}" > src/main.rs
+RUN mkdir src &amp;&amp; echo "fn main() {}" &gt; src/main.rs
 RUN cargo build --release --locked
 
 COPY src ./src
@@ -498,14 +503,14 @@ CMD ["mi-servicio"]</code></pre>
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
-            <pre><code data-lang="bash">FROM rust:1.78-slim AS builder
+            <pre><code data-lang="bash">FROM rust:1.80-slim AS builder
 
 RUN rustup target add x86_64-unknown-linux-musl
 RUN apt-get update &amp;&amp; apt-get install -y musl-tools
 
 WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
-RUN mkdir src &amp;&amp; echo "fn main() {}" > src/main.rs
+RUN mkdir src &amp;&amp; echo "fn main() {}" &gt; src/main.rs
 RUN cargo build --release --locked --target x86_64-unknown-linux-musl
 
 COPY src ./src
@@ -519,6 +524,45 @@ EXPOSE 8080
 ENTRYPOINT ["/mi-servicio"]</code></pre>
           </div>
           <p>La imagen final con scratch puede pesar menos de 10 MB para un servicio típico. La imagen equivalente en PHP con FPM raramente baja de 100 MB.</p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos</p>
+              <ul>
+                <li><strong>Olvidar que los tests corren en paralelo.</strong> <code>cargo test</code> ejecuta cada test en su propio hilo a la vez. Si comparten una base de datos, un fichero o variables de entorno, fallan de forma intermitente. Aísla los datos por test o limita con <code>-- --test-threads=1</code>.</li>
+                <li><strong>Medir rendimiento con el binario de debug.</strong> <code>cargo run</code> sin <code>--release</code> puede ir varias veces más lento: los tiempos que saques no dicen nada de producción. <code>cargo bench</code> ya compila optimizado.</li>
+                <li><strong>Usar <code>scratch</code> y llamar a HTTPS.</strong> La imagen vacía no trae certificados raíz y las conexiones TLS fallan. Copia el bundle de <code>ca-certificates</code> desde el builder o usa <code>rustls</code> con los certificados embebidos.</li>
+                <li><strong>Confiar en que <code>#[tokio::test]</code> reproduce producción.</strong> Por defecto usa un runtime de un solo thread; para probar concurrencia real usa <code>#[tokio::test(flavor = "multi_thread")]</code>.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Qué usar en cada caso…</h4>
+              <ul>
+                <li>Tests unitarios en el propio módulo para lógica pura: cálculos, validaciones, conversiones</li>
+                <li>Tests en <code>tests/</code> para la API pública del crate y los endpoints HTTP de punta a punta</li>
+                <li>Fakes a mano detrás de un trait cuando la dependencia es pequeña; <code>mockall</code> cuando el trait tiene muchos métodos</li>
+                <li>Criterion solo en el código caliente que vas a optimizar, para medir antes y después</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Qué evitar…</h4>
+              <ul>
+                <li>Testear lo que ya garantiza el sistema de tipos: que un campo exista o que una función no devuelva null</li>
+                <li>Mockear la base de datos en todo: para queries SQL, un test contra una BD real en Docker detecta mucho más</li>
+                <li>Benchmarks de todo el proyecto por si acaso: cuestan mantenerlos y nadie mira los informes</li>
+                <li>Elegir <code>scratch</code> y musl sin pensar: sin certificados ni zona horaria, y el allocator de musl rinde peor con muchas asignaciones</li>
+              </ul>
+            </div>
+          </div>
+          <p>Para la imagen, <code>debian:bookworm-slim</code> con el binario de glibc es la opción por defecto: pequeña, con <code>ca-certificates</code> y sin sorpresas. Baja a <code>scratch</code> con musl cuando el tamaño o la superficie de ataque importen de verdad y hayas comprobado que el servicio no echa nada en falta.</p>
 
           <h2 id="resumen">
             Resumen

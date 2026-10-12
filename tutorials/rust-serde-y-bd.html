@@ -77,11 +77,15 @@
             <li><a href="#queries">sqlx::query_as! y fetch</a></li>
             <li><a href="#transacciones">Transacciones</a></li>
             <li><a href="#repository">Patrón Repository en Rust</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">
+            En PHP, que un JSON traiga un campo con otro nombre o que una columna venga a <code>NULL</code> se descubre en producción, en forma de notice o de <code>TypeError</code>. Serde y sqlx desplazan esos fallos al compilador o al borde del sistema: el JSON se convierte a un struct o se rechaza, y una query que no cuadra con el esquema no llega a compilar.
+          </p>
           <h2 id="serde">
             Serde: el framework de serialización
             <a href="#serde" class="anchor" aria-hidden="true">#</a>
@@ -244,7 +248,7 @@ async fn crear_pool() -&gt; PgPool {
               </button>
             </div>
             <pre><code data-lang="rust">[dependencies]
-sqlx = { version = "0.7", features = ["postgres", "runtime-tokio-rustls", "macros"] }</code></pre>
+sqlx = { version = "0.7", features = ["postgres", "runtime-tokio", "tls-rustls", "macros"] }</code></pre>
           </div>
 
           <h2 id="queries">
@@ -262,7 +266,7 @@ sqlx = { version = "0.7", features = ["postgres", "runtime-tokio-rustls", "macro
               </button>
             </div>
             <pre><code data-lang="rust">async fn obtener_usuarios(pool: &amp;PgPool) -&gt; Result&lt;Vec&lt;Usuario&gt;, sqlx::Error&gt; {
-    sqlx::query_as::&lt;_, Usuario>("SELECT id, nombre, email, activo FROM usuarios")
+    sqlx::query_as::&lt;_, Usuario&gt;("SELECT id, nombre, email, activo FROM usuarios")
         .fetch_all(pool)
         .await
 }</code></pre>
@@ -349,6 +353,19 @@ async fn crear_usuario(pool: &amp;PgPool, nombre: &amp;str, email: &amp;str) -&g
           </div>
           <p>La transacción se revierte automáticamente si se hace drop de ella sin llamar a <code>.commit()</code>. Si alguna de las queries falla y el operador <code>?</code> hace un early return, la transacción sale de scope y se hace rollback automático. Este es el patrón RAII aplicado a transacciones de base de datos.</p>
 
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos</p>
+              <ul>
+                <li><strong>Ejecutar sobre el pool dentro de una transacción.</strong> Si pasas <code>&amp;pool</code> en lugar de <code>&amp;mut *tx</code>, esa query va por otra conexión, fuera de la transacción, y no se revierte con ella.</li>
+                <li><strong>Olvidar el <code>commit()</code>.</strong> No hay error: al salir de scope, la transacción hace rollback en silencio y los cambios desaparecen.</li>
+                <li><strong>Mapear una columna nullable a un campo sin <code>Option</code>.</strong> Con <code>query_as!</code> el compilador lo detecta; con <code>query_as</code> sin macro, falla en runtime al decodificar la primera fila con <code>NULL</code>.</li>
+                <li><strong>Romper el build en CI por <code>query_as!</code>.</strong> La macro necesita <code>DATABASE_URL</code> al compilar. Sin base de datos en CI o en Docker, genera la caché con <code>cargo sqlx prepare</code>, commitea el directorio <code>.sqlx</code> y compila con <code>SQLX_OFFLINE=true</code>.</li>
+              </ul>
+            </div>
+          </div>
+
           <h2 id="repository">
             Patrón Repository en Rust
             <a href="#repository" class="anchor" aria-hidden="true">#</a>
@@ -385,7 +402,7 @@ impl SqlxUsuarioRepository {
 #[async_trait]
 impl UsuarioRepository for SqlxUsuarioRepository {
     async fn buscar_por_id(&amp;self, id: i32) -&gt; Result&lt;Option&lt;Usuario&gt;, sqlx::Error&gt; {
-        sqlx::query_as::&lt;_, Usuario>(
+        sqlx::query_as::&lt;_, Usuario&gt;(
             "SELECT id, nombre, email, activo FROM usuarios WHERE id = $1"
         )
         .bind(id)
@@ -394,7 +411,7 @@ impl UsuarioRepository for SqlxUsuarioRepository {
     }
 
     async fn buscar_todos(&amp;self) -&gt; Result&lt;Vec&lt;Usuario&gt;, sqlx::Error&gt; {
-        sqlx::query_as::&lt;_, Usuario>("SELECT id, nombre, email, activo FROM usuarios")
+        sqlx::query_as::&lt;_, Usuario&gt;("SELECT id, nombre, email, activo FROM usuarios")
             .fetch_all(&amp;self.pool)
             .await
     }
@@ -412,13 +429,39 @@ struct AppState {
 }
 </code></pre>
           </div>
-          <p>La crate <code>async_trait</code> es necesaria porque los traits con métodos async no son directamente estables en Rust todavía. Añade el boilerplate de <code>Box&lt;dyn Future&gt;</code> automáticamente.</p>
+          <p>Desde Rust 1.75 los traits admiten <code>async fn</code> de forma nativa, pero un trait con <code>async fn</code> nativo no es dyn-compatible: no puede usarse como <code>dyn UsuarioRepository</code>. Como <code>AppState</code> guarda el repositorio como <code>Arc&lt;dyn UsuarioRepository&gt;</code>, aquí sigue haciendo falta la crate <code>async_trait</code>: reescribe cada método para que devuelva un <code>Pin&lt;Box&lt;dyn Future + Send&gt;&gt;</code>, que sí cabe en una vtable. Si el repositorio solo se usara como genérico (<code>R: UsuarioRepository</code>), bastaría el <code>async fn</code> nativo, o <code>fn ... -&gt; impl Future&lt;Output = ...&gt; + Send</code> si el futuro tiene que ser <code>Send</code> para <code>tokio::spawn</code> o axum.</p>
           <div class="callout callout--tip">
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
             <div class="callout__body">
               <p><strong>Para tests</strong>: el trait <code>UsuarioRepository</code> permite crear una implementación fake en memoria para tests unitarios, sin tocar la base de datos. Esto es el equivalente a mockear el repositorio en PHP.</p>
             </div>
           </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Úsalos así…</h4>
+              <ul>
+                <li>Structs con <code>#[derive(Deserialize)]</code> para todo JSON de forma conocida: requests, respuestas de APIs, configuración</li>
+                <li><code>serde_json::Value</code> solo para JSON de forma realmente libre, como metadatos arbitrarios o un proxy</li>
+                <li>sqlx con <code>query_as!</code> cuando escribes SQL a mano y quieres que el esquema se compruebe al compilar</li>
+                <li>Transacciones en cuanto dos escrituras deban ocurrir juntas o ninguna</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Mejor otra opción cuando…</h4>
+              <ul>
+                <li>Las queries se construyen dinámicamente (filtros combinables): las macros no sirven, usa <code>QueryBuilder</code> de sqlx</li>
+                <li>Quieres un ORM con relaciones y entidades al estilo Doctrine: <code>SeaORM</code> o <code>Diesel</code></li>
+                <li>No puedes tener una base de datos accesible al compilar y no quieres mantener la caché offline: usa las funciones sin macro</li>
+                <li>Envuelves cada query en un Repository por costumbre: si solo hay una implementación y no la vas a falsear en tests, el trait sobra</li>
+              </ul>
+            </div>
+          </div>
+          <p>El criterio: tipa todo lo que cruza una frontera (HTTP, base de datos, ficheros) en cuanto entra, y trabaja con tipos de Rust dentro. Cuanto antes falle un dato mal formado, más barato es entender por qué.</p>
 
           <h2 id="resumen">
             Resumen

@@ -77,11 +77,13 @@
             <li><a href="#compilar">cargo build, run y check</a></li>
             <li><a href="#primer-error">El primer error del compilador</a></li>
             <li><a href="#cargo-doc">cargo doc --open</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">Viniendo de PHP, tu ciclo es «guardar y recargar»; en Rust hay un paso en medio, el compilador, y al principio pasarás buena parte del tiempo leyendo lo que te dice. Esta lección te deja un proyecto real creado con Cargo y, sobre todo, te enseña a leer un error del compilador como lo que es: el revisor de código más pedante y más útil que vas a tener.</p>
           <h2 id="cargo-new">
             cargo new: crea el proyecto
             <a href="#cargo-new" class="anchor" aria-hidden="true">#</a>
@@ -140,7 +142,7 @@ edition = "2021"
           <ul>
             <li><strong>name</strong>: el nombre del crate. En binarios, es también el nombre del ejecutable generado.</li>
             <li><strong>version</strong>: sigue semver estricto.</li>
-            <li><strong>edition</strong>: la edición del lenguaje. Usa siempre <code>2021</code>. Las ediciones no rompen compatibilidad entre crates: un crate en edición 2021 puede depender de uno en edición 2018 sin problema.</li>
+            <li><strong>edition</strong>: la edición del lenguaje. Con el toolchain 1.80 del curso, <code>2021</code> es la más reciente; desde Rust 1.85 existe <code>2024</code>, que es la que pone <code>cargo new</code> con un toolchain actual. Las ediciones no rompen compatibilidad entre crates: un crate en edición 2021 puede depender de uno en edición 2018 sin problema.</li>
           </ul>
           <p>Para añadir dependencias, edita la sección <code>[dependencies]</code> o usa <code>cargo add</code>:</p>
           <div class="code-block">
@@ -214,7 +216,7 @@ edition = "2021"
             </div>
             <pre><code data-lang="bash">cargo run
 # Compiling hola-mundo v0.1.0 (/app)
-#  Finished dev [unoptimized + debuginfo] target(s) in 0.42s
+#  Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.42s
 #   Running `target/debug/hola-mundo`
 # Hello, world!</code></pre>
           </div>
@@ -287,6 +289,17 @@ edition = "2021"
             </div>
           </div>
 
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos en el primer programa</p>
+              <p><strong>Medir rendimiento sin <code>--release</code>.</strong> El binario de debug no está optimizado y lleva comprobaciones extra; compararlo con PHP o Go te da conclusiones falsas.</p>
+              <p><strong>Olvidar el <code>!</code> de <code>println</code>.</strong> <code>println("hola")</code> no compila porque es una macro, no una función. El compilador te lo dice y te sugiere añadir el <code>!</code>.</p>
+              <p><strong>Leer solo la primera línea del error.</strong> La parte útil suele estar debajo, en las líneas <code>help:</code> y <code>note:</code>, que muchas veces traen la corrección escrita. Y corrige de arriba abajo: un error temprano provoca otros en cascada.</p>
+              <p><strong>No versionar <code>Cargo.lock</code> en un binario.</strong> Es tu <code>composer.lock</code>: sin él, cada build puede resolver versiones distintas. Por eso <code>cargo new</code> solo ignora <code>/target</code>.</p>
+            </div>
+          </div>
+
           <h2 id="cargo-doc">
             cargo doc --open
             <a href="#cargo-doc" class="anchor" aria-hidden="true">#</a>
@@ -321,6 +334,27 @@ pub fn factorial(n: u64) -&gt; u64 {
     (1..=n).product()
 }</code></pre>
           </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Situación</th><th>Comando</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Estás escribiendo código y quieres saber si compila</td><td><code>cargo check</code>: no genera binario y es lo más rápido</td></tr>
+                <tr><td>Quieres probar el programa</td><td><code>cargo run</code></td></tr>
+                <tr><td>Vas a medir rendimiento o desplegar</td><td><code>cargo build --release</code>, siempre</td></tr>
+                <tr><td>El código lo van a usar otros proyectos</td><td><code>cargo new --lib</code>, con <code>src/lib.rs</code></td></tr>
+                <tr><td>Un experimento de un fichero, sin dependencias</td><td>El Rust Playground o <code>rustc fichero.rs</code>; para todo lo demás, Cargo</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Lo que <strong>no</strong> conviene: compilar en <code>--release</code> mientras desarrollas (tarda más y pierdes las comprobaciones de overflow que te avisan de bugs) ni invocar <code>rustc</code> a mano en un proyecto con dependencias: Cargo resuelve versiones, features y el orden de compilación, igual que no llamarías a <code>php</code> sin Composer en un proyecto con <code>vendor/</code>.</p>
+
 
           <h2 id="resumen">
             Resumen

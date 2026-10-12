@@ -76,11 +76,13 @@
             <li><a href="#reglas">Las reglas del borrow checker</a></li>
             <li><a href="#slices">Slices: referencias a partes</a></li>
             <li><a href="#dangling">Dangling references: imposibles en Rust</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">Con el ownership puro, cada función que solo quiere leer un dato tendría que quedárselo y devolverlo. Las referencias resuelven eso, pero con una condición que no existe en PHP: muchos pueden leer a la vez o uno solo puede escribir, nunca las dos cosas. Esa regla, comprobada al compilar, es la que elimina en Rust bugs que en otros lenguajes solo aparecen en producción, como modificar una colección mientras alguien la recorre.</p>
           <h2 id="referencias">
             &amp;T: referencias compartidas
             <a href="#referencias" class="anchor" aria-hidden="true">#</a>
@@ -100,7 +102,7 @@
 
 fn main() {
     let nombre = String::from("Rust");
-    let longitud = calcular_longitud(&amp;nombre); // prestamos &nombre
+    let longitud = calcular_longitud(&amp;nombre); // prestamos &amp;nombre
     println!("{} tiene {} caracteres", nombre, longitud); // nombre sigue siendo válido
 }</code></pre>
           </div>
@@ -267,6 +269,16 @@ fn main() {
           </div>
           <p>Usar <code>&amp;[T]</code> en lugar de <code>&amp;Vec&lt;T&gt;</code> como parámetro es más flexible: acepta arrays, Vecs y cualquier slice.</p>
 
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos</p>
+              <p><strong>Pedir <code>&amp;String</code> o <code>&amp;Vec&lt;T&gt;</code> en los parámetros.</strong> Funciona, pero obliga a quien llama a tener exactamente ese tipo. <code>&amp;str</code> y <code>&amp;[T]</code> aceptan lo mismo y más, sin coste.</p>
+              <p><strong>Leer <code>&amp;mut</code> como el <code>&amp;$x</code> de PHP.</strong> Una referencia de PHP es un alias más, y puede haber muchos modificando a la vez. Una <code>&amp;mut</code> de Rust es exclusiva: mientras existe, nadie más puede ni leer el dato.</p>
+              <p><strong>Modificar una colección mientras la recorres.</strong> <code>for x in &amp;v { v.push(…) }</code> no compila (<code>E0502</code>), y es justo el bug que Rust evita: el <code>push</code> puede mover el buffer. Recoge primero lo que quieres añadir en otro <code>Vec</code> y extiende después.</p>
+            </div>
+          </div>
+
           <h2 id="dangling">
             Dangling references: imposibles en Rust
             <a href="#dangling" class="anchor" aria-hidden="true">#</a>
@@ -295,10 +307,10 @@ fn main() {
               </button>
             </div>
             <pre><code data-lang="bash">error[E0106]: missing lifetime specifier
- --&gt; src/main.rs:1:30
+ --&gt; src/main.rs:1:29
   |
 1 | fn retornar_referencia() -&gt; &amp;String {
-  |                              ^ expected named lifetime parameter</code></pre>
+  |                             ^ expected named lifetime parameter</code></pre>
           </div>
           <p>El compilador detecta que la referencia retornada apuntaría a datos que ya no existen. La solución es retornar el <code>String</code> (mover el ownership al caller) en lugar de una referencia:</p>
           <div class="code-block">
@@ -313,6 +325,31 @@ fn main() {
     String::from("hola") // movemos el String, no retornamos una referencia
 }</code></pre>
           </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Presta el valor cuando…</h4>
+              <ul>
+                <li>La función solo lee: <code>&amp;T</code> es la opción por defecto para parámetros</li>
+                <li>La función modifica el dato de quien llama en el sitio: <code>&amp;mut T</code>, y así queda explícito en la firma</li>
+                <li>Aceptas texto o listas: <code>&amp;str</code> y <code>&amp;[T]</code>, que valen para <code>String</code>, literales, <code>Vec</code> y arrays</li>
+                <li>Devuelves una vista de algo que ya recibiste, como la primera palabra de un texto</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Elige otra cosa cuando…</h4>
+              <ul>
+                <li>La función tiene que guardar el dato más allá de la llamada: que lo reciba por valor</li>
+                <li>Quieres guardar referencias dentro de un struct de dominio: lo normal es que el struct sea dueño de sus datos; las referencias en structs piden lifetimes (siguiente lección)</li>
+                <li>Varias partes del programa necesitan modificar el mismo dato a lo largo del tiempo: replantea quién es el dueño, usa índices o, como último recurso, los smart pointers</li>
+              </ul>
+            </div>
+          </div>
+          <p>Si el borrow checker rechaza algo, casi siempre es porque dos partes del código quieren el mismo dato a la vez. Acortar el préstamo (terminar de leer antes de escribir) suele bastar; si no, el diseño pide otro reparto de responsabilidades.</p>
 
           <h2 id="resumen">
             Resumen

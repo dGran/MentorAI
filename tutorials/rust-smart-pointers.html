@@ -76,12 +76,13 @@
             <li><a href="#arc">Arc&lt;T&gt;: Rc para threads</a></li>
             <li><a href="#refcell">RefCell&lt;T&gt;: mutabilidad interior</a></li>
             <li><a href="#mutex">Mutex&lt;T&gt; y RwLock&lt;T&gt;</a></li>
-            <li><a href="#cuando-usar">Árbol de decisión</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">El ownership de Rust dice que cada valor tiene un único dueño, pero hay estructuras que no encajan: un tipo recursivo, un dato que comparten varios handlers o una caché que varios hilos quieren modificar. En PHP no lo notas porque todo objeto se comparte por referencia y el motor cuenta las referencias por ti. En Rust, ese reparto se elige a propósito con un smart pointer, y cada uno tiene un coste y una garantía distintos.</p>
           <h2 id="box">
             Box&lt;T&gt;: alojar en el heap
             <a href="#box" class="anchor" aria-hidden="true">#</a>
@@ -124,7 +125,7 @@ fn main() {
             Rc&lt;T&gt;: múltiples dueños en un thread
             <a href="#rc" class="anchor" aria-hidden="true">#</a>
           </h2>
-          <p><code>Rc&lt;T&gt;</code> (Reference Counted) permite que múltiples partes del código sean dueñas del mismo dato. Implementa conteo de referencias, similar a cómo PHP gestiona la memoria internamente para valores escalares.</p>
+          <p><code>Rc&lt;T&gt;</code> (Reference Counted) permite que múltiples partes del código sean dueñas del mismo dato. Implementa conteo de referencias, similar a cómo PHP gestiona internamente la memoria de strings, arrays y objetos.</p>
           <div class="code-block">
             <div class="code-block__head">
               <span class="code-block__lang">rust</span>
@@ -297,9 +298,9 @@ fn main() {
             </div>
           </div>
 
-          <h2 id="cuando-usar">
-            Árbol de decisión
-            <a href="#cuando-usar" class="anchor" aria-hidden="true">#</a>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
           </h2>
           <p>La pregunta "¿qué smart pointer necesito?" tiene una respuesta estructurada:</p>
           <ol>
@@ -315,6 +316,13 @@ fn main() {
               <p><strong>El caso más común en servidores web</strong>: estado de la aplicación compartido (pool de BD, config, caché) entre handlers async. La respuesta es <code>Arc&lt;T&gt;</code> si el estado es inmutable, o <code>Arc&lt;RwLock&lt;T&gt;&gt;</code> si necesita mutarse.</p>
             </div>
           </div>
+          <p>Igual de importante es saber cuándo <strong>no</strong> recurrir a ellos:</p>
+          <ul>
+            <li><strong>Como reflejo para imitar los objetos de PHP.</strong> Envolver todo en <code>Rc&lt;RefCell&lt;T&gt;&gt;</code> compila, pero cambia errores de compilación por panics en runtime. Primero intenta que haya un dueño claro y préstamos cortos.</li>
+            <li><strong>Cuando una referencia basta.</strong> Si el dato vive más que quien lo usa, <code>&amp;T</code> no cuesta nada; <code>Rc</code> o <code>Arc</code> solo compensan cuando nadie sabe quién terminará último.</li>
+            <li><strong><code>Box</code> sin motivo.</strong> Solo hace falta para tipos recursivos, trait objects o valores muy grandes que quieres mover sin copiarlos; para lo demás, el valor directo.</li>
+            <li><strong>Un <code>Mutex</code> para datos que no cambian.</strong> Si la config se carga al arrancar y no se toca, <code>Arc&lt;T&gt;</code> sin lock es más simple y más rápido.</li>
+          </ul>
 
           <h2 id="resumen">
             Resumen

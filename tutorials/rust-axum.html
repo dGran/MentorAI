@@ -78,11 +78,15 @@
             <li><a href="#state">Estado de la aplicación</a></li>
             <li><a href="#middleware">Middleware con tower</a></li>
             <li><a href="#errores-axum">Manejo de errores</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">
+            Con Symfony, que un controlador reciba el usuario, el body validado y el repositorio es cosa del contenedor y de la reflexión en runtime. Axum consigue lo mismo con el sistema de tipos: lo que el handler pide en sus parámetros es lo que el framework extrae, y si no cuadra, no compila. Menos magia y más errores en compilación, a cambio de escribir más explícito.
+          </p>
           <h2 id="que-es-axum">
             ¿Qué es Axum?
             <a href="#que-es-axum" class="anchor" aria-hidden="true">#</a>
@@ -199,7 +203,7 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }</code></pre>
           </div>
-          <p>Axum verifica en compilación que el tipo del extractor es correcto para la ruta (por ejemplo, que <code>Path&lt;u32&gt;</code> corresponde a un parámetro <code>:id</code> en la ruta). Si los tipos no coinciden, error en tiempo de compilación, no en runtime.</p>
+          <p>Axum verifica en compilación que cada parámetro del handler es un extractor válido, pero no que <code>Path&lt;u32&gt;</code> case con un parámetro <code>:id</code> de la ruta: si el segmento no se puede parsear como <code>u32</code>, el error llega en runtime como una respuesta 400 (y 500 si la ruta no declara ese parámetro).</p>
 
           <h2 id="json">
             JSON request/response
@@ -241,7 +245,7 @@ async fn crear_usuario(
     (StatusCode::CREATED, Json(usuario))
 }</code></pre>
           </div>
-          <p>El extractor <code>Json&lt;T&gt;</code> deserializa el cuerpo del request como JSON al tipo <code>T</code> (<a href="rust-serde-y-bd.html">usando Serde</a>). Si la deserialización falla, Axum retorna automáticamente un 422 con el mensaje de error.</p>
+          <p>El extractor <code>Json&lt;T&gt;</code> deserializa el cuerpo del request como JSON al tipo <code>T</code> (<a href="rust-serde-y-bd.html">usando Serde</a>). Si la deserialización falla, Axum retorna automáticamente un 422 si el JSON no encaja con <code>T</code> (400 si está mal formado y 415 si falta <code>Content-Type: application/json</code>), con el mensaje de error.</p>
           <p>Para retornar JSON, envuelve el valor en <code>Json(valor)</code>. Axum serializa el valor con Serde y añade el header <code>Content-Type: application/json</code>.</p>
 
           <h2 id="state">
@@ -319,7 +323,7 @@ async fn main() {
             <li><code>CorsLayer</code>: cabeceras CORS configurables.</li>
             <li><code>CompressionLayer</code>: compresión gzip/brotli del response.</li>
             <li><code>TimeoutLayer</code>: timeout global por request.</li>
-            <li><code>RequestIdLayer</code>: añade un ID único a cada request.</li>
+            <li><code>SetRequestIdLayer</code>: añade un ID único a cada request.</li>
           </ul>
           <p>Para middleware de autenticación propio, implementas el trait <code>tower::Layer</code> o usas <code>axum::middleware::from_fn</code>:</p>
           <div class="code-block">
@@ -330,7 +334,7 @@ async fn main() {
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
-            <pre><code data-lang="rust">use axum::{middleware, response::Response, extract::Request};
+            <pre><code data-lang="rust">use axum::{middleware, response::{IntoResponse, Response}, extract::Request};
 
 async fn autenticar(
     request: Request,
@@ -391,7 +395,7 @@ impl IntoResponse for ApiError {
     }
 }
 
-async fn handler_con_error(Path(id): Path&lt;u32&gt;) -&gt; Result&lt;Json&lt;String&gt;&gt;, ApiError&gt; {
+async fn handler_con_error(Path(id): Path&lt;u32&gt;) -&gt; Result&lt;Json&lt;String&gt;, ApiError&gt; {
     if id == 0 {
         return Err(ApiError::NoEncontrado);
     }
@@ -400,6 +404,45 @@ async fn handler_con_error(Path(id): Path&lt;u32&gt;) -&gt; Result&lt;Json&lt;St
 }</code></pre>
           </div>
           <p>Este patrón hace el manejo de errores completamente tipado: el compilador garantiza que todos los errores posibles se conviertan a una respuesta HTTP correcta. No hay una ruta de error implícita que puedas olvidar.</p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos</p>
+              <ul>
+                <li><strong>Poner el extractor del body en cualquier posición.</strong> <code>Json</code>, <code>String</code> o <code>Bytes</code> consumen el cuerpo y solo pueden ir como <strong>último</strong> parámetro. Si no, el handler deja de implementar <code>Handler</code> y el error de compilación no lo dice tan claro.</li>
+                <li><strong>Usar <code>unwrap()</code> dentro de un handler.</strong> Un panic no se convierte en un 500 como una excepción no capturada en Symfony: la conexión se corta. Devuelve tu tipo de error con <code>IntoResponse</code>, o añade <code>CatchPanicLayer</code> de <code>tower-http</code> como red de seguridad.</li>
+                <li><strong>Suponer que todo body inválido da 422.</strong> El rechazo de <code>Json</code> distingue: sin <code>Content-Type: application/json</code> responde 415, con JSON mal formado 400, y con JSON válido que no encaja en el tipo, 422.</li>
+                <li><strong>Ignorar el orden de las capas.</strong> Con <code>Router::layer</code>, la última capa añadida envuelve a las anteriores y se ejecuta primero; con <code>ServiceBuilder</code> se ejecutan de arriba abajo. Un middleware de auth puesto en el sitio equivocado puede quedar por fuera del timeout o de las trazas.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Axum encaja cuando…</h4>
+              <ul>
+                <li>Construyes una API HTTP o un microservicio donde latencia, memoria o coste por instancia importan</li>
+                <li>El resto del servicio ya vive sobre Tokio: sqlx, reqwest, colas</li>
+                <li>Quieres que el contrato de cada endpoint (path, query, body, estado) se compruebe al compilar</li>
+                <li>Necesitas middleware reutilizable del ecosistema <code>tower</code>: timeouts, trazas, CORS, compresión</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Mejor otra cosa cuando…</h4>
+              <ul>
+                <li>Es una aplicación con panel de administración, formularios y plantillas: Laravel o Symfony te dan mucho más hecho</li>
+                <li>El equipo no conoce Rust y el cuello de botella no es el rendimiento</li>
+                <li>Hablas gRPC entre servicios: <code>tonic</code> es la opción natural, sobre la misma base de Tokio</li>
+                <li>Necesitas un ORM con migraciones, eventos y admin de serie: en Rust tendrás que montarlo por piezas</li>
+              </ul>
+            </div>
+          </div>
+          <p>La alternativa más directa dentro de Rust es <code>actix-web</code>, igual de madura y con su propio modelo. Axum suele ganar por integrarse con <code>tower</code> y con el resto del ecosistema Tokio sin adaptadores. Un buen primer paso desde PHP es sacar a Axum el endpoint caliente que más CPU consume y dejar el resto donde está.</p>
 
           <h2 id="resumen">
             Resumen
@@ -417,7 +460,7 @@ async fn handler_con_error(Path(id): Path&lt;u32&gt;) -&gt; Result&lt;Json&lt;St
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Los extractores inyectan datos del request en los parámetros del handler con verificación de tipos en compilación: Path, Query, Json, State, Headers.</span>
+                <span>Los extractores inyectan datos del request en los parámetros del handler con verificación de tipos en compilación: Path, Query, Json, State, HeaderMap.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>

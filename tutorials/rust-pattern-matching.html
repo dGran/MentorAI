@@ -77,11 +77,13 @@
             <li><a href="#if-let">if let</a></li>
             <li><a href="#while-let">while let</a></li>
             <li><a href="#patrones-en-params">Patrones en let y parámetros</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">En PHP, añadir un estado nuevo a un enum es buscar a mano cada <code>switch</code> y cada <code>match</code> que lo trata, y rezar por no olvidarte ninguno. En Rust, el compilador hace esa búsqueda por ti: el <code>match</code> es exhaustivo, extrae los datos de cada variante con su tipo y no te deja compilar hasta cubrir el caso nuevo. Esta lección va de aprovechar eso en lugar de esquivarlo.</p>
           <h2 id="match">
             match exhaustivo
             <a href="#match" class="anchor" aria-hidden="true">#</a>
@@ -251,6 +253,17 @@ fn procesar(msg: Mensaje) {
 }</code></pre>
           </div>
 
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos al llegar de PHP</p>
+              <p><strong>Cerrar con <code>_ =&gt;</code> un <code>match</code> sobre un enum propio.</strong> Compila hoy, pero cuando añadas la variante <code>Devuelto</code> caerá en silencio en el comodín. Enumera las variantes, aunque varias compartan brazo con <code>|</code>.</p>
+              <p><strong>Creer que un nombre en el patrón compara con una variable.</strong> <code>match codigo { limite =&gt; … }</code> no compara con la variable <code>limite</code>: crea una nueva que encaja con todo, y el resto de brazos quedan inalcanzables (el compilador lo avisa). Para comparar, usa un guard (<code>c if c == limite</code>) o una <code>const</code>.</p>
+              <p><strong>Mover el valor sin querer.</strong> Hacer <code>match</code> sobre un <code>Option&lt;String&gt;</code> y extraer <code>Some(nombre)</code> mueve el <code>String</code> fuera, y la variable original deja de poder usarse. Si solo quieres mirar, haz <code>match &amp;opcion</code> o <code>opcion.as_ref()</code>.</p>
+              <p><strong>Poner el brazo general primero.</strong> Los brazos se prueban en orden y gana el primero que encaja: un <code>x if x &gt; 0</code> antes de <code>1</code> hace que el <code>1</code> no se ejecute nunca. Del caso más específico al más general.</p>
+            </div>
+          </div>
+
           <h2 id="if-let">
             if let
             <a href="#if-let" class="anchor" aria-hidden="true">#</a>
@@ -373,10 +386,36 @@ fn distancia_al_origen(&amp;Punto { x, y }: &amp;Punto) -&gt; f64 {
 
 fn main() {
     let punto = Punto { x: 3.0, y: 4.0 };
-    println!("Distancia: {}", distancia_al_origen(&amp;punto)); // 5.0
+    println!("Distancia: {}", distancia_al_origen(&amp;punto)); // 5
 }</code></pre>
           </div>
           <p>Desestructurar en el parámetro de función es útil cuando el caller siempre tiene la estructura entera pero la función solo necesita algunos campos.</p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Usa <code>match</code> o sus variantes cuando…</h4>
+              <ul>
+                <li>Varias variantes de un enum importan y cada una hace algo distinto: <code>match</code> completo, sin <code>_</code></li>
+                <li>Solo te interesa un caso y el resto se ignora: <code>if let</code></li>
+                <li>Necesitas el valor para seguir y, si no está, salir de la función: <code>let Some(x) = opcion else { return; };</code></li>
+                <li>Solo quieres un booleano «¿encaja este patrón?»: <code>matches!(estado, Estado::Enviado { .. })</code></li>
+                <li>Consumes algo hasta que se agota: <code>while let</code></li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Prefiere otra cosa cuando…</h4>
+              <ul>
+                <li>Es una condición booleana simple sobre números o strings: un <code>if</code> se lee mejor</li>
+                <li>Transformas un <code>Option</code> o <code>Result</code> sin ramificar lógica: <code>map</code>, <code>unwrap_or</code>, <code>ok_or</code> o <code>?</code> son más cortos</li>
+                <li>Repites el mismo <code>match</code> sobre el mismo enum en diez sitios: muévelo a un método del enum</li>
+              </ul>
+            </div>
+          </div>
+          <p>El criterio de fondo: en enums tuyos, cuantos menos <code>_</code>, mejor. Cada comodín es un sitio donde el compilador dejará de avisarte cuando el enum crezca.</p>
 
           <h2 id="resumen">
             Resumen
