@@ -274,7 +274,7 @@ var_dump(OrderStatus::INITIAL-&gt;canTransitionTo(OrderStatus::Shipped));</code>
             Lo que se guarda es el <code>value</code>, nunca el <code>name</code>. El nombre del caso es código y lo renombrarás algún día; el valor es un contrato con la base de datos y con quien consuma tu API. Por eso <code>json_encode()</code> de un backed enum emite su valor, y por eso un enum sin valor no se puede serializar a JSON.
           </p>
           <p>
-            Para la columna, un <code>VARCHAR</code> corto es la opción menos frágil. El <code>ENUM</code> nativo de MySQL obliga a un <code>ALTER TABLE</code> por cada caso nuevo; si quieres que la base de datos también rechace valores, un <code>CHECK</code> se cambia igual de fácil y es estándar.
+            Para la columna, un <code>VARCHAR</code> corto es la opción menos frágil. El <code>ENUM</code> nativo de MySQL obliga a un <code>ALTER TABLE</code> por cada caso nuevo; si quieres que la base de datos también rechace valores, un <code>CHECK</code> también pide un <code>ALTER</code>, pero es estándar y no reordena ni convierte valores (MySQL lo aplica desde la 8.0.16).
           </p>
           <div class="code-block">
             <div class="code-block__head">
@@ -312,7 +312,7 @@ protected function casts(): array
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
             <div class="callout__body">
               <p class="callout__title">Un dato desconocido en la base de datos es un bug</p>
-            <p>Ambos mapeos usan <code>from()</code>: si una fila trae <code>'refunded'</code> antes de desplegar ese caso, la carga falla con <code>ValueError</code>. Es lo correcto, y obliga a desplegar primero el código y después los datos.</p>
+            <p>Ambos mapeos usan <code>from()</code>: si una fila trae <code>'refunded'</code> antes de desplegar ese caso, la carga falla: Laravel lanza el <code>ValueError</code> y Doctrine lo envuelve en una <code>MappingException</code>. Es lo correcto, y obliga a desplegar primero el código y después los datos.</p>
             </div>
           </div>
           <h2 id="readonly">
@@ -320,7 +320,7 @@ protected function casts(): array
             <a href="#readonly" class="anchor" aria-hidden="true">#</a>
           </h2>
           <p>
-            Una propiedad <code>readonly</code> se asigna una sola vez, desde el ámbito de la clase, y después cualquier escritura lanza <code>Error</code>. Lleva siempre tipo y no admite valor por defecto. Una clase <code>readonly</code> (PHP 8.2) solo ahorra repetir la palabra en cada propiedad.
+            Una propiedad <code>readonly</code> se asigna una sola vez, desde el ámbito de la clase (o de una hija, desde PHP 8.4), y después cualquier escritura lanza <code>Error</code>. Lleva siempre tipo y no admite valor por defecto. Una clase <code>readonly</code> (PHP 8.2) solo ahorra repetir la palabra en cada propiedad.
           </p>
           <p>
             Lo que <code>readonly</code> congela es la <strong>referencia</strong>, no lo que hay detrás. Un array <code>readonly</code> no admite <code>$bag-&gt;items[] = 2</code>, pero si la propiedad guarda un objeto mutable, como un <code>DateTime</code> o un <code>ArrayObject</code>, ese objeto sigue cambiando por dentro. Solo es inmutable de verdad si todo lo que contiene lo es: <code>DateTimeImmutable</code>, otros value objects, escalares.

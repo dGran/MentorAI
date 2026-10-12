@@ -3094,7 +3094,7 @@ window.MENTORAI_CHECKS = {
       w: "Las funciones flecha capturan por valor al crearse: cada suma se hace sobre una copia y la variable exterior no cambia. Para acumular, array_sum o array_reduce." },
   ],
   "pm-phpstan": [
-    { id: "cc26a6b", q: "Tus tests pasan en verde y PHPStan marca un argument.type en la rama de los abonos. ¿Qué explica la diferencia?",
+    { id: "cc26a6b", q: "Tus tests pasan en verde y PHPStan marca un method.notFound en la rama de los abonos. ¿Qué explica la diferencia?",
       o: ["Que PHPStan ejecuta cada rama con valores inventados, y los tests solo con sus fixtures","Que PHPStan revisa todas las ramas sin ejecutarlas, y los tests solo las que recorren","Que PHPStan activa strict_types en todo el proyecto, y los tests lo dejan apagado"], a: 1,
       w: "El análisis estático deduce los tipos de cada rama sin ejecutar nada; un test solo comprueba el camino y los datos que él mismo recorre." },
     { id: "c110582", q: "Arreglas un error que estaba congelado en el baseline. ¿Qué hace PHPStan con su configuración por defecto?",
