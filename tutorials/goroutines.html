@@ -79,11 +79,13 @@
             <li><a href="#sincronizar">Esperar goroutines: WaitGroup</a></li>
             <li><a href="#race-condition">Race conditions</a></li>
             <li><a href="#patron-worker">Patrón worker pool</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">En PHP, si una petición tiene que llamar a tres APIs, las llama una detrás de otra y el usuario espera la suma de las tres. En Go puedes lanzarlas a la vez y esperar solo a la más lenta. El precio es nuevo para quien viene de PHP-FPM: ahora varias tareas comparten la misma memoria, y eso hay que aprender a gestionarlo.</p>
         <h2 id="que-es">
             Qué es una goroutine
             <a href="#que-es" class="anchor" aria-hidden="true">#</a>
@@ -158,7 +160,6 @@ go saludar("Luis")  // otra goroutine, concurrente con la anterior
               </button>
             </div>
             <pre><code data-lang="go">for i := 0; i &lt; 5; i++ {
-    i := i   // copia local: importante para capturar el valor correcto en el closure
     go func() {
         fmt.Println("goroutine", i)
     }()
@@ -166,10 +167,10 @@ go saludar("Luis")  // otra goroutine, concurrente con la anterior
 </code></pre>
           </div>
 
-        <div class="callout callout--warning">
-            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
             <div class="callout__body">
-              <p>El <code>i := i</code> es crítico. Sin él, el closure captura la variable del bucle (no su valor), y cuando la goroutine ejecuta, <code>i</code> ya puede haber cambiado. Es uno de los errores más comunes al empezar con goroutines.</p>
+              <p>Desde Go 1.22 (con <code>go 1.22</code> o superior en <code>go.mod</code>), cada vuelta del bucle tiene su propia <code>i</code>, así que cada goroutine ve el valor de su vuelta. En código anterior verás <code>i := i</code> dentro del bucle: era la forma de copiar el valor antes de que el closure lo capturase, porque todas las vueltas compartían la misma variable.</p>
             </div>
           </div>
 
@@ -212,7 +213,6 @@ func procesarLotes(ids []int) {
 
     for _, id := range ids {
         wg.Add(1)   // incrementa el contador antes de lanzar la goroutine
-        id := id    // captura local
 
         go func() {
             defer wg.Done()   // decrementa cuando la goroutine termina
@@ -329,7 +329,20 @@ for i := 0; i &lt; 1000; i++ {
 </code></pre>
           </div>
 
-        <h2 id="patron-worker">
+        <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos al empezar</p>
+              <ul>
+                <li><strong>Pensar que la memoria es «de la petición», como en PHP.</strong> En PHP-FPM cada petición arranca con su estado limpio. En Go, un mapa o una variable de paquete la comparten todas las goroutines a la vez, y escribir en ella sin <code>Mutex</code> es una race condition, aunque en local parezca funcionar.</li>
+                <li><strong>Goroutines que nunca terminan.</strong> Una goroutine bloqueada para siempre esperando un channel que nadie escribe no da error: se queda viva ocupando memoria. Multiplicada por cada petición, es una fuga lenta que acaba tumbando el proceso.</li>
+                <li><strong>Ejecutar los tests sin <code>-race</code>.</strong> Las races son intermitentes y casi nunca saltan en una prueba manual. El detector las encuentra solo si el código pasa por ellas, así que tiene que ir en CI.</li>
+                <li><strong>Un <code>panic</code> dentro de una goroutine tumba el proceso entero.</strong> El <code>recover</code> de quien la lanzó no la protege: si hace falta, el <code>recover</code> va dentro de la propia goroutine.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="patron-worker">
             Patrón worker pool
             <a href="#patron-worker" class="anchor" aria-hidden="true">#</a>
           </h2>
@@ -370,7 +383,32 @@ for i := 0; i &lt; 1000; i++ {
 </code></pre>
           </div>
 
-        <h2 id="resumen">
+        <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+<div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Lanza goroutines cuando…</h4>
+              <ul>
+                <li>Haces varias operaciones de E/S independientes (APIs, consultas, ficheros) y quieres sumar la más lenta, no todas</li>
+                <li>Procesas un lote grande cuyos elementos no dependen entre sí: ahí encaja el worker pool</li>
+                <li>Tienes trabajo de fondo que vive con el proceso: un consumidor de cola, un refresco periódico de caché</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No las necesitas cuando…</h4>
+              <ul>
+                <li>El trabajo es secuencial por naturaleza: cada paso necesita el resultado del anterior</li>
+                <li>Es un cálculo corto: crear, sincronizar y esperar cuesta más que hacerlo directamente</li>
+                <li>Solo quieres que cada petición HTTP vaya en paralelo: <code>net/http</code> ya lanza una goroutine por petición</li>
+                <li>La tarea debe sobrevivir a un reinicio o reintentarse: eso es una cola (Redis, RabbitMQ), no una goroutine suelta</li>
+              </ul>
+            </div>
+          </div>
+          <p>Regla práctica: no lances una goroutine sin saber <strong>cuándo termina y quién la espera</strong>. Si no puedes responder, usa un <code>WaitGroup</code>, un channel de resultados o un <code>context</code> que la pare. Y si el número de tareas no tiene techo, limita la concurrencia con un pool en vez de abrir una goroutine por elemento.</p>
+
+          <h2 id="resumen">
             Resumen
             <a href="#resumen" class="anchor" aria-hidden="true">#</a>
           </h2>

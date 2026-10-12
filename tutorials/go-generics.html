@@ -58,7 +58,7 @@
         <div class="tutorial-meta">
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            13 min de lectura
+            10 min de lectura
           </span>
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -78,12 +78,13 @@
             <li><a href="#restricciones">Restricciones de tipo</a></li>
             <li><a href="#tipos-genericos">Tipos genéricos</a></li>
             <li><a href="#constraints">El paquete constraints</a></li>
-            <li><a href="#cuando-usar">Cuándo usar generics</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+                    <p class="lead">Tienes la misma función escrita tres veces, para <code>int</code>, <code>float64</code> y <code>string</code>, o una sola con <code>any</code> que solo falla en ejecución. Los generics resuelven ese dilema, pero en Go se usan con mucha más mesura que en Java o TypeScript. Saber cuándo no usarlos es la mitad de la lección.</p>
         <h2 id="problema">
             El problema antes de generics
             <a href="#problema" class="anchor" aria-hidden="true">#</a>
@@ -341,11 +342,23 @@ func Min[T constraints.Ordered](a, b T) T {
 </code></pre>
           </div>
 
-        <h2 id="cuando-usar">
-            Cuándo usar generics
-            <a href="#cuando-usar" class="anchor" aria-hidden="true">#</a>
-          </h2>
+                            <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos</p>
+              <ul>
+                <li><strong>Usar <code>==</code> o <code>&lt;</code> con <code>[T any]</code>.</strong> No compila: <code>any</code> no promete esas operaciones. Pide <code>comparable</code> para <code>==</code> y <code>cmp.Ordered</code> para ordenar; desde Go 1.21 está en la stdlib y ya no hace falta <code>golang.org/x/exp/constraints</code>.</li>
+                <li><strong>Métodos con parámetros de tipo propios.</strong> <code>func (c *Cola[T]) Map[U any](...)</code> no compila: un método solo puede usar los parámetros de su tipo. Escríbelo como función libre, <code>MapCola[T, U any](c *Cola[T], ...)</code>.</li>
+                <li><strong>Generics donde basta una interfaz.</strong> Si el cuerpo solo llama a métodos, un parámetro de tipo interfaz hace lo mismo con menos ruido en la firma.</li>
+              </ul>
+            </div>
+          </div>
 
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La regla que funciona: escribe primero la versión concreta y generaliza cuando aparezca la segunda copia casi idéntica. Un parámetro de tipo que solo se instancia con un tipo es complejidad sin retorno.</p>
         <div class="table-wrap">
         <table>
           <thead><tr><th>Situación</th><th>Recomendación</th></tr></thead>
@@ -364,8 +377,11 @@ func Min[T constraints.Ordered](a, b T) T {
               <p>La guía del equipo de Go: usa generics cuando escribirías el mismo código varias veces para distintos tipos, pero no cuando las interfaces ya cubren el caso. Los generics son para la capa de infraestructura y utilidades, no para la lógica de dominio.</p>
             </div>
           </div>
+          <p>Antes de escribir tu propio helper, mira los paquetes <code>slices</code> y <code>maps</code> de la stdlib (desde Go 1.21): <code>slices.Contains</code>, <code>slices.Index</code>, <code>slices.Sort</code> o <code>slices.Max</code> ya cubren lo que la mayoría de proyectos reescribía a mano.</p>
+          <p>Y si tu función solo llama a métodos de <code>T</code>, no necesitas generics: <code>func Enviar[T Notificador](n T)</code> hace lo mismo que <code>func Enviar(n Notificador)</code> y se lee peor. Los generics ganan cuando el tipo concreto importa en la salida: un <code>[]T</code> que devuelves, o una <code>Cola[T]</code> que no obliga al llamador a hacer type assertions.</p>
 
-        <h2 id="resumen">
+
+          <h2 id="resumen">
             Resumen
             <a href="#resumen" class="anchor" aria-hidden="true">#</a>
           </h2>

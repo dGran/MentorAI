@@ -58,7 +58,7 @@
         <div class="tutorial-meta">
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            13 min de lectura
+            11 min de lectura
           </span>
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -79,11 +79,13 @@
             <li><a href="#for">El único bucle: for</a></li>
             <li><a href="#switch">switch sin fallthrough</a></li>
             <li><a href="#defer">defer: garantizar limpieza</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">La mayor parte del código Go que vas a leer son funciones que devuelven un valor y un error, bucles <code>for</code> y algún <code>defer</code>. Si llegas de PHP buscando <code>while</code>, <code>foreach</code> o <code>try/finally</code>, no los vas a encontrar: Go los cubre con menos piezas, y cada una tiene un uso claro.</p>
         <h2 id="funciones">
             Funciones
             <a href="#funciones" class="anchor" aria-hidden="true">#</a>
@@ -463,7 +465,20 @@ default:
             </div>
           </div>
 
-        <h2 id="resumen">
+        <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Con tan pocas piezas, la pregunta no es qué existe sino cuándo cada una deja el código más claro:</p>
+          <ul>
+            <li><strong>Retornos múltiples para <code>(valor, error)</code></strong>, y poco más. Si una función devuelve tres o más valores relacionados, agrúpalos en un struct: <code>nombre, edad, email, err</code> cuesta de leer y de ampliar.</li>
+            <li><strong><code>if</code> con inicializador cuando la variable solo importa para esa comprobación</strong>: <code>if err := guardar(u); err != nil</code>. Si necesitas el valor después, declárala fuera del <code>if</code>; meter su uso en un <code>else</code> crea justo el anidamiento que Go intenta evitar.</li>
+            <li><strong><code>switch</code> sin variable</strong> en lugar de una cadena de tres o más <code>else if</code>. <code>fallthrough</code>, casi nunca: si dos casos comparten código, agrúpalos con <code>case "a", "b":</code>.</li>
+            <li><strong><code>defer</code> para liberar lo que acabas de adquirir</strong>, en la línea siguiente a comprobar el error: <code>f.Close()</code>, <code>rows.Close()</code>, <code>mu.Unlock()</code>. Dentro de un bucle largo, no: los <code>defer</code> se acumulan hasta que retorna la función, no al final de cada vuelta. Extrae el cuerpo del bucle a una función.</li>
+            <li><strong>Closures para adaptar comportamiento</strong> (un middleware, el comparador de <code>slices.SortFunc</code>), no para esconder estado como si fueran objetos: para eso, un struct con métodos.</li>
+          </ul>
+
+          <h2 id="resumen">
             Resumen
             <a href="#resumen" class="anchor" aria-hidden="true">#</a>
           </h2>

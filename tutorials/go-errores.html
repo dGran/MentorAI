@@ -58,7 +58,7 @@
         <div class="tutorial-meta">
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            13 min de lectura
+            10 min de lectura
           </span>
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -79,11 +79,13 @@
             <li><a href="#errores-tipados">Errores tipados</a></li>
             <li><a href="#wrapping">Wrapping y unwrapping</a></li>
             <li><a href="#panic">Panic y recover</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+                    <p class="lead">En PHP, la excepción que nadie captura sube hasta el handler global, y descubres de dónde venía leyendo una traza. En Go el error es un valor que tienes en la mano en cada llamada, y decides ahí qué contexto añadirle y si sigue subiendo. Parece verbosidad; es la razón de que el log de un servicio Go cuente qué pasó sin abrir el código.</p>
         <h2 id="patron-error">
             El patrón (valor, error)
             <a href="#patron-error" class="anchor" aria-hidden="true">#</a>
@@ -392,7 +394,35 @@ func obtenerElemento(slice []int, i int) int {
             </div>
           </div>
 
-        <h2 id="resumen">
+                  <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Todo fallo que se puede esperar es un <code>error</code>: entrada inválida, registro que no existe, red caída, timeout de la base de datos. La decisión real está en qué forma darle para quien lo recibe.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Elige así…</h4>
+              <ul>
+                <li><strong>Centinela</strong> (<code>var ErrNoEncontrado = errors.New(...)</code>) cuando al llamador le basta saber qué pasó</li>
+                <li><strong>Error tipado</strong> cuando necesita datos para reaccionar: el recurso, el campo que falló validación</li>
+                <li><strong><code>%w</code></strong> cuando quieres que el llamador pueda inspeccionar la causa con <code>errors.Is</code> o <code>errors.As</code></li>
+                <li><strong><code>panic</code></strong> para invariantes imposibles o fallos al arrancar, como <code>regexp.MustCompile</code> con un patrón fijo</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Evita…</h4>
+              <ul>
+                <li><code>panic</code> y <code>recover</code> como un <code>try/catch</code> de negocio</li>
+                <li>Loguear el error y además devolverlo: acaba apareciendo varias veces en el log, una por capa</li>
+                <li>Comparar textos con <code>err.Error() == "..."</code>: se rompe al cambiar el mensaje</li>
+                <li><code>%w</code> sobre errores internos de una dependencia que no quieres convertir en parte de tu API: ahí, <code>%v</code></li>
+              </ul>
+            </div>
+          </div>
+          <p>Regla práctica: cada capa añade lo que sabe y la anterior no («cargando pedido 42»), y solo la capa que decide qué hacer con el error lo loguea o lo traduce a un código HTTP.</p>
+
+
+          <h2 id="resumen">
             Resumen
             <a href="#resumen" class="anchor" aria-hidden="true">#</a>
           </h2>

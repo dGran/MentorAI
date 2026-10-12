@@ -58,7 +58,7 @@
         <div class="tutorial-meta">
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            13 min de lectura
+            12 min de lectura
           </span>
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -78,12 +78,13 @@
             <li><a href="#metodos-promovidos">Métodos promovidos</a></li>
             <li><a href="#vs-php">Comparación con PHP traits</a></li>
             <li><a href="#interfaces-embedding">Embedding de interfaces</a></li>
-            <li><a href="#cuando-usar">Cuándo usar embedding</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+                    <p class="lead">Las jerarquías de herencia empiezan con dos clases limpias y acaban con una base abstracta que nadie se atreve a tocar. Go te quita <code>extends</code> para que no llegues ahí. A cambio te da el embedding, que reutiliza código sin prometer que un tipo «es» otro.</p>
         <h2 id="sin-herencia">
             Go no tiene herencia
             <a href="#sin-herencia" class="anchor" aria-hidden="true">#</a>
@@ -175,7 +176,19 @@ fmt.Println(p.Animal.Describir()) // "Rex (30.5 kg)": método original sigue acc
 </code></pre>
           </div>
 
-        <h2 id="vs-php">
+                  <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos</p>
+              <ul>
+                <li><strong>Esperar que <code>Perro</code> valga donde se pide un <code>Animal</code>.</strong> <code>func pesar(a Animal)</code> no acepta un <code>Perro</code>; tienes que pasar <code>p.Animal</code> o, mejor, aceptar una interfaz.</li>
+                <li><strong>Esperar despacho virtual.</strong> Si un método de <code>Animal</code> llama a <code>a.Describir()</code>, se ejecuta el de <code>Animal</code> aunque <code>Perro</code> lo redefina: el tipo incrustado no sabe que está dentro de otro. El patrón «método plantilla» de PHP no funciona así; pasa la parte variable como interfaz o función.</li>
+                <li><strong>Incrustar para escribir menos.</strong> Incrustar un <code>sync.Mutex</code> en un struct exportado publica <code>Lock()</code> y <code>Unlock()</code> como parte de tu API. Usa un campo con nombre no exportado.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="vs-php">
             Comparación con PHP traits
             <a href="#vs-php" class="anchor" aria-hidden="true">#</a>
           </h2>
@@ -313,11 +326,11 @@ func (s *notificadorStub) Enviar(dest, msg string) error {
 </code></pre>
           </div>
 
-        <h2 id="cuando-usar">
-            Cuándo usar embedding
-            <a href="#cuando-usar" class="anchor" aria-hidden="true">#</a>
+                  <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
           </h2>
-
+          <p>Al incrustar un tipo, todos sus métodos exportados pasan a formar parte del API del tipo externo. Esa es la pregunta que decide: ¿quieres que quien use tu struct vea esos métodos?</p>
         <div class="table-wrap">
         <table>
           <thead><tr><th>Situación</th><th>Recomendación</th></tr></thead>
@@ -336,8 +349,11 @@ func (s *notificadorStub) Enviar(dest, msg string) error {
               <p>El embedding promueve métodos pero no es herencia real. No hay <code>super</code>, no hay jerarquía de tipos, no hay subclassing. <code>Perro</code> no es un subtipo de <code>Animal</code>: son dos tipos distintos. Esto es intencional: evita los problemas de la herencia profunda.</p>
             </div>
           </div>
+          <p>Si la respuesta es no, usa un campo con nombre: <code>repo Repositorio</code> en vez de <code>Repositorio</code> incrustado. Lo usas por dentro y no filtras nada por fuera. Es la opción más habitual en servicios, y equivale a la inyección por constructor de PHP.</p>
+          <p>Si lo que buscas es que varios tipos sean intercambiables, el embedding no lo resuelve: ningún tipo pasa a ser subtipo de otro. Define una interfaz con lo que el consumidor necesita y que cada tipo la cumpla.</p>
 
-        <h2 id="resumen">
+
+          <h2 id="resumen">
             Resumen
             <a href="#resumen" class="anchor" aria-hidden="true">#</a>
           </h2>

@@ -58,7 +58,7 @@
         <div class="tutorial-meta">
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            14 min de lectura
+            11 min de lectura
           </span>
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -79,11 +79,13 @@
             <li><a href="#middleware">Middleware</a></li>
             <li><a href="#timeouts">Timeouts de servidor</a></li>
             <li><a href="#cliente">El cliente HTTP</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">En PHP, el servidor web y el lenguaje son piezas separadas: Nginx recibe, PHP-FPM ejecuta y Laravel o Symfony enrutan. En Go todo eso es tu binario, y la stdlib trae lo necesario para levantar una API seria. Entender <code>net/http</code> por dentro es lo que te deja decidir con criterio si necesitas un framework o no.</p>
         <h2 id="servidor-basico">
             Servidor básico
             <a href="#servidor-basico" class="anchor" aria-hidden="true">#</a>
@@ -354,7 +356,44 @@ cuerpo, err := io.ReadAll(resp.Body)
 </code></pre>
           </div>
 
-        <h2 id="resumen">
+        <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos al pasar de PHP a net/http</p>
+              <ul>
+                <li><strong>Guardar estado de la petición en variables globales.</strong> En PHP cada petición empieza de cero; aquí los handlers corren a la vez en el mismo proceso. Un mapa global escrito desde un handler es una race condition. Lo que es de la petición vive en variables locales o en <code>r.Context()</code>.</li>
+                <li><strong>Llamar a <code>w.Header().Set</code> después de escribir.</strong> El primer <code>Write</code> o <code>WriteHeader</code> envía las cabeceras; lo que pongas después se ignora en silencio. Orden: cabeceras, código de estado y cuerpo.</li>
+                <li><strong>No cerrar <code>resp.Body</code> en el cliente.</strong> Sin <code>defer resp.Body.Close()</code>, la conexión no vuelve al pool y bajo carga te quedas sin sockets. Ciérralo aunque el código de estado sea un error.</li>
+                <li><strong>Ignorar el error de <code>ListenAndServe</code>.</strong> Si el puerto está ocupado, devuelve el error al instante y el programa termina sin decir por qué. Compruébalo, ignorando solo <code>http.ErrServerClosed</code>, que es el apagado normal.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+<div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Basta con net/http cuando…</h4>
+              <ul>
+                <li>Haces una API REST o un servicio interno: desde Go 1.22 el <code>ServeMux</code> enruta por método y parámetros de path</li>
+                <li>Quieres pocas dependencias y saber qué pasa en cada petición</li>
+                <li>Tu middleware es lo habitual: logs, autenticación, recuperación de pánicos, CORS</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Plantéate otra pieza cuando…</h4>
+              <ul>
+                <li>Necesitas validación de entrada, binding o documentación OpenAPI generada: un router ligero como <code>chi</code> o un generador de código te ahorra repetición</li>
+                <li>El equipo ya trabaja con un framework y su ecosistema de middleware</li>
+                <li>Tienes que servir TLS con certificados automáticos o hacer balanceo: un proxy delante (Nginx, Caddy, el balanceador de tu plataforma) sigue teniendo sentido</li>
+              </ul>
+            </div>
+          </div>
+          <p>El criterio: empieza con la stdlib y añade una librería solo cuando repitas el mismo código en varios handlers. Como los routers populares de Go usan la interfaz <code>http.Handler</code>, cambiar después no obliga a reescribir los handlers. Lo que no es opcional, uses lo que uses, son los timeouts del servidor y del cliente.</p>
+
+          <h2 id="resumen">
             Resumen
             <a href="#resumen" class="anchor" aria-hidden="true">#</a>
           </h2>

@@ -86,11 +86,13 @@
             <li><a href="#cache">La caché de módulos</a></li>
             <li><a href="#air">Hot reload con Air</a></li>
             <li><a href="#comandos">Comandos del día a día</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">Instalar Go en el portátil parece lo rápido, hasta que tu máquina, la de un compañero y CI compilan con versiones distintas y un error deja de reproducirse. Con PHP ya resolviste eso metiendo el runtime en un contenedor; aquí haces lo mismo, con dos detalles propios de Go: la caché de módulos y que cada cambio exige recompilar.</p>
         <h2 id="imagen">
             La imagen oficial de Go
             <a href="#imagen" class="anchor" aria-hidden="true">#</a>
@@ -137,7 +139,7 @@ golang:1.23-alpine   # imagen ligera (25 MB vs 800 MB), sin gcc</code></pre>
 └── .air.toml             # configuración de hot reload (opcional)</code></pre>
           </div>
 
-        <p>La convención <code>cmd/</code> es donde van los puntos de entrada (<code>main.go</code>). <code>internal/</code> es código que Go no permite importar desde fuera del módulo: el compilador lo impone, no es solo una convención.</p>
+        <p>La convención <code>cmd/</code> es donde van los puntos de entrada (<code>main.go</code>). <code>internal/</code> es código que no se puede importar desde fuera del árbol que cuelga de su directorio padre (con <code>internal/</code> en la raíz, desde fuera del módulo): lo impone la herramienta <code>go</code>, no es solo una convención.</p>
 
         <h2 id="compose">
             docker compose para desarrollo
@@ -213,7 +215,19 @@ volumes:
 
         <p>Esto actualiza <code>go.mod</code> y <code>go.sum</code> en el host gracias al bind mount. Es el equivalente a <code>composer require</code>.</p>
 
-        <h2 id="air">
+        <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos al montar el entorno</p>
+              <ul>
+                <li><strong>Escuchar en <code>localhost</code> dentro del contenedor.</strong> <code>http.ListenAndServe("127.0.0.1:8080", …)</code> solo acepta conexiones del propio contenedor y el puerto publicado no responde. Escucha en <code>":8080"</code> (todas las interfaces).</li>
+                <li><strong>Cachear los módulos pero no la compilación.</strong> <code>/go/pkg/mod</code> guarda el código descargado; los objetos compilados van a <code>/root/.cache/go-build</code> (<code>go env GOCACHE</code>). Sin un volumen ahí, cada contenedor nuevo recompila todo desde cero.</li>
+                <li><strong>Acabar con <code>go.mod</code> y ficheros generados propiedad de root.</strong> El contenedor corre como root y lo que escribe en el bind mount queda así en el host, y luego tu editor no puede guardarlo. En Linux, añade <code>user: "1000:1000"</code> (tu UID y GID) al servicio, con <code>GOCACHE</code> y el volumen de módulos en rutas que ese usuario pueda escribir.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="air">
             Hot reload con Air
             <a href="#air" class="anchor" aria-hidden="true">#</a>
           </h2>
@@ -272,15 +286,14 @@ volumes:
 
         <div class="code-block">
             <div class="code-block__head">
-              <span class="code-block__lang">bash</span>
+              <span class="code-block__lang">ini</span>
               <button class="copy-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
-            <pre><code data-lang="bash"># .air.toml
+            <pre><code data-lang="ini"># .air.toml
 root = "."
-main = "./cmd/server/"
 
 [build]
   cmd = "go build -o /tmp/server ./cmd/server/"
@@ -330,7 +343,20 @@ docker compose run --rm app go build -o /tmp/servidor ./cmd/server/</code></pre>
             </div>
           </div>
 
-        <h2 id="resumen">
+        <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Este montaje (imagen oficial, bind mount del código y volumen para la caché) es tu entorno por defecto: la versión de Go la fija el compose, no la máquina de cada uno.</p>
+          <ul>
+            <li><strong>Úsalo siempre que el proyecto se comparta</strong> o tenga servicios alrededor (base de datos, Redis, una cola): el compose los levanta juntos y CI puede usar la misma imagen.</li>
+            <li><strong>Air solo compensa con un servidor</strong> que quieres ver reiniciado al guardar. Para un CLI o una librería sobra: <code>go run</code> o <code>go test ./...</code> tardan segundos y no añaden otra pieza que configurar.</li>
+            <li><strong>Imagen completa para desarrollar, multi-stage para desplegar.</strong> Nunca lleves a producción la imagen <code>golang</code> con el código montado: pesa cientos de megas y arrastra el compilador, cuando lo único que necesitas es el binario (<a href="go-a-produccion.html">go-a-produccion</a>).</li>
+            <li><strong>Alpine en desarrollo solo si ninguna dependencia usa CGO.</strong> Si alguna lo necesita (un driver de SQLite, por ejemplo), la imagen basada en Debian te ahorra pelearte con <code>gcc</code> y musl.</li>
+          </ul>
+          <p>Lo que no resuelve este montaje es el editor: gopls necesita un Go con el que analizar el código. Para eso, en la siguiente lección, instalas la misma versión en el host o conectas el editor al contenedor; ejecutar y testear sigue ocurriendo aquí dentro.</p>
+
+          <h2 id="resumen">
             Resumen
             <a href="#resumen" class="anchor" aria-hidden="true">#</a>
           </h2>
