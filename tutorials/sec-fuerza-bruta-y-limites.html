@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fuerza bruta y límites en login y reset — MentorAI</title>
+    <meta name="description" content="Credential stuffing frente a fuerza bruta, límites por IP y por cuenta en Symfony y Laravel, bloqueo progresivo, enumeración de usuarios, tokens de reset y MFA." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Seguridad</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Fuerza bruta y límites en login y reset</h1>
+        <p class="tutorial-hero__lead">Tu formulario de login acepta un millón de intentos por hora sin quejarse, y el de reset le dice a cualquiera qué emails tienes registrados. Limitar bien no es poner un contador: es saber qué clave cuentas, qué haces al pasarte y qué respondes mientras tanto.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            26 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#dos-ataques">Fuerza bruta y credential stuffing</a></li>
+            <li><a href="#limites">Limitar por IP y por cuenta</a></li>
+            <li><a href="#bloqueo">Bloqueo progresivo</a></li>
+            <li><a href="#enumeracion">Enumeración de usuarios</a></li>
+            <li><a href="#reset">Tokens de reset</a></li>
+            <li><a href="#mfa">MFA</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#testear">Cómo testearlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Un endpoint de login es un oráculo: le das un email y una contraseña y te dice si
+            aciertas. Sin límites, cualquiera puede preguntarle millones de veces. Lo que separa
+            una cuenta robada de un intento fallido casi nunca es el algoritmo de hash: es cuántas
+            veces dejas preguntar y cuánta información regalas en cada respuesta.
+          </p>
+
+          <h2 id="dos-ataques">
+            Fuerza bruta frente a credential stuffing
+            <a href="#dos-ataques" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Se meten en el mismo saco, pero tienen formas opuestas, y la defensa que frena a uno
+            no ve al otro. La <strong>fuerza bruta</strong> prueba muchas contraseñas contra
+            pocas cuentas. El <strong>credential stuffing</strong> prueba pares email-contraseña
+            filtrados en otros servicios: un intento por cuenta, contra miles de cuentas, porque
+            la gente repite contraseñas.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Fuerza bruta</h4>
+              <ul>
+                <li>Muchos intentos sobre la misma cuenta</li>
+                <li>Contraseñas de diccionario o variaciones</li>
+                <li>Se ve en el contador de fallos de esa cuenta</li>
+                <li>La frena un límite por cuenta</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Credential stuffing</h4>
+              <ul>
+                <li>Uno o dos intentos por cuenta</li>
+                <li>Credenciales reales de filtraciones ajenas</li>
+                <li>Repartido entre miles de IP de proxies residenciales</li>
+                <li>No lo frena ni el límite por IP ni el de cuenta</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            El OWASP API Security Top 10 de 2023 recoge las dos en <em>API2: Broken
+            Authentication</em>, y la falta de límites en general en <em>API4: Unrestricted
+            Resource Consumption</em>. La consecuencia: el límite de peticiones es necesario pero
+            no suficiente; contra el stuffing hacen falta MFA y rechazar contraseñas filtradas.
+          </p>
+
+          <h2 id="limites">
+            Limitar por IP y por cuenta
+            <a href="#limites" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un límite es una pregunta: <em>¿cuántos intentos permito a esta clave en esta
+            ventana?</em> Toda la decisión está en la clave. Contar solo por IP castiga a una
+            oficina entera detrás del mismo NAT y no ve al atacante que rota direcciones. Contar
+            solo por cuenta deja a cualquiera bloquear la cuenta de otro. Lo sensato es combinar
+            dos límites:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Clave</th><th>Qué frena</th><th>Qué se le escapa</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>email + IP</code></td><td>Fuerza bruta desde un origen contra una cuenta</td><td>El mismo ataque repartido entre muchas IP</td></tr>
+                <tr><td><code>IP</code>, más holgado</td><td>Una IP que barre muchas cuentas</td><td>Botnets: cada IP hace muy pocos intentos</td></tr>
+                <tr><td><code>email</code> sola</td><td>Fuerza bruta distribuida contra una cuenta</td><td>Abre la puerta a bloquear cuentas ajenas</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            Symfony trae los dos primeros de serie. Con el componente
+            <code>symfony/rate-limiter</code> instalado, <code>login_throttling</code> en el
+            firewall aplica un límite por usuario e IP y otro más amplio solo por IP:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">yaml · config/packages/security.yaml</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="yaml">security:
+    firewalls:
+        main:
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'</code></pre>
+          </div>
+
+          <p>
+            En Laravel se declara el limitador con <code>RateLimiter::for</code> y se aplica con
+            el middleware <code>throttle:login</code>. Devolver un array aplica los dos límites a
+            la vez; cada uno necesita su propia clave:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · app/Providers/AppServiceProvider.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Providers;
+
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\ServiceProvider;
+
+final class AppServiceProvider extends ServiceProvider
+{
+    private const INTENTOS_POR_CUENTA_E_IP = 5;
+    private const INTENTOS_POR_IP = 50;
+
+    public function boot(): void
+    {
+        RateLimiter::for('login', function (Request $request): array {
+            $email = mb_strtolower((string) $request-&gt;input('email'));
+
+            return [
+                Limit::perMinute(self::INTENTOS_POR_CUENTA_E_IP)-&gt;by('cuenta:' . $email . '|' . $request-&gt;ip()),
+                Limit::perMinute(self::INTENTOS_POR_IP)-&gt;by('ip:' . $request-&gt;ip()),
+            ];
+        });
+    }
+}</code></pre>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La IP que ves puede no ser la del cliente</p>
+              <p>
+                Detrás de un balanceador, <code>$request-&gt;ip()</code> devuelve la del proxy
+                salvo que configures los proxies de confianza. Y si confías en
+                <code>X-Forwarded-For</code> venga de quien venga, el atacante elige su propia
+                IP en cada petición y tu límite no cuenta nada.
+              </p>
+            </div>
+          </div>
+
+          <p>
+            El reset y el registro necesitan su propio límite: cada petición envía un email que
+            pagas tú. En Symfony, un limitador en <code>framework.rate_limiter</code>; en
+            Laravel, otro <code>RateLimiter::for</code>. Y un primer corte en el borde, en
+            <a href="inf-nginx.html">nginx</a>, es mucho más barato.
+          </p>
+
+          <h2 id="bloqueo">
+            Bloqueo progresivo frente a bloqueo de cuenta
+            <a href="#bloqueo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Bloquear la cuenta tras cinco fallos frena la fuerza bruta y crea un problema nuevo:
+            <strong>cualquiera que conozca un email puede dejar a su dueño sin acceso</strong>.
+            Basta con fallar cinco veces cada cuarto de hora: una denegación de servicio gratis.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Primeros fallos</b><small>Se responde normal, sin fricción</small></span>
+              </div>
+              <div class="flow__arrow" data-label="se pasa del umbral"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Espera creciente</b><small>429 con Retry-After que se duplica en cada tramo</small></span>
+              </div>
+              <div class="flow__arrow" data-label="sigue fallando"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Fricción extra</b><small>CAPTCHA o verificación por email</small></span>
+              </div>
+              <div class="flow__arrow" data-label="patrón anómalo"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>Avisar al dueño</b><small>Email de intentos fallidos; la cuenta sigue usable</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">
+              El atacante pasa de miles de intentos por hora a unas decenas al día; el usuario
+              legítimo, que falla dos veces, ni lo nota.
+            </p>
+          </div>
+
+          <p>
+            El bloqueo progresivo encarece cada intento en vez de cerrar la puerta. Y si el
+            límite va por <code>email + IP</code>, el atacante solo se retrasa a sí mismo: el
+            dueño, desde su IP, entra sin problema. El bloqueo duro queda para casos concretos,
+            como cuentas de administración con desbloqueo manual, y sabiendo que es un DoS que
+            aceptas.
+          </p>
+
+          <h2 id="enumeracion">
+            Enumeración de usuarios en login, registro y reset
+            <a href="#enumeracion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Saber qué emails existen reduce la lista del atacante y le dice a quién mandar
+            phishing. Se lo das si tus respuestas difieren entre una cuenta que existe y una que
+            no: en el texto, en el código de estado o en el tiempo.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · vulnerable: dos mensajes y dos tiempos</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class VerificadorDeCredenciales
+{
+    public function __construct(private readonly Usuarios $usuarios) {}
+
+    public function verificar(string $email, string $password): Usuario
+    {
+        $usuario = $this-&gt;usuarios-&gt;porEmail($email);
+
+        if ($usuario === null) {
+            throw new CredencialesInvalidas('No existe ninguna cuenta con ese email');
+        }
+
+        if (!password_verify($password, $usuario-&gt;hashDeContrasena())) {
+            throw new CredencialesInvalidas('La contraseña no es correcta');
+        }
+
+        return $usuario;
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            Aunque unifiques el mensaje, el tiempo sigue delatando: si el email no existe,
+            respondes en milisegundos; si existe, tardas lo que cueste el hash, que con bcrypt o
+            Argon2 es deliberadamente lento (lo explica <a href="hashing-vs-cifrado.html">hashing
+            frente a cifrado</a>). La corrección es verificar siempre contra un hash, aunque sea
+            uno señuelo:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · corregido: misma respuesta, mismo coste</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class VerificadorDeCredenciales
+{
+    private const HASH_SENUELO = '$2y$12$/Dhs8CN1BVzUHQp/oOP6r.DNSkv6ozzuR/truegpz9.z7rpFoU3D6';
+
+    public function __construct(private readonly Usuarios $usuarios) {}
+
+    public function verificar(string $email, string $password): Usuario
+    {
+        $usuario = $this-&gt;usuarios-&gt;porEmail($email);
+        $hash = $usuario?-&gt;hashDeContrasena() ?? self::HASH_SENUELO;
+        $esValida = password_verify($password, $hash);
+
+        if ($usuario === null || !$esValida) {
+            throw new CredencialesInvalidas('Email o contraseña incorrectos');
+        }
+
+        return $usuario;
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            El hash señuelo tiene que usar el mismo algoritmo y coste que los reales; si no, el
+            tiempo vuelve a diferir. El mismo criterio vale para los otros dos formularios:
+          </p>
+          <ul>
+            <li>
+              <strong>Reset:</strong> responde siempre «Si existe una cuenta con ese email, te
+              hemos enviado un enlace», y envía el email fuera de la petición, en una cola, para
+              que el tiempo tampoco cambie.
+            </li>
+            <li>
+              <strong>Registro:</strong> es el más difícil, porque el email tiene que ser único.
+              La salida es responder igual en los dos casos y mandar al email existente un aviso
+              de «ya tienes cuenta, ¿has olvidado la contraseña?».
+            </li>
+          </ul>
+
+          <h2 id="reset">
+            Tokens de reset de un solo uso y con caducidad
+            <a href="#reset" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un enlace de reset es una contraseña temporal que viaja por email. Hay que tratarlo
+            como tal: impredecible, guardado como hash, con vida corta y que muera al usarse.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · EmisorDeTokensDeReset.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class EmisorDeTokensDeReset
+{
+    private const BYTES_DE_TOKEN = 32;
+    private const VIDA_DEL_TOKEN = 'PT30M';
+
+    public function __construct(private readonly TokensDeReset $tokens) {}
+
+    public function emitir(Usuario $usuario): string
+    {
+        $token = bin2hex(random_bytes(self::BYTES_DE_TOKEN));
+        $caducidad = (new DateTimeImmutable())-&gt;add(new DateInterval(self::VIDA_DEL_TOKEN));
+
+        $this-&gt;tokens-&gt;sustituirLosDe($usuario, hash('sha256', $token), $caducidad);
+
+        return $token;
+    }
+
+    public function consumir(string $token): Usuario
+    {
+        $guardado = $this-&gt;tokens-&gt;porHash(hash('sha256', $token));
+
+        if ($guardado === null || $guardado-&gt;haCaducado(new DateTimeImmutable())) {
+            throw new TokenDeResetInvalido();
+        }
+
+        $this-&gt;tokens-&gt;borrarLosDe($guardado-&gt;usuario());
+
+        return $guardado-&gt;usuario();
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            Cada línea responde a un ataque. <code>random_bytes</code>, porque
+            <code>uniqid</code> o <code>md5(time())</code> se adivinan. El hash y no el token,
+            para que una copia de la base de datos no abra cuentas. Borrar al consumir, para que
+            un enlace reenviado no valga dos veces. Al completar el reset, cierra además las
+            sesiones abiertas. En Laravel,
+            el broker de contraseñas ya guarda el token hasheado con caducidad configurable en
+            <code>config/auth.php</code>; en Symfony, lo habitual es
+            <code>symfonycasts/reset-password-bundle</code>.
+          </p>
+
+          <h2 id="mfa">
+            MFA: la pieza que sí frena el stuffing
+            <a href="#mfa" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Ningún límite distingue al dueño de quien trae su contraseña correcta, robada. El
+            segundo factor sí: sin el código no hay acceso. No todos valen lo mismo: los SMS son
+            vulnerables al duplicado de SIM, los códigos TOTP de una app son un buen mínimo, y
+            las passkeys (WebAuthn) resisten además el phishing, porque van ligadas al dominio.
+          </p>
+          <p>
+            Dos complementos baratos: rechazar contraseñas que ya aparecen en filtraciones
+            (<code>NotCompromisedPassword</code> en Symfony, <code>Password::uncompromised()</code>
+            en Laravel) y avisar al usuario de cada login desde un dispositivo nuevo.
+          </p>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El código de MFA también se puede adivinar</p>
+              <p>
+                Un código de seis dígitos tiene un millón de combinaciones. Si el paso de
+                verificación no tiene su propio límite, un atacante con la contraseña lo recorre
+                en horas. Limita los intentos por sesión de login y por cuenta, igual que la
+                contraseña.
+              </p>
+            </div>
+          </div>
+
+          <ul>
+            <li><strong>Limitar el login y olvidar el resto:</strong> el reset, la verificación
+              de MFA, el registro y los endpoints de la API que aceptan credenciales son la misma
+              puerta.</li>
+            <li><strong>Un reset que se salta el MFA:</strong> si cambiar la contraseña deja
+              entrar sin segundo factor, el MFA solo protege a quien no ha olvidado nada.</li>
+            <li><strong>Construir el enlace de reset con la cabecera <code>Host</code>:</strong>
+              un atacante la cambia y el email lleva el token a su dominio. Usa la URL base de
+              la configuración.</li>
+            <li><strong>Guardar el contador en memoria del proceso:</strong> con varios workers o
+              servidores, cada uno cuenta por su lado. El almacén tiene que ser compartido:
+              Redis o la caché de la aplicación.</li>
+          </ul>
+
+          <h2 id="testear">
+            Cómo detectarlo y testearlo
+            <a href="#testear" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La prueba más rápida es atacarte a ti mismo en local y mirar en qué intento llega el
+            429:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · ¿cuándo me corta?</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">for intento in $(seq 1 10); do
+  curl -s -o /dev/null -w "$intento → %{http_code} en %{time_total}s\n" \
+    -X POST http://localhost:8000/login \
+    -d 'email=ana@example.com&amp;password=incorrecta'
+done</code></pre>
+          </div>
+
+          <p>
+            Repítelo con un email que no existe y compara: el código de estado, el cuerpo y el
+            tiempo deberían ser indistinguibles. Después, fija cada propiedad en un test
+            funcional para que no se pierda en un refactor:
+          </p>
+          <ul>
+            <li>El intento N+1 devuelve 429, y otra IP contra la misma cuenta sigue entrando.</li>
+            <li>Login y reset responden igual para un email que existe y para uno que no.</li>
+            <li>Un token de reset usado o caducado falla, y emitir uno nuevo invalida el anterior.</li>
+            <li>La verificación de MFA también acaba en 429.</li>
+          </ul>
+          <p>
+            En producción, el stuffing se ve en el agregado, no en una cuenta: una tasa global de
+            logins fallidos muy por encima de lo normal merece una alerta.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Aplícalo siempre que…</h4>
+              <ul>
+                <li>Un endpoint acepte una contraseña, un código o un token</li>
+                <li>Una petición dispare un email o un SMS</li>
+                <li>La respuesta pueda revelar si un email está registrado</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No te compensa cuando…</h4>
+              <ul>
+                <li>Delegas el login entero en un proveedor de identidad (OIDC)</li>
+                <li>Es una herramienta interna tras VPN y SSO corporativo</li>
+                <li>Quieres bloqueo duro de cuenta en un servicio público: es un DoS servido</li>
+              </ul>
+            </div>
+          </div>
+          <p>
+            Si delegas la autenticación, el límite y el MFA son problema del proveedor: tu parte
+            es validar bien lo que te devuelve (lo cuenta <a href="autenticacion.html">autenticación:
+            sesiones y JWT</a>). Para el resto de ataques a formularios, el punto de partida es
+            <a href="owasp.html">OWASP Top 10</a>.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La fuerza bruta se frena con límites; el credential stuffing, con MFA y rechazando contraseñas filtradas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Combina un límite por cuenta e IP con otro más holgado por IP, en un almacén compartido.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Encarece cada intento con esperas crecientes en vez de bloquear la cuenta: el bloqueo duro es un DoS.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Login, registro y reset responden igual, en texto, estado y tiempo, exista o no el email.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los tokens de reset salen de <code>random_bytes</code>, se guardan como hash, caducan pronto y mueren al usarse.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Validación de entrada y asignación masiva — MentorAI</title>
+    <meta name="description" content="Validar en el borde frente a sanear, asignación masiva con $fillable y DTOs en Laravel y Symfony, y BOPLA de OWASP API: no aceptar ni exponer propiedades de más." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Seguridad</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Validación de entrada y asignación masiva</h1>
+        <p class="tutorial-hero__lead">Tu endpoint de «editar perfil» espera un nombre y un idioma. Alguien le manda también <code>"is_admin": true</code> y tu ORM, muy servicial, lo guarda. Esta lección va de decidir qué entra y qué sale, campo a campo.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            21 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">El campo que nadie pidió</a></li>
+            <li><a href="#validar">Validar en el borde, no sanear</a></li>
+            <li><a href="#bopla">BOPLA: propiedades de más</a></li>
+            <li><a href="#laravel">En Laravel</a></li>
+            <li><a href="#symfony">En Symfony</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#detectar">Cómo detectarlo y testearlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Un formulario web es una sugerencia, no un contrato. El navegador envía los campos que
+            pinta tu HTML, pero cualquiera con <code>curl</code> puede mandar los que quiera, con el
+            tipo que quiera. La pregunta no es «¿qué campos envía mi front?», sino «¿qué campos
+            acepta mi backend?». Si la respuesta es «los que lleguen», tienes un problema.
+          </p>
+
+          <h2 id="problema">
+            El campo que nadie pidió
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La <strong>asignación masiva</strong> (<em>mass assignment</em>) es copiar el cuerpo
+            de la petición directamente sobre un objeto del dominio. Es cómodo: una línea y el
+            modelo queda actualizado. El precio es que el cliente elige qué propiedades tocas, y tu
+            entidad <code>User</code> tiene más propiedades de las que tu pantalla muestra:
+            <code>role</code>, <code>is_admin</code>, <code>email_verified_at</code>,
+            <code>credit</code>, <code>tenant_id</code>.
+          </p>
+          <p>
+            El caso clásico lo protagonizó GitHub en 2012: un usuario usó asignación masiva en una
+            aplicación Rails para añadir su clave pública a un repositorio ajeno. No hizo falta
+            ningún exploit sofisticado, solo un campo de más en un formulario.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>JSON de entrada</b><small>name, locale… y is_admin</small></span>
+              </div>
+              <div class="flow__arrow" data-label="solo campos conocidos"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>DTO de entrada</b><small>tipos, rangos y listas permitidas</small></span>
+              </div>
+              <div class="flow__arrow" data-label="cambios explícitos"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Entidad de dominio</b><small>el código decide qué se modifica</small></span>
+              </div>
+              <div class="flow__arrow" data-label="solo campos públicos"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>DTO de salida</b><small>nada de hashes ni flags internos</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Dos fronteras con lista explícita: la de entrada y la de salida.</p>
+          </div>
+
+          <h2 id="validar">
+            Validar en el borde, no sanear
+            <a href="#validar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Validar es <strong>rechazar</strong> lo que no cumple el contrato; sanear es
+            <strong>transformar</strong> la entrada para que «parezca» buena. La validación gana por
+            una razón sencilla: si rechazas, el dato malo nunca entra; si saneas, apuestas a que tu
+            transformación cubre todos los casos, y suele haber uno que no.
+          </p>
+          <p>
+            El borde es el primer punto donde tu código recibe la petición: el controlador o lo
+            que haya justo antes. Ahí se comprueban tres cosas:
+          </p>
+          <ul>
+            <li><strong>Tipo:</strong> un entero es un entero, no <code>"5 OR 1=1"</code> ni un array.</li>
+            <li><strong>Rango y longitud:</strong> una cantidad entre 1 y 100, un nombre de como mucho 100 caracteres.</li>
+            <li><strong>Lista permitida:</strong> el idioma es <code>es</code>, <code>en</code> o <code>fr</code>; cualquier otro valor se rechaza.</li>
+          </ul>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Técnica</th><th>Qué hace</th><th>Dónde va</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Validar</td><td>Rechaza la petición con un 422 si no cumple el contrato.</td><td>En la entrada, siempre.</td></tr>
+                <tr><td>Normalizar</td><td>Ajusta forma sin cambiar significado: <code>trim</code>, minúsculas en el email.</td><td>En la entrada, antes de validar.</td></tr>
+                <tr><td>Escapar</td><td>Codifica para el contexto de destino: HTML, SQL, shell.</td><td>En la salida, según el destino.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            Fíjate en que «sanear contra XSS» no aparece. Pasar <code>strip_tags</code> a la entrada
+            no protege una salida que acaba en un atributo o en JavaScript: el escapado depende del
+            destino y se hace al pintar, como se explica en <a href="owasp.html">OWASP Top 10</a>.
+          </p>
+
+          <h2 id="bopla">
+            BOPLA: aceptar o exponer propiedades de más
+            <a href="#bopla" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El OWASP API Security Top 10 de 2023 unió dos riesgos de su edición de 2019 en uno:
+            <strong>API3:2023 Broken Object Property Level Authorization</strong>, BOPLA. La idea
+            es que la autorización no termina en el objeto («¿puedes tocar este usuario?»), también
+            llega a cada propiedad («¿puedes cambiar su rol?, ¿puedes ver su hash?»). Tiene dos
+            caras:
+          </p>
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Aceptar de más (escritura)</h4>
+              <ul>
+                <li>La antigua <em>mass assignment</em></li>
+                <li>El cliente fija <code>role</code>, <code>price</code> o <code>tenant_id</code></li>
+                <li>Se corrige con un DTO de entrada cerrado</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Exponer de más (lectura)</h4>
+              <ul>
+                <li>La antigua <em>excessive data exposure</em></li>
+                <li>La respuesta incluye hash, tokens o notas internas</li>
+                <li>Se corrige con un DTO de salida explícito</li>
+              </ul>
+            </div>
+          </div>
+          <p>
+            La segunda cara es traicionera porque el front «no lo usa»: el campo no se pinta, pero
+            viaja en el JSON y cualquiera lo lee en las herramientas del navegador. Filtrar en el
+            cliente no es filtrar.
+          </p>
+
+          <h2 id="laravel">
+            En Laravel: <code>$fillable</code>, FormRequest y Resources
+            <a href="#laravel" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Eloquent protege de serie: <code>create()</code> y <code>update()</code> solo asignan
+            los atributos listados en <code>$fillable</code>. El agujero aparece cuando alguien lo
+            desactiva para no pelearse con él y además pasa el cuerpo entero:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · vulnerable</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+final class User extends Authenticatable
+{
+    protected $guarded = [];
+}
+
+final class ProfileController
+{
+    public function update(Request $request): JsonResponse
+    {
+        $request-&gt;user()-&gt;update($request-&gt;all());
+
+        return response()-&gt;json($request-&gt;user());
+    }
+}</code></pre>
+          </div>
+          <p>
+            Con <code>$guarded = []</code> todo es asignable, y <code>$request-&gt;all()</code>
+            trae lo que el cliente quiera. La versión corregida cierra las dos fronteras:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · corregido</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+final class User extends Authenticatable
+{
+    protected $fillable = ['name', 'locale'];
+
+    protected $hidden = ['password', 'remember_token'];
+}
+
+final class UpdateProfileRequest extends FormRequest
+{
+    public function rules(): array
+    {
+        return [
+            'name' =&gt; ['required', 'string', 'max:100'],
+            'locale' =&gt; ['required', Rule::in(['es', 'en', 'fr'])],
+        ];
+    }
+}
+
+final class ProfileController
+{
+    public function update(UpdateProfileRequest $request): UserResource
+    {
+        $request-&gt;user()-&gt;update($request-&gt;validated());
+
+        return new UserResource($request-&gt;user());
+    }
+}
+
+final class UserResource extends JsonResource
+{
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' =&gt; $this-&gt;id,
+            'name' =&gt; $this-&gt;name,
+            'locale' =&gt; $this-&gt;locale,
+        ];
+    }
+}</code></pre>
+          </div>
+          <p>
+            Son tres capas, y cada una cubre un fallo distinto: <code>validated()</code> devuelve
+            solo las claves con regla, <code>$fillable</code> frena lo que se cuele por otro camino
+            y el <code>JsonResource</code> decide qué sale. <code>$hidden</code> es una red, no la
+            lista de salida: si mañana añades una columna sensible, el Resource no la expone sin que
+            nadie la escriba.
+          </p>
+
+          <h2 id="symfony">
+            En Symfony: DTO con <code>#[MapRequestPayload]</code>
+            <a href="#symfony" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En Symfony el riesgo típico es deserializar el JSON directamente sobre la entidad con
+            <code>OBJECT_TO_POPULATE</code>: el Serializer llama a todo <em>setter</em> que
+            encuentre, <code>setRoles()</code> incluido. Los formularios son más seguros, porque solo
+            mapean los campos declarados en el <code>FormType</code> y rechazan los extra mientras no
+            actives <code>allow_extra_fields</code>. Para una API JSON, lo limpio es un DTO:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · corregido</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+final readonly class UpdateProfileInput
+{
+    public function __construct(
+        #[Assert\NotBlank]
+        #[Assert\Length(max: 100)]
+        public string $name,
+        #[Assert\Choice(choices: ['es', 'en', 'fr'])]
+        public string $locale,
+    ) {
+    }
+}
+
+final class ProfileController extends AbstractController
+{
+    #[Route('/api/me', methods: ['PATCH'])]
+    public function update(
+        #[CurrentUser] User $user,
+        #[MapRequestPayload] UpdateProfileInput $input,
+        EntityManagerInterface $entityManager,
+    ): JsonResponse {
+        $user-&gt;rename($input-&gt;name);
+        $user-&gt;changeLocale($input-&gt;locale);
+        $entityManager-&gt;flush();
+
+        return $this-&gt;json(ProfileOutput::fromUser($user));
+    }
+}</code></pre>
+          </div>
+          <p>
+            <code>#[MapRequestPayload]</code> deserializa el cuerpo al DTO, lo valida y responde
+            con un 422 si falla. Un <code>is_admin</code> en el JSON no tiene dónde caer porque el
+            DTO no lo declara. Si prefieres que un campo desconocido sea un error en vez de ignorarse,
+            pasa <code>allow_extra_attributes</code> a <code>false</code> en el contexto de
+            serialización. Y la salida usa su propio DTO, <code>ProfileOutput</code>, en vez de
+            serializar la entidad.
+          </p>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que se cuela en revisión</p>
+              <ul>
+                <li><strong>Validar y luego usar <code>all()</code>.</strong> La FormRequest pasa, pero se persiste el cuerpo completo, con los campos sin regla.</li>
+                <li><strong>Lista de prohibidos.</strong> <code>$guarded = ['is_admin']</code> funciona hasta que alguien añade la columna <code>plan</code>. Las listas permitidas fallan cerradas; las prohibidas, abiertas.</li>
+                <li><strong>Arrays anidados sin forma.</strong> Con la regla <code>'address' =&gt; 'array'</code>, <code>validated()</code> devuelve el array entero con cualquier subclave. Usa <code>'array:street,city'</code> y valida cada clave.</li>
+                <li><strong>Devolver la entidad tal cual.</strong> Funciona, pero cualquier columna nueva sale en la API sin que nadie lo decida.</li>
+                <li><strong>Confiar en la validación del front.</strong> Es comodidad para el usuario, no seguridad.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Validar no es autorizar</p>
+              <p>
+                Un <code>role</code> válido de la lista permitida sigue siendo un problema si quien lo
+                cambia no es administrador. Que un campo sea correcto y que este usuario pueda
+                tocarlo son dos comprobaciones distintas; la segunda tiene su propia lección en este
+                curso.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="detectar">
+            Cómo detectarlo y testearlo
+            <a href="#detectar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Busca primero los patrones que abren la puerta. No todos son fallos, pero cada
+            aparición merece una mirada:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · búsqueda en el repo</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">grep -rnE 'guarded = \[\]|unguard\(|-&gt;all\(\)|OBJECT_TO_POPULATE' src app</code></pre>
+          </div>
+          <p>
+            Después, fija el comportamiento con un test que haga lo que haría el atacante: mandar el
+            campo prohibido y comprobar que no cambió nada ni sale en la respuesta.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · tests/Feature/ProfileUpdateTest.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+public function test_profile_update_ignores_admin_flag(): void
+{
+    $user = User::factory()-&gt;create(['is_admin' =&gt; false]);
+
+    $this-&gt;actingAs($user)
+        -&gt;patchJson('/api/me', ['name' =&gt; 'Ana', 'locale' =&gt; 'es', 'is_admin' =&gt; true])
+        -&gt;assertOk()
+        -&gt;assertJsonMissingPath('data.is_admin');
+
+    $this-&gt;assertFalse($user-&gt;fresh()-&gt;is_admin);
+}</code></pre>
+          </div>
+          <p>
+            En Laravel hay además una alarma gratuita para desarrollo:
+            <code>Model::preventSilentlyDiscardingAttributes()</code> lanza una
+            <code>MassAssignmentException</code> cuando intentas asignar un atributo que no está en
+            <code>$fillable</code>, en vez de descartarlo en silencio. Actívalo fuera de producción y
+            verás enseguida qué endpoints reciben campos que no esperabas.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>DTO de entrada y salida cuando…</h4>
+              <ul>
+                <li>El endpoint escribe en una entidad con campos sensibles: rol, precio, tenant</li>
+                <li>La API es pública o la consumen terceros</li>
+                <li>La entidad tiene columnas que el cliente no debe ver</li>
+                <li>El mismo modelo se edita desde pantallas con permisos distintos</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Basta con algo más ligero cuando…</h4>
+              <ul>
+                <li>Es un panel interno donde todos los campos son editables por igual</li>
+                <li>La entidad es plana y sin campos sensibles: una etiqueta, una nota</li>
+                <li>Es un prototipo que no va a ver tráfico real</li>
+              </ul>
+            </div>
+          </div>
+          <p>
+            La alternativa ligera no es «sin protección»: en Laravel, una FormRequest con
+            <code>validated()</code> y un <code>$fillable</code> bien puesto; en Symfony, un
+            <code>FormType</code> con los campos justos. Lo que nunca está justificado es
+            <code>$guarded = []</code> combinado con <code>$request-&gt;all()</code>. Para lo que
+            pasa después, sesiones y tokens, sigue en <a href="autenticacion.html">autenticación</a>.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El cliente puede enviar cualquier campo: tu backend decide cuáles acepta, con una lista permitida.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Valida en el borde tipo, rango y lista permitida, y rechaza; el escapado va en la salida, según el destino.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>BOPLA (API3:2023) tiene dos caras: aceptar propiedades de más y exponer propiedades de más.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Laravel: <code>validated()</code>, <code>$fillable</code> y un <code>JsonResource</code>. Symfony: DTO con <code>#[MapRequestPayload]</code> y DTO de salida.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un test que manda <code>is_admin: true</code> y comprueba que no cambió nada vale más que cualquier revisión.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

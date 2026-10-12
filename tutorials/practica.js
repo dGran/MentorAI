@@ -1286,4 +1286,45 @@ window.MENTORAI_PRACTICE = {
       },
     },
   ],
+  "seguridad-backend": [
+    {
+      id: "rb83fdf",
+      title: "El test de los dos usuarios",
+      statement:
+        "Monta una API mínima con el servidor de PHP: un fichero api.php con dos pedidos en un array (el 1 de alice y el 2 de bob), el usuario en la cabecera X-User y una ruta GET /orders/{id} que devuelve el pedido. Escríbela primero como la escribiría alguien con prisa: busca el pedido por id y lo devuelve. Arráncala con php -S 127.0.0.1:8765 api.php y demuestra con curl que bob lee el pedido de alice. Después arréglala y repite las mismas peticiones: alice ve el 1, bob recibe 404 al pedir el 1 y 200 al pedir el 2, un id inexistente da 404 y sin cabecera da 401.",
+      solution:
+        "La versión con prisa devuelve el pedido 1 a bob con un 200: estar autenticado no dice nada de a quién pertenece cada objeto, y eso es BOLA. El arreglo compara el dueño con el usuario en el mismo sitio donde se carga el pedido, y responde igual a «no existe» que a «no es tuyo»: con un 403 para lo ajeno, bob podría recorrer ids y saber qué pedidos existen. La condición se escribe para denegar por defecto: solo pasa el caso en que el pedido existe y es del usuario. Y las cinco peticiones con curl son el test de los dos usuarios en miniatura; en tu proyecto es un test funcional que crea dos usuarios y pide lo del otro, uno por cada ruta que devuelve objetos.",
+      solutionCode: {
+        lang: "php",
+        source:
+          "<?php\ndeclare(strict_types=1);\n\nconst ORDERS = [\n    1 => ['owner' => 'alice', 'total' => 120],\n    2 => ['owner' => 'bob', 'total' => 35],\n];\n\nheader('Content-Type: application/json');\n$user = $_SERVER['HTTP_X_USER'] ?? null;\n\nif ($user === null) {\n    http_response_code(401);\n    exit;\n}\n\nif (!preg_match('#^/orders/(\\d+)$#', parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), $match)) {\n    http_response_code(404);\n    exit;\n}\n\n$order = ORDERS[(int) $match[1]] ?? null;\n\nif ($order === null || $order['owner'] !== $user) {\n    http_response_code(404);\n    echo json_encode(['error' => 'not found']);\n    exit;\n}\n\necho json_encode($order);\n\n\n# php -S 127.0.0.1:8765 api.php\ncurl -s -H \"X-User: alice\" localhost:8765/orders/1   # 200\ncurl -s -H \"X-User: bob\" localhost:8765/orders/1     # 404\ncurl -s -H \"X-User: bob\" localhost:8765/orders/2     # 200\ncurl -s -H \"X-User: bob\" localhost:8765/orders/99    # 404\ncurl -s -o /dev/null -w \"%{http_code}\\n\" localhost:8765/orders/1   # 401",
+      },
+    },
+    {
+      id: "r3087f3",
+      title: "Valida la IP, no la URL",
+      statement:
+        "Escribe en PHP una función isSafeOutboundUrl(string $url): bool para un servicio que descarga la URL que le pasa el usuario (una vista previa de enlaces, un webhook). Debe aceptar solo http y https, resolver el host y rechazar la URL si cualquiera de sus direcciones no es pública. Pruébala por línea de comandos con esta lista: https://example.com/, http://127.0.0.1/admin, http://localhost:8080/, http://169.254.169.254/latest/meta-data/, http://[::1]/, http://2130706433/, http://10.0.0.5/, file:///etc/passwd y gopher://example.com/. Solo la primera debe pasar.",
+      solution:
+        "Todas menos example.com quedan bloqueadas, y cada una por un motivo distinto: 127.0.0.1 y ::1 son la propia máquina, 169.254.169.254 es el servicio de metadatos de la nube que entrega credenciales, 10.0.0.5 es tu red interna, y file y gopher no son HTTP. La trampa es 2130706433: no tiene forma de IP, pero el resolvedor la convierte en 127.0.0.1. Por eso se valida la dirección resuelta y no el texto de la URL: una lista negra de cadenas como «localhost» o «127.» se salta así. FILTER_FLAG_GLOBAL_RANGE (PHP 8.2) es más estricto que NO_PRIV_RANGE junto a NO_RES_RANGE: 100.64.0.1, la red compartida de los operadores (CGNAT), pasa esos dos y la bloquea GLOBAL_RANGE. Dos límites que la función no cierra: gethostbynamel solo devuelve IPv4, así que un nombre con registro AAAA interno necesita dns_get_record; y entre validar y conectar el DNS puede cambiar de respuesta (DNS rebinding), así que en producción la petición se hace contra la IP validada, por ejemplo con CURLOPT_RESOLVE, o con un cliente que lo haga por ti como NoPrivateNetworkHttpClient de Symfony.",
+      solutionCode: {
+        lang: "php",
+        source:
+          "<?php\ndeclare(strict_types=1);\n\nfunction resolvedAddresses(string $host): array\n{\n    $literal = trim($host, '[]');\n\n    if (filter_var($literal, FILTER_VALIDATE_IP)) {\n        return [$literal];\n    }\n\n    return gethostbynamel($host) ?: [];\n}\n\nfunction isSafeOutboundUrl(string $url): bool\n{\n    $parts = parse_url($url);\n\n    if (!in_array($parts['scheme'] ?? '', ['http', 'https'], true) || !isset($parts['host'])) {\n        return false;\n    }\n\n    $addresses = resolvedAddresses($parts['host']);\n\n    if ($addresses === []) {\n        return false;\n    }\n\n    foreach ($addresses as $address) {\n        if (!filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_GLOBAL_RANGE)) {\n            return false;\n        }\n    }\n\n    return true;\n}\n\n$urls = [\n    'https://example.com/',\n    'http://127.0.0.1/admin',\n    'http://localhost:8080/',\n    'http://169.254.169.254/latest/meta-data/',\n    'http://[::1]/',\n    'http://2130706433/',\n    'http://10.0.0.5/',\n    'file:///etc/passwd',\n    'gopher://example.com/',\n];\n\nforeach ($urls as $url) {\n    printf(\"%-45s %s\\n\", $url, isSafeOutboundUrl($url) ? 'permitida' : 'bloqueada');\n}\n\n# php ssrf.php",
+      },
+    },
+    {
+      id: "r9ed515",
+      title: "Audita un lock con avisos",
+      statement:
+        "En un directorio vacío, simula un proyecto heredado con una dependencia vulnerable: un composer.json que fija guzzlehttp/guzzle a 7.4.0. Intenta instalarlo y lee el error. Después reproduce lo que pasa en un proyecto cuyo composer.lock ya tenía esa versión: desactiva el bloqueo en la configuración, instala, ejecuta composer audit --locked y mira su código de salida. Por último, actualiza la dependencia de forma que el audit quede limpio. Necesitas Composer 2.9 o posterior.",
+      solution:
+        "Con Composer 2.9 el primer install ya falla: el resolvedor no carga versiones afectadas por avisos de seguridad (audit.block-insecure, activo por defecto) y lista los avisos. Eso protege lo que se resuelve de nuevo, pero no un lock que ya traía la versión vulnerable: con el bloqueo desactivado para simular ese lock, composer audit --locked lista los avisos y sale con código 1, y ese código es lo que hace fallar un paso de CI. El arreglo es relajar la restricción a ^7.4 y actualizar con -W, que permite mover también las dependencias de guzzle; el audit queda limpio y sale con 0, y al terminar se retira el block-insecure: false de la simulación. Desactivar block-insecure o añadir el aviso a audit.ignore no arregla nada: solo apaga el aviso, y si se hace tiene que quedar escrito por qué.",
+      solutionCode: {
+        lang: "bash",
+        source:
+          "mkdir audit-demo && cd audit-demo\necho '{\"require\":{\"guzzlehttp/guzzle\":\"7.4.0\"}}' > composer.json\ncomposer install            # falla: versión afectada por avisos de seguridad\n\n# Simula un lock antiguo que ya traía la versión vulnerable\necho '{\"require\":{\"guzzlehttp/guzzle\":\"7.4.0\"},\"config\":{\"audit\":{\"block-insecure\":false}}}' > composer.json\ncomposer install\ncomposer audit --locked; echo \"exit: $?\"   # lista los avisos, exit: 1\n\ncomposer require \"guzzlehttp/guzzle:^7.4\" -W\ncomposer config --unset audit.block-insecure   # vuelve el bloqueo por defecto\ncomposer audit --locked; echo \"exit: $?\"   # sin avisos, exit: 0",
+      },
+    },
+  ],
 };

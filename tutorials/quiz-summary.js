@@ -126,5 +126,9 @@ window.MENTORAI_QUIZ_SUMMARY = {
   "metodo-con-agentes": {
     "total": 17,
     "passingScore": null
+  },
+  "seguridad-backend": {
+    "total": 16,
+    "passingScore": null
   }
 };

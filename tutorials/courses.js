@@ -837,4 +837,46 @@ window.MENTORAI_COURSES = [
       },
     ],
   },
+  {
+    slug: "seguridad-backend",
+    title: "Seguridad aplicada al backend",
+    summary:
+      "Los fallos que se cometen al escribir un endpoint, no los de la teoría: autorización objeto a objeto, validación y asignación masiva, SSRF, subidas de ficheros, fuerza bruta, CSRF con cookies modernas, secretos y dependencias, y logs que no filtran lo que protegen. Cada lección termina con el test o el comando que demuestra que el agujero está cerrado.",
+    level: "Intermedio",
+    icon: "shield",
+    modules: [
+      {
+        title: "Quién puede tocar qué",
+        summary: "Autorizar cada acceso a cada objeto y aceptar solo los campos que el usuario puede cambiar.",
+        lessons: [
+          "sec-autorizacion",
+          "sec-validacion-y-asignacion-masiva",
+        ],
+      },
+      {
+        title: "Lo que entra por la puerta",
+        summary: "Peticiones que tu servidor hace en nombre de otro y ficheros que alguien te sube.",
+        lessons: [
+          "sec-ssrf",
+          "sec-subida-de-ficheros",
+        ],
+      },
+      {
+        title: "Ataques a la cuenta",
+        summary: "Adivinar contraseñas a escala y hacer que el navegador de la víctima actúe por ella.",
+        lessons: [
+          "sec-fuerza-bruta-y-limites",
+          "sec-csrf-moderno",
+        ],
+      },
+      {
+        title: "Lo que rodea al código",
+        summary: "Los secretos, las dependencias y los logs: lo que se filtra sin que el código tenga un bug.",
+        lessons: [
+          "sec-secretos-y-cadena-de-suministro",
+          "sec-logging-seguro",
+        ],
+      },
+    ],
+  },
 ];
