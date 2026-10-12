@@ -76,11 +76,13 @@
             <li><a href="#elision">Elision rules</a></li>
             <li><a href="#structs-lifetime">Lifetimes en structs</a></li>
             <li><a href="#static">'static: el lifetime eterno</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">Tarde o temprano escribirás una función que devuelve una referencia y el compilador te pedirá un <code>'a</code> que no sabes de dónde sale. No es burocracia: el compilador necesita saber de cuál de las entradas viene lo que devuelves para garantizar que no apuntará a memoria ya liberada. Esta lección explica cuándo tienes que decírselo tú y cuándo la respuesta correcta es dejar de usar referencias.</p>
           <h2 id="problema">
             El problema que resuelven
             <a href="#problema" class="anchor" aria-hidden="true">#</a>
@@ -107,7 +109,7 @@
               </button>
             </div>
             <pre><code data-lang="bash">error[E0106]: missing lifetime specifier
- --&gt; src/main.rs:1:36
+ --&gt; src/main.rs:1:38
   |
 1 | fn la_mas_larga(x: &amp;str, y: &amp;str) -&gt; &amp;str {
   |                    ----     ----     ^ expected named lifetime parameter</code></pre>
@@ -294,6 +296,31 @@ fn main() {
               <p><strong>Evita <code>'static</code> como atajo</strong>: cuando el compilador pide un lifetime y no sabes qué poner, la tentación es <code>'static</code> porque "hace que compile". Esto enmascara el problema real: estás guardando una referencia que debería ser un valor poseído. Antes de usar <code>'static</code>, pregúntate si deberías usar <code>String</code> en lugar de <code>&amp;str</code>, o <code>Vec&lt;T&gt;</code> en lugar de <code>&amp;[T]</code>.</p>
             </div>
           </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Anota lifetimes cuando…</h4>
+              <ul>
+                <li>Una función recibe varias referencias y devuelve otra que sale de alguna de ellas</li>
+                <li>Un struct es una vista temporal sobre datos de otro: un parser que trocea un texto sin copiarlo, un iterador sobre una colección</li>
+                <li>El compilador te lo pide y la referencia tiene sentido: el dato original vive más que quien la usa</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Evítalos cuando…</h4>
+              <ul>
+                <li>El struct es una entidad o un DTO que pasa entre capas: que sea dueño de sus datos (<code>String</code>, <code>Vec</code>)</li>
+                <li>La anotación se contagia a todos los tipos que tocan el struct: es la señal de que ahí tocaba poseer el dato</li>
+                <li>Una sola referencia de entrada o <code>&amp;self</code>: las elision rules ya lo resuelven, no anotes de más</li>
+                <li>Pones <code>'static</code> para que compile: casi siempre lo correcto es un valor poseído o compartirlo con <code>Arc</code></li>
+              </ul>
+            </div>
+          </div>
+          <p>En código de backend, la mayoría de lifetimes explícitos aparecen en utilidades de bajo nivel y en código que evita copias por rendimiento. En la lógica de negocio, datos poseídos y algún <code>.clone()</code> consciente suelen ser más claros y casi nunca son el cuello de botella.</p>
 
           <h2 id="resumen">
             Resumen

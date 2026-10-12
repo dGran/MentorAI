@@ -77,11 +77,13 @@
             <li><a href="#const">const y static</a></li>
             <li><a href="#shadowing">Shadowing</a></li>
             <li><a href="#string-y-str">String vs &amp;str</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">En PHP una variable es una caja donde cabe cualquier cosa en cualquier momento, y alguna vez habrás descubierto en producción que <code>$total</code> era un string. Rust le da la vuelta: cada valor tiene un tipo fijo conocido al compilar y no cambia salvo que lo pidas. Parece burocracia hasta que cuentas cuántos bugs de PHP desaparecen antes de ejecutar nada.</p>
           <h2 id="let">
             let e inmutabilidad por defecto
             <a href="#let" class="anchor" aria-hidden="true">#</a>
@@ -344,6 +346,41 @@ println!("{}", combinado);</code></pre>
 }</code></pre>
           </div>
           <p>Pasar <code>&amp;str</code> en lugar de <code>String</code> como parámetro hace la función más flexible: acepta tanto <code>&amp;str</code> literales como referencias a <code>String</code> existentes.</p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos con tipos y variables</p>
+              <p><strong><code>let mut</code> por reflejo.</strong> Es la costumbre de PHP, pero quita la garantía de que el valor no cambia. El compilador avisa de los <code>mut</code> innecesarios: hazle caso.</p>
+              <p><strong>Recibir <code>&amp;String</code> en los parámetros.</strong> Obliga a quien llama a tener un <code>String</code>; con <code>&amp;str</code> la función acepta literales y referencias a <code>String</code> por igual. Clippy lo señala.</p>
+              <p><strong>Tratar un <code>String</code> como un array de caracteres.</strong> <code>texto[0]</code> no compila, porque en UTF-8 un carácter puede ocupar varios bytes, y <code>len()</code> cuenta bytes: <code>"camión".len()</code> es 7, como <code>strlen</code> en PHP. Para caracteres, <code>.chars().count()</code>, el equivalente a <code>mb_strlen</code>.</p>
+              <p><strong>Convertir con <code>as</code> datos que vienen de fuera.</strong> Con <code>let valor: i32 = 300;</code>, <code>valor as u8</code> da 44 sin avisar. Para entradas de usuario o de una API, <code>u8::try_from(valor)</code> devuelve un <code>Result</code> que te obliga a tratar el caso que no cabe.</p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Situación</th><th>Elige</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Un valor que no cambia después de calcularlo</td><td><code>let</code>, la opción por defecto</td></tr>
+                <tr><td>Un contador, un acumulador o un buffer que crece</td><td><code>let mut</code>, en el ámbito más pequeño posible</td></tr>
+                <tr><td>Transformar un valor por pasos o cambiar su tipo (un <code>&amp;str</code> leído que parseas a <code>u32</code>)</td><td>Shadowing con <code>let</code></td></tr>
+                <tr><td>Un valor conocido al compilar: límites, timeouts, tamaños</td><td><code>const</code></td></tr>
+                <tr><td>Un global que necesita dirección fija en memoria</td><td><code>static</code>; evita <code>static mut</code>, que exige <code>unsafe</code></td></tr>
+                <tr><td>Índices y longitudes de colecciones</td><td><code>usize</code></td></tr>
+                <tr><td>Importes de dinero</td><td>Enteros en céntimos (<code>i64</code>), nunca <code>f64</code></td></tr>
+                <tr><td>Un parámetro que solo lee texto / texto que guardas o devuelves</td><td><code>&amp;str</code> / <code>String</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Si dudas, empieza por lo más restrictivo (<code>let</code>, <code>&amp;str</code>) y deja que el compilador te pida más: añadir un <code>mut</code> cuando hace falta cuesta un segundo; descubrir quién muta algo que no debía cuesta una tarde.</p>
+
 
           <h2 id="resumen">
             Resumen

@@ -77,11 +77,15 @@
             <li><a href="#anyhow">anyhow para aplicaciones</a></li>
             <li><a href="#async-errores">? en código async</a></li>
             <li><a href="#panic">panic! y cuándo usarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">
+            En PHP, que una función pueda fallar es un secreto entre ella y su <code>@throws</code>, y la excepción que nadie esperaba aparece en producción. Rust pone el fallo en la firma y obliga a decidir qué hacer con él en cada llamada. La pregunta deja de ser si has puesto el <code>try/catch</code> y pasa a ser qué tipo de error quieres devolver.
+          </p>
           <h2 id="sin-excepciones">
             Sin excepciones en Rust
             <a href="#sin-excepciones" class="anchor" aria-hidden="true">#</a>
@@ -104,7 +108,7 @@
           <div class="callout callout--info">
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
             <div class="callout__body">
-              <p><strong>La ventaja en equipos</strong>: en PHP, es fácil olvidar que una función puede lanzar y no envolverla en try/catch. En Rust, si ignoras un Result (con un warning de variable no usada), el compilador te avisa. No puedes "olvidarte" de manejar un error.</p>
+              <p><strong>La ventaja en equipos</strong>: en PHP, es fácil olvidar que una función puede lanzar y no envolverla en try/catch. En Rust, si ignoras un Result (<code>Result</code> lleva <code>#[must_use]</code>: warning <code>unused_must_use</code>), el compilador te avisa. No puedes "olvidarte" de manejar un error.</p>
             </div>
           </div>
           <p>Esta visibilidad tiene un coste: el código que llama a funciones fallibles necesita decidir qué hacer con el error. La herramienta que hace esto ergonómico es el operador <code>?</code>.</p>
@@ -336,6 +340,33 @@ async fn obtener_usuario(id: u32) -&gt; Result&lt;Usuario, ApiError&gt; {
               <p><strong><code>unwrap()</code> en producción</strong>: <code>resultado.unwrap()</code> entra en panic si el Result es Err. En código de producción, reemplázalo con <code>?</code>, <code>match</code>, o <code>.unwrap_or_else(|e| ...)</code>. El <code>unwrap()</code> es una señal de que no has pensado en el caso de error.</p>
             </div>
           </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La elección no es entre usar <code>Result</code> o no, sino qué forma de error encaja en cada capa del código:</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Elige así…</h4>
+              <ul>
+                <li><code>Result</code> para fallos esperables: fichero que no existe, red caída, input inválido</li>
+                <li><code>Option</code> cuando la ausencia es normal y no un error: buscar un usuario que puede no existir</li>
+                <li><code>thiserror</code> en librerías y en el dominio, donde quien llama necesita distinguir variantes con <code>match</code></li>
+                <li><code>anyhow</code> en el binario (<code>main</code>, CLI, arranque), donde solo quieres propagar con contexto y registrar</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Evita…</h4>
+              <ul>
+                <li><code>panic!</code> o <code>unwrap()</code> para errores que dependen del exterior: tumban el hilo</li>
+                <li>Exponer <code>anyhow::Error</code> en la API pública de una librería: el usuario no puede hacer <code>match</code> sobre él</li>
+                <li>Un enum de error gigante para todo el proyecto: cada módulo con el suyo y <code>#[from]</code> para unirlos</li>
+                <li>Convertir todo a <code>String</code>: pierdes la causa y la posibilidad de reaccionar según el tipo</li>
+              </ul>
+            </div>
+          </div>
+          <p>El criterio de fondo: si alguien va a <strong>reaccionar</strong> de forma distinta según el error, necesita un tipo con variantes. Si solo va a <strong>informar</strong> del error, basta con propagarlo con contexto.</p>
 
           <h2 id="resumen">
             Resumen

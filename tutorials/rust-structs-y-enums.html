@@ -76,11 +76,13 @@
             <li><a href="#enums">Enums con datos</a></li>
             <li><a href="#option">Option&lt;T&gt;: sin null</a></li>
             <li><a href="#result">Result&lt;T, E&gt;: errores como valores</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">En PHP, un pedido que puede estar «pendiente», «enviado con tracking» o «cancelado con motivo» acaba siendo una clase con media docena de propiedades nullables y un campo <code>estado</code> que nadie impide dejar incoherente. Rust te da dos piezas para que esos estados imposibles no se puedan ni escribir: structs para los datos que van siempre juntos y enums para los que son una cosa <em>o</em> la otra. Con ellas, <code>Option</code> y <code>Result</code> dejan de ser magia: son enums normales.</p>
           <h2 id="structs">
             Structs
             <a href="#structs" class="anchor" aria-hidden="true">#</a>
@@ -373,6 +375,33 @@ fn main() {
               <p><strong><code>unwrap()</code> en producción</strong>: llamar a <code>.unwrap()</code> en un Result en código de producción es como dejar una excepción sin capturar en PHP. Si el Result es Err, el programa entra en panic y se detiene. Usa <code>?</code> para propagar o <code>match</code> para manejar.</p>
             </div>
           </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La pregunta que decide es si los datos van <strong>juntos</strong> (struct: un producto tiene nombre <em>y</em> precio <em>y</em> stock) o son <strong>alternativos</strong> (enum: un pago es con tarjeta <em>o</em> transferencia <em>o</em> Bizum, cada uno con sus datos).</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Encaja así…</h4>
+              <ul>
+                <li>Struct para entidades y DTOs cuyos campos existen siempre</li>
+                <li>Enum con datos cuando el conjunto de variantes es cerrado y lo controlas tú: estados de un pedido, tipos de evento, comandos</li>
+                <li>Tuple struct (<code>struct Euros(i64)</code>) para que el compilador no deje mezclar dos números que significan cosas distintas</li>
+                <li><code>Option</code> para la ausencia normal (un usuario que puede no existir) y <code>Result</code> para lo que falla con un motivo</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Evítalo cuando…</h4>
+              <ul>
+                <li>Un struct con varios <code>bool</code> o <code>Option</code> que solo valen en ciertas combinaciones: eso pide un enum</li>
+                <li>El conjunto de tipos es abierto y otros deben añadir los suyos (plugins, drivers): ahí va un trait</li>
+                <li>Usas <code>Option</code> para un error que merece explicación: devuelve <code>Result</code></li>
+                <li>Usas <code>.unwrap()</code> fuera de tests y prototipos: propaga con <code>?</code></li>
+              </ul>
+            </div>
+          </div>
+          <p>Regla práctica: si al leer el tipo te preguntas «¿y este campo cuándo viene vacío?», el modelo está pidiendo un enum.</p>
 
           <h2 id="resumen">
             Resumen

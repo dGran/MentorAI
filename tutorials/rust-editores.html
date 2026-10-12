@@ -77,17 +77,19 @@
             <li><a href="#clippy">Clippy: el linter que enseña</a></li>
             <li><a href="#rustfmt">rustfmt: formateo automático</a></li>
             <li><a href="#docker-editor">Acceso al contenedor desde el editor</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">Rust es el lenguaje donde más se nota la diferencia entre un editor que colorea y uno que entiende el código: con inferencia por todas partes y un borrow checker estricto, sin ayuda no sabes qué tipo tienes delante ni por qué se queja el compilador hasta que compilas. Dejar bien montados rust-analyzer, Clippy y rustfmt el primer día convierte los errores en una conversación continua en lugar de una pared al final.</p>
           <h2 id="rust-analyzer">
             rust-analyzer
             <a href="#rust-analyzer" class="anchor" aria-hidden="true">#</a>
           </h2>
           <p>rust-analyzer es el servidor LSP oficial de Rust. A diferencia de una simple extensión de sintaxis, ejecuta el compilador de Rust en segundo plano y expone sus diagnósticos al editor: tipos inferidos al hacer hover, errores antes de guardar, autocompletado basado en el análisis real del código, y refactors como renombrar símbolo o extraer función.</p>
-          <p>Antes de rust-analyzer existía el plugin RLS, que era lento y limitado. rust-analyzer lo reemplazó completamente en 2021 y hoy es la herramienta de referencia para cualquier editor con soporte LSP.</p>
+          <p>Antes de rust-analyzer existía el plugin RLS, que era lento y limitado. rust-analyzer lo reemplazó completamente en 2022 y hoy es la herramienta de referencia para cualquier editor con soporte LSP.</p>
           <div class="callout callout--info">
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
             <div class="callout__body">
@@ -116,12 +118,12 @@
     "editor.defaultFormatter": "rust-lang.rust-analyzer"
   },
   "rust-analyzer.checkOnSave": true,
-  "rust-analyzer.checkOnSave.command": "clippy",
+  "rust-analyzer.check.command": "clippy",
   "rust-analyzer.inlayHints.parameterHints.enable": true,
   "rust-analyzer.inlayHints.typeHints.enable": true
 }</code></pre>
           </div>
-          <p>Con <code>checkOnSave.command: "clippy"</code> el editor ejecuta Clippy en cada guardado, no solo el compilador básico. Ves sugerencias de mejora en línea, sin salir del editor.</p>
+          <p>Con <code>check.command: "clippy"</code> el editor ejecuta Clippy en cada guardado, no solo el compilador básico. Ves sugerencias de mejora en línea, sin salir del editor.</p>
           <p>Los <em>inlay hints</em> muestran los tipos inferidos directamente en el código, en gris junto a las variables. Con un sistema de tipos como el de Rust, donde la inferencia cubre casi todo, esto es esencial para saber qué tipo tiene cada expresión sin hacer hover constante.</p>
 
           <h2 id="rustRover">
@@ -136,7 +138,7 @@
               <p><strong>Para equipos PHP</strong>: si tu equipo ya usa PhpStorm, RustRover tiene sentido directo. Si usas VS Code para todo lo demás, quédate en VS Code con rust-analyzer: la experiencia es muy similar y evitas cambiar de herramienta.</p>
             </div>
           </div>
-          <p>RustRover tiene licencia de pago, pero ofrece prueba gratuita de 30 días y licencias gratuitas para proyectos open source y estudiantes.</p>
+          <p>RustRover es gratuito para uso no comercial desde su versión estable (2024); el uso comercial requiere licencia de pago, con prueba gratuita de 30 días.</p>
 
           <h2 id="clippy">
             Clippy: el linter que enseña Rust
@@ -216,11 +218,21 @@ edition = "2021"
 imports_granularity = "Crate"
 group_imports = "StdExternalCrate"</code></pre>
           </div>
-          <p><code>imports_granularity = "Crate"</code> agrupa los imports del mismo crate en un único <code>use</code> con llaves. <code>group_imports = "StdExternalCrate"</code> separa automáticamente stdlib, crates externas y propias en tres bloques distintos.</p>
+          <p><code>imports_granularity = "Crate"</code> agrupa los imports del mismo crate en un único <code>use</code> con llaves. <code>group_imports = "StdExternalCrate"</code> separa automáticamente stdlib, crates externas y propias en tres bloques distintos. Las dos opciones aún son inestables: rustfmt estable las ignora con un aviso y solo se aplican con nightly (<code>cargo +nightly fmt</code>).</p>
           <div class="callout callout--tip">
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
             <div class="callout__body">
               <p><strong>En CI</strong>: añade <code>cargo fmt --check</code> al pipeline. Falla si algún fichero no está formateado, igual que <code>php-cs-fixer --dry-run</code> en PHP.</p>
+            </div>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos al montar el editor</p>
+              <p><strong>rust-analyzer en el host sin toolchain en el host.</strong> El servidor necesita <code>cargo</code> y las fuentes de la biblioteca estándar (<code>rust-src</code>) para analizar. Si todo el toolchain vive en el contenedor, el editor se queda sin tipos ni diagnósticos: o instalas rustup también en el host, o conectas el editor al contenedor.</p>
+              <p><strong><code>-D warnings</code> en CI sin fijar el toolchain.</strong> Cada versión de Clippy trae lints nuevos, y una pipeline que trata los avisos como errores se rompe un día sin que nadie haya tocado código. Fija la versión con <code>rust-toolchain.toml</code> y súbela a propósito.</p>
+              <p><strong>Formatear a mano o con otro formateador.</strong> Si el editor no pasa rustfmt al guardar, <code>cargo fmt --check</code> falla en CI por diferencias que no viste. Configura el formateo al guardar con rust-analyzer, que delega en rustfmt.</p>
             </div>
           </div>
 
@@ -244,7 +256,9 @@ group_imports = "StdExternalCrate"</code></pre>
   "dockerComposeFile": "../compose.yml",
   "service": "app",
   "workspaceFolder": "/app",
-  "extensions": ["rust-lang.rust-analyzer"]
+  "customizations": {
+    "vscode": { "extensions": ["rust-lang.rust-analyzer"] }
+  }
 }</code></pre>
           </div>
           <p><strong>RustRover Remote SSH</strong>: RustRover soporta conexión a hosts remotos vía SSH, incluyendo contenedores con SSH habilitado. Añade el servidor SSH al contenedor en el Dockerfile de desarrollo y conéctate desde JetBrains Gateway.</p>
@@ -254,6 +268,32 @@ group_imports = "StdExternalCrate"</code></pre>
               <p><strong>Para empezar</strong>: el volumen montado (<code>.:/app</code>) con rust-analyzer en el host es suficiente para los primeros proyectos. Dev Containers aporta valor cuando las dependencias del sistema difieren entre el host y el contenedor.</p>
             </div>
           </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Aplícalo cuando…</h4>
+              <ul>
+                <li><strong>VS Code + rust-analyzer</strong>: ya vives en VS Code o quieres una opción sin licencia; la experiencia de edición es muy parecida</li>
+                <li><strong>RustRover</strong>: tu equipo usa PhpStorm, quieres los mismos atajos y un debugger visual sin configurar CodeLLDB</li>
+                <li><strong>Dev Containers</strong>: no quieres toolchain en el host o las bibliotecas del sistema difieren entre host y contenedor</li>
+                <li><strong>Clippy en cada guardado y <code>cargo fmt --check</code> en CI</strong>: siempre, desde el primer commit; es barato y enseña el idioma</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Y elige otra cosa cuando…</h4>
+              <ul>
+                <li>Tienes un workspace enorme y <code>checkOnSave</code> con Clippy bloquea el editor: deja <code>cargo check</code> al guardar y Clippy para el pre-commit o CI</li>
+                <li>Heredas un proyecto con cientos de avisos: no actives <code>clippy::pedantic</code> de golpe; empieza por los lints por defecto y añade los que aporten</li>
+                <li>Solo vas a hacer un experimento de diez líneas: el Rust Playground en el navegador basta, sin montar nada</li>
+              </ul>
+            </div>
+          </div>
+          <p>La regla de fondo: el editor y la CI deben usar las mismas herramientas con la misma versión. Si no, verás en verde en local lo que falla en la pipeline.</p>
+
 
           <h2 id="resumen">
             Resumen
@@ -271,7 +311,7 @@ group_imports = "StdExternalCrate"</code></pre>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>VS Code con <code>checkOnSave: "clippy"</code> da una experiencia excelente sin coste de licencia.</span>
+                <span>VS Code con <code>check.command: "clippy"</code> da una experiencia excelente sin coste de licencia.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>

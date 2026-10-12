@@ -76,11 +76,13 @@
             <li><a href="#closures">Closures</a></li>
             <li><a href="#iteradores">Iteradores y métodos</a></li>
             <li><a href="#higher-order">Funciones de orden superior</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">En PHP una función puede devolver un array, <code>null</code> o <code>false</code> según el día, y te enteras leyendo el cuerpo. En Rust la firma es un contrato que el compilador hace cumplir: tipos de entrada y salida explícitos, siempre. A cambio, dentro del cuerpo casi todo es expresión e inferencia, y las closures con iteradores sustituyen a la mayoría de los <code>foreach</code> que escribías.</p>
           <h2 id="funciones">
             Funciones y retorno implícito
             <a href="#funciones" class="anchor" aria-hidden="true">#</a>
@@ -228,7 +230,7 @@ saludar();</code></pre>
 
 let suma_pares: i32 = numeros
     .iter()
-    .filter(|&&amp;x| x % 2 == 0)
+    .filter(|&amp;&amp;x| x % 2 == 0)
     .map(|&amp;x| x * x)
     .sum();
 
@@ -314,6 +316,32 @@ fn main() {
 }</code></pre>
           </div>
           <p>Este patrón de <em>factory de funciones</em> —una función que retorna una closure configurada con sus parámetros— es muy común en Rust para construir callbacks y transformadores reutilizables.</p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Elige…</h4>
+              <ul>
+                <li><strong>Función con nombre (<code>fn</code>)</strong>: lógica reutilizable, que quieres testear por separado o que forma parte de una API</li>
+                <li><strong>Closure</strong>: lógica corta de un solo uso, normalmente como argumento de <code>map</code>, <code>filter</code> o <code>sort_by</code>, o que necesita capturar variables del entorno</li>
+                <li><strong>Cadena de iteradores</strong>: transformar, filtrar o agregar una colección sin variables mutables intermedias</li>
+                <li><strong><code>impl Fn</code> como parámetro</strong>: la función recibe comportamiento, como un callback o una estrategia</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Y otra cosa cuando…</h4>
+              <ul>
+                <li>La cadena tiene muchos pasos con lógica compleja en cada closure: un <code>for</code> con nombres claros se lee mejor y rinde igual</li>
+                <li>Devuelves una tupla de más de dos o tres valores: define un <code>struct</code> con nombres</li>
+                <li>Usas <code>Box&lt;dyn Fn&gt;</code> donde basta <code>impl Fn</code>: el <code>dyn</code> solo hace falta para guardar closures distintas en la misma colección o elegir una en tiempo de ejecución</li>
+              </ul>
+            </div>
+          </div>
+          <p>Para salir antes, <code>return</code>; para el valor final, la última expresión sin <code>;</code>. Mezclarlos al revés compila, pero quien lea tu código tardará más en ver qué devuelve la función.</p>
+
 
           <h2 id="resumen">
             Resumen

@@ -77,11 +77,15 @@
             <li><a href="#mutex-threads">Arc&lt;Mutex&lt;T&gt;&gt;: estado compartido</a></li>
             <li><a href="#rayon">Rayon: paralelismo de datos</a></li>
             <li><a href="#vs-go">Rust vs Go en concurrencia</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">
+            En PHP cada petición vive en su propio proceso y la memoria compartida casi no existe, así que nunca has tenido que pelearte con un data race. En cuanto un servicio necesita repartir trabajo entre cores, el problema aparece de golpe: dos hilos tocando el mismo dato a la vez. Rust no te pide disciplina para evitarlo; se niega a compilar el código que lo permitiría.
+          </p>
           <h2 id="threads">
             std::thread::spawn
             <a href="#threads" class="anchor" aria-hidden="true">#</a>
@@ -238,7 +242,7 @@ fn main() {
     let handles: Vec&lt;_&gt; = (0..8u64).map(|i| {
         let resultados = Arc::clone(&amp;resultados);
         thread::spawn(move || {
-            let calculo = (0..=i).sum::&lt;u64>();
+            let calculo = (0..=i).sum::&lt;u64&gt;();
             resultados.lock().unwrap().push(calculo);
         })
     }).collect();
@@ -253,6 +257,19 @@ fn main() {
 }</code></pre>
           </div>
           <p>El <code>MutexGuard</code> retornado por <code>.lock()</code> implementa <code>Deref</code> y <code>DerefMut</code>, así que puedes usarlo como el tipo interior. Se libera automáticamente al salir de scope.</p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos</p>
+              <ul>
+                <li><strong>Creer que Rust evita los deadlocks.</strong> El compilador garantiza que no hay data races, no que no haya bloqueos: dos hilos que toman dos <code>Mutex</code> en orden distinto se quedan esperando para siempre. Toma los candados siempre en el mismo orden.</li>
+                <li><strong>Mantener el <code>MutexGuard</code> vivo más de la cuenta.</strong> El candado se libera al salir de scope, no al terminar de usarlo. Si haces trabajo lento en el mismo bloque, los demás hilos esperan; copia lo que necesitas y suelta el guard (un bloque <code>{}</code> o <code>drop(guard)</code>).</li>
+                <li><strong>Olvidar el <code>join()</code>.</strong> Cuando <code>main</code> termina, el proceso acaba y se lleva por delante los hilos que sigan trabajando, sin aviso.</li>
+                <li><strong><code>lock().unwrap()</code> sin saber por qué puede fallar.</strong> Si un hilo entra en panic con el candado tomado, el <code>Mutex</code> queda envenenado y los siguientes <code>lock()</code> devuelven <code>Err</code>: el <code>unwrap()</code> propaga el panic al resto.</li>
+              </ul>
+            </div>
+          </div>
 
           <h2 id="rayon">
             Rayon: paralelismo de datos
@@ -310,7 +327,34 @@ fn main() {
               </tbody>
             </table>
           </div>
-          <p>La diferencia clave: Go garantiza la ausencia de data races con el <em>race detector</em> (una herramienta que ejecutas en tests). Rust la garantiza en compilación, sin necesidad de ejecutar nada. Un bug que Go detecta en tests o producción, Rust lo detecta antes de que exista el binario.</p>
+          <p>La diferencia clave: Go detecta data races con el <em>race detector</em> (una herramienta que ejecutas en tests), y solo encuentra las que ocurren durante esa ejecución. Rust garantiza su ausencia en compilación, sin necesidad de ejecutar nada. Un bug que Go detecta en tests o producción, Rust lo detecta antes de que exista el binario.</p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Los threads del sistema operativo son la herramienta para trabajo que <strong>ocupa CPU</strong> o para un puñado de tareas de larga duración. Para miles de conexiones que pasan el tiempo esperando red, lo que toca es async, la siguiente lección.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Usa threads cuando…</h4>
+              <ul>
+                <li>El trabajo es CPU intensivo: hashing, compresión, parseo o cálculo sobre grandes volúmenes</li>
+                <li>Quieres aplicar la misma operación a una colección grande: <code>par_iter()</code> de Rayon y listo</li>
+                <li>Tienes pocos workers de larga vida (un consumidor de cola, un proceso batch) comunicados por canales</li>
+                <li>Necesitas que un hilo tome prestados datos locales sin <code>Arc</code>: <code>std::thread::scope</code> lo permite</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No los uses cuando…</h4>
+              <ul>
+                <li>Atiendes muchas conexiones I/O concurrentes: un thread por conexión no escala, usa Tokio</li>
+                <li>Basta con un contador compartido: <code>AtomicU64</code> es más barato que un <code>Mutex</code></li>
+                <li>El trabajo puede ir a una cola externa y procesarse en otro proceso, como harías con Messenger</li>
+                <li>Vas a meter un <code>Mutex</code> alrededor de todo: si cada hilo espera el candado, has serializado el programa</li>
+              </ul>
+            </div>
+          </div>
+          <p>Regla práctica: empieza por paso de mensajes con canales, porque el ownership deja claro quién tiene el dato. Pasa a <code>Arc&lt;Mutex&lt;T&gt;&gt;</code> solo cuando varios hilos necesiten de verdad leer y modificar el mismo estado, y a <code>RwLock</code> si las lecturas superan con mucho a las escrituras.</p>
 
           <h2 id="resumen">
             Resumen
@@ -344,7 +388,7 @@ fn main() {
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Rust garantiza ausencia de data races en compilación; Go lo hace con el race detector en runtime. La garantía de Rust es más fuerte.</span>
+                <span>Rust garantiza ausencia de data races en compilación; Go las detecta con el race detector en runtime. La garantía de Rust es más fuerte.</span>
               </li>
             </ul>
           </div>

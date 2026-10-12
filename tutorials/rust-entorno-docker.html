@@ -77,11 +77,13 @@
             <li><a href="#compose">Docker Compose</a></li>
             <li><a href="#cache-cargo">Caché de dependencias</a></li>
             <li><a href="#flujo">Flujo de trabajo diario</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">El primer <code>cargo build</code> de un proyecto con unas cuantas dependencias puede tardar minutos, y si tu entorno lo tira todo en cada <code>docker compose up</code>, pagarás esos minutos cada mañana. El objetivo no es solo que Rust compile dentro de un contenedor, sino que la segunda compilación sea casi inmediata y que el host siga limpio: sin rustup ni toolchains mezclados entre proyectos.</p>
           <h2 id="por-que-docker">
             Por qué dockerizar el entorno
             <a href="#por-que-docker" class="anchor" aria-hidden="true">#</a>
@@ -121,21 +123,21 @@
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
-            <pre><code data-lang="bash">FROM rust:1.79-slim
+            <pre><code data-lang="bash">FROM rust:1.80-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update &amp;&amp; apt-get install -y \
     pkg-config \
     libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
+    &amp;&amp; rm -rf /var/lib/apt/lists/*
 
 ENV CARGO_HOME=/cargo-cache
 ENV PATH="$CARGO_HOME/bin:$PATH"
 
 CMD ["cargo", "watch", "-x", "run"]</code></pre>
           </div>
-          <p>La imagen oficial <code>rust:1.79-slim</code> incluye <code>rustc</code>, <code>cargo</code> y <code>rustup</code>. La variable <code>CARGO_HOME</code> mueve el caché fuera del contenedor (lo explicamos abajo).</p>
+          <p>La imagen oficial <code>rust:1.80-slim</code> incluye <code>rustc</code>, <code>cargo</code> y <code>rustup</code>. La variable <code>CARGO_HOME</code> mueve el caché fuera del contenedor (lo explicamos abajo).</p>
           <p>Para desarrollo activo, <code>cargo-watch</code> recarga al guardar igual que <code>nodemon</code>:</p>
           <div class="code-block">
             <div class="code-block__head">
@@ -145,7 +147,7 @@ CMD ["cargo", "watch", "-x", "run"]</code></pre>
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
-            <pre><code data-lang="bash">RUN cargo install cargo-watch</code></pre>
+            <pre><code data-lang="bash">RUN cargo install --root /usr/local cargo-watch</code></pre>
           </div>
 
           <h2 id="compose">
@@ -204,6 +206,17 @@ volumes:
             </div>
           </div>
 
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos al dockerizar Rust</p>
+              <p><strong>Escuchar en <code>127.0.0.1</code> dentro del contenedor.</strong> El <code>ports: "3000:3000"</code> publica el puerto, pero si tu servidor hace bind a <code>127.0.0.1:3000</code> solo acepta conexiones desde dentro del propio contenedor y el navegador del host no llega. Haz bind a <code>0.0.0.0:3000</code>.</p>
+              <p><strong>Instalar herramientas donde luego monta un volumen.</strong> Con <code>CARGO_HOME=/cargo-cache</code>, <code>cargo install cargo-watch</code> deja el binario en <code>/cargo-cache/bin</code> de la imagen. Un volumen nombrado vacío copia ese contenido la primera vez, pero si el volumen ya existía lo tapa y aparece <code>no such command: watch</code>. Instala las herramientas fuera del volumen, por ejemplo con <code>cargo install --root /usr/local cargo-watch</code>.</p>
+              <p><strong>Ficheros de root en tu máquina.</strong> En Linux el contenedor corre como root por defecto, así que lo que genera en el bind mount (<code>Cargo.lock</code>, un <code>cargo new</code>) aparece con dueño root en el host. Ejecuta el servicio con tu UID (<code>user:</code> en compose) y ajusta los permisos de los volúmenes.</p>
+              <p><strong>Dejar <code>target/</code> en el bind mount.</strong> Crece a varios gigas y, en macOS y Windows, la E/S compartida lo hace todo más lento. El volumen <code>target-cache</code> lo saca del host.</p>
+            </div>
+          </div>
+
           <h2 id="flujo">
             Flujo de trabajo diario
             <a href="#flujo" class="anchor" aria-hidden="true">#</a>
@@ -240,6 +253,31 @@ docker compose exec app cargo test
               <p><strong>cargo add</strong> es el equivalente a <code>composer require</code>: añade la crate al <code>Cargo.toml</code> y actualiza el lock. Disponible desde Rust 1.62.</p>
             </div>
           </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Aplícalo cuando…</h4>
+              <ul>
+                <li>Tu equipo ya trabaja dockerizado en PHP o Go y quieres el mismo flujo: el host solo tiene Docker y el editor</li>
+                <li>El proyecto depende de bibliotecas del sistema (OpenSSL, <code>libpq</code>) y quieres las mismas versiones en local, en CI y en producción</li>
+                <li>Mantienes varios proyectos con toolchains distintos y no quieres que se pisen</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Y elige otra cosa cuando…</h4>
+              <ul>
+                <li>Trabajas en macOS o Windows con un proyecto grande: la E/S del volumen compartido penaliza la compilación, y rustup en el host es bastante más rápido. rustup ya aísla la versión por proyecto con <code>rust-toolchain.toml</code></li>
+                <li>Es un proyecto en Rust puro, sin dependencias del sistema, y trabajas solo: rustup local te ahorra una capa</li>
+                <li>Vas a desplegar: esta imagen de desarrollo lleva el compilador entero. Para producción, un build multi-stage que copie solo el binario a una imagen mínima</li>
+              </ul>
+            </div>
+          </div>
+          <p>Un término medio habitual: rustup en el host para que el editor vaya fino, y el contenedor para lo que debe ser reproducible (tests, build de CI, dependencias del sistema).</p>
+
 
           <h2 id="resumen">
             Resumen

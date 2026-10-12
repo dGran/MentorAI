@@ -77,11 +77,13 @@
             <li><a href="#impl-trait">impl Trait en parámetros y retorno</a></li>
             <li><a href="#trait-objects">dyn Trait: polimorfismo en runtime</a></li>
             <li><a href="#traits-stdlib">Traits importantes de la stdlib</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">En PHP, cuando quieres que un producto y un usuario se puedan describir igual, declaras una interface y la implementas en cada clase. Rust hace lo mismo con los traits, pero con dos giros que cambian cómo diseñas: puedes implementarlos sobre tipos que no son tuyos y decidir si el polimorfismo se resuelve al compilar, sin coste, o en runtime. Saber elegir entre esas dos formas es lo que separa un código Rust idiomático de uno que imita a PHP.</p>
           <h2 id="que-es-un-trait">
             ¿Qué es un trait?
             <a href="#que-es-un-trait" class="anchor" aria-hidden="true">#</a>
@@ -359,6 +361,31 @@ fn main() {
     println!("{}", p1 == p2); // true
 }</code></pre>
           </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Define un trait cuando…</h4>
+              <ul>
+                <li>Varios tipos comparten un comportamiento y hay código que debe funcionar con cualquiera de ellos</li>
+                <li>Escribes una función genérica y necesitas exigir capacidades: <code>T: Display + Clone</code></li>
+                <li>Quieres que tu tipo encaje con la stdlib: <code>Display</code> para <code>println!</code>, <code>From</code> para <code>?</code> y <code>.into()</code>, <code>Default</code></li>
+                <li>Necesitas sustituir una dependencia en tests (un repositorio, un reloj) por otra implementación</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No lo hagas cuando…</h4>
+              <ul>
+                <li>Solo hay un tipo que lo implementa: métodos en un <code>impl</code> normal, sin trait. La costumbre de PHP de «interface para todo» aquí solo añade ruido</li>
+                <li>El conjunto de casos es cerrado y lo controlas tú: un enum con <code>match</code> es más simple que <code>Vec&lt;Box&lt;dyn Trait&gt;&gt;</code></li>
+                <li>Buscas compartir datos como haría una clase base: los traits no tienen campos; usa composición</li>
+              </ul>
+            </div>
+          </div>
+          <p>Entre las dos formas de usarlo: generics o <code>impl Trait</code> por defecto, porque se resuelven al compilar y no cuestan nada en runtime. Pasa a <code>dyn Trait</code> cuando necesitas mezclar tipos distintos en la misma colección o decidir la implementación en runtime (por configuración, por ejemplo).</p>
 
           <h2 id="resumen">
             Resumen

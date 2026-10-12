@@ -76,11 +76,15 @@
             <li><a href="#features">Features: compilación condicional</a></li>
             <li><a href="#workspace">Workspaces: monorepo Rust</a></li>
             <li><a href="#crates-esenciales">Crates esenciales para backend</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">
+            En PHP, Composer instala, PHPUnit prueba, PHPStan analiza y cada proyecto monta su propio <code>Makefile</code> para unirlos. En Rust todo eso es un solo comando con subcomandos, y todos los proyectos se construyen igual. Lo que sí tienes que aprender son las piezas donde Cargo decide por ti: semver, features y workspaces.
+          </p>
           <h2 id="cargo">
             Cargo: build, test, doc, publish
             <a href="#cargo" class="anchor" aria-hidden="true">#</a>
@@ -122,7 +126,7 @@
             <pre><code data-lang="bash">cargo add serde
 cargo add serde --features derive
 cargo add tokio --features full
-cargo add sqlx --features postgres,runtime-tokio-rustls</code></pre>
+cargo add sqlx --features postgres,runtime-tokio,tls-rustls</code></pre>
           </div>
           <p><code>cargo add</code> (disponible desde Rust 1.62) actualiza el <code>Cargo.toml</code> automáticamente. Antes había que editar el fichero a mano.</p>
           <p>Las versiones siguen semver estricto. La notación de versiones en <code>Cargo.toml</code>:</p>
@@ -135,8 +139,8 @@ cargo add sqlx --features postgres,runtime-tokio-rustls</code></pre>
               </button>
             </div>
             <pre><code data-lang="rust">[dependencies]
-serde = "1.0"         # ^1.0: >=1.0.0, &lt;2.0.0 (compatible)
-tokio = "~1.28"       # ~1.28: >=1.28.0, &lt;1.29.0 (patch solo)
+serde = "1.0"         # ^1.0: &gt;=1.0.0, &lt;2.0.0 (compatible)
+tokio = "~1.28"       # ~1.28: &gt;=1.28.0, &lt;1.29.0 (patch solo)
 uuid = "=1.3.0"       # versión exacta
 rand = "*"            # cualquier versión (no recomendado)</code></pre>
           </div>
@@ -170,8 +174,8 @@ mockall = "0.12"</code></pre>
             <pre><code data-lang="rust">[dependencies]
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
-sqlx = { version = "0.7", features = ["postgres", "runtime-tokio-rustls", "macros"] }
-reqwest = { version = "0.11", features = ["json"] }</code></pre>
+sqlx = { version = "0.7", features = ["postgres", "runtime-tokio", "tls-rustls", "macros"] }
+reqwest = { version = "0.12", features = ["json"] }</code></pre>
           </div>
           <p>Sin <code>features = ["full"]</code>, Tokio solo incluye el código base sin el I/O async, timers, canales, etc. Con <code>"full"</code>, incluye todo. Para producción, es mejor especificar solo las features que usas para reducir la compilación.</p>
           <p>Puedes definir features propias en tu crate para exponer funcionalidades opcionales:</p>
@@ -256,6 +260,19 @@ serde.workspace = true</code></pre>
           </div>
           <p>Todos los crates del workspace comparten el mismo <code>Cargo.lock</code>: las versiones son consistentes en todo el monorepo.</p>
 
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos</p>
+              <ul>
+                <li><strong>Leer <code>"1.2"</code> como versión exacta.</strong> En Cargo significa <code>^1.2</code>: cualquier <code>&gt;=1.2.0, &lt;2.0.0</code>. Para fijar una versión concreta hace falta <code>"=1.2.3"</code>, y casi nunca es buena idea en una librería.</li>
+                <li><strong>Esperar que <code>cargo update</code> toque el <code>Cargo.toml</code>.</strong> Solo actualiza el <code>Cargo.lock</code> dentro de los rangos que ya declaras. Para subir de versión mayor tienes que cambiar el requisito.</li>
+                <li><strong>Diseñar features como interruptores excluyentes.</strong> Si dos crates del grafo dependen de la tuya con features distintas, Cargo compila una sola copia con la unión de ambas. Una feature solo debe añadir funcionalidad, nunca quitarla.</li>
+                <li><strong>Compilar en CI sin <code>--locked</code>.</strong> Sin él, Cargo puede resolver versiones nuevas si el lock no cuadra con el <code>Cargo.toml</code>; con él, falla en vez de compilar algo distinto a lo que probaste.</li>
+              </ul>
+            </div>
+          </div>
+
           <h2 id="crates-esenciales">
             Crates esenciales para backend
             <a href="#crates-esenciales" class="anchor" aria-hidden="true">#</a>
@@ -288,6 +305,33 @@ serde.workspace = true</code></pre>
               <p><strong>Para empezar un servidor REST</strong>: <code>tokio + axum + serde + sqlx + tracing + anyhow + thiserror</code>. Este stack cubre el 90% de un servicio backend típico.</p>
             </div>
           </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Cargo lo usas siempre; las decisiones están en cómo organizas el proyecto y qué dependencias metes.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Haz…</h4>
+              <ul>
+                <li>Un solo crate con módulos mientras el proyecto quepa en la cabeza: es lo más simple de compilar y navegar</li>
+                <li>Un workspace cuando tengas varios binarios que comparten código (API, worker, CLI) o el tiempo de compilación pida partir</li>
+                <li>Features propias solo para dependencias pesadas y opcionales, como un driver de BD o las métricas</li>
+                <li>Repasar <code>cargo tree</code> antes de añadir una crate: ves qué arrastra y si ya la tienes por otra vía</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Evita…</h4>
+              <ul>
+                <li>Partir en crates por imitar la estructura de carpetas de Symfony: cada crate es una frontera de compilación y de visibilidad</li>
+                <li>Activar <code>features = ["full"]</code> por costumbre en todo: alarga la compilación</li>
+                <li>Añadir una crate para veinte líneas que puedes escribir tú, sobre todo si está sin mantener</li>
+                <li>Features que se excluyen entre sí: Cargo las suma, no elige una</li>
+              </ul>
+            </div>
+          </div>
+          <p>Para empezar un servicio, el stack de la tabla de crates esenciales es una base segura: son crates muy usadas y mantenidas, y casi todas se integran entre sí sin pegamento.</p>
 
           <h2 id="resumen">
             Resumen
