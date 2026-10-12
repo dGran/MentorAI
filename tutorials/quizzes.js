@@ -2129,7 +2129,7 @@ window.MENTORAI_QUIZZES = {
       o: ["Que cualquier usuario puede pedir el perfil de otro usuario","Que el endpoint acepta propiedades que no debería","Que la respuesta no escapa el HTML del nombre","Que el JSON incluye columnas que el cliente no debe ver"], a: 3,
       w: "Es la cara de lectura de BOPLA: que el front no pinte un campo no impide leerlo en el JSON. Pedir el perfil ajeno sería BOLA, un GET no acepta propiedades y el escapado es otro problema. Se corrige con un JsonResource que liste lo que sale.",
       lesson: "sec-validacion-y-asignacion-masiva" },
-    { id: "q653a7d", q: "Tu SaaS deja que cada cliente configure la URL de sus webhooks. Tu guard valida la IP resuelta y fija la conexión con CURLOPT_RESOLVE, pero el proxy de egress registra un intento hacia 169.254.169.254 dentro de una misma entrega a hooks.cliente.io. ¿Qué ha pasado con más probabilidad?",
+    { id: "q653a7d", q: "Tu SaaS deja que cada cliente configure la URL de sus webhooks. Tu guard valida la IP resuelta y fija la conexión con CURLOPT_RESOLVE, pero el cortafuegos de salida registra un intento hacia 169.254.169.254 dentro de una misma entrega a hooks.cliente.io. ¿Qué ha pasado con más probabilidad?",
       o: ["El DNS del cliente devolvió otra IP en una segunda resolución","El cliente editó la URL guardada saltándose la validación","El proxy de egress reescribió el destino de la petición","El receptor respondió con un 302 y tu cliente lo siguió"], a: 3,
       w: "Fijar la IP descarta el rebinding, y todo ocurre en la misma entrega, así que la URL guardada no cambió. Una redirección es otra URL: hay que desactivarlas o validar cada salto.",
       lesson: "sec-ssrf" },

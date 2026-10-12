@@ -3044,7 +3044,7 @@ window.MENTORAI_CHECKS = {
       w: "Es una lista negra por nombre de clave: no detecta un token metido en el mensaje ni un campo con otro nombre. El processor corre antes de los handlers y en Monolog 3 devuelve una copia con with(); la defensa principal es elegir los campos uno a uno." },
     { id: "c046c39", q: "¿Qué evita la inyección en logs por saltos de línea?",
       o: ["Escapar a mano los caracteres especiales antes de concatenar","Usar un mensaje constante y pasar los datos en el contexto","Activar allowInlineLineBreaks en el LineFormatter de Monolog"], a: 1,
-      w: "Sin concatenación, el formateador (JsonFormatter o LineFormatter por defecto) neutraliza los saltos de línea. Escapar a mano es frágil, y allowInlineLineBreaks hace justo lo contrario: deja pasar los saltos." },
+      w: "Sin concatenación, el formateador neutraliza los saltos de línea si es JsonFormatter o un LineFormatter sin allowInlineLineBreaks (Laravel lo activa en sus canales por defecto). Escapar a mano es frágil, y allowInlineLineBreaks hace justo lo contrario: deja pasar los saltos." },
     { id: "c799574", q: "¿Qué conviene registrar de un login fallido?",
       o: ["La contraseña con hash, para comparar intentos repetidos","El cuerpo completo de la petición, para reproducir el intento","El identificador con hash, la IP y el motivo del fallo"], a: 2,
       w: "Basta con saber quién, desde dónde y por qué falló. La contraseña no se registra ni con hash (suele ser la buena con una errata), y el cuerpo completo la arrastra igualmente." },

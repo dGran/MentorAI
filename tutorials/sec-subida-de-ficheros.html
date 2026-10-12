@@ -480,7 +480,7 @@ final class ZipInspector
           <p>
             Cada defensa tiene un test que la rompe si alguien la quita. Los imprescindibles: un
             PHP disfrazado de JPEG, un fichero un byte por encima del límite, un SVG con script
-            y un zip con una entrada <code>../</code>. Con los fakes de Laravel cuesta pocas
+            y un zip con una entrada <code>../</code>. Con un UploadedFile real en modo test (el fake deduce el tipo del nombre, no del contenido) cuesta pocas
             líneas:
           </p>
 
@@ -497,7 +497,9 @@ final class ZipInspector
 public function test_rejects_php_disguised_as_jpeg(): void
 {
     Storage::fake('s3');
-    $disguisedScript = UploadedFile::fake()-&gt;createWithContent('foto.jpg', '&lt;?php system($_GET["c"]);');
+    $path = tempnam(sys_get_temp_dir(), 'avatar');
+    file_put_contents($path, '&lt;?php system($_GET["c"]);');
+    $disguisedScript = new UploadedFile($path, 'foto.jpg', 'image/jpeg', null, true);
 
     $this-&gt;actingAs(User::factory()-&gt;create())
         -&gt;postJson('/api/avatar', ['avatar' =&gt; $disguisedScript])
