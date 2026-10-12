@@ -76,11 +76,13 @@
             <li><a href="#while">while y break/continue</a></li>
             <li><a href="#match">match/case (Python 3.10+)</a></li>
             <li><a href="#walrus">El operador walrus :=</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">La lógica de un endpoint es casi toda control de flujo: validar, ramificar y recorrer resultados. En Python las piezas se parecen a las de PHP lo justo para confundir: el <code>for</code> no lleva índice, un <code>else</code> puede colgar de un bucle y <code>match</code> no es un <code>switch</code>. Aquí ves qué herramienta elegir en cada caso y por qué.</p>
           <h2 id="if">
             if/elif/else y truthiness
             <a href="#if" class="anchor" aria-hidden="true">#</a>
@@ -278,6 +280,18 @@ def describir(punto: Punto) -&gt; str:
             </div>
           </div>
 
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos al controlar el flujo</p>
+              <ul>
+                <li><strong>Usar un nombre suelto en un <code>case</code> como si fuera una constante.</strong> <code>case ACTIVO:</code> no compara: captura el valor en una variable llamada <code>ACTIVO</code> y casa siempre. Si no es el último <code>case</code>, Python lo rechaza con un <code>SyntaxError</code>; si lo es, se traga todo en silencio. Compara con nombres con punto (<code>Estado.ACTIVO</code>, de un <code>Enum</code>) o con literales.</li>
+                <li><strong>Borrar de una lista mientras la recorres.</strong> El <code>for</code> avanza por índice y, al quitar un elemento, se salta el siguiente. Con un diccionario, directamente salta <code>RuntimeError</code>. Construye una colección nueva con una comprensión, o recorre una copia.</li>
+                <li><strong>Usar la truthiness cuando el cero es un valor válido.</strong> <code>if not cantidad:</code> trata igual <code>0</code> que <code>None</code>, y un pedido de cero unidades acaba en la rama de «falta el dato». Si lo que quieres saber es si llegó, pregunta <code>if cantidad is None:</code>.</li>
+              </ul>
+            </div>
+          </div>
+
           <h2 id="walrus">
             El operador walrus :=
             <a href="#walrus" class="anchor" aria-hidden="true">#</a>
@@ -320,6 +334,19 @@ while chunk:
               <p><strong>Cuándo no usar walrus</strong>: si no elimina duplicación real o si hace el código más oscuro, no lo uses. El Zen de Python: "Explicit is better than implicit." Un walrus innecesario es un truco, no una mejora.</p>
             </div>
           </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <ul>
+            <li><strong><code>if</code>/<code>elif</code></strong> para dos o tres ramas y condiciones sobre rangos. Si se anidan, sal pronto con un <code>return</code> en cada caso que no sigue: el camino feliz queda al final y sin sangría.</li>
+            <li><strong><code>match</code></strong> cuando ramificas por la <em>forma</em> de los datos: un comando partido en palabras, un JSON que llega con estructuras distintas o una dataclass. Para comparar un valor con cuatro constantes, un <code>if</code>/<code>elif</code> o un diccionario de funciones se lee mejor.</li>
+            <li><strong><code>for</code> sobre el iterable</strong>, con <code>enumerate</code> si necesitas el índice y <code>zip</code> si recorres dos a la vez. <code>for i in range(len(lista))</code> es PHP traducido y casi siempre sobra.</li>
+            <li><strong><code>while</code></strong> solo cuando no hay una colección que recorrer: polling, reintentos o leer hasta que se agote la entrada.</li>
+            <li><strong><code>for</code>…<code>else</code></strong> para «busca y, si no aparece, haz esto». Si el equipo no lo conoce, una función con <code>return</code> dentro del bucle dice lo mismo sin sorpresas.</li>
+            <li><strong>Walrus</strong> cuando elimina una llamada repetida de verdad, no para ahorrar una línea.</li>
+          </ul>
 
           <h2 id="resumen">
             Resumen

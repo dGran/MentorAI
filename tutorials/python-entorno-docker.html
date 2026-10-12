@@ -76,11 +76,13 @@
             <li><a href="#compose">Compose con hot-reload</a></li>
             <li><a href="#uv">uv como gestor moderno</a></li>
             <li><a href="#flujo">Flujo de trabajo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">En PHP el contenedor de desarrollo suele ser una imagen con FPM y Composer; en Python cambian las piezas y las trampas: logs que no salen, builds que tardan diez minutos por la imagen base equivocada o dependencias instaladas en un sitio y buscadas en otro. Aquí montas un entorno que arranca con un comando y se comporta igual en cualquier máquina.</p>
           <h2 id="estructura">
             Estructura del proyecto
             <a href="#estructura" class="anchor" aria-hidden="true">#</a>
@@ -196,6 +198,18 @@ volumes:
           <p>El volume <code>uv_cache</code> persiste la caché de paquetes de uv entre reinicios del contenedor. La primera vez que se instalan las dependencias uv las descarga; las siguientes las lee desde la caché del volumen. El resultado es que <code>uv add</code> dentro del contenedor tarda segundos, no minutos.</p>
           <p><code>depends_on</code> con <code>condition: service_healthy</code> garantiza que la aplicación no intenta conectarse a Postgres antes de que esté lista para aceptar conexiones. El equivalente naïve —arrancar los dos servicios en paralelo y esperar a que la app reintente— produce errores en el arranque difíciles de diagnosticar.</p>
 
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos al montar el entorno</p>
+              <ul>
+                <li><strong>Tapar el <code>.venv</code> de la imagen con el bind mount.</strong> <code>uv sync</code> crea el entorno en <code>/app/.venv</code> durante el build, y el volumen <code>.:/app</code> lo oculta con tu carpeta del host. <code>uv run</code> vuelve a sincronizar y deja un <code>.venv</code> de Linux en tu proyecto. Se evita con un volumen anónimo <code>- /app/.venv</code> o sacando el entorno de <code>/app</code> con <code>UV_PROJECT_ENVIRONMENT</code>.</li>
+                <li><strong>Arrancar uvicorn sin <code>--host 0.0.0.0</code>.</strong> Por defecto escucha en <code>127.0.0.1</code>, que dentro del contenedor solo es el propio contenedor: el puerto publicado responde con la conexión cerrada aunque el servidor esté vivo.</li>
+                <li><strong>Editar <code>pyproject.toml</code> a mano y reconstruir.</strong> <code>uv sync --frozen</code> instala lo que dice <code>uv.lock</code> sin comprobar si está al día, así que la dependencia nueva no llega y salta un <code>ModuleNotFoundError</code>. Usa <code>uv add</code>, o <code>uv lock</code> tras editar.</li>
+              </ul>
+            </div>
+          </div>
+
           <h2 id="uv">
             uv como gestor moderno
             <a href="#uv" class="anchor" aria-hidden="true">#</a>
@@ -247,6 +261,31 @@ docker compose down</code></pre>
               <p><strong>Si el contenedor no arranca</strong>: <code>docker compose logs app</code> muestra el error. Los problemas más comunes son <code>uv.lock</code> desincronizado con <code>pyproject.toml</code> (solucionado con <code>uv sync</code> dentro del contenedor) o variables de entorno faltantes en <code>.env</code>.</p>
             </div>
           </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Dockeriza el entorno cuando…</h4>
+              <ul>
+                <li>El proyecto depende de servicios (Postgres, Redis) que todo el equipo tiene que levantar igual</li>
+                <li>Ya despliegas en contenedores y quieres que desarrollo y producción partan de la misma imagen base</li>
+                <li>Usas paquetes con extensiones C que piden librerías de sistema: se instalan una vez en el Dockerfile, no en cada portátil</li>
+                <li>Trabaja más de una persona y el «en mi máquina funciona» ya os ha costado una tarde</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Quédate en el host cuando…</h4>
+              <ul>
+                <li>Es un script suelto o una CLI personal: <code>uv run</code> con su <code>.venv</code> local arranca al instante</li>
+                <li>Estás explorando datos en un notebook: el entorno local con uv da menos fricción</li>
+                <li>Tu editor no sabe usar el intérprete del contenedor y no vas a configurarlo: perderás autocompletado</li>
+              </ul>
+            </div>
+          </div>
+          <p>Este Dockerfile es de desarrollo: <code>--reload</code> y el código montado como volumen no van a producción. Allí toca una imagen construida en varias etapas, con el código copiado dentro y sin recarga. Si el proyecto crece hasta convertirse en un servicio, empieza en el contenedor; migrar un script de host a Docker a mitad de camino es fácil, pero hacerlo con tres servicios y un equipo esperando, no.</p>
 
           <h2 id="resumen">
             Resumen

@@ -75,11 +75,13 @@
             <li><a href="#paquetes">Paquetes y __init__.py</a></li>
             <li><a href="#imports">Imports absolutos y relativos</a></li>
             <li><a href="#estructura">Estructura típica de un proyecto FastAPI</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">En PHP, Composer y PSR-4 deciden por ti dónde vive cada clase y cómo se carga. En Python no hay autoloader: el <code>import</code> ejecuta código, lo cachea y te da un objeto. Entender eso explica la mitad de los errores raros de un proyecto que crece, del <code>ImportError</code> que solo pasa en CI al import circular.</p>
           <h2 id="modulos">
             Módulos
             <a href="#modulos" class="anchor" aria-hidden="true">#</a>
@@ -268,6 +270,34 @@ app = FastAPI(title="Mi API")
 app.include_router(router_usuarios, prefix="/usuarios", tags=["usuarios"])
 app.include_router(router_productos, prefix="/productos", tags=["productos"])</code></pre>
           </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Organizar en módulos y paquetes es lo normal desde el primer fichero; la decisión real es <strong>cuánto partir y qué exponer</strong>.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Haz esto…</h4>
+              <ul>
+                <li>Un módulo por <strong>tema</strong>, con varias clases y funciones relacionadas dentro</li>
+                <li>Paquetes cuando un tema ya pide varios módulos (<code>routers/</code>, <code>services/</code>)</li>
+                <li>Re-exportar en <code>__init__.py</code> solo la API pública del paquete</li>
+                <li>Imports absolutos por defecto; relativos dentro de un paquete que podría cambiar de nombre</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Evita esto…</h4>
+              <ul>
+                <li>Un fichero por clase al estilo PSR-4: acabas con decenas de módulos de diez líneas y imports kilométricos</li>
+                <li>Jerarquías profundas (<code>app.domain.user.entities.user</code>) que solo replican carpetas</li>
+                <li>Código con efectos al importar: conexiones a BD, lectura de ficheros o llamadas HTTP en el nivel superior del módulo</li>
+                <li><code>from x import *</code> fuera de la consola interactiva</li>
+              </ul>
+            </div>
+          </div>
+          <p>Si dudas entre partir o no, mira los imports: cuando dos módulos se importan mutuamente o casi todo lo que usa uno vive en el otro, la frontera está mal puesta. Y lo que tenga que ejecutarse al arrancar va en una función que llamas desde <code>main.py</code>, no en el cuerpo del módulo, para que importar sea barato y predecible en tests.</p>
+
 
           <h2 id="resumen">
             Resumen

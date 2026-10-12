@@ -1205,7 +1205,7 @@ window.ACADEMIA_TUTORIALS = [
     topic: "Python",
     tags: ["Funciones", "kwargs", "Lambdas", "Built-ins"],
     level: "Principiante",
-    minutes: 11,
+    minutes: 10,
     icon: "code",
     status: "published",
   },

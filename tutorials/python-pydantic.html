@@ -76,11 +76,13 @@
             <li><a href="#field">Field: metadatos, restricciones y alias</a></li>
             <li><a href="#modelos-anidados">Modelos anidados y serialización</a></li>
             <li><a href="#settings">BaseSettings para configuración</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">En PHP validas un request con un array de reglas y después sigues trabajando con un array sin tipos, confiando en que nadie escriba mal una clave. Pydantic junta las dos cosas: declaras la forma de los datos una vez y, a partir de ahí, o tienes un objeto correcto o tienes un error que dice exactamente qué campo falló y por qué.</p>
           <h2 id="basemodel">
             BaseModel: la base de todo
             <a href="#basemodel" class="anchor" aria-hidden="true">#</a>
@@ -136,7 +138,7 @@ except ValidationError as error:
     print(error.errors()[0]["type"])     # 'float_parsing'
     print(error.errors()[0]["loc"])      # ('valor',)</code></pre>
           </div>
-          <p>Los modelos son inmutables por defecto. Esto los hace seguros para pasar entre capas sin riesgo de mutaciones inesperadas. Si necesitas mutabilidad, actívala con <code>model_config = ConfigDict(frozen=False)</code>.</p>
+          <p>Los modelos son mutables por defecto: puedes reasignar un campo, y por defecto esa asignación no se revalida. Si quieres que sean inmutables (seguros para pasar entre capas sin mutaciones inesperadas, y hasheables), actívalo con <code>model_config = ConfigDict(frozen=True)</code>.</p>
           <div class="callout callout--warning">
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <div class="callout__body">
@@ -236,6 +238,16 @@ Rango(minimo=1.0, maximo=10.0)    # OK
 Rango(minimo=10.0, maximo=1.0)    # ValidationError</code></pre>
           </div>
           <p>Si necesitas transformar los datos antes de que se construya el modelo (por ejemplo, renombrar claves de un diccionario externo), usa <code>@model_validator(mode="before")</code>: en ese caso el validador recibe el dict crudo y debe devolver un dict modificado.</p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos con Pydantic</p>
+              <p><strong>Creer que asignar revalida.</strong> La validación ocurre al construir el modelo. <code>usuario.id = "abc"</code> no lanza nada por defecto: si mutas modelos, activa <code>ConfigDict(validate_assignment=True)</code> o hazlos inmutables con <code>frozen=True</code>.</p>
+              <p><strong>Olvidar el <code>return</code> en un <code>@field_validator</code>.</strong> Lo que devuelve el validador es el nuevo valor del campo. Una función que solo comprueba y no devuelve nada deja el campo en <code>None</code>, sin error.</p>
+              <p><strong>Fiarse de la coerción cuando no la quieres.</strong> En el modo por defecto, <code>"42"</code> se convierte en <code>42</code> y <code>"yes"</code> en <code>True</code>. Es cómodo para query strings, pero en un contrato estricto usa <code>Field(strict=True)</code> o <code>ConfigDict(strict=True)</code>.</p>
+            </div>
+          </div>
 
           <h2 id="field">
             Field: metadatos, restricciones y alias
@@ -405,6 +417,31 @@ APP_CLAVE_SECRETA=s3cr3t-k3y!</code></pre>
               <p><strong>Singleton de configuración</strong>: en proyectos FastAPI es habitual exponer la configuración como <code>config = Configuracion()</code> a nivel de módulo y acceder a ella vía <code>Depends(lambda: config)</code>. Esto permite sobreescribirla en tests inyectando una instancia con valores distintos sin tocar variables de entorno globales.</p>
             </div>
           </div>
+
+                    <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Pydantic brilla en las fronteras del sistema, donde entran datos en los que no puedes confiar. Dentro, cuando los datos ya están validados, su coste deja de tener sentido.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Úsalo cuando…</h4>
+              <ul>
+                <li>Los datos cruzan una frontera: el body de una API, la respuesta de un servicio externo, un mensaje de una cola o un fichero de configuración</li>
+                <li>Quieres el JSON Schema gratis: FastAPI genera la documentación OpenAPI a partir de tus modelos</li>
+                <li>Necesitas configuración tipada que falle al arrancar, con <code>BaseSettings</code></li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Evítalo cuando…</h4>
+              <ul>
+                <li>Modelas objetos de dominio que construyes tú con datos ya válidos: un <code>@dataclass</code> es más ligero y no paga validación</li>
+                <li>Ya tienes modelos de ORM: no dupliques cada entidad de SQLAlchemy como modelo Pydantic «por si acaso»</li>
+                <li>Creas millones de objetos en un bucle con datos ya validados: ahí <code>model_construct()</code> se salta la validación</li>
+              </ul>
+            </div>
+          </div>
+          <p>La regla práctica es <strong>valida en el borde y confía dentro</strong>. Igual que en Symfony no pasas el <code>Request</code> hasta el repositorio, el modelo Pydantic se convierte en tu objeto de dominio en cuanto cruza la puerta, y el resto del código trabaja con tipos que ya sabe correctos.</p>
 
           <h2 id="resumen">
             Resumen

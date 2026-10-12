@@ -76,11 +76,13 @@
             <li><a href="#generadores">Expresiones generadoras</a></li>
             <li><a href="#yield">Funciones generadoras con yield</a></li>
             <li><a href="#itertools">itertools</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">Un endpoint que exporta un CSV de dos millones de filas no debería necesitar dos gigas de RAM. En PHP lo resuelves con generadores y <code>yield</code>; en Python la misma idea está en todas partes, a veces con un simple cambio de corchetes por paréntesis. La diferencia entre construir una lista y producir valores bajo demanda es la que separa un script que funciona en local de uno que aguanta producción.</p>
           <h2 id="list-comp">
             List comprehensions
             <a href="#list-comp" class="anchor" aria-hidden="true">#</a>
@@ -241,6 +243,17 @@ print(primeros_10)  # [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]</code></pre>
 list(encadenar([1, 2], [3, 4], [5]))  # [1, 2, 3, 4, 5]</code></pre>
           </div>
 
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos</p>
+              <p><strong>Recorrer dos veces un generador.</strong> Un generador se agota y no avisa: la segunda pasada simplemente no da nada. Tras <code>total = sum(g)</code>, un <code>for</code> sobre <code>g</code> no entra y <code>max(g)</code> lanza <code>ValueError</code> por secuencia vacía. Si necesitas varias pasadas, materializa con <code>list()</code>.</p>
+              <p><strong>Usar una comprehension por sus efectos.</strong> <code>[enviar(email) for email in emails]</code> construye una lista de <code>None</code> que nadie usa. Para efectos, un <code>for</code>: dice lo que hace.</p>
+              <p><strong>Cerrar el fichero antes de consumir.</strong> Si una función devuelve <code>(linea for linea in f)</code> desde dentro de un <code>with open(...)</code>, el fichero ya está cerrado cuando alguien itera. Haz que la función sea generadora con <code>yield</code> dentro del <code>with</code>, como <code>leer_csv_en_chunks</code>.</p>
+              <p><strong>Lambdas creadas en un bucle.</strong> <code>[lambda: i for i in range(3)]</code> devuelve tres funciones que dan <code>2</code>: capturan la variable, no su valor en ese momento. Fíjalo con un parámetro por defecto, <code>lambda i=i: i</code>.</p>
+            </div>
+          </div>
+
           <h2 id="itertools">
             itertools
             <a href="#itertools" class="anchor" aria-hidden="true">#</a>
@@ -288,6 +301,34 @@ list(itertools.takewhile(lambda x: x &lt; 5, [1, 2, 3, 4, 5, 6]))
               <p><strong>itertools.groupby requiere datos ordenados</strong>: agrupa elementos <em>consecutivos</em> por la clave. Si los datos no están ordenados por la clave de agrupación, obtendrás múltiples grupos para la misma clave. Siempre ordena antes de agrupar.</p>
             </div>
           </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La pregunta no es «comprehension o bucle», sino <strong>quién va a consumir el resultado y cuántas veces</strong>.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Elige comprehension o generador cuando…</h4>
+              <ul>
+                <li>La transformación cabe en una línea: un <code>map</code> y un <code>filter</code> como mucho</li>
+                <li>Indexas por un campo: <code>{u.id: u for u in usuarios}</code></li>
+                <li>Recorres datos grandes o infinitos una sola vez: generador</li>
+                <li>Alimentas a <code>sum</code>, <code>any</code>, <code>max</code> o <code>join</code>, que consumen y descartan</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Usa otra cosa cuando…</h4>
+              <ul>
+                <li>Hay varios <code>if</code> anidados o efectos (guardar, loguear): un <code>for</code> normal</li>
+                <li>Necesitas recorrer el resultado dos veces, indexarlo o saber su <code>len</code>: lista</li>
+                <li>Solo ejecutas algo por cada elemento sin construir nada: <code>for</code>, no una comprehension que tiras</li>
+                <li>El volumen es pequeño y el generador solo complica la depuración</li>
+              </ul>
+            </div>
+          </div>
+          <p>Por defecto, lista: es más fácil de inspeccionar y reutilizar. Pasa a generador cuando el tamaño de los datos no está acotado o lo lees de fuera (fichero, BD, API paginada). Las funciones con <code>yield</code> encajan en esos mismos casos cuando el proceso necesita estado entre elementos, como agrupar en lotes.</p>
+
 
           <h2 id="resumen">
             Resumen

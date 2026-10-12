@@ -100,7 +100,7 @@ window.MENTORAI_QUIZ_SUMMARY = {
     "passingScore": null
   },
   "python": {
-    "total": 12,
+    "total": 18,
     "passingScore": null
   },
   "claude-code": {

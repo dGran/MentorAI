@@ -76,11 +76,13 @@
             <li><a href="#con-argumentos">Decoradores con argumentos</a></li>
             <li><a href="#clases-como-decoradores">Clases como decoradores</a></li>
             <li><a href="#en-uso">Decoradores que ya conoces</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">Medir tiempos, reintentar llamadas, cachear o comprobar permisos: lógica que se repite alrededor de muchas funciones sin ser parte de ninguna. En PHP la meterías en un middleware o en un trait; en Python la envuelves con un decorador. FastAPI, pytest y la stdlib lo usan tanto que no entenderlos es leer media base de código a ciegas.</p>
           <h2 id="que-son">
             Qué son los decoradores
             <a href="#que-son" class="anchor" aria-hidden="true">#</a>
@@ -199,6 +201,17 @@ def llamar_api(url: str) -&gt; dict:
           </div>
           <p>La estructura es: <code>reintentar(max_intentos=5)</code> devuelve <code>decorador</code>, que se aplica a <code>llamar_api</code> y devuelve <code>wrapper</code>. Desde el punto de vista del caller, <code>llamar_api</code> se llama igual que antes pero con reintentos automáticos.</p>
 
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos</p>
+              <p><strong>Olvidar <code>@functools.wraps</code>.</strong> Además del nombre y el docstring, se pierde <code>__wrapped__</code>, que es lo que usa <code>inspect.signature</code> para ver la firma real. FastAPI lee esa firma para saber qué parámetros espera la ruta: sin <code>wraps</code>, solo ve <code>*args, **kwargs</code>.</p>
+              <p><strong>No devolver el resultado.</strong> Un wrapper que llama a <code>funcion(*args, **kwargs)</code> sin <code>return</code> convierte cualquier función decorada en una que devuelve <code>None</code>, sin error.</p>
+              <p><strong>Quitar los paréntesis a un decorador con argumentos.</strong> <code>@reintentar</code> en lugar de <code>@reintentar()</code> pasa la función como <code>max_intentos</code> y deja <code>decorador</code> en su lugar: la llamada no ejecuta nada y devuelve una función en vez del resultado, así que el error salta más adelante, lejos del decorador.</p>
+              <p><strong>Envolver un <code>async def</code> con un wrapper síncrono.</strong> El wrapper recibe la corrutina sin esperarla: <code>medir_tiempo</code> mediría cuánto tarda en crearse, no en ejecutarse. Para funciones async, el wrapper también es <code>async def</code> y hace <code>await funcion(...)</code>.</p>
+            </div>
+          </div>
+
           <h2 id="clases-como-decoradores">
             Clases como decoradores
             <a href="#clases-como-decoradores" class="anchor" aria-hidden="true">#</a>
@@ -309,6 +322,34 @@ def fibonacci(n: int) -&gt; int:
               <p><strong><code>@cache</code> de functools</strong>: memoiza los resultados de la función por los argumentos. La primera llamada con un conjunto de argumentos ejecuta la función; las siguientes la devuelven del cache. Para <code>fibonacci(40)</code>, la diferencia es de segundos a microsegundos.</p>
             </div>
           </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un decorador es buena idea cuando la lógica es <strong>transversal</strong>: igual para muchas funciones y ajena a lo que cada una hace.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Encaja un decorador cuando…</h4>
+              <ul>
+                <li>La misma envoltura se aplica a varias funciones: tiempos, logs, reintentos, caché</li>
+                <li>El comportamiento no depende de los detalles internos de la función</li>
+                <li>Registras funciones en un framework (<code>@app.get</code>, <code>@pytest.fixture</code>)</li>
+                <li>Quieres que al leer la firma se vea qué política se aplica</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Evítalo cuando…</h4>
+              <ul>
+                <li>Solo lo usa una función: escribe la lógica dentro, se lee mejor</li>
+                <li>Cambia argumentos o el tipo de retorno de forma que sorprende a quien llama</li>
+                <li>Apilas cuatro decoradores y el orden importa: hazlo explícito en código</li>
+                <li>Necesitas lógica alrededor de un bloque, no de una función: un context manager</li>
+              </ul>
+            </div>
+          </div>
+          <p>Antes de escribir uno, busca si ya existe: <code>functools.cache</code> y <code>lru_cache</code> para memoizar, librerías de reintentos como <code>tenacity</code> o el sistema de dependencias de FastAPI para autenticación. Escribe el tuyo cuando sea una política propia del proyecto que se repite en varios sitios y no haya una pieza estándar que lo cubra.</p>
+
 
           <h2 id="resumen">
             Resumen

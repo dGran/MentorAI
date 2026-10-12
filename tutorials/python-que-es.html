@@ -76,11 +76,13 @@
             <li><a href="#para-que-no">Para qué no encaja</a></li>
             <li><a href="#comparativa">Python vs PHP vs Go vs Rust</a></li>
             <li><a href="#por-que-ahora">Por qué Python ahora</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">Si vienes de PHP, la pregunta útil no es si Python es mejor, sino para qué trabajo concreto compensa meter un segundo lenguaje en tu equipo. Esta lección te da ese mapa: dónde juega en casa, dónde sufre y cómo se compara con lo que ya conoces, para que la decisión no dependa de la moda.</p>
           <h2 id="origen">
             El origen y la filosofía
             <a href="#origen" class="anchor" aria-hidden="true">#</a>
@@ -140,6 +142,18 @@ There should be one-- and preferably only one --obvious way to do it.</code></pr
             </div>
           </div>
 
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos al llegar desde PHP</p>
+              <ul>
+                <li><strong>Leer «dinámico» como «débil».</strong> Python no convierte por ti: <code>1 + "2"</code> lanza <code>TypeError</code> y <code>"3" * 2</code> devuelve <code>"33"</code>, no <code>6</code>. Las conversiones van explícitas con <code>int()</code> o <code>str()</code>.</li>
+                <li><strong>Descartarlo por el GIL para un backend web.</strong> El GIL limita a los hilos que calculan, no a los que esperan: durante una consulta a la base de datos o una llamada HTTP el hilo lo suelta. Para I/O, async o un servidor con varios workers rinden bien.</li>
+                <li><strong>Elegirlo para CPU pura porque se escribe rápido.</strong> Un servicio que procesa imágenes o cifra en bucle se queda en un núcleo con hilos, y pasar a <code>multiprocessing</code> obliga a serializar datos entre procesos. Si eso es el núcleo del servicio, el ahorro de escritura se paga en producción.</li>
+              </ul>
+            </div>
+          </div>
+
           <h2 id="comparativa">
             Python vs PHP vs Go vs Rust
             <a href="#comparativa" class="anchor" aria-hidden="true">#</a>
@@ -188,6 +202,32 @@ There should be one-- and preferably only one --obvious way to do it.</code></pr
             <pre><code data-lang="bash">uv init my-api
 uv add fastapi uvicorn
 uv run uvicorn src.main:app --reload</code></pre>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El coste de adoptar Python casi nunca es aprenderlo: es operar dos stacks. Otro runtime en las imágenes, otro gestor de dependencias, otro pipeline de CI y alguien de guardia que entienda ambos. Por eso la decisión se toma por el tipo de trabajo, no por gusto.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Elige Python cuando…</h4>
+              <ul>
+                <li>El proyecto toca datos o ML: pandas, NumPy o PyTorch no tienen equivalente en PHP y montar un puente entre lenguajes sale más caro</li>
+                <li>Hay scripts de automatización que hoy son bash frágil y empiezan a necesitar tests y estructuras de datos</li>
+                <li>Arrancas una API nueva, I/O-bound, y quieres validación y documentación salidas de los tipos (FastAPI con Pydantic)</li>
+                <li>Hay al menos otra persona en el equipo dispuesta a mantenerlo</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Busca otra opción cuando…</h4>
+              <ul>
+                <li>La funcionalidad cabe en el monolito PHP que ya tienes y funciona: un servicio aparte solo añade despliegue y red</li>
+                <li>El cuello de botella es CPU en paralelo: Go o Rust lo aprovechan sin el GIL</li>
+                <li>El P99 de latencia es un requisito duro: Go o Rust dan tiempos más predecibles</li>
+                <li>Necesitas repartir un binario único sin runtime: Go lo resuelve de serie</li>
+              </ul>
+            </div>
           </div>
 
           <h2 id="resumen">
