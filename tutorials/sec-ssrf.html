@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SSRF: cuando tu servidor pide lo que no debe — MentorAI</title>
+    <meta name="description" content="Qué es SSRF y por qué es tu servidor el que pide: metadatos de la nube, servicios internos, webhooks y previsualizaciones, lista permitida, validar la IP resuelta, redirecciones, DNS rebinding y proxy de egress." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Seguridad</span>
+        </nav>
+        <h1 class="tutorial-hero__title">SSRF: cuando tu servidor pide lo que no debe</h1>
+        <p class="tutorial-hero__lead">Cada vez que tu backend descarga una URL que eligió otro, le prestas tu posición en la red. El atacante no puede llegar a tu base de datos ni a los metadatos de la nube; tu servidor sí, y lo hará por él si se lo pides bien.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            23 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#el-problema">El servidor es el que pide</a></li>
+            <li><a href="#donde-aparece">Dónde aparece sin que lo busques</a></li>
+            <li><a href="#defensa">La defensa, capa a capa</a></li>
+            <li><a href="#codigo">Cómo se ve en PHP</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#testear">Cómo testearlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Imagina un mensajero de la empresa con llave de todas las plantas. Un desconocido le
+            da un papel con una dirección y él va sin preguntar. Si la dirección es «la sala de
+            servidores, segundo cajón», la trae igual. Eso es Server-Side Request Forgery: el
+            atacante no entra, hace que entres tú.
+          </p>
+
+          <h2 id="el-problema">
+            El servidor es el que pide
+            <a href="#el-problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Tu cortafuegos protege la red interna de lo que llega de fuera. Pero la petición
+            saliente la origina tu propio proceso PHP, que vive <b>dentro</b>: puede hablar con
+            <code>localhost</code>, con el Redis sin contraseña de la subred privada, con el panel
+            de administración que «solo se ve desde la VPN» y con el servicio de metadatos de la
+            nube en <code>169.254.169.254</code>. Ese último es el premio gordo: en una instancia
+            mal configurada devuelve las credenciales temporales del rol de la máquina, y con
+            ellas el atacante opera tu cuenta como si fuera tu servidor.
+          </p>
+          <p>
+            Por eso OWASP le dio entrada propia: es la <b>A10:2021</b> del Top 10 web y la
+            <b>API7:2023</b> del Top 10 de APIs. No es un fallo de inyección como los de
+            <a href="owasp.html">la lección de OWASP</a>: la petición es legítima, lo que falla es
+            <b>a quién</b> se la haces.
+          </p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">SSRF ciego también cuenta</p>
+              <p>
+                Aunque no devuelvas el cuerpo de la respuesta, el atacante aprende por el tiempo
+                que tarda o por el mensaje de error: «conexión rechazada» frente a «timeout»
+                basta para mapear qué puertos están abiertos en tu red interna.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="donde-aparece">
+            Dónde aparece sin que lo busques
+            <a href="#donde-aparece" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Casi nadie escribe «descargar URL arbitraria» en un ticket. Llega disfrazado de
+            funcionalidad razonable:
+          </p>
+          <ul>
+            <li><b>Webhooks salientes</b>: el cliente configura a qué URL le avisas. Ya lo apunta
+              <a href="pr-webhooks.html">la lección de webhooks</a>; aquí vemos cómo cerrarlo.</li>
+            <li><b>Previsualización de enlaces</b>: pegas una URL en un chat y el servidor baja la
+              página para sacar título e imagen.</li>
+            <li><b>Importar desde URL</b>: avatar, CSV o feed RSS que el usuario indica con un enlace.</li>
+            <li><b>Generar PDF desde HTML</b> con un navegador sin cabeza: si el HTML lleva contenido
+              del usuario, un <code>&lt;img src&gt;</code> o un <code>&lt;iframe&gt;</code> lo pide tu servidor.</li>
+            <li><b>Integraciones con URL configurable</b>: «URL de tu instancia», endpoints de
+              descubrimiento OpenID, servidores SMTP o LDAP que elige el tenant.</li>
+          </ul>
+
+          <h2 id="defensa">
+            La defensa, capa a capa
+            <a href="#defensa" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            No hay una comprobación única que baste, porque el ataque tiene varias puertas: la
+            cadena de la URL, lo que resuelve el DNS, las redirecciones y la red. Cada capa cierra
+            una.
+          </p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Esquema y host</b><small>Solo https; si los destinos son conocidos, lista permitida exacta</small></span>
+              </div>
+              <div class="flow__arrow" data-label="host válido"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Resolver el DNS tú</b><small>Todas las IP que devuelva, no la cadena</small></span>
+              </div>
+              <div class="flow__arrow" data-label="IP públicas"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Conectar a esa IP fijada</b><small>Sin segunda resolución, sin redirecciones automáticas</small></span>
+              </div>
+              <div class="flow__arrow" data-label="por la red"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>Salir por un proxy de egress</b><small>La red impone la regla aunque el código falle</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Las capas 1 a 3 viven en tu código; la 4, en la infraestructura.</p>
+          </div>
+          <p>
+            <b>Lista permitida antes que lista negra.</b> Si tu integración solo habla con tres
+            proveedores, compara el host exacto contra esos tres y olvídate del resto. Bloquear
+            rangos es el plan B para cuando el destino lo elige el usuario de verdad, como en
+            los webhooks.
+          </p>
+          <p>
+            <b>Valida la IP resuelta, no el texto.</b> <code>127.0.0.1</code> también se escribe
+            <code>2130706433</code>, <code>0x7f.1</code> o <code>[::ffff:127.0.0.1]</code>, y un
+            dominio tuyo puede apuntar a <code>10.0.0.5</code>. Lo único que no miente es la
+            dirección a la que vas a conectar. Estos son los rangos que nunca deben ser destino:
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Rango</th><th>Qué hay detrás</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>127.0.0.0/8</code>, <code>::1</code></td><td>La propia máquina</td></tr>
+                <tr><td><code>10.0.0.0/8</code>, <code>172.16.0.0/12</code>, <code>192.168.0.0/16</code></td><td>Redes privadas: tu VPC, tus bases de datos</td></tr>
+                <tr><td><code>169.254.0.0/16</code>, <code>fe80::/10</code></td><td>Link-local, donde vive el servicio de metadatos</td></tr>
+                <tr><td><code>100.64.0.0/10</code>, <code>fc00::/7</code></td><td>CGNAT y redes privadas IPv6</td></tr>
+                <tr><td><code>0.0.0.0/8</code></td><td>«Esta red»: en Linux acaba en localhost</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Desde PHP 8.2, <code>filter_var</code> con <code>FILTER_FLAG_GLOBAL_RANGE</code> rechaza
+            de golpe los rangos que el RFC 6890 no marca como globales, sin mantener la tabla a mano (deja pasar multicast y NAT64, así que no sustituye al proxy).
+          </p>
+          <p>
+            <b>Fija la IP para cerrar el DNS rebinding.</b> Si validas que
+            <code>evil.example</code> resuelve a una IP pública y luego dejas que cURL lo resuelva
+            otra vez, el atacante, que controla ese DNS con un TTL de cero, responde la segunda
+            vez con <code>127.0.0.1</code>. Es una condición de carrera entre comprobar y usar. Se
+            cierra conectando a la IP que ya validaste, con <code>CURLOPT_RESOLVE</code>, que
+            conserva el <code>Host</code> y el SNI del TLS.
+          </p>
+          <p>
+            <b>Las redirecciones son otra URL.</b> Un <code>302</code> a
+            <code>http://169.254.169.254/</code> salta todas tus comprobaciones si el cliente lo
+            sigue solo. O desactivas las redirecciones, o repites la validación completa en cada salto.
+          </p>
+          <p>
+            <b>El proxy de egress es el cinturón.</b> Si todas las peticiones a URLs de usuario
+            salen por un proxy (Squid, o Smokescreen, que Stripe publicó para esto) y la red no deja
+            salir por otro sitio, un fallo en tu validación no llega a la red interna. Ojo: con proxy, el DNS lo resuelve él y <code>CURLOPT_RESOLVE</code> ya no fija nada, así que la comprobación de IP tiene que hacerla el proxy, como Smokescreen. Es la misma
+            idea de denegar por defecto que las reglas de salida de
+            <a href="inf-hardening.html">bastionar un servidor</a>.
+          </p>
+
+          <h2 id="codigo">
+            Cómo se ve en PHP
+            <a href="#codigo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La versión que aparece en casi todos los proyectos el primer día:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · LinkPreviewController.php (vulnerable)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">public function preview(Request $request): JsonResponse
+{
+    $html = file_get_contents($request-&gt;query-&gt;getString('url'));
+
+    return new JsonResponse(['title' =&gt; $this-&gt;extractTitle($html)]);
+}</code></pre>
+          </div>
+          <p>
+            Tiene todos los fallos a la vez: acepta cualquier IP, sigue redirecciones y, por ser
+            <code>file_get_contents</code>, también <code>file:///etc/passwd</code> y los envoltorios
+            <code>php://</code>. La versión corregida separa la decisión en un servicio propio:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · OutboundUrlGuard.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class OutboundUrlGuard
+{
+    private const ALLOWED_SCHEME = 'https';
+    private const DEFAULT_PORT = 443;
+
+    public function resolve(string $url): ResolvedTarget
+    {
+        $parts = parse_url($url);
+        $scheme = strtolower($parts['scheme'] ?? '');
+        $host = $parts['host'] ?? '';
+
+        if ($scheme !== self::ALLOWED_SCHEME || $host === '') {
+            throw new UnsafeUrlException('Solo se admiten URLs https con host');
+        }
+
+        $addresses = gethostbynamel($host) ?: [];
+
+        if ($addresses === []) {
+            throw new UnsafeUrlException('El host no resuelve');
+        }
+
+        foreach ($addresses as $address) {
+            $this-&gt;assertPublic($address);
+        }
+
+        return new ResolvedTarget($host, $parts['port'] ?? self::DEFAULT_PORT, $addresses[0]);
+    }
+
+    private function assertPublic(string $address): void
+    {
+        if (filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_GLOBAL_RANGE) === false) {
+            throw new UnsafeUrlException('El destino es una dirección interna');
+        }
+    }
+}</code></pre>
+          </div>
+          <p>Y la petición, en Laravel 11, conecta a la IP fijada y no sigue saltos:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Laravel</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">$target = $this-&gt;guard-&gt;resolve($url);
+
+$response = Http::timeout(5)
+    -&gt;withOptions([
+        'allow_redirects' =&gt; false,
+        'curl' =&gt; [CURLOPT_RESOLVE =&gt; ["{$target-&gt;host}:{$target-&gt;port}:{$target-&gt;ip}"]],
+    ])
+    -&gt;get($url);</code></pre>
+          </div>
+          <p>
+            En Symfony 7 tienes el trabajo medio hecho: el decorador
+            <code>NoPrivateNetworkHttpClient</code> comprueba la IP a la que se conecta de verdad,
+            también tras cada redirección, y corta si cae en un rango privado.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Symfony</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">$client = new NoPrivateNetworkHttpClient(
+    HttpClient::create(['max_redirects' =&gt; 0, 'timeout' =&gt; 5, 'max_duration' =&gt; 10])
+);</code></pre>
+          </div>
+          <p>
+            El timeout corto no es decorativo: sin él, cada URL que cuelga ata un worker. Lo
+            tienes en detalle en <a href="sd-timeouts-y-reintentos.html">timeouts y reintentos</a>.
+          </p>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que parece validar y no valida</p>
+              <ul>
+                <li><b>Una regex sobre la URL</b> que busca <code>127.</code> o <code>localhost</code>:
+                  la esquivan las notaciones decimales, hexadecimales e IPv6.</li>
+                <li><b>Validar y dejar que el cliente resuelva otra vez</b>: es justo la ventana que
+                  aprovecha el DNS rebinding.</li>
+                <li><b>Lista permitida con <code>str_contains</code> o <code>str_ends_with</code></b>
+                  sin el punto: <code>api.partner.com.evil.io</code> y <code>evilpartner.com</code> pasan.</li>
+                <li><b>Seguir redirecciones por defecto</b>: Guzzle y el cliente de Symfony las siguen
+                  si no les dices lo contrario.</li>
+                <li><b>Devolver el error de red tal cual</b> al usuario: le das el mapa de puertos.</li>
+                <li><b>Fiarlo todo a IMDSv2</b>: en AWS exige un token por <code>PUT</code> y frena el
+                  SSRF más simple, pero no protege el resto de tu red interna.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="testear">
+            Cómo testearlo
+            <a href="#testear" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El guard es un servicio puro y merece un test unitario con una batería de URLs
+            hostiles: cada notación de localhost, cada rango de la tabla, esquemas
+            <code>file</code> y <code>gopher</code>, y un host que no resuelve. Todas deben lanzar
+            <code>UnsafeUrlException</code>; una URL pública conocida, no.
+          </p>
+          <p>
+            Lo que el unitario no cubre son las redirecciones y el rebinding. Para eso, un test de
+            integración contra un servidor tuyo que responda con un <code>302</code> hacia
+            <code>169.254.169.254</code>, y un DNS de prueba que alterne entre una IP pública y
+            <code>127.0.0.1</code>. Si la petición llega a salir, el test falla. En producción, el
+            log del proxy de egress con los destinos bloqueados es tu alarma temprana.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Sí, siempre que…</h4>
+              <ul>
+                <li>Cualquier parte de la URL la decide un usuario o un tenant, aunque sea solo el dominio.</li>
+                <li>Renderizas HTML de usuarios con un navegador sin cabeza o un generador de PDF.</li>
+                <li>Tu servidor corre en una nube con servicio de metadatos o junto a servicios sin autenticación.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Sobra cuando…</h4>
+              <ul>
+                <li>La URL es una constante de tu configuración hacia un proveedor fijo: basta con el timeout.</li>
+                <li>El dato viaja al revés: el usuario sube el fichero en vez de darte un enlace.</li>
+              </ul>
+            </div>
+          </div>
+          <p>
+            La alternativa más segura es no tener la funcionalidad: si puedes pedir que suban el
+            fichero, o que el receptor consulte tu API en lugar de recibir el webhook, no hay
+            petición que falsificar. Si la necesitas, aísla quien hace las peticiones en un worker
+            con su propia red y su proxy de salida.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>SSRF convierte tu servidor en el atacante: llega a localhost, a la red privada y a los metadatos de la nube.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Lista permitida exacta cuando los destinos son conocidos; bloqueo de rangos cuando los elige el usuario.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Valida la IP resuelta, no la cadena, y conecta a esa misma IP con <code>CURLOPT_RESOLVE</code> para cerrar el DNS rebinding.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Desactiva las redirecciones o valida cada salto; solo <code>https</code>, timeout corto y errores genéricos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un proxy de egress hace que un fallo en el código no se convierta en acceso a la red interna.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

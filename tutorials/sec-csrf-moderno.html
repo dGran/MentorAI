@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CSRF moderno: SameSite y APIs JSON — MentorAI</title>
+    <meta name="description" content="Por qué SameSite=Lax cambió el CSRF y dónde no basta, token sincronizado frente a doble cookie, APIs JSON con cookies de sesión y la comprobación de Origin y Sec-Fetch-Site en PHP." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Seguridad</span>
+        </nav>
+        <h1 class="tutorial-hero__title">CSRF moderno: SameSite y APIs JSON</h1>
+        <p class="tutorial-hero__lead">SameSite=Lax cortó de raíz el CSRF de manual, y por eso mucha gente cree que ya no existe. Sigue ahí, en los huecos que Lax deja abiertos: un GET que borra, un subdominio que comparte sitio y una API JSON que no mira el Content-Type.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            25 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#samesite">Qué cambió SameSite</a></li>
+            <li><a href="#huecos">Dónde Lax no basta</a></li>
+            <li><a href="#tokens">Token sincronizado o doble cookie</a></li>
+            <li><a href="#apis-json">APIs JSON y cookies</a></li>
+            <li><a href="#origen">Origin y Sec-Fetch-Site</a></li>
+            <li><a href="#codigo">En código PHP</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#detectar">Cómo testearlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            El CSRF no necesita robar nada: le basta con que el navegador adjunte tu cookie de
+            sesión a una petición que no has decidido tú. La base está en
+            <a href="owasp.html#csrf">OWASP imprescindible</a>; aquí va lo que ha cambiado desde
+            entonces y dónde siguen cayendo los backends de hoy.
+          </p>
+
+          <h2 id="samesite">
+            Qué cambió SameSite
+            <a href="#samesite" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Durante años, cualquier web podía enviar un formulario a tu dominio y el navegador
+            adjuntaba la cookie sin preguntar. El atributo <code>SameSite</code> le da al
+            servidor la última palabra sobre eso, con tres valores:
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Valor</th><th>La cookie viaja en peticiones desde otro sitio…</th><th>Coste</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>Strict</code></td><td>Nunca, ni siquiera al pinchar un enlace</td><td>El usuario llega desde un correo y aparece deslogueado</td></tr>
+                <tr><td><code>Lax</code></td><td>Solo en navegaciones de primer nivel con método seguro (GET)</td><td>Casi ninguno: es el equilibrio habitual</td></tr>
+                <tr><td><code>None</code></td><td>Siempre; exige <code>Secure</code></td><td>Vuelves al mundo anterior a SameSite</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            El cambio grande fue que Chrome, y con él los navegadores basados en Chromium, empezó
+            a tratar como <code>Lax</code> toda cookie que no declara <code>SameSite</code>. De
+            golpe, el formulario oculto que se autoenvía por POST dejó de llevar la sesión en la
+            mayoría de los usuarios. Pero «la mayoría» no es «todos»: no todos los navegadores
+            aplican ese valor por defecto, así que la defensa no puede depender de él.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Decláralo siempre, no lo heredes</p>
+              <p>
+                Symfony y Laravel ya configuran la cookie de sesión con <code>Lax</code> (PHP a secas no: <code>session.cookie_samesite</code> viene vacío),
+                pero cualquier cookie que pongas tú con <code>setcookie()</code> sin el atributo
+                queda a merced del navegador. Escríbelo explícito: lo que no está escrito no se
+                revisa.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="huecos">
+            Dónde Lax no basta
+            <a href="#huecos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <code>Lax</code> es una buena primera capa, no la defensa completa. Tiene tres huecos
+            conocidos, y los tres aparecen en código real:
+          </p>
+          <ul>
+            <li>
+              <strong>GET con efectos.</strong> Lax deja pasar la cookie en la navegación de
+              primer nivel por GET, porque supone que GET no cambia nada. Si
+              <code>/newsletter/baja?id=7</code> o <code>/pedido/cancelar</code> actúan por GET,
+              un simple enlace o una redirección desde otra web los dispara con tu sesión.
+            </li>
+            <li>
+              <strong>Subdominios.</strong> SameSite habla de <em>sitio</em>, no de
+              <em>origen</em>: <code>blog.example.com</code> y <code>app.example.com</code> son
+              el mismo sitio. Un XSS en el blog, o un subdominio con contenido de usuarios, puede
+              hacer peticiones a la app y la cookie viaja, sea <code>Lax</code> o
+              <code>Strict</code>.
+            </li>
+            <li>
+              <strong>La ventana de dos minutos.</strong> Para no romper los inicios de sesión
+              federados, Chrome deja pasar en un POST de primer nivel desde otro sitio las cookies
+              <em>sin</em> <code>SameSite</code> explícito durante sus dos primeros minutos de
+              vida. Una cookie recién emitida, justo tras el login, sigue expuesta. Declarar
+              <code>Lax</code> explícito cierra ese hueco.
+            </li>
+          </ul>
+
+          <h2 id="tokens">
+            Token sincronizado o doble cookie
+            <a href="#tokens" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Como SameSite no cubre todo, el token anti-CSRF sigue siendo la defensa principal en
+            aplicaciones con sesión. Hay dos formas de implementarlo, y la diferencia está en
+            dónde vive la verdad:
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Token sincronizado</h4>
+              <ul>
+                <li>El servidor guarda el token en la sesión y lo pinta en el formulario</li>
+                <li>Al recibir, compara el enviado con el de la sesión</li>
+                <li>El atacante no puede leerlo: está en una página de otro origen</li>
+                <li>Exige estado en servidor, que con sesión ya tienes</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Doble cookie ingenua</h4>
+              <ul>
+                <li>El token va en una cookie y el cliente lo repite en una cabecera</li>
+                <li>El servidor solo comprueba que ambos coinciden</li>
+                <li>Quien pueda escribir cookies, desde un subdominio o HTTP plano, fija los dos</li>
+                <li>Sin estado, pero sin garantía si no va firmado</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            La doble cookie tiene sentido cuando no hay sesión en servidor, pero en su versión
+            <strong>firmada</strong>: el token es un HMAC ligado al identificador de sesión, de
+            modo que un valor inventado por el atacante no valida. Laravel usa una variante: la
+            cookie <code>XSRF-TOKEN</code> va cifrada y lo que se compara al final es el token
+            guardado en la sesión, no las dos copias entre sí.
+          </p>
+
+          <h2 id="apis-json">
+            APIs JSON con cookies frente a tokens en cabecera
+            <a href="#apis-json" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La pregunta que decide si una API necesita protección CSRF es una sola:
+            <strong>¿la credencial viaja sola?</strong> Si el cliente manda
+            <code>Authorization: Bearer …</code> desde su propio código, una web ajena no puede
+            añadir esa cabecera, y no hay CSRF. Si la API se apoya en la cookie de sesión, como
+            hacen las SPA con Sanctum o con el firewall de Symfony, el riesgo es exactamente el
+            de un formulario clásico. Qué opción elegir y qué cuesta cada una está en
+            <a href="autenticacion.html">autenticación</a>.
+          </p>
+          <p>
+            La falsa seguridad típica es «mi endpoint solo acepta JSON, y un formulario no puede
+            mandar JSON». Sí puede: un formulario con <code>enctype="text/plain"</code> produce un
+            cuerpo que, bien construido, es JSON válido. Lo que sí protege es exigir
+            <code>Content-Type: application/json</code>: ese tipo no es «simple», así que el
+            navegador manda antes un preflight y tu política <a href="pr-cabeceras-que-importan.html#cors">CORS</a>
+            decide. Si el servidor parsea el cuerpo sin mirar la cabecera, esa barrera
+            desaparece.
+          </p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">CORS no bloquea la petición, bloquea la lectura</p>
+              <p>
+                Una petición simple llega a tu servidor y se ejecuta aunque CORS impida al
+                atacante leer la respuesta. Para CSRF eso no consuela: el daño era el efecto, no
+                la respuesta. Y un CORS que hace eco de cualquier <code>Origin</code> con
+                credenciales, el fallo de configuración que recoge API8:2023 del Top 10 de APIs,
+                anula también el preflight.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="origen">
+            Origin, Referer y Sec-Fetch-Site
+            <a href="#origen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Hay una defensa que no necesita token: preguntar al navegador de dónde viene la
+            petición. Los navegadores modernos envían cabeceras que el JavaScript de la página
+            no puede falsificar:
+          </p>
+          <ul>
+            <li>
+              <strong><code>Sec-Fetch-Site</code></strong> dice la relación entre quien origina y
+              tu servidor: <code>same-origin</code>, <code>same-site</code>,
+              <code>cross-site</code> o <code>none</code> (el usuario escribió la URL). Es la
+              señal más directa, y distingue el subdominio hermano que SameSite no ve.
+            </li>
+            <li>
+              <strong><code>Origin</code></strong> acompaña a los POST en los navegadores modernos y se
+              compara contra una lista blanca exacta. Es el respaldo cuando falta la anterior.
+            </li>
+            <li>
+              <strong><code>Referer</code></strong> es el último recurso: la
+              <code>Referrer-Policy</code> o un proxy pueden quitarlo, así que su ausencia no
+              prueba nada.
+            </li>
+          </ul>
+          <p>
+            Symfony 7.2 incorporó una protección CSRF sin estado basada en <code>Origin</code> y <code>Referer</code> (más una doble cookie opcional), y es
+            la dirección en la que va el ecosistema: comprobar el origen en el servidor es más
+            barato que propagar tokens por todas las vistas.
+          </p>
+
+          <h2 id="codigo">
+            En código PHP
+            <a href="#codigo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El endpoint vulnerable confía en la sesión y lee el cuerpo como JSON sin mirar nada
+            más:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · vulnerable</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+session_start();
+
+$payload = json_decode(file_get_contents('php://input'), true, flags: JSON_THROW_ON_ERROR);
+
+$profileService-&gt;changeEmail($_SESSION['user_id'], $payload['email']);</code></pre>
+          </div>
+
+          <p>Y esto, alojado en cualquier web, le cambia el correo a quien la visite con sesión abierta:</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">html · página del atacante</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>&lt;form action="https://app.example.com/api/perfil/email" method="POST" enctype="text/plain"&gt;
+  &lt;input name='{"email":"atacante@example.com","x":"' value='"}'&gt;
+&lt;/form&gt;
+&lt;script&gt;document.forms[0].submit()&lt;/script&gt;</code></pre>
+          </div>
+
+          <p>
+            La corrección son dos comprobaciones antes de tocar nada: que la petición venga de tu
+            propio origen y que el cuerpo sea de verdad JSON.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · CrossSiteRequestGuard.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class CrossSiteRequestGuard
+{
+    private const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS'];
+    private const SAME_ORIGIN = 'same-origin';
+    private const JSON_CONTENT_TYPE = 'application/json';
+
+    public function __construct(private readonly string $trustedOrigin)
+    {
+    }
+
+    public function assertAllowed(array $server): void
+    {
+        if (in_array($server['REQUEST_METHOD'], self::SAFE_METHODS, true)) {
+            return;
+        }
+
+        $this-&gt;rejectUnless($this-&gt;isSameOrigin($server), CrossSiteRequestRejected::class);
+        $this-&gt;rejectUnless($this-&gt;isJson($server), UnsupportedMediaType::class);
+    }
+
+    private function isSameOrigin(array $server): bool
+    {
+        $fetchSite = $server['HTTP_SEC_FETCH_SITE'] ?? null;
+
+        if ($fetchSite !== null) {
+            return $fetchSite === self::SAME_ORIGIN;
+        }
+
+        return ($server['HTTP_ORIGIN'] ?? null) === $this-&gt;trustedOrigin;
+    }
+
+    private function isJson(array $server): bool
+    {
+        return str_starts_with($server['CONTENT_TYPE'] ?? '', self::JSON_CONTENT_TYPE);
+    }
+
+    private function rejectUnless(bool $isAllowed, string $exceptionClass): void
+    {
+        if ($isAllowed) {
+            return;
+        }
+
+        throw new $exceptionClass();
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            Fíjate en dos decisiones. <code>same-site</code> se rechaza a propósito: es
+            justo el subdominio comprometido. Y si no llega ni <code>Sec-Fetch-Site</code> ni
+            <code>Origin</code>, la petición se rechaza: un cliente que no es navegador no debería
+            autenticarse con la cookie de sesión. Junto a esto, la cookie declarada explícita:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ini · php.ini</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="ini">session.cookie_samesite = "Lax"
+session.cookie_secure = 1
+session.cookie_httponly = 1</code></pre>
+          </div>
+
+          <p>
+            En Symfony equivale a <code>framework.session.cookie_samesite</code> y en Laravel a
+            <code>same_site</code> en <code>config/session.php</code>. Los formularios de ambos
+            ya llevan token sincronizado: el middleware <code>ValidateCsrfToken</code> en Laravel
+            11 y la opción <code>csrf_protection</code> de los formularios en Symfony.
+          </p>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Los que siguen abriendo la puerta</p>
+              <ul>
+                <li><strong>Excluir la API del middleware CSRF</strong> «porque es JSON», cuando se autentica con la cookie de sesión.</li>
+                <li><strong>Acciones por GET</strong>: bajas, confirmaciones o «marcar como leído» en un enlace. Lax las deja pasar.</li>
+                <li><strong>Parsear JSON sin comprobar <code>Content-Type</code></strong>, que reabre el formulario <code>text/plain</code>.</li>
+                <li><strong>Comparar <code>Origin</code> con <code>str_contains</code></strong>: <code>example.com.atacante.net</code> también lo contiene.</li>
+                <li><strong>Comparar tokens con <code>==</code></strong> en vez de <code>hash_equals()</code>, que compara en tiempo constante.</li>
+                <li><strong><code>SameSite=None</code> en la sesión</strong> para que funcione un iframe, sin otra defensa detrás.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="detectar">
+            Cómo testearlo
+            <a href="#detectar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            CSRF se prueba fingiendo ser el navegador del ataque: la cookie válida, pero las
+            cabeceras de otro sitio. Si la respuesta es un 2xx, tienes un problema.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · simular la petición del atacante</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">curl -i -X POST https://app.local/api/perfil/email \
+  -H "Cookie: PHPSESSID=$SESSION_ID" \
+  -H "Origin: https://atacante.example" \
+  -H "Sec-Fetch-Site: cross-site" \
+  -H "Content-Type: text/plain" \
+  --data '{"email":"atacante@example.com"}'</code></pre>
+          </div>
+
+          <p>
+            Lo que esperas es un 403 o un 415. Convierte esa petición en un test funcional por
+            cada endpoint que cambia estado, con tres variantes: <code>cross-site</code>,
+            <code>same-site</code> y sin cabeceras de origen. Y revisa el inventario de rutas
+            buscando cualquier GET que escriba en base de datos: es el hueco que ningún
+            middleware cubre.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Protege contra CSRF cuando…</h4>
+              <ul>
+                <li>La autenticación viaja en una cookie, sea web clásica o SPA</li>
+                <li>Hay subdominios que no controlas del todo</li>
+                <li>La sesión necesita <code>SameSite=None</code> por un iframe o un SSO</li>
+                <li>El endpoint cambia estado, sea cual sea su método</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No hace falta cuando…</h4>
+              <ul>
+                <li>La credencial va en <code>Authorization</code> y la pone el código del cliente</li>
+                <li>Es una API entre servidores, sin navegador de por medio</li>
+                <li>El endpoint es de solo lectura de verdad y no devuelve datos privados</li>
+              </ul>
+            </div>
+          </div>
+          <p>
+            La alternativa al token, si no quieres propagarlo por las vistas, es la comprobación
+            de origen con <code>Sec-Fetch-Site</code> y <code>Origin</code> en un middleware,
+            siempre sobre una cookie con <code>SameSite</code> explícito. Lo que no es alternativa
+            es confiar solo en el valor por defecto del navegador.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>SameSite=Lax corta el CSRF por POST desde otro sitio, pero no cubre GET con efectos ni subdominios hermanos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Declara SameSite explícito: las cookies sin él dependen del navegador y tienen una ventana de dos minutos en Chrome.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El token sincronizado vive en la sesión; la doble cookie solo es segura si va firmada y ligada a ella.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una API JSON con cookie de sesión es tan vulnerable como un formulario si no exige <code>Content-Type: application/json</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>Sec-Fetch-Site</code> y <code>Origin</code> permiten rechazar en el servidor lo que no viene de tu propio origen, sin token.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

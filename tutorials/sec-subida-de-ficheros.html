@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Subida de ficheros sin sustos — MentorAI</title>
+    <meta name="description" content="Cómo aceptar ficheros de usuarios en PHP sin abrir la puerta: validar por contenido, nombres generados, almacenamiento privado, cabeceras de descarga, SVG, zip bombs y URLs firmadas." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Seguridad</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Subida de ficheros sin sustos</h1>
+        <p class="tutorial-hero__lead">Un formulario de avatar parece la funcionalidad más inocente de la aplicación. Es también la única puerta por la que un desconocido deja un fichero entero en tu servidor y luego le pide a tu dominio que se lo sirva a otros.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            25 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#por-que">Por qué es tan peligroso</a></li>
+            <li><a href="#validar">Validar por contenido</a></li>
+            <li><a href="#guardar">Dónde y con qué nombre</a></li>
+            <li><a href="#servir">Servirlo sin que se ejecute</a></li>
+            <li><a href="#formatos">Imágenes, SVG y comprimidos</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#testear">Cómo testearlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Casi todos los fallos de subida de ficheros salen de la misma confusión: tratar el
+            nombre y el tipo que manda el cliente como si fueran hechos. Son texto escrito por
+            quien sube el fichero, y vale exactamente lo mismo que cualquier otro campo del
+            formulario.
+          </p>
+
+          <h2 id="por-que">
+            Por qué es tan peligroso
+            <a href="#por-que" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un campo de texto mal validado te deja un dato raro en la base de datos. Un fichero
+            mal validado puede acabar en tres sitios mucho peores, y conviene tenerlos
+            presentes porque cada defensa de esta lección tapa uno:
+          </p>
+          <ul>
+            <li><strong>Ejecutarse en tu servidor.</strong> Un <code>.php</code> guardado dentro del docroot es código que el servidor web ejecutará cuando alguien pida su URL.</li>
+            <li><strong>Ejecutarse en el navegador de otro usuario.</strong> Un HTML o un SVG con script servido desde tu dominio es un XSS almacenado con tus cookies a su alcance.</li>
+            <li><strong>Tumbarte.</strong> Un fichero de varios gigas, una imagen de 50.000 × 50.000 píxeles o un zip que se descomprime a terabytes agotan disco, memoria o CPU.</li>
+          </ul>
+          <p>
+            Lo tercero tiene nombre en el OWASP API Security Top 10 2023:
+            <strong>API4, consumo de recursos sin restricciones</strong>. Lo segundo es el mismo
+            XSS de <a href="owasp.html">los fundamentos de OWASP</a>, solo que la carga útil no
+            llega en un parámetro sino dentro de un fichero que tú mismo publicas.
+          </p>
+
+          <h2 id="validar">
+            Validar por contenido, no por nombre
+            <a href="#validar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Este es el código que aparece en demasiados proyectos. Tiene tres fallos, y ninguno
+            se ve en una prueba manual con una foto normal:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · vulnerable</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+$upload = $_FILES['avatar'];
+
+if ($upload['type'] === 'image/jpeg' || str_ends_with($upload['name'], '.jpg')) {
+    move_uploaded_file($upload['tmp_name'], __DIR__ . '/public/uploads/' . $upload['name']);
+}</code></pre>
+          </div>
+
+          <p>
+            <code>$upload['type']</code> es la cabecera <code>Content-Type</code> de esa parte
+            del formulario: la pone el cliente y se falsifica con una línea de
+            <code>curl</code>. La extensión también la elige él. Y el nombre original acaba en
+            una ruta pública, así que <code>shell.php</code> pasa si declara
+            <code>image/jpeg</code>, y un nombre con <code>../</code> intenta salir del
+            directorio.
+          </p>
+          <p>
+            La única fuente fiable es el propio contenido. <code>finfo</code> lee los primeros
+            bytes del fichero (los <em>magic bytes</em>) y deduce el tipo real. Con eso se
+            decide contra una <strong>lista de permitidos</strong>, nunca de prohibidos, y la
+            extensión final la pones tú a partir del tipo detectado:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · AvatarUploader.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class AvatarUploader
+{
+    private const MAX_BYTES = 5 * 1024 * 1024;
+    private const EXTENSION_BY_MIME_TYPE = [
+        'image/jpeg' =&gt; 'jpg',
+        'image/png' =&gt; 'png',
+        'image/webp' =&gt; 'webp',
+    ];
+
+    public function __construct(private readonly string $privateStorageDirectory)
+    {
+    }
+
+    public function store(string $temporaryPath): string
+    {
+        if (filesize($temporaryPath) &gt; self::MAX_BYTES) {
+            throw new FileTooLarge();
+        }
+
+        $mimeType = (new finfo(FILEINFO_MIME_TYPE))-&gt;file($temporaryPath);
+        $extension = self::EXTENSION_BY_MIME_TYPE[$mimeType] ?? throw new UnsupportedFileType($mimeType);
+        $storedName = bin2hex(random_bytes(16)) . '.' . $extension;
+
+        if (!move_uploaded_file($temporaryPath, $this-&gt;privateStorageDirectory . '/' . $storedName)) {
+            throw new UploadFailed();
+        }
+
+        return $storedName;
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            Los frameworks ya traen esto resuelto, y conviene saber qué método mira qué. En
+            Symfony, <code>UploadedFile::getMimeType()</code> y <code>guessExtension()</code>
+            miran el contenido; <code>getClientMimeType()</code> y
+            <code>getClientOriginalExtension()</code> repiten lo que dijo el cliente. En Laravel,
+            las reglas <code>mimes</code> y <code>mimetypes</code> también deducen el tipo del
+            contenido.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Symfony 7 y Laravel 11</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+#[Assert\File(maxSize: '5M', mimeTypes: ['image/jpeg', 'image/png', 'image/webp'])]
+public ?UploadedFile $avatar = null;
+
+$request-&gt;validate([
+    'avatar' =&gt; ['required', 'file', 'max:5120', 'mimetypes:image/jpeg,image/png,image/webp'],
+]);</code></pre>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El tipo real no garantiza que sea inofensivo</p>
+              <p>
+                Un fichero puede ser un JPEG válido y llevar PHP en sus metadatos: es un
+                <em>políglota</em>. <code>finfo</code> te dice que es una imagen, no que sea
+                inocua. Por eso la validación es la primera capa y no la única: lo que de verdad
+                lo neutraliza es dónde lo guardas y cómo lo sirves.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="guardar">
+            Dónde y con qué nombre se guarda
+            <a href="#guardar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <strong>El nombre lo generas tú.</strong> Un identificador aleatorio elimina de golpe
+            el path traversal, las colisiones, los caracteres raros y las extensiones dobles. El
+            nombre original, si lo necesitas para la descarga, va a la base de datos como dato,
+            nunca a una ruta. Laravel ya lo hace así: <code>store()</code> genera un nombre
+            aleatorio con la extensión deducida del contenido.
+          </p>
+          <p>
+            <strong>Fuera del docroot.</strong> Si el fichero no está bajo
+            <code>public/</code>, el servidor web no puede ejecutarlo ni servirlo directamente:
+            cualquier acceso pasa por tu código, que es donde viven la autorización y las
+            cabeceras. La alternativa natural es un <strong>almacenamiento de objetos</strong>
+            (S3 o compatible), que además saca los ficheros de la máquina y no ejecuta nada.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Guardar así</h4>
+              <ul>
+                <li>Nombre aleatorio y extensión según el tipo detectado</li>
+                <li>Fuera del docroot o en almacenamiento de objetos</li>
+                <li>Nombre original y tipo en la base de datos</li>
+                <li>Cada descarga pasa por una comprobación de permisos</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No guardar así</h4>
+              <ul>
+                <li>Con el nombre que mandó el cliente</li>
+                <li>En <code>public/uploads</code> con PHP activo</li>
+                <li>Con la extensión copiada del original</li>
+                <li>Con una URL pública adivinable</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="servir">
+            Servirlo sin que el navegador lo ejecute
+            <a href="#servir" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Al devolver el fichero, dos cabeceras deciden qué hace el navegador con él.
+            <code>Content-Type</code> debe ser el tipo que validaste y guardaste, no uno
+            deducido otra vez del nombre. <code>Content-Disposition: attachment</code> fuerza la
+            descarga en vez de pintarlo en tu dominio; reserva <code>inline</code> para los
+            tipos que de verdad quieres mostrar, como imágenes rasterizadas o PDF. Súmale
+            <code>X-Content-Type-Options: nosniff</code>, que ya viste en
+            <a href="pr-cabeceras-que-importan.html">las cabeceras que importan</a>, para que el
+            navegador no reinterprete el contenido por su cuenta.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · DocumentDownloadController.php (Symfony 7)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+$this-&gt;denyAccessUnlessGranted('DOCUMENT_VIEW', $document);
+
+$response = new BinaryFileResponse($this-&gt;privateStorage-&gt;absolutePathOf($document));
+$response-&gt;headers-&gt;set('Content-Type', $document-&gt;mimeType());
+$response-&gt;headers-&gt;set('X-Content-Type-Options', 'nosniff');
+$response-&gt;setContentDisposition(
+    ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+    $document-&gt;originalName(),
+    $document-&gt;asciiFallbackName(),
+);
+
+return $response;</code></pre>
+          </div>
+
+          <p>
+            Con almacenamiento de objetos, en vez de pasar los bytes por PHP generas una
+            <strong>URL firmada</strong>: válida unos minutos, para un objeto concreto, y emitida
+            solo después de comprobar los permisos. El bucket sigue siendo privado; la firma es
+            el permiso temporal. Laravel la genera con <code>temporaryUrl()</code>, y en S3
+            puedes fijar en la propia firma la cabecera de descarga:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · URL firmada (Laravel 11)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+Gate::authorize('view', $document);
+
+$url = Storage::disk('s3')-&gt;temporaryUrl($document-&gt;path, now()-&gt;addMinutes(5), [
+    'ResponseContentDisposition' =&gt; 'attachment',
+]);</code></pre>
+          </div>
+
+          <p>
+            La misma idea sirve en sentido contrario: una URL firmada de subida deja que el
+            cliente mande el fichero directamente al bucket sin pasar por tu servidor. Solo que
+            entonces la validación no ha ocurrido todavía: sube a una zona de cuarentena, y un
+            proceso tuyo lo valida antes de moverlo a su sitio definitivo.
+          </p>
+
+          <h2 id="formatos">
+            Imágenes, SVG y comprimidos
+            <a href="#formatos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <strong>Imágenes: reprocésalas.</strong> Decodificar y volver a codificar con GD o
+            Imagick produce un fichero nuevo, con solo los píxeles: se van los metadatos (y con
+            ellos la geolocalización de la foto) y casi cualquier carga escondida. Antes de
+            decodificar, comprueba las dimensiones con <code>getimagesize()</code>, que solo lee
+            la cabecera: una imagen pequeña en bytes puede ocupar gigas al descomprimirse en
+            memoria.
+          </p>
+          <p>
+            <strong>SVG: no es una imagen, es un documento.</strong> Es XML, admite
+            <code>&lt;script&gt;</code> y manejadores de eventos, y si lo abres desde tu dominio
+            ejecuta JavaScript con tu origen. Las salidas razonables son no aceptarlo,
+            convertirlo a PNG al subirlo o servirlo siempre como <code>attachment</code> desde
+            un dominio aparte. Mostrarlo con <code>&lt;img&gt;</code> no ejecuta scripts, pero
+            nada impide que alguien abra la URL directamente.
+          </p>
+          <p>
+            <strong>Comprimidos: no te fíes de lo que dicen.</strong> Una <em>zip bomb</em>
+            ocupa kilobytes y se expande a gigas. Y cada entrada lleva un nombre que puede
+            contener <code>../</code> para escribir fuera del destino (<em>zip slip</em>). Revisa
+            el índice antes de extraer:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · ZipInspector.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class ZipInspector
+{
+    private const MAX_ENTRIES = 1_000;
+    private const MAX_UNCOMPRESSED_BYTES = 200 * 1024 * 1024;
+
+    public function assertSafe(ZipArchive $archive): void
+    {
+        if ($archive-&gt;numFiles &gt; self::MAX_ENTRIES) {
+            throw new ArchiveTooLarge();
+        }
+
+        $uncompressedBytes = 0;
+
+        for ($index = 0; $index &lt; $archive-&gt;numFiles; $index++) {
+            $entry = $archive-&gt;statIndex($index);
+
+            if (str_contains($entry['name'], '..') || str_starts_with($entry['name'], '/')) {
+                throw new UnsafeArchiveEntry($entry['name']);
+            }
+
+            $uncompressedBytes += $entry['size'];
+
+            if ($uncompressedBytes &gt; self::MAX_UNCOMPRESSED_BYTES) {
+                throw new ArchiveTooLarge();
+            }
+        }
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            El tamaño del índice lo declara el propio zip, así que también puede mentir: al
+            extraer, cuenta los bytes que escribes y corta al pasar el límite.
+          </p>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Validar bien y servir mal</p>
+              <p>
+                El fallo más común no está en la subida sino en la descarga: el fichero se valida
+                con cuidado y luego se publica en una URL pública, sin <code>Content-Type</code>
+                fijado ni <code>attachment</code>, y sin comprobar quién lo pide. Cualquiera que
+                adivine o reciba la URL lo ve, y el navegador decide cómo interpretarlo.
+              </p>
+            </div>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Límites que no coinciden</p>
+              <p>
+                El tamaño máximo se aplica en tres capas: el proxy
+                (<code>client_max_body_size</code> en <a href="inf-nginx.html">nginx</a>), PHP
+                (<code>upload_max_filesize</code> y <code>post_max_size</code>) y tu validación.
+                Si la de PHP es menor que la tuya, el fichero llega vacío con un error de subida
+                y tu código lo trata como «no se envió nada». Ajusta las tres y comprueba siempre
+                el campo <code>error</code> de la subida.
+              </p>
+            </div>
+          </div>
+
+          <ul>
+            <li>Lista de extensiones prohibidas en vez de permitidas: siempre falta alguna (<code>.phtml</code>, <code>.phar</code>, <code>.htaccess</code>).</li>
+            <li>Procesar ficheros pesados dentro de la petición: el reprocesado de imágenes va mejor en una cola, con límites de memoria y tiempo.</li>
+            <li>URLs firmadas de horas o días: son credenciales al portador, y se comparten, se cachean y acaban en logs.</li>
+          </ul>
+
+          <h2 id="testear">
+            Cómo testearlo
+            <a href="#testear" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cada defensa tiene un test que la rompe si alguien la quita. Los imprescindibles: un
+            PHP disfrazado de JPEG, un fichero un byte por encima del límite, un SVG con script
+            y un zip con una entrada <code>../</code>. Con un UploadedFile real en modo test (el fake deduce el tipo del nombre, no del contenido) cuesta pocas
+            líneas:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · AvatarUploadTest.php (Laravel 11)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+public function test_rejects_php_disguised_as_jpeg(): void
+{
+    Storage::fake('s3');
+    $path = tempnam(sys_get_temp_dir(), 'avatar');
+    file_put_contents($path, '&lt;?php system($_GET["c"]);');
+    $disguisedScript = new UploadedFile($path, 'foto.jpg', 'image/jpeg', null, true);
+
+    $this-&gt;actingAs(User::factory()-&gt;create())
+        -&gt;postJson('/api/avatar', ['avatar' =&gt; $disguisedScript])
+        -&gt;assertUnprocessable();
+
+    Storage::disk('s3')-&gt;assertDirectoryEmpty('avatars');
+}</code></pre>
+          </div>
+
+          <p>
+            Y desde fuera, lo que decide si un fichero se ejecuta en el navegador son las
+            cabeceras de la descarga. Míralas sobre un fichero real:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · cabeceras de una descarga</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">curl -sI https://app.example.com/documents/42/download | grep -iE 'content-type|content-disposition|nosniff'</code></pre>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Aplícalo entero cuando…</h4>
+              <ul>
+                <li>Cualquier usuario externo puede subir ficheros</li>
+                <li>Lo subido se sirve a otros usuarios desde tu dominio</li>
+                <li>Procesas el contenido: miniaturas, extracción, importación</li>
+                <li>Aceptas comprimidos o formatos documentales</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Puedes aligerarlo cuando…</h4>
+              <ul>
+                <li>Solo suben administradores autenticados de confianza</li>
+                <li>El fichero solo lo vuelve a descargar quien lo subió</li>
+                <li>Nunca se descomprime ni se interpreta en el servidor</li>
+                <li>Es una herramienta interna sin acceso desde fuera</li>
+              </ul>
+            </div>
+          </div>
+          <p>
+            Aligerar no es quitar lo básico: nombre generado, fuera del docroot y límite de
+            tamaño son baratos y van siempre. Si no quieres mantener nada de esto, la
+            alternativa es delegarlo en un servicio gestionado de ficheros o imágenes que
+            valide y transforme por ti, y quedarte solo con la autorización.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El nombre y el tipo que manda el cliente son texto suyo: el tipo real se saca del contenido con <code>finfo</code>, contra una lista de permitidos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El nombre lo generas tú y el fichero vive fuera del docroot o en un bucket privado: así ni se ejecuta ni se sirve sin pasar por tu código.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Al servir, <code>Content-Type</code> fijado, <code>nosniff</code> y <code>attachment</code> salvo lo que quieras mostrar; con S3, URLs firmadas de pocos minutos tras comprobar permisos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Las imágenes se reprocesan, el SVG se trata como documento con script y los zip se inspeccionan antes de extraer: tamaño total, número de entradas y rutas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El límite de tamaño vive en tres capas, proxy, PHP y aplicación, y las tres tienen que cuadrar.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

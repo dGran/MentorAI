@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Logging seguro: qué registrar y qué nunca — MentorAI</title>
+    <meta name="description" content="Logging seguro en PHP: qué eventos de seguridad registrar, qué no registrar nunca, redactar campos en Monolog, inyección en logs, retención, acceso y alertas útiles." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Seguridad</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Logging seguro: qué registrar y qué nunca</h1>
+        <p class="tutorial-hero__lead">El día que te atacan, los logs son lo único que te cuenta qué pasó. El resto del tiempo son una base de datos copiada en cinco sitios y que lee medio equipo. Esta lección va de que sirvan para lo primero sin convertirse en una fuga por lo segundo.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            26 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#dos-fallos">Los dos fallos opuestos</a></li>
+            <li><a href="#que-registrar">Qué registrar</a></li>
+            <li><a href="#que-nunca">Qué no registrar nunca</a></li>
+            <li><a href="#redactar">Redactar en Monolog</a></li>
+            <li><a href="#inyeccion">Inyección en logs</a></li>
+            <li><a href="#retencion">Retención, acceso y alertas</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#testear">Cómo testearlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Un log de seguridad tiene que contestar cuatro preguntas tras un incidente: quién, qué, cuándo y desde dónde. Y no debe contener nada que, si el log se filtra, le dé al atacante algo que no tenía.</p>
+
+          <h2 id="dos-fallos">
+            Los dos fallos opuestos
+            <a href="#dos-fallos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Los logs fallan en seguridad de dos formas que tiran en direcciones contrarias, y por eso cuesta acertar:</p>
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Registrar de menos</h4>
+              <ul>
+                <li>Te enteras del ataque por un cliente, semanas después.</li>
+                <li>No puedes saber qué cuentas se vieron afectadas.</li>
+                <li>Es <em>Security Logging and Monitoring Failures</em> (A09) del OWASP Top 10 2021.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Registrar de más</h4>
+              <ul>
+                <li>Contraseñas y tokens en texto plano en el agregador.</li>
+                <li>Datos personales con más copias y más lectores que la propia base de datos.</li>
+                <li>Una fuga del sistema de logs equivale a una fuga de producción.</li>
+              </ul>
+            </div>
+          </div>
+          <p>La raíz es la misma: tratar el log como un volcado de lo que pasa por el código en vez de como un registro diseñado. Los fundamentos (niveles, JSON, <code>request_id</code>, PSR-3) ya están en <a href="logs-estructurados.html">Logs estructurados</a>; aquí se mira todo eso con ojos de atacante.</p>
+
+          <h2 id="que-registrar">
+            Qué registrar: eventos que permiten investigar
+            <a href="#que-registrar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>No hace falta registrarlo todo, sino las decisiones de seguridad que toma tu aplicación. Cada una con un nombre de evento estable, para poder contarlas y alertar sobre ellas:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Evento</th><th>Por qué importa</th><th>Contexto mínimo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>auth.login_failed</code></td><td>Fuerza bruta y relleno de credenciales</td><td>Identificador intentado, IP, motivo</td></tr>
+                <tr><td><code>auth.login_succeeded</code></td><td>Saber qué pasó después de una racha de fallos</td><td>Id de usuario, IP</td></tr>
+                <tr><td><code>authz.access_denied</code></td><td>Alguien probando recursos ajenos</td><td>Id de usuario, recurso, acción</td></tr>
+                <tr><td><code>user.role_changed</code></td><td>Escalada de privilegios</td><td>Quién lo cambió, a quién, de qué a qué</td></tr>
+                <tr><td><code>auth.password_reset</code></td><td>Toma de cuentas</td><td>Id de usuario, IP</td></tr>
+                <tr><td><code>auth.mfa_disabled</code></td><td>Paso previo típico a un abuso</td><td>Id de usuario, quién lo hizo</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Fíjate en que ninguna fila lleva el valor de un secreto. Para investigar necesitas saber <strong>que</strong> alguien presentó un token caducado, no el token. Y el <code>request_id</code> de cada evento es lo que te permite enlazarlo con el resto de la petición.</p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Un canal propio para auditoría</p>
+              <p>Separar estos eventos en su propio canal (<code>audit</code>) permite darles otra retención y otro control de acceso que a los logs de depuración. En Symfony basta con declararlo en <code>monolog.channels</code> e inyectar <code>LoggerInterface $auditLogger</code>; en Laravel, un canal más en <code>config/logging.php</code>.</p>
+            </div>
+          </div>
+
+          <h2 id="que-nunca">
+            Qué no registrar nunca
+            <a href="#que-nunca" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La lista es corta: contraseñas (tampoco hasheadas), tokens de sesión, de API o de restablecimiento, cabeceras <code>Authorization</code> y <code>Cookie</code>, secretos de configuración, números de tarjeta y datos personales que no necesites para investigar. Que la IP también es un dato personal no significa que no puedas guardarla, sino que su retención tiene que estar justificada.</p>
+          <p>El problema es que casi nunca se registran a propósito. Se cuelan por el camino del medio: el contexto que se pasa entero. Mira este listener de Laravel, que parece inofensivo:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · vulnerable · app/Listeners/RegistrarLoginFallido.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Listeners;
+
+use Illuminate\Auth\Events\Failed;
+use Illuminate\Support\Facades\Log;
+
+final class RegistrarLoginFallido
+{
+    public function handle(Failed $event): void
+    {
+        Log::warning('auth.login_failed', [
+            'credentials' =&gt; $event-&gt;credentials,
+            'request' =&gt; request()-&gt;all(),
+        ]);
+    }
+}</code></pre>
+          </div>
+          <p><code>$event-&gt;credentials</code> lleva la contraseña tal cual la escribió el usuario, y <code>request()-&gt;all()</code> la vuelve a meter. Peor aún: una contraseña fallida suele ser la correcta con una errata, o la de otro servicio. La versión corregida elige los campos uno a uno:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · corregido · app/Listeners/RegistrarLoginFallido.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Listeners;
+
+use Illuminate\Auth\Events\Failed;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+
+final class RegistrarLoginFallido
+{
+    private const EVENTO = 'auth.login_failed';
+    private const CANAL = 'audit';
+
+    public function __construct(private readonly Request $request) {}
+
+    public function handle(Failed $event): void
+    {
+        Log::channel(self::CANAL)-&gt;warning(self::EVENTO, [
+            'identificador' =&gt; hash('sha256', (string) ($event-&gt;credentials['email'] ?? '')),
+            'usuario_id' =&gt; $event-&gt;user?-&gt;getAuthIdentifier(),
+            'ip' =&gt; $this-&gt;request-&gt;ip(),
+            'guard' =&gt; $event-&gt;guard,
+        ]);
+    }
+}</code></pre>
+          </div>
+          <p>El email va con hash por un motivo concreto: hay quien escribe la contraseña en el campo del usuario. Con el hash sigues pudiendo agrupar intentos contra la misma cuenta sin guardar lo que se tecleó. Es seudonimización, no anonimato: un SHA-256 de un email se revierte probando emails conocidos; si eso te preocupa, usa <code>hash_hmac</code> con una clave propia. Si el email existe, <code>usuario_id</code> ya identifica la cuenta.</p>
+
+          <h2 id="redactar">
+            Redactar campos en Monolog
+            <a href="#redactar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Elegir los campos a mano es la defensa principal, pero alguien acabará pasando un array entero. Para eso se pone una red de seguridad en el propio logger: un <em>processor</em> de Monolog que reescribe cada registro antes de que llegue a cualquier handler. En Monolog 3 el registro es un <code>LogRecord</code> inmutable, así que se devuelve una copia con <code>with()</code>:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · src/Logging/RedactarCamposSensibles.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Logging;
+
+use Monolog\Attribute\AsMonologProcessor;
+use Monolog\LogRecord;
+use Monolog\Processor\ProcessorInterface;
+
+#[AsMonologProcessor]
+final class RedactarCamposSensibles implements ProcessorInterface
+{
+    private const MASCARA = '[REDACTADO]';
+    private const CLAVES_SENSIBLES = ['password', 'token', 'secret', 'authorization', 'cookie', 'card'];
+
+    public function __invoke(LogRecord $record): LogRecord
+    {
+        return $record-&gt;with(
+            context: $this-&gt;redactar($record-&gt;context),
+            extra: $this-&gt;redactar($record-&gt;extra),
+        );
+    }
+
+    private function redactar(array $datos): array
+    {
+        foreach ($datos as $clave =&gt; $valor) {
+            if ($this-&gt;esSensible((string) $clave)) {
+                $datos[$clave] = self::MASCARA;
+
+                continue;
+            }
+
+            if (is_array($valor)) {
+                $datos[$clave] = $this-&gt;redactar($valor);
+            }
+        }
+
+        return $datos;
+    }
+
+    private function esSensible(string $clave): bool
+    {
+        $claveNormalizada = strtolower($clave);
+
+        foreach (self::CLAVES_SENSIBLES as $claveSensible) {
+            if (str_contains($claveNormalizada, $claveSensible)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}</code></pre>
+          </div>
+          <p>En Symfony, el atributo <code>#[AsMonologProcessor]</code> lo registra en todos los canales con autoconfiguración. En Laravel se engancha con la clave <code>tap</code> de cada canal en <code>config/logging.php</code> (<code>'tap' =&gt; [AplicarRedaccion::class]</code>), que recibe el logger al crearlo:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · app/Logging/AplicarRedaccion.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Logging;
+
+use Illuminate\Log\Logger;
+
+final class AplicarRedaccion
+{
+    public function __invoke(Logger $logger): void
+    {
+        $logger-&gt;pushProcessor(new RedactarCamposSensibles());
+    }
+}</code></pre>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Por qué es solo una red</p>
+              <p>Redactar por nombre de clave es una lista negra: no ve un token dentro del mensaje ni un campo llamado <code>clave_api</code>. Sirve para cazar el descuido habitual, no para sustituir la lista blanca de campos que pones en cada llamada.</p>
+            </div>
+          </div>
+
+          <h2 id="inyeccion">
+            Inyección en logs: el salto de línea
+            <a href="#inyeccion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Si concatenas entrada del usuario en un log de texto, el usuario escribe en tu log. Con un salto de línea (<code>%0A</code> en la URL) fabrica una línea entera que parece tuya: un email como <code>x@x.es\n[2026-10-12] Login correcto para admin@empresa.es</code> deja en el fichero un acceso que nunca ocurrió, y un investigador lo creerá. Arriba, la forma vulnerable; abajo, la corregida:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · vulnerable frente a corregido</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+error_log('Login fallido para ' . $request-&gt;get('email'));
+
+$logger-&gt;warning('auth.login_failed', ['identificador' =&gt; $identificadorConHash]);</code></pre>
+          </div>
+          <p>La corrección no es escapar a mano, sino no concatenar: mensaje constante y datos en el contexto. Los formateadores de Monolog ya neutralizan los saltos de línea (<code>JsonFormatter</code> los escapa dentro del JSON; <code>LineFormatter</code> los sustituye salvo que actives <code>allowInlineLineBreaks</code>). El riesgo vuelve con <code>error_log()</code>, con <code>file_put_contents</code> o con ese formateador «para que se vean bien las trazas», que es justo el que Laravel monta por defecto en sus canales de fichero: allí el salto de línea del contexto llega intacto, así que el canal de auditoría usa <code>'formatter' =&gt; Monolog\Formatter\JsonFormatter::class</code>.</p>
+          <p>Hay una segunda cara: si tu visor de logs pinta HTML sin escapar, un <code>&lt;script&gt;</code> en el campo <code>User-Agent</code> se ejecuta en el navegador de quien investiga, que suele ser alguien con muchos permisos. Es el XSS almacenado de <a href="owasp.html">OWASP imprescindible</a>, con el log como almacén.</p>
+
+          <h2 id="retencion">
+            Retención, acceso y alertas
+            <a href="#retencion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un log de auditoría que el atacante puede borrar no vale para auditar. Tres decisiones lo convierten en evidencia:</p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Fuera de la máquina</b><small>Envío continuo a un agregador: con root en el servidor no se reescribe la historia</small></span>
+              </div>
+              <div class="flow__arrow" data-label="acceso mínimo"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Quién puede leer</b><small>Auditoría solo para quien investiga; depuración para el equipo</small></span>
+              </div>
+              <div class="flow__arrow" data-label="caducidad"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Retención con fecha</b><small>Corta para depuración; la de auditoría, la que fije tu política y la normativa</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Cada copia de un log es una copia de los datos que contiene, con su propio riesgo.</p>
+          </div>
+          <p>El endurecimiento de la máquina que envía los logs está en <a href="inf-hardening.html">Endurecer un servidor</a>. Lo que toca a la aplicación son las alertas, y la regla es alertar sobre <strong>tasas y patrones</strong>, no sobre eventos sueltos: un login fallido es ruido; cientos contra cuentas distintas desde la misma IP es relleno de credenciales.</p>
+          <ul>
+            <li>Picos de <code>auth.login_failed</code> por IP o por cuenta.</li>
+            <li>Ráfagas de <code>authz.access_denied</code> de un mismo usuario: alguien recorriendo ids ajenos.</li>
+            <li>Cualquier <code>user.role_changed</code> hacia administrador fuera del proceso habitual.</li>
+            <li>Que dejen de llegar logs: es lo primero que hace quien no quiere ser visto.</li>
+          </ul>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Los que más se repiten</p>
+              <ul>
+                <li><strong>Registrar el cuerpo de la petición «para depurar»</strong> y olvidarlo en producción: arrastra contraseñas, tokens y datos personales.</li>
+                <li><strong>Registrar la excepción con su contexto entero</strong>: algunas llevan la consulta con parámetros o la URL con el token en la query string.</li>
+                <li><strong>Tener redacción solo en un canal</strong>, mientras el del framework, el de colas o el de Sentry siguen escribiendo sin ella.</li>
+                <li><strong>Mensajes variables</strong> (<code>"Fallo para $email"</code>): abren la inyección y además impiden agrupar y alertar.</li>
+                <li><strong>No registrar los accesos denegados</strong> porque «ya devolvemos 403»: el 403 protege, pero sin el log nadie ve que alguien está probando.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="testear">
+            Cómo detectarlo y testearlo
+            <a href="#testear" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El processor es una clase pura: se prueba como cualquier otra. Y el flujo completo se comprueba con el <code>TestHandler</code> de Monolog, que guarda en memoria lo que se habría escrito:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · tests/Logging/RedactarCamposSensiblesTest.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+use App\Logging\RedactarCamposSensibles;
+use Monolog\Handler\TestHandler;
+use Monolog\Logger;
+use PHPUnit\Framework\TestCase;
+
+final class RedactarCamposSensiblesTest extends TestCase
+{
+    private const PASSWORD = 'MiClaveSecreta-2026';
+
+    public function testNoEscribeLaPasswordAunqueVengaAnidada(): void
+    {
+        $handler = new TestHandler();
+        $logger = new Logger('audit', [$handler], [new RedactarCamposSensibles()]);
+
+        $logger-&gt;warning('auth.login_failed', ['credentials' =&gt; ['email' =&gt; 'a@b.es', 'password' =&gt; self::PASSWORD]]);
+
+        $registro = $handler-&gt;getRecords()[0];
+        self::assertStringNotContainsString(self::PASSWORD, json_encode($registro-&gt;context));
+    }
+}</code></pre>
+          </div>
+          <p>Fuera de los tests, busca de vez en cuando en los logs de preproducción patrones que nunca deberían aparecer: <code>Bearer </code>, <code>eyJ</code> (el arranque en Base64 de casi todo JWT), <code>password</code> o <code>"set-cookie"</code>. Si un barrido así encuentra algo, tienes un hueco que el processor no cubre.</p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Sí</h4>
+              <ul>
+                <li>Cualquier aplicación con login, roles o datos de usuarios: los eventos de auditoría y la redacción desde el primer día.</li>
+                <li>Al añadir un endpoint que decide acceso: su <code>access_denied</code> se registra igual que se testea su 403.</li>
+                <li>Al integrar un SDK o un handler nuevo: comprobar que pasa por la redacción.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No hace falta</h4>
+              <ul>
+                <li>Un canal de auditoría separado en un script interno sin usuarios ni datos personales.</li>
+                <li>Registrar cada lectura correcta de cada recurso: es ruido caro que tapa lo que importa.</li>
+              </ul>
+            </div>
+          </div>
+          <p>La alternativa a un sistema propio de auditoría, cuando el volumen o la normativa lo piden, es una tabla de auditoría en base de datos o un servicio dedicado con escritura de solo añadir. El principio es el mismo: eventos con nombre, campos elegidos, nada de secretos.</p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Registra las decisiones de seguridad (login fallido, acceso denegado, cambio de rol) con nombre estable, quién, qué, cuándo y desde dónde.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Nunca contraseñas, tokens, cabeceras de autenticación ni cuerpos completos: elige los campos uno a uno.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Un processor de Monolog que redacta claves sensibles es la red de seguridad, no la defensa principal.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Mensaje constante y datos en el contexto: así no hay inyección por saltos de línea y puedes agrupar.</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span>Logs fuera de la máquina, con acceso mínimo y retención con fecha; alertas sobre tasas, no sobre eventos sueltos.</span></li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
