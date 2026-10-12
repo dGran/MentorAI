@@ -189,9 +189,10 @@ en la review, y en `herramientas/` están los scripts de medición y aplicación
 Después vienen #36, #37 y #38 (decisión del usuario: «#35-#38 después, en ese
 orden»), y luego #92-#100 (huecos del catálogo, P3).
 
-**Pendiente sin issue:** 33 lecciones de otros cursos (Linux, PHPUnit, CI/CD, Git,
-clean code, SOLID, testing, jerga) sin «Cuándo aplicarlo»; y 43 lecciones con
-`h2` sin ancla.
+**Tanda preparada, sin lanzar:** `plan-tanda-2026-10-12.md` es el contrato para vaciar el
+backlog: #112 → #35 → #36 → #37 → #38 → #113 → #114 → #93-#100 → #92, con automerge. La deuda
+que estaba sin issue ya lo tiene: #112 (ancla del `h2` «Cuándo aplicarlo» en 43 lecciones) y
+#113/#114 (33 lecciones sin «Cuándo aplicarlo»).
 
 ## Decisiones que no se reabren sin motivo nuevo
 
