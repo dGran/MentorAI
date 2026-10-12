@@ -77,7 +77,7 @@
             <li><a href="#funciones-genericas">Funciones genéricas</a></li>
             <li><a href="#restricciones">Restricciones de tipo</a></li>
             <li><a href="#tipos-genericos">Tipos genéricos</a></li>
-            <li><a href="#constraints">El paquete constraints</a></li>
+            <li><a href="#constraints">El paquete cmp</a></li>
             <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
@@ -314,10 +314,10 @@ pedido, ok := colaPedidos.Desencolar()   // 1, true
           </div>
 
         <h2 id="constraints">
-            El paquete constraints
+            El paquete cmp
             <a href="#constraints" class="anchor" aria-hidden="true">#</a>
           </h2>
-        <p>El paquete <code>golang.org/x/exp/constraints</code> (experimental pero estable en la práctica) y la propia stdlib ofrecen restricciones predefinidas:</p>
+        <p>Desde Go 1.21 la stdlib trae el paquete <code>cmp</code> con la restricción <code>cmp.Ordered</code>: enteros, flotantes y strings, todo lo que se puede ordenar. El paquete <code>golang.org/x/exp/constraints</code> solo aparece ya en código anterior a esa versión.</p>
 
         <div class="code-block">
             <div class="code-block__head">
@@ -327,10 +327,10 @@ pedido, ok := colaPedidos.Desencolar()   // 1, true
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
-            <pre><code data-lang="go">import "golang.org/x/exp/constraints"
+            <pre><code data-lang="go">import "cmp"
 
-// constraints.Ordered: cualquier tipo comparable con &lt;, &gt;, &lt;=, &gt;=
-func Min[T constraints.Ordered](a, b T) T {
+// cmp.Ordered: cualquier tipo comparable con &lt;, &gt;, &lt;=, &gt;=
+func Min[T cmp.Ordered](a, b T) T {
     if a &lt; b {
         return a
     }
@@ -341,6 +341,7 @@ func Min[T constraints.Ordered](a, b T) T {
 // any: builtin de Go — cualquier tipo (alias de interface{})
 </code></pre>
           </div>
+        <p>Para el caso simple ni siquiera hace falta escribir <code>Min</code>: desde Go 1.21 los builtins <code>min</code> y <code>max</code> aceptan cualquier tipo ordenado, <code>min(3, 7)</code> o <code>max(a, b, c)</code>.</p>
 
                             <div class="callout callout--warning">
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -349,7 +350,7 @@ func Min[T constraints.Ordered](a, b T) T {
               <ul>
                 <li><strong>Usar <code>==</code> o <code>&lt;</code> con <code>[T any]</code>.</strong> No compila: <code>any</code> no promete esas operaciones. Pide <code>comparable</code> para <code>==</code> y <code>cmp.Ordered</code> para ordenar; desde Go 1.21 está en la stdlib y ya no hace falta <code>golang.org/x/exp/constraints</code>.</li>
                 <li><strong>Métodos con parámetros de tipo propios.</strong> <code>func (c *Cola[T]) Map[U any](...)</code> no compila: un método solo puede usar los parámetros de su tipo. Escríbelo como función libre, <code>MapCola[T, U any](c *Cola[T], ...)</code>.</li>
-                <li><strong>Generics donde basta una interfaz.</strong> Si el cuerpo solo llama a métodos, un parámetro de tipo interfaz hace lo mismo con menos ruido en la firma.</li>
+                <li><strong>Un parámetro de tipo que solo se instancia con un tipo.</strong> Si en todo el código <code>T</code> acaba siempre siendo <code>int</code>, la firma genérica solo añade ruido: escribe la función con <code>int</code> y generaliza cuando aparezca el segundo tipo.</li>
               </ul>
             </div>
           </div>
@@ -405,7 +406,7 @@ func Min[T constraints.Ordered](a, b T) T {
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span><code>comparable</code> permite usar <code>==</code> y <code>!=</code>; <code>any</code> acepta cualquier tipo; <code>constraints.Ordered</code> permite comparaciones de orden.</span>
+                <span><code>comparable</code> permite usar <code>==</code> y <code>!=</code>; <code>any</code> acepta cualquier tipo; <code>cmp.Ordered</code> (stdlib desde Go 1.21) permite comparaciones de orden.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
