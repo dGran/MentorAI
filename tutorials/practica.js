@@ -1327,4 +1327,45 @@ window.MENTORAI_PRACTICE = {
       },
     },
   ],
+  "php-moderno": [
+    {
+      id: "r6b8fb1",
+      title: "¿Quién manda en strict_types?",
+      statement:
+        "Crea tres ficheros en un directorio. precio.php, con declare(strict_types=1), define totalEnCentimos(int $unidades, int $precioEnCentimos): int. checkout-laxo.php lo incluye SIN declare y llama a totalEnCentimos(\"3\", 1999) y a totalEnCentimos(true, 1999). checkout-estricto.php lo incluye CON declare(strict_types=1) y hace la misma primera llamada dentro de un try que captura TypeError. Ejecuta los dos checkouts con php y explica por qué el mismo código da resultados distintos si la función está declarada en un fichero estricto.",
+      solution:
+        "El laxo imprime 5997 y 1999: la cadena \"3\" se convierte en 3 y true en 1 sin avisar, porque el modo estricto lo decide el fichero que hace la llamada, no el que declara la función. El estricto lanza TypeError: Argument #1 ($unidades) must be of type int, string given. Por eso poner declare(strict_types=1) solo en tus clases no protege nada si el controlador o la plantilla que las llaman no lo llevan: el declare va en todos los ficheros, y el sitio donde importa es justo el borde que recibe datos de fuera. Fíjate también en el true convertido en 1: es el tipo de bug que no da error, solo un total equivocado.",
+      solutionCode: {
+        lang: "php",
+        source:
+          "<?php\ndeclare(strict_types=1);\n\nfunction totalEnCentimos(int $unidades, int $precioEnCentimos): int\n{\n    return $unidades * $precioEnCentimos;\n}\n\n// checkout-laxo.php\n<?php\nrequire __DIR__ . '/precio.php';\n\necho totalEnCentimos(\"3\", 1999), PHP_EOL;\necho totalEnCentimos(true, 1999), PHP_EOL;\n\n// checkout-estricto.php\n<?php\ndeclare(strict_types=1);\nrequire __DIR__ . '/precio.php';\n\ntry {\n    echo totalEnCentimos(\"3\", 1999), PHP_EOL;\n} catch (TypeError $error) {\n    echo get_class($error), ': ', $error->getMessage(), PHP_EOL;\n}\n\n// $ php checkout-laxo.php     → 5997 y 1999\n// $ php checkout-estricto.php → TypeError: ... must be of type int, string given",
+      },
+    },
+    {
+      id: "rdce88f",
+      title: "Un baseline que avisa cuando lo arreglas",
+      statement:
+        "En un directorio vacío instala PHPStan 2 (composer require --dev phpstan/phpstan:^2) y crea src/Cliente.php con una clase que tiene un private ?string $email, un método dominio() que hace substr($this->email, strpos($this->email, \"@\") + 1) y un método saludo() que llama a $this->nombre(), que no existe. Analiza a nivel 8 y anota los errores. Genera un baseline, inclúyelo en phpstan.neon y comprueba que el análisis pasa. Después arregla solo saludo() y vuelve a analizar: ¿por qué falla otra vez si has arreglado algo?",
+      solution:
+        "A nivel 8 salen tres errores: dos argument.type, porque $email puede ser null y strpos y substr esperan string, y un method.notFound por nombre(). Con el baseline el análisis sale con 0: los tres quedan congelados, no arreglados. Al arreglar saludo() falla con ignore.unmatched: el baseline ignora un error que ya no existe, y reportUnmatchedIgnoredErrors (activo por defecto) te obliga a regenerarlo. Esa es la gracia: el baseline solo puede encoger, y cada arreglo deja constancia. Un baseline que nadie regenera ni mira es deuda escondida; uno que baja en cada PR es el plan de pago de esa deuda.",
+      solutionCode: {
+        lang: "bash",
+        source:
+          "composer require --dev phpstan/phpstan:^2\nmkdir -p src\ncat > src/Cliente.php <<'EOF'\n<?php\ndeclare(strict_types=1);\n\nfinal class Cliente\n{\n    public function __construct(private ?string $email) {}\n\n    public function dominio(): string\n    {\n        return substr($this->email, strpos($this->email, '@') + 1);\n    }\n\n    public function saludo(): string\n    {\n        return 'Hola, ' . $this->nombre();\n    }\n}\nEOF\n\nprintf 'parameters:\\n    level: 8\\n    paths:\\n        - src\\n' > phpstan.neon\nvendor/bin/phpstan analyse            # 3 errores: argument.type x2, method.notFound\n\nvendor/bin/phpstan analyse --generate-baseline\nprintf 'includes:\\n    - phpstan-baseline.neon\\nparameters:\\n    level: 8\\n    paths:\\n        - src\\n' > phpstan.neon\nvendor/bin/phpstan analyse            # [OK] No errors\n\n# arregla saludo() y repite\nvendor/bin/phpstan analyse            # ignore.unmatched: el baseline ignora un error que ya no existe\nvendor/bin/phpstan analyse --generate-baseline   # el baseline encoge",
+      },
+    },
+    {
+      id: "r2fa6b7",
+      title: "Migra una clase de PHP 7.4 con Rector",
+      statement:
+        "Escribe una clase Pedido al estilo de PHP 7.4: dos propiedades asignadas a mano en el constructor, un switch que devuelve una etiqueta según el estado, un ternario $this->cliente !== null ? $this->cliente->pais() : null y un strpos($referencia, \"INT-\") === 0. Instala Rector 2 (composer require --dev rector/rector:^2), crea un rector.php con withPaths y withPhpSets(php80: true) y ejecuta primero vendor/bin/rector process --dry-run. Lee qué reglas aplicaría y con qué código de salida termina; luego aplícalo y compara.",
+      solution:
+        "El dry-run termina con código 2 y lista cuatro reglas: promoción de propiedades al constructor, switch a match, el ternario a nullsafe y strpos === 0 a str_starts_with. Ese código distinto de cero es lo que permite usar el dry-run en CI como «aquí queda migración pendiente». Al aplicarlo, la clase queda con private string $estado en el constructor, un match, $this->cliente?->pais() y str_starts_with. Ojo con una diferencia: match compara con === y switch con ==, así que si el estado pudiera llegar como entero el comportamiento cambia; por eso Rector se pasa con los tests en verde antes y después, y de un set de versión al siguiente, no todos de golpe. Con php81: true añadiría readonly a las propiedades promocionadas.",
+      solutionCode: {
+        lang: "php",
+        source:
+          "// src/Pedido.php antes\n<?php\n\nfinal class Pedido\n{\n    private string $estado;\n    private ?Cliente $cliente;\n\n    public function __construct(string $estado, ?Cliente $cliente)\n    {\n        $this->estado = $estado;\n        $this->cliente = $cliente;\n    }\n\n    public function etiqueta(): string\n    {\n        switch ($this->estado) {\n            case 'pagado':\n                return 'Pagado';\n            case 'enviado':\n                return 'En camino';\n            default:\n                return 'Pendiente';\n        }\n    }\n\n    public function pais(): ?string\n    {\n        return $this->cliente !== null ? $this->cliente->pais() : null;\n    }\n\n    public function esReferenciaInterna(string $referencia): bool\n    {\n        return strpos($referencia, 'INT-') === 0;\n    }\n}\n\n// rector.php\n<?php\n\nuse Rector\\Config\\RectorConfig;\n\nreturn RectorConfig::configure()\n    ->withPaths([__DIR__ . '/src'])\n    ->withPhpSets(php80: true);\n\n// $ vendor/bin/rector process --dry-run   → 4 reglas, exit 2\n// $ vendor/bin/rector process\n\n// src/Pedido.php después\n<?php\n\nfinal class Pedido\n{\n    public function __construct(private string $estado, private ?Cliente $cliente)\n    {\n    }\n\n    public function etiqueta(): string\n    {\n        return match ($this->estado) {\n            'pagado' => 'Pagado',\n            'enviado' => 'En camino',\n            default => 'Pendiente',\n        };\n    }\n\n    public function pais(): ?string\n    {\n        return $this->cliente?->pais();\n    }\n\n    public function esReferenciaInterna(string $referencia): bool\n    {\n        return str_starts_with($referencia, 'INT-');\n    }\n}\n",
+      },
+    },
+  ],
 };

@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rector: migrar de versión sin hacerlo a mano — MentorAI</title>
+    <meta name="description" content="Rector en PHP: refactors automáticos sobre el AST, rector.php con la configuración fluida de Rector 2, sets de versión y de frameworks, --dry-run y migración por escalones con tests y PHPStan como red." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>PHP</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Rector: migrar de versión sin hacerlo a mano</h1>
+        <p class="tutorial-hero__lead">Tienes cien mil líneas escritas para PHP 7.4 y producción ya corre 8.4. Hacer la migración a mano son semanas de cambios mecánicos que nadie quiere revisar. Rector los hace en minutos y te entrega un diff que sí se puede revisar.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            25 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">El problema de migrar a mano</a></li>
+            <li><a href="#que-es">Qué es Rector: cambios sobre el AST</a></li>
+            <li><a href="#configuracion">rector.php con la configuración fluida</a></li>
+            <li><a href="#sets">Sets de PHP y de frameworks</a></li>
+            <li><a href="#dry-run">--dry-run: el diff antes que el cambio</a></li>
+            <li><a href="#pasos">Un set cada vez, con red</a></li>
+            <li><a href="#orden">Primero Rector, después PHP-CS-Fixer</a></li>
+            <li><a href="#regla-propia">¿Una regla propia?</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Las lecciones anteriores enseñan qué escribir en PHP moderno. Esta trata de cómo llevar ahí el código que ya existe.
+          </p>
+          <h2 id="problema">
+            El problema de migrar a mano
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Subir de versión de PHP casi nunca exige pensar. Exige repetir. Convertir propiedades en <a href="pm-sintaxis-moderna.html">promoción de constructor</a>, cambiar <code>strpos(...) === 0</code> por <code>str_starts_with</code>, pasar <code>switch</code> a <code>match</code>, marcar como <code>readonly</code> lo que nunca se reasigna. Cada cambio es trivial; el problema es que hay miles.
+          </p>
+          <p>
+            Hecho a mano, ese trabajo es lento, así que se aplaza; es irregular, porque cada persona moderniza a su manera; y es difícil de revisar, porque un PR de 4.000 líneas tocadas a mano obliga a leerlas todas. Necesitas una herramienta que aplique la misma transformación siempre igual y te enseñe el resultado antes de escribirlo.
+          </p>
+          <h2 id="que-es">
+            Qué es Rector: cambios sobre el AST
+            <a href="#que-es" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Rector es una herramienta de refactorización automática. No busca y reemplaza texto: <strong>parsea cada fichero a un árbol de sintaxis (AST)</strong> con <code>nikic/php-parser</code>, le pasa una lista de reglas que modifican nodos concretos y vuelve a imprimir solo lo que cambió. Para decidir si una regla aplica usa la información de tipos de PHPStan, que es dependencia suya, así que distingue un <code>$invoice-&gt;send()</code> de un <code>$mailer-&gt;send()</code>.
+          </p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Código fuente</b><small>Los ficheros de withPaths</small></span>
+              </div>
+              <div class="flow__arrow" data-label="php-parser"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>AST con tipos</b><small>PHPStan resuelve qué es cada variable</small></span>
+              </div>
+              <div class="flow__arrow" data-label="reglas de los sets"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>AST modificado</b><small>Cada regla toca solo los nodos que entiende</small></span>
+              </div>
+              <div class="flow__arrow" data-label="impresión"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>Diff o fichero escrito</b><small>Según uses --dry-run o no</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Rector trabaja sobre estructura y tipos, no sobre texto.</p>
+          </div>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Rector</h4>
+              <ul>
+                <li>Entiende que un <code>switch</code> con <code>return</code> en cada caso equivale a un <code>match</code></li>
+                <li>Renombra un método en la declaración y en cada llamada de esa clase</li>
+                <li>Si una regla no está segura, no toca el nodo</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Buscar y reemplazar</h4>
+              <ul>
+                <li>No sabe dónde acaba una expresión ni qué tipo tiene</li>
+                <li>Renombra también el método homónimo de otra clase</li>
+                <li>Falla en silencio con saltos de línea o comentarios</li>
+              </ul>
+            </div>
+          </div>
+          <h2 id="configuracion">
+            rector.php con la configuración fluida
+            <a href="#configuracion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Se instala como dependencia de desarrollo (<code>composer require --dev rector/rector</code>, y el porqué de <code>require-dev</code> está en <a href="composer.html">Composer a fondo</a>). Rector 2 se configura con un constructor fluido, <code>RectorConfig::configure()</code>, que devuelve el fichero entero en una expresión:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · rector.php</span>
+              <button class="copy-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+use Rector\Config\RectorConfig;
+
+return RectorConfig::configure()
+    -&gt;withPaths([
+        __DIR__ . '/src',
+        __DIR__ . '/tests',
+    ])
+    -&gt;withSkip([
+        __DIR__ . '/src/Legacy',
+    ])
+    -&gt;withPhpSets(php81: true)
+    -&gt;withComposerBased(phpunit: true, symfony: true)
+    -&gt;withPreparedSets(deadCode: true, typeDeclarations: true);</code></pre>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Método</th><th>Para qué sirve</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>withPaths</code></td><td>Qué directorios procesa. Nada fuera de ellos se toca.</td></tr>
+                <tr><td><code>withSkip</code></td><td>Rutas o reglas que se excluyen, también una regla solo en una ruta.</td></tr>
+                <tr><td><code>withPhpSets</code></td><td>Modernización hasta una versión de PHP.</td></tr>
+                <tr><td><code>withComposerBased</code></td><td>Reglas de frameworks según la versión instalada en <code>vendor/</code>.</td></tr>
+                <tr><td><code>withPreparedSets</code></td><td>Sets de calidad que no dependen de versión: código muerto, tipos, early return…</td></tr>
+                <tr><td><code>withRules</code> / <code>withConfiguredRule</code></td><td>Reglas sueltas, sin configurar o con parámetros.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h2 id="sets">
+            Sets de PHP y de frameworks
+            <a href="#sets" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un <strong>set</strong> es una lista de reglas con un objetivo común. <code>withPhpSets(php81: true)</code> aplica todas las reglas de modernización <strong>hasta</strong> PHP 8.1, no solo las de 8.1: es acumulativo. Por eso solo admite una versión y solo se puede llamar una vez; si pasas dos, Rector se niega a arrancar. Sin argumentos, <code>withPhpSets()</code> toma la versión de <code>require.php</code> en tu <code>composer.json</code>, lo que lo mantiene alineado con lo que el proyecto declara soportar.
+          </p>
+          <p>
+            Para frameworks, <code>withComposerBased</code> lee la versión instalada de PHPUnit, Symfony, Doctrine o Twig y aplica solo las reglas que le corresponden: al subir Symfony, la siguiente pasada trae las reglas de la nueva. Laravel no viene incluido: tiene su propio paquete de reglas, mantenido por la comunidad.
+          </p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Rector corre en PHP 7.4</p>
+              <p>
+                El paquete admite PHP 7.4, así que lo instalas en el proyecto antiguo sin subir antes el intérprete: primero migras el código y después la versión de producción.
+              </p>
+            </div>
+          </div>
+          <h2 id="dry-run">
+            --dry-run: el diff antes que el cambio
+            <a href="#dry-run" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La primera ejecución siempre lleva <code>--dry-run</code>: Rector imprime el diff de cada fichero y las reglas que lo produjeron, sin escribir nada. Léelo como el PR de un compañero.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · ver el cambio sin aplicarlo</span>
+              <button class="copy-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">vendor/bin/rector process --dry-run
+vendor/bin/rector process</code></pre>
+          </div>
+          <p>Con <code>withPhpSets(php80: true)</code>, esta clase escrita para PHP 7.4:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · src/Invoice.php (antes)</span>
+              <button class="copy-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace App;
+
+final class Invoice
+{
+    private string $number;
+    private int $totalInCents;
+    private ?Customer $customer;
+
+    public function __construct(string $number, int $totalInCents, ?Customer $customer)
+    {
+        $this-&gt;number = $number;
+        $this-&gt;totalInCents = $totalInCents;
+        $this-&gt;customer = $customer;
+    }
+
+    public function customerName(): ?string
+    {
+        return $this-&gt;customer !== null ? $this-&gt;customer-&gt;name() : null;
+    }
+
+    public function statusLabel(string $status): string
+    {
+        switch ($status) {
+            case 'paid':
+                return 'Pagada';
+            case 'pending':
+                return 'Pendiente';
+            default:
+                return 'Desconocido';
+        }
+    }
+
+    public function isProforma(): bool
+    {
+        return strpos($this-&gt;number, 'PRO-') === 0;
+    }
+}</code></pre>
+          </div>
+          <p>queda así, con cuatro reglas aplicadas que el informe nombra una a una:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · src/Invoice.php (después)</span>
+              <button class="copy-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace App;
+
+final class Invoice
+{
+    public function __construct(private string $number, private int $totalInCents, private ?Customer $customer)
+    {
+    }
+
+    public function customerName(): ?string
+    {
+        return $this-&gt;customer?-&gt;name();
+    }
+
+    public function statusLabel(string $status): string
+    {
+        return match ($status) {
+            'paid' =&gt; 'Pagada',
+            'pending' =&gt; 'Pendiente',
+            default =&gt; 'Desconocido',
+        };
+    }
+
+    public function isProforma(): bool
+    {
+        return str_starts_with($this-&gt;number, 'PRO-');
+    }
+}</code></pre>
+          </div>
+          <p>
+            No añadió <code>readonly</code>, que es PHP 8.1: el set marca el techo. Si lo subes a <code>php81</code>, la siguiente pasada añade <code>readonly</code> a las propiedades promocionadas; con <code>php82</code>, convierte la clase en <code>final readonly class</code>.
+          </p>
+          <h2 id="pasos">
+            Un set cada vez, con red
+            <a href="#pasos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La tentación es poner <code>php84: true</code> y lanzar: un diff de miles de líneas que mezcla seis versiones de cambios y que nadie revisa en serio. Si algo se rompe, no sabes qué regla fue. Lo que funciona es subir una versión cada vez, con los tests y PHPStan como red:
+          </p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Sube un escalón</b><small>php80, luego php81, luego php82…</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>--dry-run y lee el diff</b><small>Si una regla no te convence, withSkip</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Aplica y pasa la red</b><small>PHPUnit y PHPStan en verde</small></span>
+              </div>
+              <div class="flow__arrow" data-label="repite"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>Un commit por escalón</b><small>Solo cambios de Rector, sin mezclar</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Cada escalón es un commit revisable y revertible por separado.</p>
+          </div>
+          <p>
+            Rector produce código válido, pero no prueba que el comportamiento sea el mismo: lo que se decide en tiempo de ejecución, como la reflexión o un método invocado por su nombre desde configuración, le queda fuera de la vista. Los tests cazan el cambio de comportamiento; <a href="pm-phpstan.html">PHPStan</a> caza el tipo que dejó de cuadrar. Un commit por escalón te permite revertir solo el que falló.
+          </p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Los sets de calidad, también por niveles</p>
+              <p>
+                <code>withDeadCodeLevel</code>, <code>withTypeCoverageLevel</code> y <code>withCodeQualityLevel</code> reciben un número y activan las reglas de ese set de la más segura a la más invasiva. Empieza en 0 y súbelo de uno en uno, igual que harías con los niveles de PHPStan.
+              </p>
+            </div>
+          </div>
+          <h2 id="orden">
+            Primero Rector, después PHP-CS-Fixer
+            <a href="#orden" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Rector imprime el código que cambia, pero no conoce tus reglas de estilo. En el ejemplo dejó el constructor con el cuerpo vacío en dos líneas; con <code>@PER-CS</code>, <a href="pm-estilo-automatico.html">PHP-CS-Fixer</a> lo reescribe como <code>{}</code>. Por eso el orden es fijo: Rector cambia la estructura y el fixer normaliza la forma. Al revés, el commit sale con un estilo que tu CI rechaza.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · un escalón completo</span>
+              <button class="copy-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">vendor/bin/rector process
+vendor/bin/php-cs-fixer fix
+vendor/bin/phpstan analyse
+vendor/bin/phpunit
+git commit -am "refactor: apply Rector PHP 8.1 set"</code></pre>
+          </div>
+          <h2 id="regla-propia">
+            ¿Una regla propia?
+            <a href="#regla-propia" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Antes de escribir una regla, mira si existe una configurable. Renombrar un método, una clase o una función en todo el proyecto ya está resuelto:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · rector.php (regla configurable)</span>
+              <button class="copy-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+use Rector\Config\RectorConfig;
+use Rector\Renaming\Rector\MethodCall\RenameMethodRector;
+use Rector\Renaming\ValueObject\MethodCallRename;
+
+return RectorConfig::configure()
+    -&gt;withPaths([__DIR__ . '/src'])
+    -&gt;withConfiguredRule(RenameMethodRector::class, [
+        new MethodCallRename('App\Mailer', 'sendMail', 'send'),
+    ]);</code></pre>
+          </div>
+          <p>
+            Una regla propia compensa cuando el cambio necesita lógica que ninguna regla configurable expresa y aparece en muchos sitios: por ejemplo, pasar <code>Money::fromFloat(4.95)</code> a <code>Money::fromCents(495)</code>, que exige calcular el nuevo argumento. Es una clase que extiende <code>AbstractRector</code>, declara qué nodos le interesan y devuelve el nodo cambiado o <code>null</code> si no aplica:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · utils/Rector/MoneyFromFloatToCentsRector.php</span>
+              <button class="copy-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace Utils\Rector;
+
+use PhpParser\Node;
+use PhpParser\Node\Identifier;
+use PhpParser\Node\Expr\StaticCall;
+use PhpParser\Node\Scalar\Float_;
+use PhpParser\Node\Scalar\Int_;
+use Rector\Rector\AbstractRector;
+use Symplify\RuleDocGenerator\ValueObject\RuleDefinition;
+
+final class MoneyFromFloatToCentsRector extends AbstractRector
+{
+    private const int CENTS_PER_UNIT = 100;
+
+    public function getRuleDefinition(): RuleDefinition
+    {
+        return new RuleDefinition('Money::fromFloat(12.5) pasa a Money::fromCents(1250)', []);
+    }
+
+    public function getNodeTypes(): array
+    {
+        return [StaticCall::class];
+    }
+
+    public function refactor(Node $node): ?Node
+    {
+        if (! $this-&gt;isName($node-&gt;class, 'App\Money') || ! $this-&gt;isName($node-&gt;name, 'fromFloat')) {
+            return null;
+        }
+
+        $amount = $node-&gt;getArgs()[0]-&gt;value ?? null;
+
+        if (! $amount instanceof Float_) {
+            return null;
+        }
+
+        $node-&gt;name = new Identifier('fromCents');
+        $node-&gt;args[0]-&gt;value = new Int_((int) round($amount-&gt;value * self::CENTS_PER_UNIT));
+
+        return $node;
+    }
+}</code></pre>
+          </div>
+          <p>
+            Se registra con <code>withRules([MoneyFromFloatToCentsRector::class])</code> y el namespace <code>Utils\</code> en el <code>autoload-dev</code>. La llamada con una variable, <code>Money::fromFloat($amount)</code>, se queda como está: la regla solo toca lo que puede transformar con certeza.
+          </p>
+          <p>
+            Para diez ficheros no compensa: el IDE lo hace antes de que termines de probar la regla. Y si lo que buscas es prohibir un patrón en el futuro, eso es trabajo de PHPStan, que avisa sin reescribir.
+          </p>
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que convierte una migración en un incendio</p>
+              <ul>
+                <li><strong>Todos los sets a la vez.</strong> Un único diff imposible de revisar y de bisecar.</li>
+                <li><strong>Aplicar sin red.</strong> Sin tests, nada garantiza que el comportamiento siga igual. El primer paso es cubrir lo crítico.</li>
+                <li><strong>Mezclar cambios a mano con los de Rector.</strong> El revisor ya no puede fiarse del diff mecánico.</li>
+                <li><strong>El fixer antes que Rector.</strong> El código que Rector reimprime queda con su formato, no con el tuyo.</li>
+                <li><strong>Sacar Rector de CI al terminar.</strong> El siguiente PR vuelve a escribir <code>strpos(...) === 0</code> y la migración se deshace poco a poco.</li>
+              </ul>
+            </div>
+          </div>
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Terminada la migración, en CI <code>rector process --dry-run</code> termina con un código de salida distinto de cero si queda algún cambio pendiente, igual que <code>php-cs-fixer check</code>. Añádelo al paso de análisis estático que ya describe <a href="ci-para-php.html">CI para un proyecto PHP</a> y nadie podrá reintroducir lo que ya migraste.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · en CI y para depurar una regla</span>
+              <button class="copy-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">vendor/bin/rector process --dry-run --no-progress-bar
+vendor/bin/rector process --dry-run --only="Rector\Php80\Rector\Switch_\ChangeSwitchToMatchRector"</code></pre>
+          </div>
+          <p>
+            La opción <code>--only</code> ejecuta una única regla del set; sirve para aislar cuál produce un cambio sospechoso antes de excluirla con <code>withSkip</code>.
+          </p>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Rector cuando…</h4>
+              <ul>
+                <li>Subes de versión de PHP, PHPUnit o Symfony</li>
+                <li>Una deprecación o un cambio de API interna afecta a cientos de llamadas</li>
+                <li>Quieres que el código nuevo no vuelva a la sintaxis vieja</li>
+                <li>Tienes tests y PHPStan que hagan de red</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No lo necesitas cuando…</h4>
+              <ul>
+                <li>El cambio toca un puñado de ficheros</li>
+                <li>Es un cambio de diseño: repartir responsabilidades o extraer clases</li>
+                <li>El proyecto no tiene ni un test que proteja el comportamiento</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La alternativa sencilla</p>
+              <p>
+                Para renombrar algo en pocos ficheros, el refactor del IDE basta y no añade una dependencia. Si lo que quieres es detectar el patrón viejo sin reescribirlo, PHPStan avisa y deja la decisión a quien escribe el código.
+              </p>
+            </div>
+          </div>
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Rector reescribe código sobre el AST y con los tipos de PHPStan, no con buscar y reemplazar.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>withPhpSets</code> es acumulativo y marca un techo: todas las reglas hasta esa versión, y sin argumentos lee <code>composer.json</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>--dry-run</code> primero; un escalón de versión por commit, con PHPUnit y PHPStan en verde entre medias.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Rector cambia la estructura y PHP-CS-Fixer la forma, en ese orden.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Regla propia solo si el cambio necesita lógica y se repite mucho; antes busca una configurable.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Tras migrar, <code>--dry-run</code> en CI impide que vuelva el código viejo.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

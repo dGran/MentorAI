@@ -41,6 +41,7 @@ window.MENTORAI_PATHS = [
     icon: "code",
     steps: [
       { type: "course", ref: "oop" },
+      { type: "course", ref: "php-moderno" },
       { type: "course", ref: "solid" },
       { type: "course", ref: "clean-code" },
       { type: "article", ref: "object-calisthenics" },

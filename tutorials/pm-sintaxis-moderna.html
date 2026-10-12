@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sintaxis moderna: match, argumentos con nombre y callables — MentorAI</title>
+    <meta name="description" content="match frente a switch, argumentos con nombre y su coste en una API pública, callables de primera clase, nullsafe, spread, funciones flecha, new en inicializadores y el pipe de PHP 8.5." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>PHP</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Sintaxis moderna: match, argumentos con nombre y callables</h1>
+        <p class="tutorial-hero__lead">Un <code>switch</code> que trata un <code>null</code> como un cero, una llamada con tres booleanos seguidos que nadie sabe leer, un <code>'trim'</code> entre comillas que el IDE no puede seguir. PHP 8 trajo sintaxis que cierra esos huecos; lo que importa es saber qué te compra cada pieza y qué te cuesta.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            26 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">Código que dice menos de lo que hace</a></li>
+            <li><a href="#match">match frente a switch</a></li>
+            <li><a href="#argumentos">Argumentos con nombre y su precio</a></li>
+            <li><a href="#callables">Callables de primera clase</a></li>
+            <li><a href="#nullsafe">El operador nullsafe</a></li>
+            <li><a href="#spread">Spread con claves de texto</a></li>
+            <li><a href="#flecha">Funciones flecha: captura por valor</a></li>
+            <li><a href="#inicializadores">new en inicializadores</a></li>
+            <li><a href="#pipe">El operador pipe de PHP 8.5</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Cada construcción de esta lección elimina una clase concreta de fallo o de ruido, y cada una tiene un caso en el que conviene no usarla. Partimos de donde acaban <a href="tipos-de-clases-php.html">Tipos de clases en PHP</a> y <a href="pm-tipado-estricto.html">el tipado estricto</a>.
+          </p>
+
+          <h2 id="problema">
+            Código que dice menos de lo que hace
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Mucho PHP heredado funciona, pero esconde la intención. Tres síntomas habituales:</p>
+          <ul>
+            <li>Un <code>switch</code> compara con <code>==</code>: un valor que no esperabas cae en un caso que no le toca, o en el <code>default</code>, sin que nada avise.</li>
+            <li><code>createUser('ana@example.com', false, true, true)</code> obliga a abrir la firma para saber qué es cada <code>true</code>.</li>
+            <li><code>array_map('trim', $lines)</code> pasa una función como texto: el motor solo comprueba que existe cuando la llama, y un renombrado automático no la sigue.</li>
+          </ul>
+          <p>El porqué es el mismo en los tres casos: el lenguaje no podía expresar la intención, así que vivía en la cabeza de quien escribió el código. La sintaxis moderna la mueve al código, donde la comprueban el motor y <a href="pm-phpstan.html">PHPStan</a>.</p>
+
+          <h2 id="match">
+            match frente a switch
+            <a href="#match" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p><code>switch</code> es una sentencia: ejecuta ramas, compara con <code>==</code> y, si olvidas un <code>break</code>, sigue con el caso siguiente. <code>match</code> (PHP 8.0) es una <strong>expresión</strong>: devuelve un valor, compara con <code>===</code>, no tiene caída entre brazos y, si ningún brazo encaja, lanza <code>UnhandledMatchError</code>.</p>
+          <p>Con un descuento que aún no se ha calculado, <code>switch</code> da por bueno el primer caso:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · antes: switch</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$percentage = null;
+
+switch ($percentage) {
+    case 0:
+        $label = 'Sin descuento';
+        break;
+    case 10:
+        $label = 'Cliente habitual';
+        break;
+    default:
+        $label = 'Promoción';
+}
+
+echo $label, PHP_EOL;</code></pre>
+          </div>
+          <p>Imprime «Sin descuento», porque <code>null == 0</code> es cierto. El dato que faltaba se ha convertido en un dato válido y nadie se ha enterado. La versión con <code>match</code>:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · después: match</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+function discountLabel(?int $percentage): string
+{
+    return match ($percentage) {
+        0 =&gt; 'Sin descuento',
+        10 =&gt; 'Cliente habitual',
+        20, 30 =&gt; 'Promoción',
+    };
+}
+
+echo discountLabel(10), PHP_EOL;
+
+try {
+    echo discountLabel(null), PHP_EOL;
+} catch (UnhandledMatchError $exception) {
+    echo $exception-&gt;getMessage(), PHP_EOL;
+}</code></pre>
+          </div>
+          <p>La primera llamada imprime «Cliente habitual»; la segunda lanza la excepción, que en PHP 8.5 dice <code>Unhandled match case of type null</code>. El fallo sale donde nace, no tres pantallas después. Para rangos, <code>match (true)</code> con una condición en cada brazo.</p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">No pongas default por reflejo</p>
+              <p>Un <code>default</code> convierte el error ruidoso en un valor silencioso, justo lo que <code>match</code> venía a evitar. Ponlo solo cuando de verdad exista un «todo lo demás». Con <a href="pm-enums-e-inmutabilidad.html">enums</a> es aún más claro: sin <code>default</code>, el análisis estático puede avisarte de que falta un caso cuando añades uno nuevo.</p>
+            </div>
+          </div>
+
+          <h2 id="argumentos">
+            Argumentos con nombre y su precio
+            <a href="#argumentos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Desde PHP 8.0 puedes pasar un argumento por el nombre de su parámetro. Ganas dos cosas: la llamada se explica sola y te saltas opcionales sin repetir sus valores por defecto.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · argumentos con nombre</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+function createUser(
+    string $email,
+    bool $isAdmin = false,
+    bool $shouldSendWelcome = true,
+    bool $isVerified = false,
+): string {
+    return sprintf('%s admin=%d welcome=%d verified=%d', $email, $isAdmin, $shouldSendWelcome, $isVerified);
+}
+
+echo createUser('ana@example.com', false, true, true), PHP_EOL;
+echo createUser('ana@example.com', isVerified: true), PHP_EOL;</code></pre>
+          </div>
+          <p>Las dos llamadas hacen lo mismo; solo la segunda se entiende sin abrir la función. Reglas: los posicionales van primero (uno detrás de un nombrado es un error de compilación) y un nombre que no existe lanza <code>Error: Unknown named parameter $x</code> al ejecutar.</p>
+
+          <h3>El nombre del parámetro ya es API</h3>
+          <p>Antes de PHP 8, renombrar <code>$limit</code> a <code>$max</code> era un cambio interno. Ahora cualquier llamante puede haber escrito <code>limit: 10</code>, así que el renombrado rompe su código. Y la herencia lo agrava: si una clase hija cambia el nombre, PHP no protesta al declararla; falla la llamada que use el nombre del padre.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · renombrar en la clase hija</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+class ReportExporter
+{
+    public function export(int $limit): string
+    {
+        return "Exportando {$limit} filas";
+    }
+}
+
+final class CsvReportExporter extends ReportExporter
+{
+    public function export(int $max): string
+    {
+        return "CSV con {$max} filas";
+    }
+}
+
+function runExport(ReportExporter $exporter): string
+{
+    return $exporter-&gt;export(limit: 100);
+}
+
+echo runExport(new ReportExporter()), PHP_EOL;
+
+try {
+    echo runExport(new CsvReportExporter()), PHP_EOL;
+} catch (Error $exception) {
+    echo $exception-&gt;getMessage(), PHP_EOL;
+}</code></pre>
+          </div>
+          <p>La segunda llamada imprime <code>Unknown named parameter $limit</code>. <code>runExport</code> cumple el contrato del padre y aun así falla con la hija.</p>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">En una librería pública, renombrar es un cambio incompatible</p>
+              <p>Si publicas un paquete, los nombres de los parámetros públicos entran en tu contrato de <a href="composer.html">versionado semántico</a>: cambiarlos pide versión mayor. En código interno el IDE encuentra los llamantes, pero al sobrescribir un método conserva el nombre.</p>
+            </div>
+          </div>
+
+          <h2 id="callables">
+            Callables de primera clase
+            <a href="#callables" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Antes, para pasar una función se usaban <code>'trim'</code>, <code>[$this, 'normalize']</code> o <code>Closure::fromCallable()</code>. Los dos primeros son callables por convención: un texto y un array que solo se comprueban al llamarlos. PHP 8.1 añadió <code>trim(...)</code>: los tres puntos literales crean un <code>Closure</code> en ese punto, y si la función o el método no existe, falla ahí mismo con <code>Call to undefined function</code>, no más tarde dentro de <code>array_map</code>.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · antes y después</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class TagNormalizer
+{
+    public function normalize(string $tag): string
+    {
+        return strtolower(trim($tag));
+    }
+
+    public function normalizeAllTheOldWay(array $tags): array
+    {
+        return array_map([$this, 'normalize'], $tags);
+    }
+
+    public function normalizeAll(array $tags): array
+    {
+        return array_map($this-&gt;normalize(...), $tags);
+    }
+}
+
+$normalizer = new TagNormalizer();
+$tags = [' PHP ', 'Rector', ' phpstan'];
+
+var_dump($normalizer-&gt;normalizeAllTheOldWay($tags) === $normalizer-&gt;normalizeAll($tags));
+var_dump(strlen(...) instanceof Closure);
+echo implode(',', $normalizer-&gt;normalizeAll($tags)), PHP_EOL;</code></pre>
+          </div>
+          <p>Para un IDE o para PHPStan, <code>$this-&gt;normalize(...)</code> es una referencia real al método: la siguen al renombrar y comprueban sus tipos. Dos límites: no se combina con nullsafe (<code>$user?-&gt;name(...)</code> no compila) ni con <code>new</code> (<code>new Foo(...)</code> tampoco).</p>
+
+          <h2 id="nullsafe">
+            El operador nullsafe
+            <a href="#nullsafe" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p><code>?-&gt;</code> (PHP 8.0) evalúa el lado izquierdo y, si es <code>null</code>, corta <strong>la cadena entera</strong> y devuelve <code>null</code>. Sustituye la escalera de <code>if ($x !== null)</code> cuando un dato es opcional de verdad.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · nullsafe</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class Address
+{
+    public function __construct(public readonly string $city) {}
+}
+
+final class Customer
+{
+    public function __construct(private readonly ?Address $address) {}
+
+    public function address(): ?Address
+    {
+        return $this-&gt;address;
+    }
+}
+
+function shippingCity(?Customer $customer): string
+{
+    return $customer?-&gt;address()?-&gt;city ?? 'Sin dirección';
+}
+
+echo shippingCity(new Customer(new Address('Valencia'))), PHP_EOL;
+echo shippingCity(new Customer(null)), PHP_EOL;
+echo shippingCity(null), PHP_EOL;</code></pre>
+          </div>
+          <p>Ojo con el «entera»: en <code>$a?-&gt;b()-&gt;c()</code>, si <code>$a</code> es <code>null</code> no se llama a nada más; pero si <code>b()</code> devuelve <code>null</code>, <code>-&gt;c()</code> sí falla, porque esa flecha no es nullsafe. Tampoco sirve para escribir: <code>$a?-&gt;b = 1</code> no compila.</p>
+
+          <h2 id="spread">
+            Spread con claves de texto
+            <a href="#spread" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El operador <code>...</code> desempaqueta un array. Desde PHP 8.1 también acepta claves de texto dentro de un array literal, con la semántica de <code>array_merge</code>: si una clave se repite, gana la última; las numéricas se renumeran. En una llamada, cada clave de texto se convierte en un argumento con nombre.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · spread</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$defaults = ['timeout' =&gt; 5, 'retries' =&gt; 3];
+$overrides = ['timeout' =&gt; 10];
+
+$options = [...$defaults, ...$overrides];
+var_dump($options);
+
+function connect(string $host, int $timeout = 5, int $retries = 3): string
+{
+    return "{$host} timeout={$timeout} retries={$retries}";
+}
+
+echo connect('db.local', ...$overrides), PHP_EOL;
+
+try {
+    echo connect('db.local', ...['timeout' =&gt; 10, 'verbose' =&gt; 1]), PHP_EOL;
+} catch (Error $exception) {
+    echo $exception-&gt;getMessage(), PHP_EOL;
+}</code></pre>
+          </div>
+          <p>La última llamada lanza <code>Unknown named parameter $verbose</code>. Es el mismo coste de antes con otra cara: un array de configuración desempaquetado en una llamada queda atado a los nombres de los parámetros.</p>
+
+          <h2 id="flecha">
+            Funciones flecha: captura por valor
+            <a href="#flecha" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p><code>fn ($x) =&gt; expresión</code> tiene una sola expresión, devuelve su valor y captura sola las variables del ámbito exterior, sin <code>use</code>. Lo importante es <em>cómo</em> las captura: <strong>por valor y en el momento de crearse</strong>. No puede modificar la variable de fuera y no ve cambios posteriores.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · captura por valor</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$amounts = [10, 20, 30];
+$taxRate = 0.21;
+$withTax = fn (float $price): float =&gt; round($price * (1 + $taxRate), 2);
+$taxRate = 0.10;
+
+echo $withTax(100.0), PHP_EOL;
+
+$total = 0;
+array_map(fn (int $amount): int =&gt; $total += $amount, $amounts);
+echo $total, PHP_EOL;
+
+$total = 0;
+array_walk($amounts, function (int $amount) use (&amp;$total): void {
+    $total += $amount;
+});
+echo $total, PHP_EOL;
+
+echo array_sum($amounts), PHP_EOL;</code></pre>
+          </div>
+          <p>Imprime 121, 0, 60 y 60. La flecha usó el 21 % que había al crearla, y su <code>$total += ...</code> sumó sobre una copia. Para acumular, una función normal con <code>use (&amp;$total)</code> funciona, pero casi siempre hay algo mejor: <code>array_sum</code> o <code>array_reduce</code>, que no dependen de estado de fuera.</p>
+
+          <h2 id="inicializadores">
+            new en inicializadores
+            <a href="#inicializadores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Desde PHP 8.1, <code>new</code> se admite en valores por defecto de parámetros, argumentos de <a href="pm-attributes.html">attributes</a>, variables estáticas y constantes globales. En propiedades y constantes de clase sigue sin estar permitido: PHP responde <code>New expressions are not supported in this context</code>.</p>
+          <p>El uso que más rinde es una dependencia opcional con un valor por defecto que no hace nada, sin el clásico <code>?Logger $logger = null</code> seguido de <code>$logger ?? new NullLogger()</code>:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · antes y después</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+interface Logger
+{
+    public function info(string $message): void;
+}
+
+final class NullLogger implements Logger
+{
+    public function info(string $message): void {}
+}
+
+final class EchoLogger implements Logger
+{
+    public function info(string $message): void
+    {
+        echo $message, PHP_EOL;
+    }
+}
+
+final class LegacyImporter
+{
+    private Logger $logger;
+
+    public function __construct(?Logger $logger = null)
+    {
+        $this-&gt;logger = $logger ?? new NullLogger();
+    }
+
+    public function import(): void
+    {
+        $this-&gt;logger-&gt;info('Importación antigua');
+    }
+}
+
+final class Importer
+{
+    public function __construct(private readonly Logger $logger = new NullLogger()) {}
+
+    public function import(): void
+    {
+        $this-&gt;logger-&gt;info('Importación terminada');
+    }
+}
+
+(new LegacyImporter())-&gt;import();
+(new Importer())-&gt;import();
+(new Importer(new EchoLogger()))-&gt;import();</code></pre>
+          </div>
+          <p>Solo la última línea imprime algo. La propiedad deja de ser anulable y desaparece una rama. Sigue siendo <a href="inyeccion-dependencias.html">inyección de dependencias</a>: el valor por defecto solo cubre a quien no pasa nada, y un contenedor que conozca <code>Logger</code> seguirá inyectando el real.</p>
+
+          <h2 id="pipe">
+            El operador pipe de PHP 8.5
+            <a href="#pipe" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>PHP 8.5 añade <code>|&gt;</code>: pasa el valor de la izquierda como único argumento al callable de la derecha. Con los callables de primera clase, las llamadas anidadas, que se leen de dentro afuera, pasan a leerse en orden.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · solo PHP 8.5</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$title = '  Sintaxis Moderna en PHP  ';
+
+$nested = str_replace(' ', '-', strtolower(trim($title)));
+
+$piped = $title
+    |&gt; trim(...)
+    |&gt; strtolower(...)
+    |&gt; (fn (string $text): string =&gt; str_replace(' ', '-', $text));
+
+var_dump($nested === $piped);
+echo $piped, PHP_EOL;</code></pre>
+          </div>
+          <p>Una función flecha a la derecha de <code>|&gt;</code> va entre paréntesis; sin ellos PHP 8.5 da un error de compilación. Si tu proyecto aún soporta PHP 8.4, el operador es un error de sintaxis allí: espera a que la versión mínima de tu <code>composer.json</code> sea 8.5.</p>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que se cuela en las revisiones</p>
+              <ul>
+                <li><strong>Desempaquetar la petición en un constructor.</strong> <code>new Filter(...$request-&gt;query-&gt;all())</code> deja que el cliente elija qué parámetros rellenar y cuáles hacen saltar un <code>Error</code>. Mapea los campos a mano.</li>
+                <li><strong>Un <code>default</code> en cada <code>match</code>.</strong> Reproduce el silencio del <code>switch</code>.</li>
+                <li><strong>Encadenar <code>?-&gt;</code> sobre datos obligatorios.</strong> Si el pedido siempre tiene cliente, un <code>null</code> ahí es un fallo que conviene ver, no un caso que tapar.</li>
+                <li><strong>Acumular dentro de una función flecha.</strong> Suma sobre una copia y el resultado se pierde sin aviso.</li>
+                <li><strong>Renombrar un parámetro al sobrescribir un método.</strong> Rompe a quien llame con el nombre del padre.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Casi todos estos fallos saltan al compilar o en la primera ejecución: basta un lint contra tu versión mínima y los tests de siempre.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · terminal</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">php -v
+php -l src/Importer.php
+find src -name '*.php' -print0 | xargs -0 -n1 php -l</code></pre>
+          </div>
+          <p>Si desarrollas con PHP 8.5 pero soportas 8.4, pasa el lint con un 8.4 en tu <a href="ci-para-php.html">pipeline de CI</a>: tu máquina no detecta un <code>|&gt;</code> colado. Lo que el lint no ve, como un argumento con nombre que no existe, lo ve el análisis estático; lo tratamos en <a href="pm-phpstan.html">PHPStan</a>. Y para migrar <code>switch</code> o <code>Closure::fromCallable</code> en bloque, <a href="pm-rector.html">Rector</a> lo hace por ti.</p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Úsalo cuando…</h4>
+              <ul>
+                <li><code>match</code>: cada caso produce un valor y un caso desconocido es un error</li>
+                <li>Argumentos con nombre: hay booleanos u opcionales que quieres saltar</li>
+                <li><code>f(...)</code>: pasas una función o un método como callback</li>
+                <li><code>?-&gt;</code>: el dato es opcional por diseño</li>
+                <li><code>new</code> por defecto: la dependencia tiene un sustituto que no hace nada</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Mejor no cuando…</h4>
+              <ul>
+                <li>Cada rama ejecuta varias sentencias con efectos: un <code>switch</code> o una tabla de handlers se leen mejor</li>
+                <li>Llamas a una librería que no promete estabilidad en los nombres de parámetros</li>
+                <li>La función flecha necesita modificar estado exterior</li>
+                <li>El <code>null</code> indica un fallo que debería verse</li>
+                <li>Tu versión mínima es anterior a la de la sintaxis</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La alternativa sencilla</p>
+              <p>Si una función pide tres booleanos con nombre para leerse, quizá el problema es la firma: un enum o un objeto de opciones dice lo mismo sin atar a nadie a los nombres de los parámetros. La sintaxis moderna aclara el diseño, no lo sustituye.</p>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>match</code> compara con <code>===</code>, devuelve un valor y lanza <code>UnhandledMatchError</code> si nada encaja. No lo silencies con un <code>default</code> por reflejo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Con argumentos con nombre, el nombre del parámetro es parte de la API: renombrarlo, también en una clase hija, rompe llamantes.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>trim(...)</code> y <code>$this-&gt;metodo(...)</code> crean un <code>Closure</code> que el IDE y PHPStan siguen; los callables en texto no.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>?-&gt;</code> corta toda la cadena si encuentra <code>null</code>; resérvalo para datos opcionales de verdad.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Las funciones flecha capturan por valor al crearse: no acumulan ni ven cambios posteriores.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>new</code> en un valor por defecto elimina el parámetro anulable de las dependencias opcionales; <code>|&gt;</code> solo existe desde PHP 8.5.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

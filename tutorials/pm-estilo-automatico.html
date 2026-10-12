@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Estilo automático: PHP-CS-Fixer y GrumPHP — MentorAI</title>
+    <meta name="description" content="Automatiza el estilo de PHP: PER Coding Style como sucesor de PSR-12, .php-cs-fixer.dist.php con conjuntos y reglas, reglas risky, la caché, --dry-run --diff en CI y GrumPHP como gancho de git antes del commit." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>PHP</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Estilo automático: PHP-CS-Fixer y GrumPHP</h1>
+        <p class="tutorial-hero__lead">Cada comentario de review sobre una llave o un espacio es tiempo que no se dedica a la lógica. Si una máquina puede decidir el formato, que lo decida ella: antes del commit en tu equipo y otra vez en CI.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            26 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">El estilo no se discute</a></li>
+            <li><a href="#per">PER Coding Style, el sucesor de PSR-12</a></li>
+            <li><a href="#config">El fichero de configuración</a></li>
+            <li><a href="#risky">Reglas risky</a></li>
+            <li><a href="#cache">La caché</a></li>
+            <li><a href="#ci">En CI: comprobar, no corregir</a></li>
+            <li><a href="#grumphp">GrumPHP: el gancho antes del commit</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            El formato del código importa, pero no merece una conversación. Lo que merece es una regla escrita, una herramienta que la aplique y un punto del flujo donde nadie pueda saltársela sin querer. Esta lección monta las tres piezas.
+          </p>
+
+          <h2 id="problema">
+            El estilo no se discute
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En un equipo sin reglas automáticas, el estilo se negocia en cada pull request. Uno pone la llave en la misma línea, otro la baja; uno ordena los <code>use</code>, otro no. El resultado es doble: reviews llenas de comentarios que no tratan de lo que hace el código, y diffs donde una línea de lógica viaja con veinte de reformateo que el editor de alguien aplicó sin preguntar.
+          </p>
+          <p>
+            Automatizar el estilo resuelve las dos cosas a la vez. La discusión se tiene <strong>una vez</strong>, al escribir la configuración, y a partir de ahí la herramienta decide. El diff solo enseña lo que cambió de verdad y quien revisa se concentra en nombres, diseño y errores. El paso del pipeline ya lo viste en <a href="ci-para-php.html">CI para PHP</a>; aquí va lo que hay antes y alrededor.
+          </p>
+
+          <h2 id="per">
+            PER Coding Style, el sucesor de PSR-12
+            <a href="#per" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Durante años la referencia fue <strong>PSR-12</strong>, del PHP-FIG. El problema es que un PSR aceptado no se reescribe, y PSR-12 se cerró antes de PHP 8: no dice nada de cómo formatear un <code>enum</code>, un <code>match</code>, una propiedad <code>readonly</code> o un attribute.
+          </p>
+          <p>
+            Su sucesor es <strong>PER Coding Style</strong> (PER es <em>PHP Evolving Recommendation</em>): parte de PSR-12 y publica revisiones nuevas a medida que el lenguaje crece. Para un proyecto nuevo no hay mucho que pensar: adopta PER-CS y reserva tus propias reglas para lo que el estándar no cubre.
+          </p>
+
+          <h2 id="config">
+            El fichero de configuración
+            <a href="#config" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            PHP-CS-Fixer busca en la raíz del proyecto un fichero <code>.php-cs-fixer.dist.php</code>, que se versiona y es la regla del equipo. Si alguien necesita retocarlo en su máquina, crea un <code>.php-cs-fixer.php</code> sin el <code>.dist</code>, que tiene prioridad y debe ir al <code>.gitignore</code>. El fichero es PHP y devuelve un objeto <code>Config</code>:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · .php-cs-fixer.dist.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+use PhpCsFixer\Config;
+use PhpCsFixer\Finder;
+use PhpCsFixer\Runner\Parallel\ParallelConfigFactory;
+
+$finder = (new Finder())
+    -&gt;in([__DIR__ . '/src', __DIR__ . '/tests']);
+
+return (new Config())
+    -&gt;setRiskyAllowed(true)
+    -&gt;setParallelConfig(ParallelConfigFactory::detect())
+    -&gt;setCacheFile(__DIR__ . '/var/.php-cs-fixer.cache')
+    -&gt;setRules([
+        '@PER-CS3x0' =&gt; true,
+        '@PHP8x4Migration' =&gt; true,
+        'declare_strict_types' =&gt; true,
+        'strict_comparison' =&gt; true,
+        'no_unused_imports' =&gt; true,
+        'class_attributes_separation' =&gt; ['elements' =&gt; ['method' =&gt; 'one']],
+    ])
+    -&gt;setFinder($finder);</code></pre>
+          </div>
+          <p>
+            Las claves con <code>@</code> son <strong>conjuntos</strong>: paquetes de reglas con nombre. <code>@PER-CS3x0</code> fija una revisión concreta del estándar, para que actualizar la herramienta no te cambie el estilo por sorpresa; <code>@PER-CS</code> a secas apunta siempre a la última. <code>@PHP8x4Migration</code> moderniza la sintaxis hasta lo que permite PHP 8.4, por ejemplo quita los paréntesis de <code>(new Price(100))-&gt;equals(...)</code>, que en 8.4 ya no hacen falta. Debajo van las reglas sueltas, que añaden o ajustan lo que el conjunto no trae.
+          </p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Los nombres de los conjuntos cambian</p>
+              <p>
+                Desde la 3.88 son obsoletos los nombres de versión con punto o sin separador, como <code>@PER-CS3.0</code> o <code>@PHP84Migration</code>, en favor de <code>@PER-CS3x0</code> y <code>@PHP8x4Migration</code>. Antes de copiar una configuración, mira qué nombres conoce tu versión con <code>php-cs-fixer list-sets</code>.
+              </p>
+            </div>
+          </div>
+          <p>Con esa configuración, este fichero:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · src/Price.php (antes)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+namespace App;
+use DateTimeImmutable;
+use InvalidArgumentException;
+final class Price {
+    public function __construct(private int $cents){
+        if($this-&gt;cents &lt; 0) throw new InvalidArgumentException('negative');
+    }
+    public function equals(Price $other) : bool {
+        return $this-&gt;cents == $other-&gt;cents;
+    }
+}</code></pre>
+          </div>
+          <p>queda así tras un <code>php-cs-fixer fix</code>:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · src/Price.php (después)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace App;
+
+use InvalidArgumentException;
+
+final class Price
+{
+    public function __construct(private int $cents)
+    {
+        if ($this-&gt;cents &lt; 0) {
+            throw new InvalidArgumentException('negative');
+        }
+    }
+
+    public function equals(Price $other): bool
+    {
+        return $this-&gt;cents === $other-&gt;cents;
+    }
+}</code></pre>
+          </div>
+          <p>
+            Fíjate en lo que no es solo formato: ha aparecido <code>declare(strict_types=1)</code>, el <code>use</code> que sobraba se ha ido y el <code>==</code> es ahora <code>===</code>. El primero y el último alteran el significado del programa: son reglas risky.
+          </p>
+
+          <h2 id="risky">
+            Reglas risky
+            <a href="#risky" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una regla <strong>risky</strong> puede cambiar el comportamiento del código, no solo su aspecto. PHP-CS-Fixer no las aplica salvo que lo autorices con <code>setRiskyAllowed(true)</code> o con <code>--allow-risky=yes</code>. <code>declare_strict_types</code>, <code>strict_comparison</code>, <code>strict_param</code> y <code>native_function_invocation</code> son risky, y los conjuntos que las agrupan llevan el sufijo <code>:risky</code>. Este es el tipo de cambio que provocan:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · comparacion.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+$allowedIds = [1, 2, 3];
+$requestedId = '2';
+
+var_dump(in_array($requestedId, $allowedIds));
+var_dump(in_array($requestedId, $allowedIds, true));
+var_dump($requestedId == 2);
+var_dump($requestedId === 2);</code></pre>
+          </div>
+          <p>
+            Imprime <code>true</code>, <code>false</code>, <code>true</code>, <code>false</code>. Si el id llega como cadena desde una petición, añadir el <code>true</code> que exige <code>strict_param</code> o el <code>===</code> de <code>strict_comparison</code> convierte un acceso permitido en uno denegado. A veces eso destapa un bug; a veces lo crea. Y <code>declare_strict_types</code> hace que una función que espera <code>int</code> y recibía <code>"5"</code> lance un <code>TypeError</code>, como viste en <a href="pm-tipado-estricto.html">tipado estricto</a>.
+          </p>
+          <p>
+            Cuándo activarlas: cuando hay tests que cubren el código afectado, en un commit propio que solo contenga ese cambio y con el análisis de <a href="pm-phpstan.html">PHPStan</a> en verde. En un proyecto nuevo, desde el primer día; en uno heredado sin tests, de una en una.
+          </p>
+
+          <h2 id="cache">
+            La caché
+            <a href="#cache" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            PHP-CS-Fixer guarda una caché con un resumen de cada fichero ya revisado y solo vuelve a analizar los que cambiaron. La caché también registra la versión de PHP, la de la herramienta y las reglas; si cualquiera de las tres cambia, se descarta entera. Por eso basta con dos decisiones: ponerla en un directorio ignorado, como el <code>var/</code> del ejemplo, y no versionarla nunca. En CI puedes conservarla entre ejecuciones o desactivarla con <code>--using-cache=no</code>.
+          </p>
+
+          <h2 id="ci">
+            En CI: comprobar, no corregir
+            <a href="#ci" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En el pipeline la herramienta no debe tocar ficheros: un commit que nadie ha revisado no puede salir de CI. Lo que hace es <strong>comprobar</strong> y fallar si algo no cumple:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · comprobación sin escribir</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">vendor/bin/php-cs-fixer fix --dry-run --diff
+
+vendor/bin/php-cs-fixer check --diff
+
+echo $?</code></pre>
+          </div>
+          <p>
+            Las dos enseñan el diff que se aplicaría y salen con código <code>8</code> si hay ficheros por corregir, lo que basta para que el job falle. <code>check</code> es la forma corta, la que usa el workflow completo de <a href="ci-para-php.html">CI para PHP</a>; no hace falta repetirlo aquí. Sin <code>--diff</code>, quien ve el job en rojo sabe <em>qué</em> fichero falla pero no <em>por qué</em>.
+          </p>
+
+          <h2 id="grumphp">
+            GrumPHP: el gancho antes del commit
+            <a href="#grumphp" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            CI avisa tarde: el commit y el push ya están hechos. Un <strong>gancho de git</strong> (<em>hook</em>) adelanta la comprobación al momento del commit, en la máquina de quien lo escribe. GrumPHP gestiona esos ganchos desde Composer: lo instalas como dependencia de desarrollo y él registra el <code>pre-commit</code> en <code>.git/hooks</code>.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · instalación</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">composer config --no-plugins allow-plugins.phpro/grumphp-shim true
+composer require --dev phpro/grumphp-shim
+
+vendor/bin/grumphp git:init</code></pre>
+          </div>
+          <p>
+            Es un plugin de Composer, así que tiene que figurar en <code>allow-plugins</code>; sin esa línea, <code>composer require</code> se niega a instalarlo. Una vez permitido, el propio <code>composer install</code> registra los ganchos en cada clon, y <code>git:init</code> los vuelve a poner si alguien los borró. La versión <code>-shim</code> es la distribución en phar, que no mezcla sus dependencias con las tuyas. Las tareas se declaran en <code>grumphp.yml</code>:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">yaml · grumphp.yml</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="yaml">grumphp:
+    stop_on_failure: true
+    tasks:
+        phpcsfixer:
+            config: .php-cs-fixer.dist.php
+        phpstan:
+            configuration: phpstan.neon
+            memory_limit: 1G
+        phpunit: ~</code></pre>
+          </div>
+          <p>
+            Al hacer <code>git commit</code>, GrumPHP recibe los ficheros preparados y ejecuta las tres tareas sobre ellos: estilo, <a href="pm-phpstan.html">análisis estático</a> y tests. Si alguna falla, el commit no se crea y la salida dice qué arreglar; en el caso de PHP-CS-Fixer, hasta el comando exacto. Se puede saltar con <code>git commit --no-verify</code>, y por eso el gancho no sustituye a CI: es la red rápida, y CI la que no se salta nadie.
+          </p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La alternativa: CaptainHook</p>
+              <p>
+                CaptainHook resuelve el mismo problema con otro enfoque: en lugar de tareas predefinidas, cada gancho es una lista de acciones en <code>captainhook.json</code>, normalmente comandos de consola. Si tu equipo ya tiene los comandos en los <a href="composer.html">scripts de Composer</a>, cualquiera de los dos solo tiene que llamarlos.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que suele salir mal</p>
+              <p><strong>Reformatear todo el proyecto en el mismo PR que un cambio funcional.</strong> El diff se vuelve ilegible y <code>git blame</code> apunta al reformateo. La primera pasada va sola, en su propio commit, y ese commit se puede listar en <code>.git-blame-ignore-revs</code>.</p>
+              <p><strong>Activar reglas risky sin tests.</strong> Un <code>===</code> nuevo puede romper una comparación que dependía de la conversión de tipos, y nadie lo verá hasta producción.</p>
+              <p><strong>Ejecutar <code>fix</code> en CI.</strong> Corrige en el runner y el job sale en verde, pero los ficheros del repositorio siguen igual.</p>
+              <p><strong>Versionar la caché</strong> o dejarla en la raíz sin ignorarla: aparece en cada diff y provoca conflictos sin sentido.</p>
+              <p><strong>Usar <code>@PER-CS</code> sin revisión fija.</strong> Al actualizar la herramienta llega un estilo nuevo, y con él cientos de ficheros cambiados en un PR que solo subía una versión.</p>
+            </div>
+          </div>
+
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Tres pruebas cortas te dicen si el montaje funciona. Primero, <code>php-cs-fixer check --diff</code> sobre el proyecto limpio tiene que salir con código <code>0</code>. Segundo, estropea a propósito el formato de un fichero, haz <code>git add</code> e intenta el commit: GrumPHP tiene que pararlo y enseñarte el fallo. Tercero, haz push de una rama con ese fichero usando <code>--no-verify</code>: el job de estilo tiene que salir en rojo.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Fixer y gancho cuando…</h4>
+              <ul>
+                <li>Más de una persona toca el mismo código</li>
+                <li>Las reviews se llenan de comentarios de formato</li>
+                <li>El proyecto ya tiene tests y PHPStan que el gancho pueda ejecutar</li>
+                <li>Empiezas un proyecto: es cuando menos cuesta</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Mejor no, o todavía no, cuando…</h4>
+              <ul>
+                <li>Los tests tardan minutos: un gancho lento acaba en <code>--no-verify</code></li>
+                <li>Hay ramas largas abiertas que el reformateo inicial llenaría de conflictos</li>
+                <li>Es un script de un solo uso que nadie va a revisar</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La alternativa sencilla</p>
+              <p>
+                Si el gancho resulta pesado, quita de él los tests y deja solo el estilo, que tarda segundos. O prescinde del gancho y quédate con el fixer configurado en el editor y la comprobación de CI: pierdes el aviso temprano, pero no la garantía.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El estilo se discute una vez, en la configuración; después decide la máquina y la review se dedica a la lógica.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>PER Coding Style sustituye a PSR-12; fija una revisión concreta del conjunto.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Las reglas risky cambian el comportamiento: actívalas con tests y en un commit propio.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La caché se invalida sola y va en un directorio ignorado.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En CI se comprueba con <code>--dry-run --diff</code> o <code>check</code>, nunca se corrige.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>GrumPHP adelanta estilo, PHPStan y tests al commit; se puede saltar, así que CI sigue siendo la garantía.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

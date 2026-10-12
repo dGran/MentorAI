@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tipado estricto y tipos compuestos — MentorAI</title>
+    <meta name="description" content="Qué hace de verdad declare(strict_types=1), tipos union, intersection y DNF, void, never, mixed y static, propiedades tipadas sin inicializar y el TypeError como red." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>PHP</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Tipado estricto y tipos compuestos</h1>
+        <p class="tutorial-hero__lead">Pasas 15,5 euros a una función que espera céntimos enteros y PHP cobra 15, sin quejarse. Los tipos de PHP moderno pueden cerrar ese hueco, pero solo si sabes qué fichero manda y qué expresa cada tipo.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            24 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">Un tipo que no te protege</a></li>
+            <li><a href="#strict-types">Qué hace de verdad strict_types</a></li>
+            <li><a href="#compuestos">Union, intersection y DNF</a></li>
+            <li><a href="#especiales">void, never, mixed, static y compañía</a></li>
+            <li><a href="#propiedades">Propiedades tipadas y su estado vacío</a></li>
+            <li><a href="#typeerror">El TypeError como red</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Una firma con tipos parece un contrato. En PHP lo es a medias: por defecto el motor intenta convertir lo que le llega antes de rendirse. Esta lección explica cuándo convierte, cómo apagar esa conversión y qué tipos tienes para describir con precisión lo que entra y lo que sale.
+          </p>
+          <h2 id="problema">
+            Un tipo que no te protege
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La <a href="tipos-de-clases-php.html">lección de tipos de clases</a> repasa qué clase usar para cada cosa. Aquí bajamos un nivel: los tipos de los parámetros, los retornos y las propiedades. La pasarela de pagos declara <code>int $centimos</code> y el checkout, un fichero antiguo sin declaración, la llama así:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Pasarela.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+function cobrar(int $centimos): string
+{
+    return "Cobrados {$centimos} céntimos";
+}</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · checkout.php (sin declare)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+require __DIR__ . '/Pasarela.php';
+
+echo cobrar("1500"), PHP_EOL;
+echo cobrar(true), PHP_EOL;
+echo cobrar(15.5), PHP_EOL;</code></pre>
+          </div>
+          <p>
+            Las tres llamadas funcionan. El <code>"1500"</code> se convierte a entero, <code>true</code> pasa a ser 1 céntimo y 15,5 se trunca a 15 con un aviso de deprecación (desde PHP 8.1) que en producción nadie lee. Esto es el <strong>modo coercitivo</strong>, el que PHP usa por defecto: si el valor se puede convertir sin perder su sentido aparente, lo convierte. El problema es que «aparente» lo decide el motor, no tú, y el error real aparece tres capas más abajo con un importe equivocado.
+          </p>
+          <h2 id="strict-types">
+            Qué hace de verdad strict_types
+            <a href="#strict-types" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <code>declare(strict_types=1)</code> apaga esa conversión para los escalares (<code>int</code>, <code>float</code>, <code>string</code>, <code>bool</code>): si el tipo no coincide, lanza <code>TypeError</code>. Lo que casi nadie recuerda es <strong>a qué afecta</strong>. La declaración no protege las funciones definidas en ese fichero; cambia cómo se comportan las <strong>llamadas hechas desde</strong> ese fichero.
+          </p>
+          <p>
+            Por eso <code>Pasarela.php</code>, con su <code>declare</code> arriba, no evitó nada: quien llamaba era <code>checkout.php</code>. Basta con declararlo en el fichero que llama:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · checkout.php (con declare)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+require __DIR__ . '/Pasarela.php';
+
+echo cobrar("1500"), PHP_EOL;</code></pre>
+          </div>
+          <p>
+            Ahora la primera llamada ya rompe con <code>cobrar(): Argument #1 ($centimos) must be of type int, string given</code>. La regla completa tiene tres piezas:
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Qué se comprueba</th><th>Qué fichero decide el modo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Argumentos de una llamada, también a funciones nativas como <code>strlen(123)</code></td><td>El fichero donde está la llamada</td></tr>
+                <tr><td>Valor de retorno</td><td>El fichero donde está declarada la función</td></tr>
+                <tr><td>Asignación a una propiedad tipada</td><td>El fichero donde está la asignación</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Hay una sola conversión que sobrevive al modo estricto: un <code>int</code> se acepta donde se espera un <code>float</code>, porque ensancharlo no pierde información. Y la declaración debe ser la primera sentencia del fichero; si va después de cualquier otra cosa, PHP ni siquiera lo compila.
+          </p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Por qué se diseñó así</p>
+              <p>
+                Si strict_types dependiera del fichero que declara, una librería que lo activara rompería a todos sus usuarios de golpe. Al depender de quien llama, cada proyecto decide su modo sin imponérselo a nadie. La contrapartida es que solo te protege si está en <em>todos</em> tus ficheros.
+              </p>
+            </div>
+          </div>
+          <h2 id="compuestos">
+            Union, intersection y DNF
+            <a href="#compuestos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un tipo simple dice «esto es un <code>int</code>». Los tipos compuestos permiten decir algo más preciso sin caer en dejarlo sin tipo:
+          </p>
+          <ul>
+            <li><strong>Union</strong> (<code>int|string</code>, PHP 8.0): el valor es de uno de los tipos. Útil en fronteras donde llegan identificadores numéricos o textuales.</li>
+            <li><strong>Intersection</strong> (<code>Countable&amp;IteratorAggregate</code>, PHP 8.1): el valor cumple <em>todos</em> los tipos a la vez. Solo admite clases e interfaces; <code>int&amp;string</code> no compila.</li>
+            <li><strong>DNF</strong> (<code>(A&amp;B)|null</code>, PHP 8.2): una unión de intersecciones. Los paréntesis son obligatorios; <code>A&amp;B|null</code> es un error de sintaxis.</li>
+          </ul>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · compuestos.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+function normalizarId(int|string $id): string
+{
+    return (string) $id;
+}
+
+function contarYRecorrer(Countable&amp;IteratorAggregate $coleccion): int
+{
+    foreach ($coleccion as $elemento) {
+        echo $elemento, PHP_EOL;
+    }
+
+    return count($coleccion);
+}
+
+function resumen((Countable&amp;IteratorAggregate)|null $coleccion): string
+{
+    if ($coleccion === null) {
+        return 'sin datos';
+    }
+
+    return count($coleccion) . ' elementos';
+}
+
+function buscarCupon(?string $codigo): ?string
+{
+    return $codigo;
+}
+
+echo normalizarId(42), PHP_EOL;
+echo contarYRecorrer(new ArrayObject(['a', 'b'])), PHP_EOL;
+echo resumen(null), PHP_EOL;
+var_dump(buscarCupon(null));</code></pre>
+          </div>
+          <p>
+            <strong>Nullable o unión con null.</strong> <code>?string</code> y <code>string|null</code> significan lo mismo. La diferencia es de sintaxis: el <code>?</code> solo se aplica a un tipo simple, así que <code>?int|string</code> no compila y debes escribir <code>int|string|null</code>. Una regla práctica: <code>?T</code> para un solo tipo, <code>|null</code> en cuanto haya dos.
+          </p>
+          <h2 id="especiales">
+            void, never, mixed, static y compañía
+            <a href="#especiales" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Hay tipos que no describen un valor concreto, sino una promesa sobre cómo termina la función o qué se devuelve:
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Tipo</th><th>Qué promete</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>void</code></td><td>La función no devuelve nada. Solo como retorno y siempre solo: <code>?void</code> no compila, y <code>return null;</code> tampoco.</td></tr>
+                <tr><td><code>never</code></td><td>La función no vuelve nunca: lanza una excepción o termina el proceso. Si llega al final, PHP lanza <code>TypeError</code>.</td></tr>
+                <tr><td><code>mixed</code></td><td>Cualquier valor, <code>null</code> incluido, por eso <code>?mixed</code> no compila. Es explícito, pero no restringe nada.</td></tr>
+                <tr><td><code>static</code></td><td>Como retorno, la clase sobre la que se llamó el método, no la que lo declara. La base de las interfaces fluidas heredables.</td></tr>
+                <tr><td><code>true</code>, <code>false</code>, <code>null</code></td><td>Valores literales como tipo. <code>false</code> solo dentro de una unión desde PHP 8.0; los tres como tipo propio desde 8.2. <code>true|false</code> no compila: es <code>bool</code>.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · especiales.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+abstract class Consulta
+{
+    protected array $filtros = [];
+
+    public static function nueva(): static
+    {
+        return new static();
+    }
+
+    public function donde(string $campo, mixed $valor): static
+    {
+        $this-&gt;filtros[$campo] = $valor;
+
+        return $this;
+    }
+}
+
+final class ConsultaDePedidos extends Consulta
+{
+}
+
+function registrar(string $mensaje): void
+{
+    echo $mensaje, PHP_EOL;
+}
+
+function fallar(string $motivo): never
+{
+    throw new DomainException($motivo);
+}
+
+function borrarCache(): true
+{
+    return true;
+}
+
+$consulta = ConsultaDePedidos::nueva()-&gt;donde('estado', 'pagado');
+registrar($consulta::class);
+var_dump(borrarCache());
+
+try {
+    fallar('Pedido sin líneas');
+} catch (DomainException $exception) {
+    registrar($exception-&gt;getMessage());
+}</code></pre>
+          </div>
+          <p>
+            Fíjate en <code>static</code>: <code>ConsultaDePedidos::nueva()</code> devuelve una <code>ConsultaDePedidos</code>, y el análisis estático lo sabe, de modo que el autocompletado sigue funcionando tras encadenar <code>donde()</code>. Con <code>self</code> perderías esa información.
+          </p>
+          <h2 id="propiedades">
+            Propiedades tipadas y su estado vacío
+            <a href="#propiedades" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una propiedad tipada (PHP 7.4) no empieza valiendo <code>null</code>: empieza <strong>sin inicializar</strong>. Es un tercer estado, distinto de cualquier valor, y leerla en ese estado lanza un <code>Error</code>. Ocurre incluso si el tipo es nullable: <code>?string $cupon</code> sin valor por defecto no es <code>null</code>.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · propiedades.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class Pedido
+{
+    public int $id;
+    public ?string $cupon;
+    public ?string $nota = null;
+}
+
+$pedido = new Pedido();
+var_dump($pedido-&gt;nota);
+
+try {
+    echo $pedido-&gt;cupon;
+} catch (Error $error) {
+    echo $error-&gt;getMessage(), PHP_EOL;
+}
+
+try {
+    $pedido-&gt;id = '7';
+} catch (TypeError $error) {
+    echo $error-&gt;getMessage(), PHP_EOL;
+}</code></pre>
+          </div>
+          <p>
+            Este estado existe a propósito: obliga a que el constructor asigne lo que el objeto necesita, en vez de dejar un <code>null</code> que nadie pidió. Si una propiedad puede faltar de verdad, dilo con <code>?string $nota = null</code>. Si no puede faltar, asígnala en el constructor, que es justo lo que hacen los value objects de la <a href="pm-enums-e-inmutabilidad.html">lección de enums e inmutabilidad</a>.
+          </p>
+          <h2 id="typeerror">
+            El TypeError como red
+            <a href="#typeerror" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <code>TypeError</code> hereda de <code>Error</code>, no de <code>Exception</code>: un <code>catch (Exception $exception)</code> no lo atrapa. Es una decisión deliberada. Un tipo que no cuadra es un fallo de programación, no una situación de negocio, y lo sano es que reviente, salga en el log con su fichero y línea, y se arregle.
+          </p>
+          <p>
+            Lo que sí es negocio es la entrada del usuario. Un formulario o un JSON siempre traen texto, y ahí no conviene apoyarse en el <code>TypeError</code>: valida en la frontera, convierte a propósito y deja que el resto del código trabaje con tipos limpios.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · frontera.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class Cantidad
+{
+    public function __construct(public readonly int $unidades)
+    {
+    }
+}
+
+function cantidadDesdeFormulario(array $datos): Cantidad
+{
+    $unidades = filter_var($datos['unidades'] ?? null, FILTER_VALIDATE_INT);
+
+    if ($unidades === false) {
+        throw new InvalidArgumentException('Las unidades deben ser un entero');
+    }
+
+    return new Cantidad($unidades);
+}
+
+var_dump(cantidadDesdeFormulario(['unidades' =&gt; '3'])-&gt;unidades);
+
+try {
+    cantidadDesdeFormulario(['unidades' =&gt; '3,5']);
+} catch (InvalidArgumentException $exception) {
+    echo $exception-&gt;getMessage(), PHP_EOL;
+}</code></pre>
+          </div>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Ojo con el cast a mano</p>
+              <p>
+                <code>(int) '3,5'</code> devuelve 3 sin quejarse. Convertir con un cast para «satisfacer» el modo estricto reintroduce la coerción que acabas de apagar, solo que escrita por ti. Valida primero y convierte después.
+              </p>
+            </div>
+          </div>
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que se cuela en las revisiones</p>
+              <ul>
+                <li><strong>Declararlo solo en las clases «importantes».</strong> Como manda quien llama, un controlador sin <code>declare</code> sigue colando conversiones en tu dominio estricto.</li>
+                <li><strong>Creer que <code>?string $x</code> empieza en null.</strong> Sin <code>= null</code>, la propiedad está sin inicializar y leerla lanza <code>Error</code>.</li>
+                <li><strong>El parámetro <code>string $x = null</code>.</strong> Lo hace nullable de forma implícita y está deprecado desde PHP 8.4: escribe <code>?string $x = null</code>.</li>
+                <li><strong>Usar <code>mixed</code> para salir del paso.</strong> Compila, pero no dice nada; si caben dos tipos, escribe la unión.</li>
+                <li><strong>Atrapar <code>Throwable</code> en un controlador genérico</strong> y devolver un 400. Así un fallo de tipos se disfraza de error del cliente y nadie lo arregla.</li>
+              </ul>
+            </div>
+          </div>
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Lo primero es saber qué ficheros siguen en modo coercitivo. Un <code>grep</code> que liste los que no tienen la declaración te da la cifra en un segundo:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · terminal</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">grep -rL --include='*.php' 'declare(strict_types=1)' src/ tests/
+
+php -d error_reporting=-1 -d display_errors=1 bin/console about</code></pre>
+          </div>
+          <p>
+            En CI, una regla de estilo puede añadir la declaración y fallar si falta; la <a href="pm-estilo-automatico.html">lección de estilo automático</a> la configura y <a href="ci-para-php.html">CI para PHP</a> la mete en el pipeline. Los deprecados del modo coercitivo, como el truncado de 15,5, solo se ven si tus tests corren con <code>error_reporting=-1</code> y fallan ante ellos.
+          </p>
+          <p>
+            El tiempo de ejecución, eso sí, solo comprueba el camino que se ejecuta. Para saber, sin ejecutar nada, que una unión no se usa como si fuera un solo tipo o que un <code>?Pedido</code> se comprueba antes de usarlo, está el análisis estático: <a href="pm-phpstan.html">PHPStan</a> lee estas mismas firmas, y la <a href="pm-generics-phpdoc.html">lección de generics</a> cubre lo que el lenguaje todavía no sabe expresar, como un array de <code>Pedido</code>.
+          </p>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>strict_types y tipos precisos cuando…</h4>
+              <ul>
+                <li>Es código nuevo: la declaración en todos los ficheros desde el primer commit</li>
+                <li>Manejas dinero, cantidades o identificadores donde un truncado es un bug</li>
+                <li>Publicas una librería o un módulo que otros llaman</li>
+                <li>Vas a apoyarte en análisis estático, que razona mejor con firmas exactas</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Con cuidado cuando…</h4>
+              <ul>
+                <li>Es código heredado sin tests: activarlo de golpe convierte coerciones silenciosas en errores en producción</li>
+                <li>Una plantilla o un script de un solo uso no justifica la conversión manual</li>
+                <li>La entrada es texto por naturaleza: valida en la frontera, no confíes en el <code>TypeError</code></li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La alternativa en código heredado</p>
+              <p>
+                Activa la declaración fichero a fichero, empezando por los que ya tienen tests, y antes sube <code>error_reporting</code> en staging para ver qué deprecados de conversión aparecen. Cada uno es una llamada que romperá: arréglala antes de declarar el fichero.
+              </p>
+            </div>
+          </div>
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Sin <code>declare(strict_types=1)</code>, PHP convierte escalares en silencio: <code>"1500"</code>, <code>true</code> y <code>15.5</code> pasan por un <code>int</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los argumentos los decide el fichero que llama; el retorno, el que declara. Solo protege si está en todos tus ficheros.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Union para «uno de», intersection para «todos a la vez», DNF para combinarlas con paréntesis. <code>?T</code> para un tipo, <code>|null</code> para varios.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>void</code> no devuelve, <code>never</code> no vuelve, <code>static</code> conserva la subclase y <code>mixed</code> no restringe nada.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una propiedad tipada sin valor está sin inicializar, no a <code>null</code>, aunque sea nullable.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>TypeError</code> es un <code>Error</code>: señala un bug que se arregla, no una entrada que se valida.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

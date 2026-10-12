@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Attributes: metadatos que el código lee — MentorAI</title>
+    <meta name="description" content="Attributes en PHP: la sintaxis #[...], declarar los tuyos con targets e IS_REPEATABLE, leerlos con Reflection, cuándo se instancian, cómo los usan los frameworks y los del núcleo como #[\Override] y #[\SensitiveParameter]." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>PHP</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Attributes: metadatos que el código lee</h1>
+        <p class="tutorial-hero__lead">Rutas, reglas de validación, listeners: los frameworks modernos los declaran con <code>#[...]</code> encima del código. PHP los guarda, pero no los ejecuta. Quién los lee, cuándo y qué pasa si están mal es lo que separa usarlos de entenderlos.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            25 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">Comentarios que el código obedece</a></li>
+            <li><a href="#sintaxis">La sintaxis: #[...]</a></li>
+            <li><a href="#declarar">Declarar un attribute propio</a></li>
+            <li><a href="#leer">Leerlos con Reflection</a></li>
+            <li><a href="#instancia">Cuándo se instancian, y cuándo fallan</a></li>
+            <li><a href="#frameworks">Lo que hacen los frameworks con ellos</a></li>
+            <li><a href="#nucleo">Attributes del núcleo que conviene usar</a></li>
+            <li><a href="#docblock">Attributes frente a anotaciones en docblock</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Un <code>#[Route('/invoices')]</code> encima de un método no hace nada por sí solo. Es una etiqueta pegada al código que PHP guarda y no ejecuta, hasta que alguien la pide por Reflection. Entender ese «hasta que alguien la pide» explica casi todo lo que sorprende de los attributes.
+          </p>
+          <h2 id="problema">
+            Comentarios que el código obedece
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Antes de PHP 8.0, los frameworks querían declarar la ruta, la validación o el mapeo de una entidad junto al código al que se refiere, y no en un YAML aparte. Como el lenguaje no tenía dónde guardar ese dato, lo metieron en el único sitio libre: el docblock.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · antes: anotación en docblock</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class InvoiceController
+{
+    /**
+     * @Route("/invoices/{id}", methods={"GET"})
+     */
+    public function show(int $id): Response
+    {
+    }
+}</code></pre>
+          </div>
+          <p>
+            Para PHP eso es un comentario. Una librería lo lee en tiempo de ejecución, parsea el texto con su propia gramática y adivina a qué clase se refiere <code>@Route</code>. Si escribes <code>@Rute</code>, nadie se queja: la ruta simplemente no existe. Si renombras la clase, el IDE no actualiza el comentario. El problema de fondo es que el dato más importante del método vivía fuera del lenguaje.
+          </p>
+          <h2 id="sintaxis">
+            La sintaxis: <code>#[...]</code>
+            <a href="#sintaxis" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un attribute es un nombre de clase con argumentos, entre <code>#[</code> y <code>]</code>. El motor lo parsea, resuelve el nombre con tus <code>use</code> como cualquier otra clase y lo guarda junto al elemento.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · después: attribute nativo</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+use Symfony\Component\Routing\Attribute\Route;
+
+final class InvoiceController
+{
+    #[Route('/invoices/{id}', methods: ['GET'])]
+    public function show(int $id): Response
+    {
+    }
+}</code></pre>
+          </div>
+          <p>
+            Se pueden poner en clases, métodos, funciones, closures, propiedades, constantes de clase y parámetros. Varios se apilan en líneas separadas o se agrupan con comas: <code>#[A, B]</code>. Los argumentos admiten argumentos con nombre, pero deben ser <strong>expresiones constantes</strong>: literales, constantes, operaciones entre ellas y, desde PHP 8.1, <code>new</code>. Una llamada como <code>strtolower('/X')</code> da <code>Constant expression contains invalid operations</code> al compilar.
+          </p>
+          <h2 id="declarar">
+            Declarar un attribute propio
+            <a href="#declarar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un attribute propio es una clase normal marcada con <code>#[Attribute]</code>. Su constructor define qué argumentos acepta, y el argumento de <code>#[Attribute]</code> dice dónde se puede usar:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Route.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+#[Attribute(Attribute::TARGET_METHOD | Attribute::IS_REPEATABLE)]
+final readonly class Route
+{
+    public function __construct(
+        public string $path,
+        public string $method = 'GET',
+    ) {
+    }
+}</code></pre>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Constante</th><th>Permite el attribute en…</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>TARGET_CLASS</code></td><td>Clases, interfaces, traits y enums</td></tr>
+                <tr><td><code>TARGET_FUNCTION</code></td><td>Funciones y closures</td></tr>
+                <tr><td><code>TARGET_METHOD</code></td><td>Métodos</td></tr>
+                <tr><td><code>TARGET_PROPERTY</code></td><td>Propiedades</td></tr>
+                <tr><td><code>TARGET_CLASS_CONSTANT</code></td><td>Constantes de clase y casos de enum</td></tr>
+                <tr><td><code>TARGET_PARAMETER</code></td><td>Parámetros</td></tr>
+                <tr><td><code>TARGET_ALL</code></td><td>Todo lo anterior; es el valor por defecto</td></tr>
+                <tr><td><code>IS_REPEATABLE</code></td><td>Flag: el mismo attribute puede aparecer varias veces en un elemento</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            PHP 8.5 añade <code>TARGET_CONSTANT</code> para las constantes globales declaradas con <code>const</code>. Una clase <code>final readonly</code> encaja bien: un attribute es metadato, no tiene por qué cambiar después de construirse. Si vienes de <a href="tipos-de-clases-php.html#readonly">readonly y value objects</a>, es el mismo patrón.
+          </p>
+          <h2 id="leer">
+            Leerlos con Reflection
+            <a href="#leer" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Toda la API de Reflection tiene <code>getAttributes()</code>: clases, métodos, funciones, propiedades, constantes y parámetros. Devuelve objetos <code>ReflectionAttribute</code>, con el nombre y los argumentos tal como se escribieron. Para tener la instancia real hay que pedirla con <code>newInstance()</code>. Este es un enrutador mínimo, completo y ejecutable:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · router.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+#[Attribute(Attribute::TARGET_METHOD | Attribute::IS_REPEATABLE)]
+final readonly class Route
+{
+    public function __construct(
+        public string $path,
+        public string $method = 'GET',
+    ) {
+    }
+}
+
+final class InvoiceController
+{
+    #[Route('/invoices')]
+    public function list(): string
+    {
+        return 'listado';
+    }
+
+    #[Route('/invoices/{id}')]
+    #[Route('/facturas/{id}')]
+    public function show(): string
+    {
+        return 'detalle';
+    }
+
+    #[Route('/invoices', method: 'POST')]
+    public function create(): string
+    {
+        return 'creada';
+    }
+}
+
+function routesOf(string $controllerClass): array
+{
+    $routes = [];
+    $controller = new ReflectionClass($controllerClass);
+
+    foreach ($controller-&gt;getMethods() as $action) {
+        foreach ($action-&gt;getAttributes(Route::class) as $attribute) {
+            $route = $attribute-&gt;newInstance();
+            $routes[] = sprintf('%-4s %-16s -&gt; %s', $route-&gt;method, $route-&gt;path, $action-&gt;getName());
+        }
+    }
+
+    return $routes;
+}
+
+echo implode(PHP_EOL, routesOf(InvoiceController::class)), PHP_EOL;</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · salida</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">$ php router.php
+GET  /invoices        -&gt; list
+GET  /invoices/{id}   -&gt; show
+GET  /facturas/{id}   -&gt; show
+POST /invoices        -&gt; create</code></pre>
+          </div>
+          <p>
+            <code>getAttributes(Route::class)</code> filtra por nombre exacto. Si pasas también <code>ReflectionAttribute::IS_INSTANCEOF</code>, filtra por herencia: así un validador pide «todo lo que implemente mi interfaz <code>Constraint</code>» sin conocer cada regla concreta.
+          </p>
+          <h2 id="instancia">
+            Cuándo se instancian, y cuándo fallan
+            <a href="#instancia" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Aquí está la sorpresa. Con tus attributes, al compilar PHP solo comprueba la sintaxis y que los argumentos sean constantes. La clase del attribute, su target y si se repite <strong>no se validan hasta <code>newInstance()</code></strong>, y su constructor no se ejecuta hasta ese momento:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · lazy.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+#[Attribute(Attribute::TARGET_METHOD)]
+final readonly class Route
+{
+    public function __construct(public string $path)
+    {
+    }
+}
+
+#[Route('/en-una-clase')]
+#[ClaseQueNoExiste]
+final class Report
+{
+}
+
+$attributes = (new ReflectionClass(Report::class))-&gt;getAttributes();
+
+foreach ($attributes as $attribute) {
+    echo $attribute-&gt;getName(), ': ';
+
+    try {
+        $attribute-&gt;newInstance();
+        echo 'ok', PHP_EOL;
+    } catch (Error $error) {
+        echo $error-&gt;getMessage(), PHP_EOL;
+    }
+}</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · salida</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">$ php lazy.php
+Route: Attribute "Route" cannot target class (allowed targets: method)
+ClaseQueNoExiste: Attribute class "ClaseQueNoExiste" not found</code></pre>
+          </div>
+          <p>
+            El fichero carga sin errores con un attribute de una clase que no existe. Repetir uno sin <code>IS_REPEATABLE</code> da <code>must not be repeated</code>, y usar como attribute una clase sin <code>#[Attribute]</code> da <code>Attempting to use non-attribute class</code>, ambos también al instanciar. Por eso un error de attribute aparece tarde: cuando el framework recorre tus clases, no cuando escribes el código.
+          </p>
+          <h2 id="frameworks">
+            Lo que hacen los frameworks con ellos
+            <a href="#frameworks" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Rutas, validación, eventos, mapeo de Doctrine o tests de PHPUnit siguen el mismo esquema que el enrutador de arriba. Lo que añade el framework es la caché: Reflection no es gratis, así que no se recorre en cada petición.
+          </p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Tu código lleva <code>#[...]</code></b><small>rutas, reglas, listeners</small></span>
+              </div>
+              <div class="flow__arrow" data-label="al compilar el contenedor"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>El framework lee con Reflection</b><small>getAttributes y newInstance</small></span>
+              </div>
+              <div class="flow__arrow" data-label="una vez"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Genera PHP plano en caché</b><small>tabla de rutas, mapa de listeners</small></span>
+              </div>
+              <div class="flow__arrow" data-label="en cada petición"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>Se usa la caché</b><small>sin volver a tocar Reflection</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Los attributes se leen al construir la caché; en producción se ejecuta el resultado.</p>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Symfony: rutas, validación y eventos</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Validator\Constraints as Assert;
+
+final class SignUpRequest
+{
+    #[Assert\NotBlank]
+    #[Assert\Length(max: 20)]
+    public string $username = '';
+}
+
+final class AccountController
+{
+    #[Route('/accounts', methods: ['POST'])]
+    public function create(): Response
+    {
+    }
+}
+
+#[AsEventListener]
+final class SendWelcomeEmail
+{
+    public function __invoke(AccountCreated $event): void
+    {
+    }
+}</code></pre>
+          </div>
+          <p>
+            Es la misma idea que el autowiring de <a href="inyeccion-dependencias.html#contenedor">el contenedor</a>: el framework lee metadatos de tus clases y genera el cableado. Por eso, tras añadir una ruta en producción, hay que regenerar la caché.
+          </p>
+          <h2 id="nucleo">
+            Attributes del núcleo que conviene usar
+            <a href="#nucleo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            PHP trae algunos attributes que el propio motor sí interpreta, sin Reflection de por medio:
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Attribute</th><th>Desde</th><th>Qué hace</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>#[\ReturnTypeWillChange]</code></td><td>8.1</td><td>Silencia el aviso de tipo de retorno al sobrescribir un método de una clase o interfaz interna sin declararlo. Es un parche de migración.</td></tr>
+                <tr><td><code>#[\SensitiveParameter]</code></td><td>8.2</td><td>Oculta el valor del parámetro en las trazas de excepción.</td></tr>
+                <tr><td><code>#[\AllowDynamicProperties]</code></td><td>8.2</td><td>Permite propiedades dinámicas en una clase, deprecadas desde 8.2.</td></tr>
+                <tr><td><code>#[\Override]</code></td><td>8.3</td><td>Error fatal si el método no sobrescribe nada del padre o de una interfaz.</td></tr>
+                <tr><td><code>#[\Deprecated]</code></td><td>8.4</td><td>Emite un aviso <code>E_USER_DEPRECATED</code> al llamar a la función, el método o la constante.</td></tr>
+                <tr><td><code>#[\NoDiscard]</code></td><td>8.5</td><td>Avisa si se ignora el valor de retorno; se descarta a propósito con <code>(void)</code>.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            <code>#[\Override]</code> es el más rentable: protege contra la errata y contra el padre que renombra su método. Sin él, el hijo se queda con un método huérfano que nadie llama.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · override.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+class Notifier
+{
+    protected function deliver(string $message): void
+    {
+    }
+}
+
+final class SlackNotifier extends Notifier
+{
+    #[\Override]
+    protected function delivr(string $message): void
+    {
+    }
+}</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · salida</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">$ php override.php
+PHP Fatal error:  SlackNotifier::delivr() has #[\Override] attribute, but no matching parent method exists</code></pre>
+          </div>
+          <p>
+            <code>#[\SensitiveParameter]</code> es el otro imprescindible: una contraseña que llega a una traza acaba en los logs o en tu herramienta de errores. Con él, si la traza incluye argumentos, muestra <code>connect('admin', Object(SensitiveParameterValue))</code> en lugar del valor.
+          </p>
+          <h2 id="docblock">
+            Attributes frente a anotaciones en docblock
+            <a href="#docblock" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Attribute <code>#[...]</code></h4>
+              <ul>
+                <li>Lo parsea el motor: una errata de sintaxis rompe la compilación</li>
+                <li>El nombre es una clase real, resuelta con <code>use</code></li>
+                <li>El IDE y PHPStan la siguen al renombrar y la validan</li>
+                <li>Se lee con Reflection, sin parsear texto</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Anotación <code>@Route</code> en docblock</h4>
+              <ul>
+                <li>Es un comentario: los errores no avisan</li>
+                <li>Necesita una librería que parsee el texto en ejecución</li>
+                <li>Renombrar la clase no actualiza el comentario</li>
+                <li>Depende de que el docblock no se elimine</li>
+              </ul>
+            </div>
+          </div>
+          <p>
+            El docblock no muere: sigue siendo el sitio de los tipos que PHP no expresa, como <code>list&lt;Invoice&gt;</code> o <code>@template</code>, que verás en <a href="pm-generics-phpdoc.html">generics con PHPDoc</a>. La regla es simple: si lo lee el analizador estático, PHPDoc; si lo lee tu código en ejecución, attribute. Pasar un proyecto antiguo de anotaciones a attributes es trabajo mecánico, el que hace <a href="pm-rector.html">Rector</a>.
+          </p>
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que se cuela en las revisiones</p>
+              <ul>
+                <li><strong>Creer que el attribute actúa solo.</strong> Poner <code>#[Length(max: 20)]</code> en una propiedad no impide asignar 30 caracteres. Valida quien lo lee, cuando lo lee.</li>
+                <li><strong>La errata o el <code>use</code> que falta.</strong> <code>#[Rout('/x')]</code> carga sin error y el framework, que filtra por <code>Route::class</code>, nunca lo ve. La ruta no existe y nada avisa.</li>
+                <li><strong>Lógica en el constructor del attribute.</strong> Es metadato: no recibe servicios ni toca base de datos. Lo que hace falta ejecutar va en el código que lo lee.</li>
+                <li><strong>Leer con Reflection en cada petición.</strong> Si construyes tu propio lector, guarda el resultado en caché como hacen los frameworks.</li>
+                <li><strong>Usar <code>#[\ReturnTypeWillChange]</code> como solución.</strong> Es un parche temporal; lo correcto es declarar el tipo de retorno.</li>
+              </ul>
+            </div>
+          </div>
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Como PHP valida tarde, quien valida pronto es el análisis estático. <a href="pm-phpstan.html">PHPStan</a> comprueba los attributes desde el nivel 0: clase inexistente, target incorrecto y repetición indebida. Los tipos de los argumentos los revisa a partir del nivel 5.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · PHPStan sobre attributes mal puestos</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">$ vendor/bin/phpstan analyse --level=5 --error-format=raw src/Report.php
+src/Report.php:13:Attribute class Route does not have the class target. [identifier=attribute.target]
+src/Report.php:16:Attribute class Rout does not exist. [identifier=attribute.notFound]
+src/Report.php:22:Attribute class Route is not repeatable but is already present above the method. [identifier=attribute.nonRepeatable]
+src/Report.php:27:Parameter #1 $path of attribute class Route constructor expects string, int given. [identifier=argument.type]</code></pre>
+          </div>
+          <p>
+            Y para tus propios attributes, el mejor test es el del enrutador de arriba: un test unitario que recorre las clases con Reflection, llama a <code>newInstance()</code> sobre todo lo que encuentra y comprueba el resultado. Si algún attribute está mal declarado, falla ahí y no en producción. El pipeline que ya tienes en <a href="ci-para-php.html#estatico">CI para PHP</a> ejecuta las dos cosas.
+          </p>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Attributes cuando…</h4>
+              <ul>
+                <li>El metadato pertenece a un elemento concreto: la ruta de un método, la regla de una propiedad</li>
+                <li>Lo va a leer código en ejecución: un framework, un validador, un serializador</li>
+                <li>Quieres que el motor marque un contrato: <code>#[\Override]</code>, <code>#[\SensitiveParameter]</code></li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No hacen falta cuando…</h4>
+              <ul>
+                <li>La información es de tipos y solo la lee PHPStan: va en PHPDoc</li>
+                <li>La configuración cambia por entorno: va en configuración, no en el código</li>
+                <li>Lo que quieres es ejecutar lógica: eso es un método o un decorador, no un metadato</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La alternativa sencilla</p>
+              <p>
+                Si solo tienes cinco rutas, un array <code>['/invoices' =&gt; [InvoiceController::class, 'list']]</code> se lee de un vistazo y no necesita Reflection ni caché. Los attributes compensan cuando las piezas crecen y quieres que cada una declare lo suyo.
+              </p>
+            </div>
+          </div>
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un attribute es metadato: PHP lo guarda y no hace nada hasta que alguien lo lee con Reflection.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Se declara con <code>#[Attribute]</code>, con los targets permitidos y <code>IS_REPEATABLE</code> si puede repetirse.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>getAttributes()</code> no valida nada; la clase, el target y la repetición se comprueban en <code>newInstance()</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los frameworks leen los attributes una vez y cachean el resultado; en producción no se recorre Reflection.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Usa <code>#[\Override]</code> y <code>#[\SensitiveParameter]</code> siempre que apliquen: los interpreta el propio motor.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>PHPDoc para lo que lee el analizador estático; attributes para lo que lee tu código en ejecución. PHPStan los valida desde el nivel 0.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

@@ -879,4 +879,34 @@ window.MENTORAI_COURSES = [
       },
     ],
   },
+  {
+    slug: "php-moderno",
+    title: "PHP moderno y calidad estática",
+    summary:
+      "El PHP que se escribe hoy y las herramientas que lo leen por ti: tipado estricto y tipos compuestos, enums e inmutabilidad, attributes, la sintaxis que sustituye a los rodeos de antes, y después PHPStan, generics en PHPDoc, estilo automático y Rector para migrar de versión. Parte de donde acaba «Tipos de clases en PHP» y termina con el código revisado por máquinas antes de llegar a la review.",
+    level: "Intermedio",
+    icon: "code",
+    modules: [
+      {
+        title: "El lenguaje moderno",
+        summary: "Lo que PHP 8 te da para que el error salte al escribir y no en producción.",
+        lessons: [
+          "pm-tipado-estricto",
+          "pm-enums-e-inmutabilidad",
+          "pm-attributes",
+          "pm-sintaxis-moderna",
+        ],
+      },
+      {
+        title: "Que la máquina lea tu código",
+        summary: "Análisis estático, generics en PHPDoc, estilo automático y migraciones con Rector.",
+        lessons: [
+          "pm-phpstan",
+          "pm-generics-phpdoc",
+          "pm-estilo-automatico",
+          "pm-rector",
+        ],
+      },
+    ],
+  },
 ];
