@@ -326,13 +326,13 @@ async fn crear_usuario(pool: &amp;PgPool, nombre: &amp;str, email: &amp;str) -&g
     pool: &amp;PgPool,
     origen_id: i32,
     destino_id: i32,
-    cantidad: f64,
+    cantidad_centimos: i64,
 ) -&gt; Result&lt;(), sqlx::Error&gt; {
     let mut transaccion = pool.begin().await?;
 
     sqlx::query!(
         "UPDATE cuentas SET saldo = saldo - $1 WHERE id = $2",
-        cantidad,
+        cantidad_centimos,
         origen_id
     )
     .execute(&amp;mut *transaccion)
@@ -340,7 +340,7 @@ async fn crear_usuario(pool: &amp;PgPool, nombre: &amp;str, email: &amp;str) -&g
 
     sqlx::query!(
         "UPDATE cuentas SET saldo = saldo + $1 WHERE id = $2",
-        cantidad,
+        cantidad_centimos,
         destino_id
     )
     .execute(&amp;mut *transaccion)
@@ -358,7 +358,7 @@ async fn crear_usuario(pool: &amp;PgPool, nombre: &amp;str, email: &amp;str) -&g
             <div class="callout__body">
               <p class="callout__title">Errores típicos</p>
               <ul>
-                <li><strong>Ejecutar sobre el pool dentro de una transacción.</strong> Si pasas <code>&amp;pool</code> en lugar de <code>&amp;mut *tx</code>, esa query va por otra conexión, fuera de la transacción, y no se revierte con ella.</li>
+                <li><strong>Ejecutar sobre el pool dentro de una transacción.</strong> Si pasas <code>&amp;pool</code> en lugar de <code>&amp;mut *transaccion</code>, esa query va por otra conexión, fuera de la transacción, y no se revierte con ella.</li>
                 <li><strong>Olvidar el <code>commit()</code>.</strong> No hay error: al salir de scope, la transacción hace rollback en silencio y los cambios desaparecen.</li>
                 <li><strong>Mapear una columna nullable a un campo sin <code>Option</code>.</strong> Con <code>query_as!</code> el compilador lo detecta; con <code>query_as</code> sin macro, falla en runtime al decodificar la primera fila con <code>NULL</code>.</li>
                 <li><strong>Romper el build en CI por <code>query_as!</code>.</strong> La macro necesita <code>DATABASE_URL</code> al compilar. Sin base de datos en CI o en Docker, genera la caché con <code>cargo sqlx prepare</code>, commitea el directorio <code>.sqlx</code> y compila con <code>SQLX_OFFLINE=true</code>.</li>

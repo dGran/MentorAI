@@ -1690,7 +1690,7 @@ window.MENTORAI_QUIZZES = {
       o: ["Los parámetros `a` y `b` son inmutables y no pueden sumarse si no se declaran con `mut`","La suma de dos `i32` puede desbordar y el compilador exige usar `checked_add` en su lugar","Falta la palabra `return`, porque una función de Rust no devuelve nada si no la escribes","El `;` convierte `a + b` en una sentencia, y el bloque devuelve `()` en vez de `i32`"], a: 3,
       w: "La última expresión de un bloque sin `;` es su valor de retorno; con `;` pasa a ser una sentencia y el bloque vale `()`. `return` solo es necesario para salir antes de tiempo, así que pensar que falta es arrastrar la costumbre de PHP.",
       lesson: "rust-funciones" },
-    { id: "qaaec96", q: "Un handler de Axum recibe `Json(request): Json<CrearUsuarioRequest>`, cuyo struct tiene `nombre: String` y `email: String`. Un cliente envía `{\"nombre\": \"Ana\"}`. ¿Qué ocurre?",
+    { id: "qaaec96", q: "Un handler de Axum recibe `Json(request): Json<CrearUsuarioRequest>`, cuyo struct tiene `nombre: String` y `email: String`. Un cliente envía `{\"nombre\": \"Ana\"}` con `Content-Type: application/json`. ¿Qué ocurre?",
       o: ["El handler se ejecuta con `email` vacío, porque `String` tiene un valor por defecto","Axum responde 422 sin ejecutar el handler, porque `Json<T>` no logra deserializar","El handler se ejecuta y el proceso cae con un panic al leer el campo `email`","Axum responde 500, porque el error de Serde llega sin tratar al runtime de tokio"], a: 1,
       w: "El extractor `Json<T>` deserializa antes de llamar al handler; si falta un campo obligatorio, Axum devuelve un 422 por sí solo. Que el campo se rellene con su valor por defecto solo pasa si lo marcas con `#[serde(default)]`.",
       lesson: "rust-axum" },

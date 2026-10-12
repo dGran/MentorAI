@@ -85,7 +85,7 @@
 
         <article class="prose">
           <p class="lead">
-            Con Symfony, que un controlador reciba el usuario, el body validado y el repositorio es cosa del contenedor y de la reflexión en runtime. Axum consigue lo mismo con el sistema de tipos: lo que el handler pide en sus parámetros es lo que el framework extrae, y si no cuadra, no compila. Menos magia y más errores en compilación, a cambio de escribir más explícito.
+            Con Symfony, que un controlador reciba el usuario, el body validado y el repositorio es cosa del contenedor y de la reflexión en runtime. Axum consigue lo mismo con el sistema de tipos: lo que el handler pide en sus parámetros es lo que el framework extrae. Si un parámetro no es un extractor válido, no compila; si el request no encaja, Axum responde con un 4xx antes de entrar en el handler. Menos magia y más errores en compilación, a cambio de escribir más explícito.
           </p>
           <h2 id="que-es-axum">
             ¿Qué es Axum?
@@ -367,7 +367,7 @@ let app = Router::new()
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
-            <pre><code data-lang="rust">use axum::{http::StatusCode, response::{IntoResponse, Response}, Json};
+            <pre><code data-lang="rust">use axum::{extract::Path, http::StatusCode, response::{IntoResponse, Response}, Json};
 use serde_json::json;
 use thiserror::Error;
 
@@ -428,7 +428,7 @@ async fn handler_con_error(Path(id): Path&lt;u32&gt;) -&gt; Result&lt;Json&lt;St
               <ul>
                 <li>Construyes una API HTTP o un microservicio donde latencia, memoria o coste por instancia importan</li>
                 <li>El resto del servicio ya vive sobre Tokio: sqlx, reqwest, colas</li>
-                <li>Quieres que el contrato de cada endpoint (path, query, body, estado) se compruebe al compilar</li>
+                <li>Quieres que cada endpoint declare en su firma qué extrae (path, query, body, estado) y que el compilador compruebe que son extractores válidos</li>
                 <li>Necesitas middleware reutilizable del ecosistema <code>tower</code>: timeouts, trazas, CORS, compresión</li>
               </ul>
             </div>
@@ -460,7 +460,7 @@ async fn handler_con_error(Path(id): Path&lt;u32&gt;) -&gt; Result&lt;Json&lt;St
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Los extractores inyectan datos del request en los parámetros del handler con verificación de tipos en compilación: Path, Query, Json, State, HeaderMap.</span>
+                <span>Los extractores inyectan datos del request en los parámetros del handler, tipados: Path, Query, Json, State, HeaderMap. El compilador comprueba que cada parámetro es un extractor válido; si el request no encaja, Axum responde con un 4xx en runtime antes de entrar en el handler.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
