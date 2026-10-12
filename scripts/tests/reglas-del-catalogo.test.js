@@ -172,7 +172,7 @@ test("punctuation inside inline code is not a form cue", () => {
   assert.deepEqual(reglas.pistasDeForma(question(["Con `a := 1`", "Con b", "Con c"], 0)), []);
 });
 
-const CURRENT_STRUCTURE = '<section class="tutorial-hero"><div class="container"></div></section><p class="toc__title">En esta página</p><div class="code-block"><div class="code-block__head"></div><pre><code data-lang="go">x</code></pre></div><div class="callout callout--tip"><svg></svg><div class="callout__body"><p>a</p></div></div><div class="keypoints"></div>';
+const CURRENT_STRUCTURE = '<section class="tutorial-hero"><div class="container"></div></section><p class="toc__title">En esta página</p><h2 id="idea">\n  La idea\n  <a href="#idea" class="anchor" aria-hidden="true">#</a>\n</h2><div class="code-block"><div class="code-block__head"></div><pre><code data-lang="go">x</code></pre></div><div class="callout callout--tip"><svg></svg><div class="callout__body"><p>a</p></div></div><div class="keypoints"></div>';
 
 test("a lesson with the current template has no structure problems", () => {
   assert.deepEqual(reglas.problemasDeEstructura(CURRENT_STRUCTURE), []);
@@ -187,6 +187,18 @@ test("each piece of the old template is reported", () => {
   for (const piece of ["En este tutorial", ".container", ".tutorial-actions", "índice", "keypoints", "<pre>", "callout"]) {
     assert.ok(problems.some((problem) => problem.includes(piece)), piece);
   }
+});
+
+test("a section heading without its template anchor is reported by id", () => {
+  const html = '<h2 id="idea">La idea <a href="#idea" class="anchor" aria-hidden="true">#</a></h2><h2 id="cuando">Cuándo aplicarlo</h2>';
+
+  assert.deepEqual(reglas.problemasDeEstructura(html), ["h2 sin ancla de plantilla: #cuando"]);
+});
+
+test("an anchor pointing to another section does not count as the heading's own", () => {
+  const html = '<h2 id="cuando">Cuándo aplicarlo <a href="#idea" class="anchor" aria-hidden="true">#</a></h2>';
+
+  assert.deepEqual(reglas.problemasDeEstructura(html), ["h2 sin ancla de plantilla: #cuando"]);
 });
 
 test("a callout without body is caught even when a correct one follows it", () => {

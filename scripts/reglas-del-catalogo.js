@@ -102,7 +102,8 @@ function pistasDeForma(pregunta) {
 }
 
 const BLOQUE_DE_CODIGO = /<div class="code-block">[\s\S]*?<\/pre>\s*<\/div>/g;
-const APERTURA_DE_CALLOUT = /<div class="callout callout--\w+[^"]*"[^>]*>/g;
+const SECCION_CON_ID = /<h2 id="([^"]+)"[^>]*>([\s\S]*?)<\/h2>/g;
+const APERTURA_DE_CALLOUT =/<div class="callout callout--\w+[^"]*"[^>]*>/g;
 const CALLOUT_CON_CUERPO = /^<div class="callout callout--\w+[^"]*"[^>]*>\s*<svg(?:(?!<\/svg>)[\s\S])*<\/svg>\s*<div class="callout__body">/;
 const ESTRUCTURA_ANTIGUA = [
   [/class="toc__title">En este tutorial/, "el índice se titula «En este tutorial» y no «En esta página»"],
@@ -120,6 +121,10 @@ function problemasDeEstructura(html) {
   const calloutsSinCuerpo = [...html.matchAll(APERTURA_DE_CALLOUT)].filter((apertura) => !CALLOUT_CON_CUERPO.test(html.slice(apertura.index)));
 
   if (calloutsSinCuerpo.length > 0) problemas.push(`${calloutsSinCuerpo.length} callout(s) sin .callout__body`);
+
+  const seccionesSinAncla = [...html.matchAll(SECCION_CON_ID)].filter(([, id, contenido]) => !contenido.includes(`href="#${id}" class="anchor"`)).map(([, id]) => id);
+
+  if (seccionesSinAncla.length > 0) problemas.push(`h2 sin ancla de plantilla: ${seccionesSinAncla.map((id) => `#${id}`).join(", ")}`);
 
   return problemas;
 }
