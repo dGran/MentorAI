@@ -909,4 +909,32 @@ window.MENTORAI_COURSES = [
       },
     ],
   },
+  {
+    slug: "concurrencia-en-bd",
+    title: "Concurrencia y consistencia en la base de datos",
+    summary:
+      "Lo que pasa cuando dos peticiones tocan la misma fila, reproducido en dos terminales con MySQL y Postgres: anomalías de aislamiento, bloqueo pesimista y colas con SKIP LOCKED, bloqueo optimista con versión, deadlocks leídos en el log, cambios de esquema sin parar la tabla y planes de ejecución reales en los dos motores.",
+    level: "Avanzado",
+    icon: "database",
+    modules: [
+      {
+        title: "Dos transacciones a la vez",
+        summary: "Las anomalías que deja pasar cada nivel y las dos formas de evitarlas: bloquear antes o comprobar al guardar.",
+        lessons: [
+          "bd-anomalias-en-dos-terminales",
+          "bd-bloqueo-pesimista",
+          "bd-bloqueo-optimista",
+          "bd-deadlocks",
+        ],
+      },
+      {
+        title: "La base de datos en producción",
+        summary: "Cambiar el esquema sin bloquear la tabla y leer lo que hace de verdad una consulta en cada motor.",
+        lessons: [
+          "bd-migraciones-sin-caida",
+          "bd-explain-comparado",
+        ],
+      },
+    ],
+  },
 ];

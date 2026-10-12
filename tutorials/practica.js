@@ -1368,4 +1368,45 @@ window.MENTORAI_PRACTICE = {
       },
     },
   ],
+  "concurrencia-en-bd": [
+    {
+      id: "r9d8085",
+      title: "Pierde una actualización y recupérala",
+      statement:
+        "Arranca Postgres con docker run -d --rm --name reto-pg -e POSTGRES_PASSWORD=x postgres:17 y abre dos terminales con docker exec -it reto-pg psql -U postgres. Crea cuentas(id int primary key, saldo int) con la cuenta 1 a 100. En las dos terminales, BEGIN y lee el saldo. En la primera, actualiza a lo leído menos 30 (UPDATE ... SET saldo = 70) y haz COMMIT; en la segunda, a lo leído menos 50 (SET saldo = 50) y COMMIT. Mira el saldo final. Después repítelo de dos formas: leyendo con SELECT ... FOR UPDATE, y sin leer, con UPDATE ... SET saldo = saldo - 30.",
+      solution:
+        "Con la lectura normal el saldo acaba en 50 o en 70 según quién confirme el último, nunca en 20: es un lost update, y READ COMMITTED, el nivel por defecto de Postgres, no lo impide, porque cada sesión escribe un valor calculado en la aplicación con datos que ya no son ciertos. Con FOR UPDATE la segunda sesión se queda esperando en su SELECT hasta el COMMIT de la primera y lee 70, así que termina en 20. Con SET saldo = saldo - 30 no hay lectura que se quede vieja: el UPDATE bloquea la fila y calcula sobre el valor confirmado, y también da 20. Por eso, cuando la operación cabe en una sola sentencia, es la mejor opción; FOR UPDATE se reserva para cuando hay que decidir algo en la aplicación entre leer y escribir.",
+      solutionCode: {
+        lang: "sql",
+        source:
+          "CREATE TABLE cuentas (id int PRIMARY KEY, saldo int NOT NULL);\nINSERT INTO cuentas VALUES (1, 100);\n\n-- Terminal A                          -- Terminal B\nBEGIN;\nSELECT saldo FROM cuentas WHERE id = 1; -- 100\n                                        BEGIN;\n                                        SELECT saldo FROM cuentas WHERE id = 1; -- 100\nUPDATE cuentas SET saldo = 70 WHERE id = 1;\nCOMMIT;\n                                        UPDATE cuentas SET saldo = 50 WHERE id = 1;\n                                        COMMIT;\nSELECT saldo FROM cuentas WHERE id = 1; -- 50: los 30 de A se han perdido\n\n-- Arreglo 1: leer bloqueando (B espera en su SELECT hasta el COMMIT de A y lee 70)\nSELECT saldo FROM cuentas WHERE id = 1 FOR UPDATE;\n\n-- Arreglo 2: sin lectura previa\nUPDATE cuentas SET saldo = saldo - 30 WHERE id = 1;",
+      },
+    },
+    {
+      id: "r1629ee",
+      title: "Una cola de trabajos con SKIP LOCKED",
+      statement:
+        "Con el mismo Postgres, crea trabajos(id serial primary key, estado text default 'pendiente') con cinco filas pendientes. En dos terminales, simula dos workers: cada uno abre una transacción y toma el siguiente trabajo con SELECT id FROM trabajos WHERE estado = 'pendiente' ORDER BY id LIMIT 1 FOR UPDATE SKIP LOCKED, sin hacer COMMIT todavía. ¿Qué id recibe cada uno? Repite quitando SKIP LOCKED y explica la diferencia.",
+      solution:
+        "Con SKIP LOCKED el primer worker recibe el 1 y el segundo el 2: la fila 1 está bloqueada por la transacción del primero y la consulta la salta en vez de esperar. Sin SKIP LOCKED el segundo se queda bloqueado en el SELECT hasta que el primero termine, y si el primero no marcó el trabajo como hecho, después recibe el mismo 1. Por eso la cola aguanta varios workers sin un sistema de colas aparte: cada uno se lleva una fila distinta y nadie espera. El precio es que el bloqueo dura lo que dure la transacción, así que el worker marca el estado y confirma pronto en vez de procesar el trabajo entero con la fila bloqueada.",
+      solutionCode: {
+        lang: "sql",
+        source:
+          "CREATE TABLE trabajos (id serial PRIMARY KEY, estado text NOT NULL DEFAULT 'pendiente');\nINSERT INTO trabajos (estado) SELECT 'pendiente' FROM generate_series(1, 5);\n\n-- Worker 1                            -- Worker 2\nBEGIN;\nSELECT id FROM trabajos\n WHERE estado = 'pendiente'\n ORDER BY id LIMIT 1\n FOR UPDATE SKIP LOCKED;               -- 1\n                                       BEGIN;\n                                       SELECT id FROM trabajos\n                                        WHERE estado = 'pendiente'\n                                        ORDER BY id LIMIT 1\n                                        FOR UPDATE SKIP LOCKED;  -- 2\nUPDATE trabajos SET estado = 'en_curso' WHERE id = 1;\nCOMMIT;\n                                       UPDATE trabajos SET estado = 'en_curso' WHERE id = 2;\n                                       COMMIT;",
+      },
+    },
+    {
+      id: "r4476a9",
+      title: "El segundo que guarda pierde, y lo sabe",
+      statement:
+        "Crea articulos(id int primary key, titulo text, version int not null default 1) con un artículo en la versión 1. Simula a Ana y a Bruno, que abrieron el formulario a la vez y los dos tienen la versión 1: lanza primero el UPDATE de Ana y después el de Bruno, los dos con SET titulo = ..., version = version + 1 WHERE id = 1 AND version = 1. Fíjate en lo que devuelve cada UPDATE y en lo que queda guardado. ¿Qué tendría que hacer la aplicación con la respuesta del segundo?",
+      solution:
+        "El de Ana devuelve UPDATE 1 y el de Bruno UPDATE 0, y queda la versión de Ana en la versión 2: el cambio de Bruno no pisa nada en silencio. Ese 0 es toda la señal del bloqueo optimista: la aplicación lee las filas afectadas y, si son 0, no da el guardado por bueno; recarga el artículo y le enseña a Bruno lo que ha cambiado, o devuelve un 409 (o un 412 si la versión viajaba en un If-Match). No hay que bloquear nada mientras alguien tiene el formulario abierto, que es justo lo que hace que encaje en la web: el conflicto se paga solo cuando ocurre.",
+      solutionCode: {
+        lang: "sql",
+        source:
+          "CREATE TABLE articulos (id int PRIMARY KEY, titulo text, version int NOT NULL DEFAULT 1);\nINSERT INTO articulos VALUES (1, 'Borrador', 1);\n\nUPDATE articulos SET titulo = 'Versión de Ana', version = version + 1\n WHERE id = 1 AND version = 1;   -- UPDATE 1\n\nUPDATE articulos SET titulo = 'Versión de Bruno', version = version + 1\n WHERE id = 1 AND version = 1;   -- UPDATE 0: Bruno tenía una versión vieja\n\nSELECT titulo, version FROM articulos;  -- Versión de Ana | 2",
+      },
+    },
+  ],
 };

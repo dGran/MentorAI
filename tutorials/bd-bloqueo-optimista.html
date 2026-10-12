@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bloqueo optimista con columna de versión — MentorAI</title>
+    <meta name="description" content="Bloqueo optimista con columna de versión en MySQL 8.4 y PostgreSQL 17: el UPDATE condicionado, qué hacer con 0 filas afectadas, #[ORM\Version] de Doctrine, cómo hacerlo con Eloquent y ETag con If-Match en la API." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Bases de datos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Bloqueo optimista con columna de versión</h1>
+        <p class="tutorial-hero__lead">Dos personas abren el mismo producto, cambian el precio y guardan. La base de datos acepta las dos escrituras sin un solo error y la primera desaparece. Una columna de versión convierte esa pérdida silenciosa en un conflicto que puedes ver y tratar.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            26 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">La escritura que se pierde sin error</a></li>
+            <li><a href="#version">Una versión que viaja con el dato</a></li>
+            <li><a href="#conflicto">Cuando afecta a 0 filas</a></li>
+            <li><a href="#doctrine">Doctrine: #[ORM\Version]</a></li>
+            <li><a href="#eloquent">Eloquent: hacerlo a mano</a></li>
+            <li><a href="#http">La versión en HTTP: ETag e If-Match</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            El bloqueo pesimista reserva la fila antes de tocarla. El optimista no reserva nada: deja que todos lean y trabajen, y solo al escribir comprueba que nadie se le ha adelantado. Es la única de las dos técnicas que sobrevive al hueco entre «abrir el formulario» y «pulsar guardar».
+          </p>
+
+          <h2 id="problema">
+            La escritura que se pierde sin error
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Ana abre la ficha del teclado a las 10:00 y ve 49,90 €. Luis la abre un minuto después y ve lo mismo. Ana aplica una rebaja y guarda 44,90. Luis, que no sabe nada de la rebaja, sube el precio por un cambio del proveedor y guarda 52,00. La última escritura gana, nadie recibe un error y la rebaja de Ana se ha esfumado. Es la <em>lost update</em> que ya viste en concepto en <a href="transacciones-acid.html">Transacciones y ACID</a> y reproducida en <a href="bd-anomalias-en-dos-terminales.html">dos terminales</a>.
+          </p>
+          <p>
+            El <code>SELECT ... FOR UPDATE</code> de <a href="bd-bloqueo-pesimista.html">la lección anterior</a> no sirve aquí, y el porqué es lo importante: la lectura y la escritura ocurren en <strong>dos peticiones HTTP distintas</strong>, separadas por minutos de alguien pensando delante de un formulario. Ninguna transacción vive tanto, y aunque pudiera, tendrías una fila bloqueada mientras Ana va a por un café. El bloqueo pesimista protege lo que pasa dentro de una transacción; el optimista protege lo que pasa entre peticiones.
+          </p>
+
+          <h2 id="version">
+            Una versión que viaja con el dato
+            <a href="#version" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cada fila lleva una columna <code>version</code>. Quien lee se guarda el número; quien escribe pone una condición: «actualiza solo si la versión sigue siendo la que leí, y súbela».
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · MySQL 8.4 y PostgreSQL 17</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">CREATE TABLE productos (
+  id INT PRIMARY KEY,
+  nombre VARCHAR(50),
+  precio DECIMAL(8,2),
+  version INT NOT NULL DEFAULT 1
+);
+INSERT INTO productos VALUES (1, 'Teclado', 49.90, 1);
+
+UPDATE productos SET precio = 44.90, version = version + 1 WHERE id = 1 AND version = 1;
+UPDATE productos SET precio = 52.00, version = version + 1 WHERE id = 1 AND version = 1;</code></pre>
+          </div>
+          <p>
+            La primera es Ana, la segunda Luis con la versión que leyó. Lo que devuelve cada motor:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">salida · MySQL 8.4</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>Query OK, 1 row affected
+Rows matched: 1  Changed: 1  Warnings: 0
+
+Query OK, 0 rows affected
+Rows matched: 0  Changed: 0  Warnings: 0</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">salida · PostgreSQL 17</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>UPDATE 1
+UPDATE 0</code></pre>
+          </div>
+          <p>
+            La comprobación y la escritura son <strong>una sola sentencia</strong>, y eso es lo que la hace segura: el motor bloquea la fila para ejecutar el <code>UPDATE</code>, así que dos escrituras con la misma versión nunca pueden coincidir las dos. Si Ana tiene su <code>UPDATE</code> sin confirmar, el de Luis espera; cuando Ana confirma, el de Luis vuelve a evaluar el <code>WHERE</code> con la fila nueva y afecta a 0 filas. Lo comprobé en los dos motores con el nivel por defecto (<code>REPEATABLE READ</code> en MySQL, <code>READ COMMITTED</code> en Postgres).
+          </p>
+          <p>
+            Tu código solo tiene que leer las filas afectadas: 1 es éxito, 0 significa que alguien se adelantó (o que la fila ya no existe).
+          </p>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">En Postgres con REPEATABLE READ no hay 0: hay error</p>
+              <p>
+                Si la transacción de Luis está en <code>REPEATABLE READ</code>, Postgres no devuelve <code>UPDATE 0</code>, sino <code>ERROR: 40001: could not serialize access due to concurrent update</code> y la transacción queda abortada. Significa lo mismo, pero llega por otro camino: tu código tiene que tratar las dos señales.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="conflicto">
+            Cuando afecta a 0 filas
+            <a href="#conflicto" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Qué hacer con el conflicto depende de una pregunta: ¿alguien tomó una decisión mirando el valor viejo?
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Respuesta</th><th>Cuándo encaja</th><th>Cómo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Recargar y reintentar</strong></td><td>La operación se calcula desde el estado actual y nadie la decidió mirando el dato: sumar puntos, aplicar un cupón</td><td>Releer en una transacción nueva y repetir, con un límite de intentos</td></tr>
+                <tr><td><strong>Fusionar</strong></td><td>Los cambios no se pisan: Ana tocó el precio y Luis la descripción</td><td>Reaplicar solo los campos que cambió el usuario sobre la versión fresca</td></tr>
+                <tr><td><strong>Devolver el conflicto</strong></td><td>Una persona decidió sobre un valor que ya no existe</td><td>409 (o 412 si usas <code>If-Match</code>) con el estado actual para que decida otra vez</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Para fusionar necesitas saber <em>qué</em> cambió el usuario respecto a la versión que leyó, no solo el formulario final. Sin ese diff no sabes si su 52,00 es una decisión o el valor que ya estaba en pantalla.
+          </p>
+
+          <h2 id="doctrine">
+            Doctrine: #[ORM\Version]
+            <a href="#doctrine" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Doctrine lo trae de serie: marcas un campo con <code>#[ORM\Version]</code> y el ORM escribe el <code>WHERE version = ?</code> y lee las filas afectadas por ti.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Producto.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+use Doctrine\ORM\Mapping as ORM;
+
+#[ORM\Entity]
+#[ORM\Table(name: 'productos')]
+class Producto
+{
+    #[ORM\Id]
+    #[ORM\Column]
+    private int $id;
+
+    #[ORM\Column(type: 'decimal', precision: 8, scale: 2)]
+    private string $precio;
+
+    #[ORM\Version]
+    #[ORM\Column(type: 'integer')]
+    private int $version;
+
+    public function cambiarPrecio(string $precio): void
+    {
+        $this-&gt;precio = $precio;
+    }
+
+    public function version(): int
+    {
+        return $this-&gt;version;
+    }
+}</code></pre>
+          </div>
+          <p>
+            Con dos <code>EntityManager</code> cargando el mismo producto, este es el SQL que registró Doctrine ORM 3.7 al hacer <code>flush()</code> en cada uno:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · log de Doctrine contra MySQL 8.4</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">UPDATE productos SET precio = ?, version = version + 1 WHERE id = ? AND version = ?
+SELECT version FROM productos WHERE id = ?
+UPDATE productos SET precio = ?, version = version + 1 WHERE id = ? AND version = ?</code></pre>
+          </div>
+          <p>
+            El primer <code>flush()</code> sube la versión y la relee para que la entidad quede al día. El segundo afecta a 0 filas y Doctrine lanza <code>OptimisticLockException</code> con el mensaje <em>The optimistic lock on an entity failed</em>; <code>getEntity()</code> te dice cuál. Ojo al detalle que más muerde: después de la excepción, <code>isOpen()</code> devuelve <code>false</code>. El <code>EntityManager</code> queda cerrado: su <a href="orm-transacciones-unit-of-work.html">unit of work</a> ya no sirve y reintentar exige uno nuevo.
+          </p>
+          <p>
+            También puedes comprobar la versión al leer, sin esperar al <code>flush()</code>, pasándole a <code>find()</code> la que trae el cliente:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · CambiarPrecio.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+use Doctrine\DBAL\LockMode;
+use Doctrine\ORM\EntityManagerInterface;
+
+final class CambiarPrecio
+{
+    public function __construct(private readonly EntityManagerInterface $entityManager)
+    {
+    }
+
+    public function __invoke(int $id, int $versionLeida, string $precio): int
+    {
+        $producto = $this-&gt;entityManager-&gt;find(Producto::class, $id, LockMode::OPTIMISTIC, $versionLeida)
+            ?? throw new ProductoNoEncontrado($id);
+
+        $producto-&gt;cambiarPrecio($precio);
+        $this-&gt;entityManager-&gt;flush();
+
+        return $producto-&gt;version();
+    }
+}</code></pre>
+          </div>
+          <p>
+            Si la versión no cuadra, <code>find()</code> lanza la misma excepción con un mensaje más útil: <em>The optimistic lock failed, version 2 was expected, but is actually 3</em>. Las dos comprobaciones se complementan: <code>find()</code> rechaza pronto lo que ya está viejo y el <code>flush()</code> cierra el hueco entre la lectura y la escritura.
+          </p>
+
+          <h2 id="eloquent">
+            Eloquent: hacerlo a mano
+            <a href="#eloquent" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Eloquent no trae columna de versión. Y <code>save()</code> no pregunta: si otro cambió la fila entre tu lectura y tu escritura, devuelve <code>true</code> igualmente y pisa su cambio. Lo comprobé con Laravel 13.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · antes: la última escritura gana</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$producto = Producto::findOrFail($id);
+$producto-&gt;precio = $precio;
+$producto-&gt;save();</code></pre>
+          </div>
+          <p>
+            La versión manual es el mismo <code>UPDATE</code> condicional a través del query builder. <code>increment()</code> genera el <code>version = version + 1</code> y devuelve las filas afectadas:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · después: escritura condicionada a la versión</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$filasAfectadas = Producto::query()
+    -&gt;whereKey($id)
+    -&gt;where('version', $versionLeida)
+    -&gt;increment('version', 1, ['precio' =&gt; $precio]);
+
+if ($filasAfectadas === 0) {
+    throw new VersionObsoleta($id, $versionLeida);
+}</code></pre>
+          </div>
+          <p>
+            El SQL que sale: <code>update `productos` set `version` = `version` + 1, `precio` = ? where `productos`.`id` = ? and `version` = ?</code>. El precio de hacerlo fuera de <code>save()</code> es que no se disparan los eventos del modelo; si dependes de ellos, encapsula esta escritura en un único método del repositorio y lanza ahí lo que necesites.
+          </p>
+
+          <h2 id="http">
+            La versión en HTTP: ETag e If-Match
+            <a href="#http" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La versión tiene que hacer el viaje completo: del servidor al cliente al leer y de vuelta al escribir. En un formulario HTML basta un campo oculto y responder 409 si no cuadra. En una API, HTTP ya tiene el mecanismo: el <code>GET</code> devuelve la versión en la cabecera <code>ETag</code>, el cliente la reenvía en <code>If-Match</code>, y si ya no coincide la respuesta es <strong>412 Precondition Failed</strong>. Si el cliente ni siquiera la manda, <strong>428 Precondition Required</strong> obliga a que la mande.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · ProductoController.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class ProductoController extends AbstractController
+{
+    #[Route('/api/productos/{id}', methods: ['PATCH'])]
+    public function cambiarPrecio(int $id, Request $request, CambiarPrecio $cambiarPrecio): JsonResponse
+    {
+        $ifMatch = $request-&gt;headers-&gt;get('If-Match');
+
+        if ($ifMatch === null) {
+            return new JsonResponse(null, Response::HTTP_PRECONDITION_REQUIRED);
+        }
+
+        try {
+            $nuevaVersion = $cambiarPrecio($id, (int) trim($ifMatch, '"'), $request-&gt;getPayload()-&gt;getString('precio'));
+        } catch (OptimisticLockException) {
+            return new JsonResponse(['error' =&gt; 'El producto ha cambiado desde que lo leíste'], Response::HTTP_PRECONDITION_FAILED);
+        }
+
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT, ['ETag' =&gt; sprintf('"%d"', $nuevaVersion)]);
+    }
+}</code></pre>
+          </div>
+          <p>
+            El <code>ETag</code> va entre comillas (<code>"3"</code>), y el éxito devuelve el nuevo para encadenar otra edición sin releer.
+          </p>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Recargar dentro de la misma transacción, en MySQL</p>
+              <p>
+                Con <code>REPEATABLE READ</code>, tras el <code>UPDATE</code> que afecta a 0 filas, un <code>SELECT</code> normal en la misma transacción me devolvió la versión 2: la foto de cuando empezó. El mismo <code>SELECT ... FOR SHARE</code> devolvió la 3. Si reintentas, hazlo en una transacción nueva o reintentarás eternamente con el dato viejo.
+              </p>
+            </div>
+          </div>
+          <ul>
+            <li><strong>La versión no viaja.</strong> Si el controlador carga la entidad al recibir el formulario y usa su propia versión, compara la fila consigo misma y nunca falla. La versión tiene que ser la que el usuario vio.</li>
+            <li><strong>Reintentar a ciegas una edición humana.</strong> Recargar y volver a escribir el 52,00 de Luis es exactamente la lost update, con un paso más.</li>
+            <li><strong>Escribir por detrás del ORM.</strong> Un <code>UPDATE</code> de DQL no toca la versión: lo ejecuté y siguió en 5. Lo mismo vale para SQL a mano, importaciones y comandos. Si escriben esa tabla, que incrementen la versión.</li>
+            <li><strong>No subir la versión en MySQL.</strong> MySQL cuenta filas cambiadas, no encontradas: un <code>UPDATE</code> con el mismo valor da <code>Rows matched: 1  Changed: 0</code> y 0 filas afectadas, donde Postgres responde <code>UPDATE 1</code>. Incrementar siempre la versión garantiza que la fila cambia.</li>
+            <li><strong>Seguir usando el <code>EntityManager</code> cerrado</strong> tras la excepción, en un worker o un comando largo.</li>
+          </ul>
+
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Dos terminales contra un contenedor desechable bastan para ver la espera y el 0:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · dos sesiones contra MySQL 8.4</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">docker run -d --rm --name bd-mysql -e MYSQL_ROOT_PASSWORD=x mysql:8.4
+docker exec -it bd-mysql mysql -uroot -px</code></pre>
+          </div>
+          <p>
+            Crea una base de datos con la tabla de arriba, abre otra sesión igual en una segunda terminal y sigue este orden:
+          </p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Terminal A</b><small>START TRANSACTION; UPDATE ... WHERE id = 1 AND version = 1;</small></span>
+              </div>
+              <div class="flow__arrow" data-label="sin confirmar"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Terminal B</b><small>El mismo UPDATE con version = 1: se queda esperando</small></span>
+              </div>
+              <div class="flow__arrow" data-label="COMMIT en A"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Terminal B</b><small>Query OK, 0 rows affected</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">El UPDATE de B espera al de A y, al despertar, ya no encuentra la versión 1.</p>
+          </div>
+          <p>
+            En el código, el test que lo atrapa es de integración: dos <code>EntityManager</code> cargan el mismo producto, el primero hace <code>flush()</code> y el test espera <code>OptimisticLockException</code> en el segundo. Si alguien quita el <code>#[ORM\Version]</code>, el test falla.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Optimista cuando…</h4>
+              <ul>
+                <li>La lectura y la escritura están en peticiones distintas: formularios, APIs, apps móviles</li>
+                <li>Los conflictos son raros: cada usuario suele editar cosas distintas</li>
+                <li>Ante un conflicto, una persona puede decidir</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Pesimista cuando…</h4>
+              <ul>
+                <li>Muchas escrituras compiten por las mismas filas y los reintentos se dispararían</li>
+                <li>Todo ocurre dentro de una transacción corta del servidor</li>
+                <li>Repetir el trabajo es caro: cálculos largos o llamadas externas</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La alternativa: que no haga falta ninguno</p>
+              <p>
+                Si la escritura se expresa entera en una sentencia, no necesitas leer antes: <code>UPDATE stock SET unidades = unidades - 1 WHERE id = 1 AND unidades &gt; 0</code> afecta a 1 fila mientras queda stock y a 0 cuando se acaba. Es la misma idea condicional, sin versión. Y si el problema es que una operación llegue dos veces, lo que buscas es <a href="idempotencia.html">idempotencia</a>, no un bloqueo; los locks entre servicios están en <a href="sd-locks-distribuidos.html">locks distribuidos</a>.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El bloqueo optimista protege el hueco entre peticiones, donde ninguna transacción llega: <code>UPDATE ... SET version = version + 1 WHERE id = ? AND version = ?</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>0 filas afectadas es el conflicto. En Postgres con <code>REPEATABLE READ</code> llega como error 40001.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Reintenta lo que se calcula solo, fusiona lo que no se pisa y devuelve 409 o 412 cuando decidió una persona.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Doctrine lo hace con <code>#[ORM\Version]</code> y lanza <code>OptimisticLockException</code>, cerrando el <code>EntityManager</code>. En Eloquent, <code>increment()</code> condicionado y comprobar las filas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En una API, la versión viaja como <code>ETag</code> y vuelve en <code>If-Match</code>.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
