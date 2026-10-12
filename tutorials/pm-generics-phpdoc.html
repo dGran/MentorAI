@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Generics con PHPDoc — MentorAI</title>
+    <meta name="description" content="Generics en PHP sin soporte del lenguaje: @template, colecciones tipadas, class-string, list y array shapes, @extends y covarianza, comprobados por PHPStan y Psalm." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>PHP</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Generics con PHPDoc</h1>
+        <p class="tutorial-hero__lead">Tu repositorio devuelve <code>object</code>, tu colección devuelve <code>array</code> y el IDE deja de autocompletar justo donde más falta hace. PHP no tiene generics, pero PHPStan y Psalm sí: viven en los comentarios y convierten «un array de algo» en un tipo que la máquina comprueba.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            26 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">Un array de qué</a></li>
+            <li><a href="#template">@template: el tipo como parámetro</a></li>
+            <li><a href="#coleccion">Una Collection&lt;T&gt; de verdad</a></li>
+            <li><a href="#class-string">class-string&lt;T&gt; en fábricas y repositorios</a></li>
+            <li><a href="#arrays">list&lt;T&gt; y array shapes</a></li>
+            <li><a href="#herencia">@extends e @implements</a></li>
+            <li><a href="#varianza">@template-covariant</a></li>
+            <li><a href="#runtime">Lo que el runtime ignora</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Un generic es un tipo con un hueco: «colección de <em>algo</em>», donde ese algo se decide al usarla. PHP no tiene sintaxis para ese hueco, así que PHPStan y Psalm la inventaron en PHPDoc. El resultado es raro de leer al principio, pero cierra la última gran zona ciega del análisis estático.
+          </p>
+
+          <h2 id="problema">
+            Un array de qué
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En <a href="pm-tipado-estricto.html">tipado estricto</a> viste que PHP comprueba en cada llamada los tipos que declaras. Esa comprobación tiene un límite: <code>array</code>, <code>iterable</code> y <code>object</code> no dicen qué llevan dentro. Una función que devuelve <code>array</code> puede devolver usuarios, strings o una mezcla, y para el motor es igual de correcta.
+          </p>
+          <p>
+            ¿Por qué no añadir <code>Collection&lt;User&gt;</code> al lenguaje? Porque PHP comprueba los tipos <strong>en ejecución</strong>. Un generic real obligaría a cada instancia a recordar su <code>T</code> y a validar cada elemento que entra; con arrays grandes y tipos anidados, ese coste se paga en cada llamada. La alternativa de Java, borrar los tipos al compilar, dejaría una sintaxis que el motor no comprueba. Y eso, en PHP, ya existe: son los docblocks.
+          </p>
+          <p>
+            Hoy <code>class Collection&lt;T&gt;</code> es un error de sintaxis. Lo que sí tienes es un analizador, <a href="pm-phpstan.html">PHPStan</a> o Psalm, que lee etiquetas como <code>@template</code> y razona con ellas antes de que el código se ejecute.
+          </p>
+
+          <h2 id="template">
+            @template: el tipo como parámetro
+            <a href="#template" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <code>@template T</code> declara una variable de tipo. Luego la usas donde iría un tipo normal: <code>@param T</code>, <code>@return T</code>. El analizador deduce <code>T</code> en cada llamada a partir de los argumentos.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · firstOf.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+/**
+ * @template T
+ * @param list&lt;T&gt; $items
+ * @return T|null
+ */
+function firstOf(array $items): mixed
+{
+    return $items[0] ?? null;
+}
+
+$name = firstOf(['Ana', 'Bruno']);
+$price = firstOf([9.95, 12.5]);
+
+\PHPStan\dumpType($name);
+\PHPStan\dumpType($price);</code></pre>
+          </div>
+          <p>
+            <code>\PHPStan\dumpType()</code> pide al analizador el tipo que ha deducido. Responde <code>'Ana'|'Bruno'|null</code> y <code>9.95|12.5|null</code>: afina hasta los literales, pero lo que importa es que ya no es <code>mixed</code>.
+          </p>
+          <p>
+            La firma nativa sigue diciendo <code>mixed</code>, que es lo único que PHP sabe expresar. El docblock añade la relación entre entrada y salida: lo que sale es del mismo tipo que lo que entró. Esa relación es justo lo que <code>mixed</code> pierde.
+          </p>
+          <p>
+            <code>@template T of Animal</code> pone un límite superior: <code>T</code> puede ser <code>Animal</code> o cualquier subtipo, y dentro de la función puedes llamar a los métodos de <code>Animal</code>.
+          </p>
+
+          <h2 id="coleccion">
+            Una Collection&lt;T&gt; de verdad
+            <a href="#coleccion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Si <code>@template</code> va en la clase, <code>T</code> vale para todos sus métodos. Este es el caso de uso estrella: una colección que sabe qué contiene, sin escribir <code>UserCollection</code>, <code>OrderCollection</code> y veinte clases idénticas más.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Collection.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+/**
+ * @template T
+ * @implements IteratorAggregate&lt;int, T&gt;
+ */
+class Collection implements IteratorAggregate
+{
+    /** @param list&lt;T&gt; $items */
+    public function __construct(private array $items = [])
+    {
+    }
+
+    /** @param T $item */
+    public function add(mixed $item): void
+    {
+        $this-&gt;items[] = $item;
+    }
+
+    /** @return T|null */
+    public function first(): mixed
+    {
+        return $this-&gt;items[0] ?? null;
+    }
+
+    /**
+     * @template R
+     * @param callable(T): R $transform
+     * @return Collection&lt;R&gt;
+     */
+    public function map(callable $transform): Collection
+    {
+        return new Collection(array_map($transform, $this-&gt;items));
+    }
+
+    /** @return ArrayIterator&lt;int, T&gt; */
+    public function getIterator(): ArrayIterator
+    {
+        return new ArrayIterator($this-&gt;items);
+    }
+}
+
+final class User
+{
+    public function __construct(public readonly string $email)
+    {
+    }
+}
+
+$users = new Collection([new User('ana@example.com')]);
+$emails = $users-&gt;map(fn (User $user): string =&gt; $user-&gt;email);
+
+$users-&gt;add('bruno@example.com');
+
+echo count(iterator_to_array($users)), PHP_EOL;</code></pre>
+          </div>
+          <p>
+            PHPStan deduce <code>Collection&lt;User&gt;</code> del constructor, sin anotar nada en la llamada, y a partir de ahí todo encaja: el <code>foreach</code> da <code>User</code>, <code>first()</code> da <code>User|null</code> y <code>map()</code> introduce su propio <code>R</code> de método, así que el resultado es <code>Collection&lt;string&gt;</code>. El <code>add()</code> con un string es lo que el analizador marca:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · salida de PHPStan</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">$ vendor/bin/phpstan analyse src/Collection.php
+  Line   Collection.php
+  55     Parameter #1 $item of method Collection&lt;User&gt;::add() expects User,
+         string given.</code></pre>
+          </div>
+          <p>
+            Fíjate en <code>@implements IteratorAggregate&lt;int, T&gt;</code>. Para los analizadores, <code>IteratorAggregate</code> es una interfaz genérica con dos parámetros, clave y valor, y hay que decir con qué tipos la implementas; si lo omites, PHPStan lo marca con <code>missingType.generics</code>.
+          </p>
+
+          <h2 id="class-string">
+            class-string&lt;T&gt; en fábricas y repositorios
+            <a href="#class-string" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Contenedores, fábricas y <code>EntityManager::getRepository()</code> reciben un nombre de clase y devuelven una instancia. Con <code>class-string&lt;T&gt;</code>, el analizador lee el <code>T</code> del propio <code>Mailer::class</code>:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Container.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class Container
+{
+    /** @var array&lt;class-string, object&gt; */
+    private array $services = [];
+
+    /**
+     * @template T of object
+     * @param class-string&lt;T&gt; $id
+     * @return T
+     */
+    public function get(string $id): object
+    {
+        $service = $this-&gt;services[$id] ??= new $id();
+
+        if (!$service instanceof $id) {
+            throw new LogicException("Servicio mal registrado: {$id}");
+        }
+
+        return $service;
+    }
+}
+
+final class Mailer
+{
+    public function send(string $to): bool
+    {
+        return true;
+    }
+}
+
+$mailer = (new Container())-&gt;get(Mailer::class);
+
+\PHPStan\dumpType($mailer);</code></pre>
+          </div>
+          <p>
+            Antes de esto, cada <code>$container-&gt;get(Mailer::class)</code> necesitaba un <code>/** @var Mailer $mailer */</code> encima, una afirmación que nadie verifica. Ahora el tipo sale de la firma. Si te suena el patrón, es el que viste en <a href="inyeccion-dependencias.html">inyección de dependencias</a>; el <code>instanceof</code> sigue ahí porque el docblock no protege en ejecución.
+          </p>
+
+          <h2 id="arrays">
+            list&lt;T&gt; y array shapes
+            <a href="#arrays" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Los arrays de PHP son a la vez listas y diccionarios, y los analizadores distinguen los dos usos:
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Tipo</th><th>Qué promete</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>array&lt;string, int&gt;</code></td><td>Claves string, valores int, en cualquier orden.</td></tr>
+                <tr><td><code>list&lt;User&gt;</code></td><td>Claves <code>0, 1, 2…</code> consecutivas, sin huecos.</td></tr>
+                <tr><td><code>non-empty-list&lt;User&gt;</code></td><td>Lo mismo, con al menos un elemento.</td></tr>
+                <tr><td><code>array{id: int, email: string, nickname?: string}</code></td><td>Claves fijas con su tipo; <code>?</code> marca las opcionales.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            <code>list</code> importa más de lo que parece. <code>array_filter</code> conserva las claves, así que su resultado ya no es una lista, y <code>json_encode</code> lo serializaría como objeto en vez de array. PHPStan lo ve:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · listas y shapes</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+/** @param list&lt;int&gt; $ids */
+function loadUsers(array $ids): void
+{
+}
+
+/** @param list&lt;int&gt; $ids */
+function loadActive(array $ids): void
+{
+    loadUsers(array_filter($ids, fn (int $id): bool =&gt; $id &gt; 0));
+    loadUsers(array_values(array_filter($ids, fn (int $id): bool =&gt; $id &gt; 0)));
+}
+
+/** @return array{id: int, email: string, nickname?: string} */
+function userRow(): array
+{
+    return ['id' =&gt; 7, 'email' =&gt; 'ana@example.com'];
+}
+
+$row = userRow();
+echo $row['emial'];</code></pre>
+          </div>
+          <p>
+            Las <em>array shapes</em> documentan las filas que vienen de la base de datos o de un JSON. El analizador avisa si lees <code>$row['emial']</code> y también si lees una clave opcional sin comprobarla. Cuando la shape pasa de cuatro o cinco claves, o viaja entre capas, es señal de que pide un objeto con propiedades <code>readonly</code>, como los de <a href="pm-enums-e-inmutabilidad.html">enums e inmutabilidad</a>.
+          </p>
+
+          <h2 id="herencia">
+            @extends e @implements
+            <a href="#herencia" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Al heredar de una clase genérica tienes que decir qué vale su <code>T</code>. Es como llamar a un constructor: si no pasas el argumento, el analizador lo trata como <code>mixed</code> y toda la información se pierde por el camino.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · UserCollection.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+/** @extends Collection&lt;User&gt; */
+final class UserCollection extends Collection
+{
+    /** @return list&lt;string&gt; */
+    public function emails(): array
+    {
+        $emails = [];
+
+        foreach ($this as $user) {
+            $emails[] = $user-&gt;email;
+        }
+
+        return $emails;
+    }
+}
+
+/** @template T of object */
+interface Repository
+{
+    /** @return T|null */
+    public function find(int $id): ?object;
+}
+
+/** @implements Repository&lt;User&gt; */
+final class UserRepository implements Repository
+{
+    public function find(int $id): ?User
+    {
+        return null;
+    }
+}</code></pre>
+          </div>
+          <p>
+            Desde el nivel 6, PHPStan exige ese dato y da <code>missingType.generics</code> en la clase que no lo pone: «extends generic class Collection but does not specify its types: T». Lo mismo con <code>@implements</code> al implementar una interfaz genérica, como el <code>Repository</code> de cada entidad.
+          </p>
+
+          <h2 id="varianza">
+            @template-covariant
+            <a href="#varianza" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un perro es un animal. ¿Un refugio de perros es un refugio de animales? Parece que sí, hasta que alguien mete un gato:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Shelter.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+interface Animal
+{
+    public function name(): string;
+}
+
+final class Dog implements Animal
+{
+    public function name(): string
+    {
+        return 'Rex';
+    }
+}
+
+final class Cat implements Animal
+{
+    public function name(): string
+    {
+        return 'Misi';
+    }
+}
+
+/** @template T of Animal */
+final class Shelter
+{
+    /** @var list&lt;T&gt; */
+    private array $animals = [];
+
+    /** @param T $animal */
+    public function admit(Animal $animal): void
+    {
+        $this-&gt;animals[] = $animal;
+    }
+
+    public function count(): int
+    {
+        return count($this-&gt;animals);
+    }
+}
+
+/** @template-covariant T of Animal */
+final class Adoptions
+{
+    /** @param list&lt;T&gt; $animals */
+    public function __construct(private readonly array $animals)
+    {
+    }
+
+    /** @return list&lt;T&gt; */
+    public function all(): array
+    {
+        return $this-&gt;animals;
+    }
+}
+
+/** @param Shelter&lt;Animal&gt; $shelter */
+function admitCat(Shelter $shelter): void
+{
+    $shelter-&gt;admit(new Cat());
+}
+
+/** @param Adoptions&lt;Animal&gt; $adoptions */
+function printNames(Adoptions $adoptions): void
+{
+    foreach ($adoptions-&gt;all() as $animal) {
+        echo $animal-&gt;name(), PHP_EOL;
+    }
+}
+
+/** @var Shelter&lt;Dog&gt; $dogs */
+$dogs = new Shelter();
+admitCat($dogs);
+
+printNames(new Adoptions([new Dog()]));</code></pre>
+          </div>
+          <p>
+            Por defecto, <code>T</code> es <strong>invariante</strong>: <code>Shelter&lt;Dog&gt;</code> y <code>Shelter&lt;Animal&gt;</code> son tipos sin relación, y PHPStan rechaza la llamada. Es lo correcto, porque <code>admit()</code> acepta un <code>T</code> y eso permite colar cualquier animal.
+          </p>
+          <p>
+            Si la clase solo <em>devuelve</em> <code>T</code> y nunca lo recibe después de construirse, el problema desaparece. Eso es <code>@template-covariant</code>: con <code>Adoptions</code>, inmutable, pasar <code>Adoptions&lt;Dog&gt;</code> donde se pide <code>Adoptions&lt;Animal&gt;</code> es válido. Y si declaras covariante una clase con un <code>add(T)</code>, PHPStan da <code>generics.variance</code>: «declared as covariant, but occurs in contravariant position». Las colecciones inmutables pueden ser covariantes; las mutables, no.
+          </p>
+
+          <h2 id="runtime">
+            Lo que el runtime ignora
+            <a href="#runtime" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Todo lo anterior son comentarios. Ejecuta la colección con el <code>add('bruno@example.com')</code> dentro y PHP la llena sin protestar: dos elementos, uno de ellos un string. El fallo aparecería más tarde y lejos, en el primer sitio con un tipo nativo, como una closure que pide <code>User</code>. La garantía la da el análisis en CI, no el motor.
+          </p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Lo entienden IDE y analizador</h4>
+              <ul>
+                <li><code>@template</code>, <code>of</code>, covarianza</li>
+                <li><code>list</code>, <code>class-string</code>, shapes</li>
+                <li><code>@extends</code> e <code>@implements</code></li>
+                <li>Autocompletado tras <code>foreach</code> y <code>first()</code></li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Lo ignora PHP al ejecutar</h4>
+              <ul>
+                <li>Todo docblock: no valida ni lanza <code>TypeError</code></li>
+                <li>Solo comprueba la firma nativa: <code>mixed</code>, <code>array</code></li>
+                <li>Reflection solo lo ve como texto en <code>getDocComment()</code></li>
+              </ul>
+            </div>
+          </div>
+          <p>
+            Por eso la firma nativa importa: un <code>@param T</code> con <code>mixed</code> debajo no protege a quien llama sin analizador. Pon el tipo nativo más estrecho que puedas y deja al docblock lo que PHP no sabe decir.
+          </p>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que se cuela al anotar</p>
+              <ul>
+                <li><strong>El <code>@var</code> encima de cada llamada.</strong> Es una afirmación sin comprobar. Si el tipo debería salir de la firma, el arreglo es un <code>@template</code> o un <code>class-string&lt;T&gt;</code> en el método.</li>
+                <li><strong>Heredar sin <code>@extends</code>.</strong> La subclase compila, pero sus elementos pasan a ser <code>mixed</code> y el analizador deja de ayudar donde más se usan.</li>
+                <li><strong>Covarianza en una clase mutable.</strong> Si la hay, PHPStan la rechaza; no la silencies, porque es exactamente el gato en el refugio de perros.</li>
+                <li><strong>Docblock y firma nativa en desacuerdo.</strong> <code>@return T|null</code> sobre <code>?object</code> sin <code>T of object</code> da <code>return.phpDocType</code>: el docblock no puede prometer más de lo que permite la firma.</li>
+                <li><strong>Creer que <code>array_filter</code> devuelve una lista.</strong> Conserva las claves; envuélvelo en <code>array_values</code>.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cuando no sepas qué ha deducido el analizador, pregúntale. <code>\PHPStan\dumpType()</code> imprime el tipo como un error más del informe. Solo existe para el analizador: si el código se ejecuta con la llamada dentro, falla con «Call to undefined function», así que la quitas antes de hacer commit. En Psalm, el equivalente es la anotación <code>/** @psalm-trace $variable */</code>.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · preguntar al analizador</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">$ vendor/bin/phpstan analyse --level 6 src/
+  Line   Container.php
+  37     Dumped type: Mailer
+  Line   LooseCollection.php
+  5      Class LooseCollection extends generic class Collection but does not
+         specify its types: T</code></pre>
+          </div>
+          <p>
+            Psalm entiende las mismas etiquetas. Si alguna construcción solo la entiende una de las dos herramientas, o confunde a tu IDE, usa los prefijos <code>@phpstan-template</code>, <code>@phpstan-param</code> o <code>@psalm-return</code>: cada analizador da prioridad a su versión con prefijo sobre la etiqueta sin él. Para que el pipeline exija todo esto en cada push, el sitio es el de <a href="ci-para-php.html">CI para PHP</a>.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Generics en PHPDoc cuando…</h4>
+              <ul>
+                <li>Escribes colecciones, repositorios base o contenedores reutilizables</li>
+                <li>Un método devuelve algo que depende de un argumento, como <code>class-string&lt;T&gt;</code></li>
+                <li>El proyecto corre PHPStan en nivel 6 o más</li>
+                <li>Las filas de base de datos o JSON viajan como arrays</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No compensa cuando…</h4>
+              <ul>
+                <li>No hay analizador en el proyecto: nadie comprobará las etiquetas</li>
+                <li>Solo hay un tipo concreto: <code>list&lt;User&gt;</code> basta, sin <code>@template</code></li>
+                <li>La shape crece y se reutiliza: pide una clase</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La alternativa sencilla</p>
+              <p>
+                Si solo tienes dos o tres colecciones, una clase concreta con firmas nativas (<code>add(User $user)</code>) da la misma seguridad y además la comprueba PHP en ejecución. El generic se gana su sitio cuando el mismo código sirve para muchos tipos.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>PHP no tiene generics porque comprueba tipos en ejecución; PHPStan y Psalm los simulan en PHPDoc y los comprueban antes de ejecutar.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>@template T</code> declara el hueco y <code>@param T</code> / <code>@return T</code> conectan entrada y salida.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>class-string&lt;T&gt;</code> saca el tipo del nombre de clase: adiós al <code>@var</code> en cada <code>get()</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>list&lt;T&gt;</code> y las array shapes describen lo que <code>array</code> calla; <code>array_filter</code> rompe las listas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Al heredar, <code>@extends</code> e <code>@implements</code> fijan el <code>T</code>; desde el nivel 6 PHPStan lo exige.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>T</code> es invariante por defecto; <code>@template-covariant</code> solo en clases que no reciben <code>T</code>, es decir, inmutables.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El runtime ignora los docblocks: la firma nativa sigue siendo tu única garantía sin analizador.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

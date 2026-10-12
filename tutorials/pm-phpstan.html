@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PHPStan: niveles y por qué un baseline no es un arreglo — MentorAI</title>
+    <meta name="description" content="Análisis estático con PHPStan 2.x: qué encuentra que los tests no, los niveles del 0 al 10 y cómo subirlos de uno en uno, phpstan.neon, el baseline como deuda congelada que solo puede encoger, ignorar por identificador y las extensiones de Symfony y Doctrine." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>PHP</span>
+        </nav>
+        <h1 class="tutorial-hero__title">PHPStan: niveles y por qué un baseline no es un arreglo</h1>
+        <p class="tutorial-hero__lead">Tus tests pasan en verde y producción lanza un <code>TypeError</code> en una rama que nadie ejecutó. PHPStan lee todas las ramas sin ejecutar ninguna. Esta lección va de adoptarlo en un proyecto con historia sin parar al equipo, y de no confundir silenciar errores con arreglarlos.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            25 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">Lo que los tests no ejecutan</a></li>
+            <li><a href="#que-encuentra">Qué encuentra PHPStan</a></li>
+            <li><a href="#niveles">Los niveles, de uno en uno</a></li>
+            <li><a href="#configuracion">phpstan.neon</a></li>
+            <li><a href="#baseline">El baseline: adoptarlo sin parar</a></li>
+            <li><a href="#no-es-arreglo">Por qué no es un arreglo</a></li>
+            <li><a href="#ignorar">Ignorar por identificador</a></li>
+            <li><a href="#extensiones">Extensiones de framework</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Un test demuestra que un camino concreto funciona con unos datos concretos. El análisis estático demuestra algo distinto: que ningún camino del código viola los tipos que tú mismo declaraste. No sustituye a los tests; cubre justo el hueco que ellos dejan.
+          </p>
+          <h2 id="problema">
+            Lo que los tests no ejecutan
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            PHP comprueba los tipos <strong>cuando la línea se ejecuta</strong>. Con <code>declare(strict_types=1)</code>, que viste en <a href="pm-tipado-estricto.html">tipado estricto</a>, pasar <code>null</code> a un parámetro <code>string</code> lanza un <code>TypeError</code>, pero solo si esa línea llega a correr con ese valor. Si la rama es rara, un abono, una factura sin email o un error de red, tus tests probablemente no la recorren y el fallo espera a producción.
+          </p>
+          <p>
+            Un analizador estático no ejecuta nada. Lee el código, deduce el tipo de cada expresión en cada rama y te avisa cuando dos piezas no encajan. Es lo más parecido a un compilador que tiene PHP, y por eso pide algo a cambio: tipos declarados. Cuanto mejor tipado está el código, más ve.
+          </p>
+
+          <h2 id="que-encuentra">
+            Qué encuentra PHPStan
+            <a href="#que-encuentra" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Este servicio tiene dos fallos. <code>Invoice::customerEmail()</code> devuelve <code>?string</code>, porque hay clientes sin email, y el método de los abonos tiene una errata. Un test con una factura normal y un email pasa en verde:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · ReminderSender.php (antes)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class ReminderSender
+{
+    public function recipientFor(Invoice $invoice): string
+    {
+        return strtolower($invoice-&gt;customerEmail());
+    }
+
+    public function amountFor(Invoice $invoice): string
+    {
+        if ($invoice-&gt;totalInCents() &lt; 0) {
+            return number_format($invoice-&gt;totalInCent() / 100, 2);
+        }
+
+        return number_format($invoice-&gt;totalInCents() / 100, 2);
+    }
+}</code></pre>
+          </div>
+          <p>PHPStan los encuentra sin que exista un solo test:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · vendor/bin/phpstan analyse (nivel 8)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code> ------ -------------------------------------------------------------
+  Line   ReminderSender.php
+ ------ -------------------------------------------------------------
+  9      Parameter #1 $string of function strtolower expects string,
+         string|null given.
+         🪪  argument.type
+  15     Call to an undefined method Invoice::totalInCent().
+         🪪  method.notFound
+ ------ -------------------------------------------------------------
+
+ [ERROR] Found 2 errors</code></pre>
+          </div>
+          <p>
+            Fíjate en la última línea de cada error: <code>argument.type</code> y <code>method.notFound</code> son sus <strong>identificadores</strong>. Volverán cuando toque ignorar algo. La corrección no es un cast ni un <code>@var</code> que tape el <code>null</code>: es decidir qué pasa cuando no hay email.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · ReminderSender.php (después)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class ReminderSender
+{
+    public function recipientFor(Invoice $invoice): ?string
+    {
+        $email = $invoice-&gt;customerEmail();
+
+        if ($email === null) {
+            return null;
+        }
+
+        return strtolower($email);
+    }
+
+    public function amountFor(Invoice $invoice): string
+    {
+        return number_format($invoice-&gt;totalInCents() / 100, 2);
+    }
+}</code></pre>
+          </div>
+          <p>
+            Ahora quien llama a <code>recipientFor()</code> recibe un <code>?string</code> y PHPStan le obligará a tratar el <code>null</code> también. El problema sube hasta quien puede decidir.
+          </p>
+
+          <h2 id="niveles">
+            Los niveles, de uno en uno
+            <a href="#niveles" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            PHPStan 2.x tiene niveles del 0 al 10, y cada uno incluye todos los anteriores. Existen porque un proyecto con años de historia en el nivel máximo devuelve miles de errores, y nadie arregla miles de errores un martes.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Nivel</th><th>Qué añade</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>0</code></td><td>Clases y funciones desconocidas, métodos desconocidos sobre <code>$this</code>, número de argumentos</td></tr>
+                <tr><td><code>1</code></td><td>Variables que quizá no están definidas, métodos y propiedades mágicos</td></tr>
+                <tr><td><code>2</code></td><td>Métodos desconocidos sobre cualquier expresión, no solo <code>$this</code>; PHPDoc válido</td></tr>
+                <tr><td><code>3</code>–<code>4</code></td><td>Tipos de retorno y de propiedades; código muerto y comparaciones siempre ciertas o falsas</td></tr>
+                <tr><td><code>5</code></td><td>Tipos de los argumentos que pasas a funciones y métodos</td></tr>
+                <tr><td><code>6</code></td><td>Tipos que faltan en firmas y propiedades</td></tr>
+                <tr><td><code>7</code></td><td>Uniones parcialmente incorrectas</td></tr>
+                <tr><td><code>8</code></td><td>Nulos: llamar o pasar algo que puede ser <code>null</code></td></tr>
+                <tr><td><code>9</code>–<code>10</code></td><td><code>mixed</code> explícito (9) y también el implícito, lo que no tiene tipo declarado (10)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            El ejemplo anterior lo demuestra: con nivel 1 PHPStan no ve la errata, porque no se llama sobre <code>$this</code>; con nivel 2 la ve, y el <code>null</code> no aparece hasta el 8. La estrategia es <strong>empezar en el nivel más alto que ya pasa limpio, y subir de uno en uno</strong>. Cada salto se pide en un PR propio, el pipeline impide volver atrás, y el nivel 6 suele ser el que más trabajo da, porque pide tipar lo que nunca se tipó. Para los arrays, eso pasa por los tipos en PHPDoc de <a href="pm-generics-phpdoc.html">generics vía PHPDoc</a>.
+          </p>
+
+          <h2 id="configuracion">
+            phpstan.neon
+            <a href="#configuracion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El nivel y las rutas viven en un fichero versionado, no en la línea de comandos: así tu máquina, la de tu compañera y el CI analizan lo mismo. El formato es NEON, muy parecido a YAML.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">neon · phpstan.neon</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="yaml">includes:
+    - phpstan-baseline.neon
+
+parameters:
+    level: 6
+    paths:
+        - src
+        - tests</code></pre>
+          </div>
+          <p>
+            <code>paths</code> dice qué se analiza; los tests también son código y también se rompen. <code>includes</code> carga otros ficheros de configuración: el baseline, que veremos ahora, y las extensiones. Con eso, <code>vendor/bin/phpstan analyse</code> sin argumentos basta. Cómo encaja ese comando en el pipeline ya lo cuenta <a href="ci-para-php.html">CI para PHP</a>.
+          </p>
+
+          <h2 id="baseline">
+            El baseline: adoptarlo sin parar
+            <a href="#baseline" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Subir al nivel 6 en un proyecto heredado da 1.400 errores. Hay dos malas salidas: quedarse en el nivel 2 para siempre, o congelar el desarrollo un mes. El <strong>baseline</strong> es la tercera: un fichero que registra los errores que existen hoy para que PHPStan los ignore, y que solo los nuevos rompan el CI.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · generar el baseline</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">vendor/bin/phpstan analyse --generate-baseline</code></pre>
+          </div>
+          <p>Crea <code>phpstan-baseline.neon</code>, con una entrada por error, archivo y número de apariciones:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">neon · phpstan-baseline.neon</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="yaml">parameters:
+	ignoreErrors:
+		-
+			message: '#^Call to an undefined method Invoice\:\:totalInCent\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/ReminderSender.php</code></pre>
+          </div>
+          <p>
+            Desde ese momento el código nuevo se escribe al nivel 6 y el viejo se arregla cuando se toca. El equipo no se para.
+          </p>
+
+          <h2 id="no-es-arreglo">
+            Por qué no es un arreglo
+            <a href="#no-es-arreglo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cada línea del baseline es un fallo potencial que sigue en el código. El baseline no lo resuelve: lo <strong>congela</strong>. Es deuda con nombre y apellidos, y la deuda que no baja crece. Por eso PHPStan trae dos mecanismos que convierten el baseline en un trinquete, que solo gira hacia abajo:
+          </p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Arreglas un error congelado</b><small>la entrada del baseline ya no coincide con nada</small></span>
+              </div>
+              <div class="flow__arrow" data-label="reportUnmatchedIgnoredErrors"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>PHPStan falla: ignore.unmatched</b><small>te obliga a borrar esa entrada</small></span>
+              </div>
+              <div class="flow__arrow" data-label="count"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Si repites el mismo error en ese archivo</b><small>falla con ignore.count: el contador no admite uno más</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">El baseline solo puede encoger. Las dos comprobaciones no se pueden ignorar.</p>
+          </div>
+          <p>
+            <code>reportUnmatchedIgnoredErrors</code> viene activado por defecto. Apagarlo para que el CI deje de quejarse es lo que convierte el baseline en un cementerio: entradas obsoletas que nadie borra y que mañana taparán un error nuevo que coincida por casualidad.
+          </p>
+          <p>
+            La regla de equipo cabe en una frase: <strong>en un PR, el diff del baseline solo puede tener líneas rojas</strong>. Regenerarlo para que pase un error nuevo es escribir en el fichero de deuda sin que nadie lo decida.
+          </p>
+
+          <h2 id="ignorar">
+            Ignorar por identificador
+            <a href="#ignorar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            A veces PHPStan tiene razón en general y no en un caso concreto. Ignorarlo es legítimo, pero hay dos formas, y una envejece mal:
+          </p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Por identificador</h4>
+              <ul>
+                <li><code>identifier: argument.type</code> más una <code>path</code></li>
+                <li>No depende del texto del mensaje</li>
+                <li>Renombrar una clase no lo rompe</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Por mensaje</h4>
+              <ul>
+                <li>Una expresión regular sobre el texto</li>
+                <li>Cambia si cambia el nombre de una clase o el mensaje</li>
+                <li>Una regex amplia tapa errores que no pensabas tapar</li>
+              </ul>
+            </div>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">neon · phpstan.neon</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="yaml">parameters:
+    ignoreErrors:
+        -
+            identifier: argument.type
+            path: src/Legacy/*</code></pre>
+          </div>
+          <p>Para una sola línea, el comentario en el propio código, con el identificador y el motivo entre paréntesis:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · ignorar una línea</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class LegacyFormatter
+{
+    public function lower(?string $value): string
+    {
+        // @phpstan-ignore argument.type (el formulario garantiza que nunca llega null)
+        return strtolower($value);
+    }
+}</code></pre>
+          </div>
+          <p>
+            Si un día esa línea deja de dar el error, PHPStan avisa con <code>ignore.unmatchedIdentifier</code>: el comentario tampoco se queda huérfano.
+          </p>
+
+          <h2 id="extensiones">
+            Extensiones de framework
+            <a href="#extensiones" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            PHPStan lee código PHP, no la configuración de tu framework. No sabe qué servicio devuelve el contenedor de Symfony ni qué tipo tiene una columna de Doctrine, así que ahí ve <code>mixed</code> o se queja de cosas correctas. Las extensiones le enseñan esa magia:
+          </p>
+          <ul>
+            <li><strong><code>phpstan/phpstan-symfony</code></strong> lee el contenedor compilado (<code>containerXmlPath</code>) y avisa si pides un servicio que no existe o es privado.</li>
+            <li><strong><code>phpstan/phpstan-doctrine</code></strong> compara el mapeo de cada columna con el tipo de la propiedad y, con un <code>objectManagerLoader</code>, valida el DQL y deduce el tipo de sus resultados.</li>
+            <li>Para Laravel existe Larastan, que cumple el mismo papel con Eloquent y las facades.</li>
+          </ul>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">neon · phpstan.neon</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="yaml">includes:
+    - vendor/phpstan/phpstan-symfony/extension.neon
+    - vendor/phpstan/phpstan-doctrine/extension.neon
+    - phpstan-baseline.neon
+
+parameters:
+    level: 6
+    paths:
+        - src
+        - tests
+    symfony:
+        containerXmlPath: var/cache/dev/App_KernelDevDebugContainer.xml</code></pre>
+          </div>
+          <p>
+            Si instalas <code>phpstan/extension-installer</code>, esos <code>includes</code> se añaden solos al instalar cada extensión con <a href="composer.html">Composer</a>.
+          </p>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Silenciar en lugar de arreglar</p>
+              <ul>
+                <li><strong>Regenerar el baseline en cada PR.</strong> Cualquier error nuevo entra congelado y el análisis deja de proteger nada.</li>
+                <li><strong>Un <code>@var</code> o un cast para callar un <code>null</code>.</strong> El error sigue ahí; solo has mentido al analizador.</li>
+                <li><strong><code>@phpstan-ignore-next-line</code> sin identificador.</strong> Calla cualquier error de esa línea, también los que aparezcan mañana.</li>
+                <li><strong>Saltar del nivel 2 al máximo.</strong> Miles de errores, un baseline enorme y la sensación de que no sirve.</li>
+                <li><strong>Analizar solo <code>src</code>.</strong> Los tests mal tipados ocultan fallos en los propios tests.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Antes de subir de nivel, mide cuánto cuesta sin tocar la configuración: <code>--level</code> en la línea de comandos manda sobre el fichero. Y vigila el tamaño del baseline como una métrica de deuda:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · medir antes de decidir</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">vendor/bin/phpstan analyse --level=7
+
+grep -c 'identifier:' phpstan-baseline.neon</code></pre>
+          </div>
+          <p>
+            Si ese número no baja de un mes a otro, el baseline ha dejado de ser un plan y se ha convertido en una alfombra.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>PHPStan en CI cuando…</h4>
+              <ul>
+                <li>El proyecto va a vivir más de unos meses o lo toca más de una persona</li>
+                <li>Vas a refactorizar o a migrar con <a href="pm-rector.html">Rector</a>: el análisis te dice qué rompiste</li>
+                <li>Heredas código sin tests: es la red más barata que puedes tender</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>El baseline no cuando…</h4>
+              <ul>
+                <li>El proyecto es nuevo: empieza en el nivel alto, sin deuda que congelar</li>
+                <li>Solo quedan unas decenas de errores: arréglalos en un PR</li>
+                <li>Nadie va a revisar que encoja: entonces solo esconde</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La alternativa sin baseline</p>
+              <p>
+                En un proyecto mediano, fija el nivel que ya pasa y sube uno cada sprint arreglando lo que salga. Va más lento, pero no deja un fichero de deuda que mantener. El estilo del código, en cambio, no es cosa de PHPStan: eso lo resuelve <a href="pm-estilo-automatico.html">el estilo automático</a>.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El análisis estático revisa todas las ramas sin ejecutarlas; los tests solo las que recorren. Se complementan.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los niveles van del 0 al 10 y se suben de uno en uno, cada salto en su PR; el CI impide volver atrás.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>phpstan.neon</code> fija nivel, rutas e includes para que todos analicen lo mismo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El baseline congela la deuda para adoptar PHPStan sin parar; no la arregla, y su diff en un PR solo puede restar.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>No apagues <code>reportUnmatchedIgnoredErrors</code>: es lo que obliga a que el baseline encoja.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Ignora por identificador y con motivo, nunca por mensaje ni con un ignore genérico.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

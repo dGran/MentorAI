@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Enums e inmutabilidad a fondo — MentorAI</title>
+    <meta name="description" content="Backed enums con from y tryFrom, métodos e interfaces, match exhaustivo y persistencia; readonly, el método with que clona y comparar value objects por valor." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>PHP</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Enums e inmutabilidad a fondo</h1>
+        <p class="tutorial-hero__lead">El enum de tres casos y la clase readonly ya los conoces. Lo difícil empieza cuando el estado llega mal escrito desde la base de datos, cuando añades un caso nuevo y cuando quieres cambiar un objeto que no se puede cambiar.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            26 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">Donde acaba la versión básica</a></li>
+            <li><a href="#backed">Backed enums: from frente a tryFrom</a></li>
+            <li><a href="#comportamiento">Métodos, constantes e interfaces</a></li>
+            <li><a href="#match">match exhaustivo, sin default</a></li>
+            <li><a href="#persistir">Persistir un enum: columna y mapeo</a></li>
+            <li><a href="#readonly">readonly a fondo</a></li>
+            <li><a href="#with">El método with que clona</a></li>
+            <li><a href="#igualdad">Comparar por valor</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+<p class="lead">
+            Un enum que solo sustituye a tres constantes es la mitad del trabajo. La otra mitad es decidir qué pasa cuando llega un valor que no existe, quién sabe las reglas de cada caso y cómo cambia un objeto que no puede cambiar. Ahí es donde el código moderno se separa del que solo lo parece.
+          </p>
+          <h2 id="problema">
+            Donde acaba la versión básica
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En <a href="tipos-de-clases-php.html">Tipos de clases en PHP</a> viste qué es un <code>enum</code>, que puede tener métodos y que una clase <code>readonly</code> sirve para un value object como <code>Dinero</code>. Esta lección empieza justo ahí.
+          </p>
+          <p>
+            El estado de un pedido llega como texto de la base de datos, de un formulario o de una API ajena. Si lo tratas como <code>string</code>, un <code>'pendng'</code> con una errata viaja por cinco capas y falla lejos de donde entró. La idea de fondo es <strong>convertir en la frontera</strong>: el texto se vuelve enum al entrar y vuelve a texto al salir. Dentro, solo circulan tipos que no admiten valores imposibles.
+          </p>
+          <h2 id="backed">
+            Backed enums: from frente a tryFrom
+            <a href="#backed" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un <em>backed enum</em> asocia a cada caso un valor escalar, <code>string</code> o <code>int</code>, que es lo que se guarda y se envía. Para convertir ese valor en caso hay dos métodos, y la diferencia entre ellos es una decisión de diseño, no de estilo:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · OrderStatus.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+enum OrderStatus: string
+{
+    case Pending = 'pending';
+    case Paid = 'paid';
+    case Shipped = 'shipped';
+    case Cancelled = 'cancelled';
+}
+
+$fromDatabase = OrderStatus::from('paid');
+
+$input = 'pendng';
+$fromRequest = OrderStatus::tryFrom($input);
+
+if ($fromRequest === null) {
+    echo "Estado desconocido: {$input}\n";
+}
+
+$allowedValues = array_map(fn (OrderStatus $status) =&gt; $status-&gt;value, OrderStatus::cases());
+
+echo implode(', ', $allowedValues), "\n";</code></pre>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Método</th><th>Si el valor no existe</th><th>Úsalo cuando</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>from()</code></td><td>Lanza <code>ValueError</code></td><td>El valor <em>tiene</em> que ser válido: viene de tu propia base de datos. Si no lo es, hay un bug y quieres enterarte.</td></tr>
+                <tr><td><code>tryFrom()</code></td><td>Devuelve <code>null</code></td><td>El valor puede ser inválido de forma legítima: entrada del usuario o de un tercero. Lo tratas como error de validación.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            <code>cases()</code> devuelve todos los casos en el orden en que se declaran. Úsalo para el desplegable o el mensaje de error con los valores admitidos: si añades un caso, se actualizan solos. Con <code>strict_types</code> activo (lo tienes en <a href="pm-tipado-estricto.html">Tipado estricto</a>), <code>from(1)</code> sobre un enum de <code>string</code> es un <code>TypeError</code>, no una conversión silenciosa.
+          </p>
+          <h2 id="comportamiento">
+            Métodos, constantes e interfaces
+            <a href="#comportamiento" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un enum no puede tener propiedades, pero sí métodos, métodos estáticos, constantes e interfaces. Eso basta para que las reglas de cada estado vivan junto al estado, en vez de repartidas en <code>if</code> por los servicios:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · OrderStatus.php (con comportamiento)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+interface HasLabel
+{
+    public function label(): string;
+}
+
+enum OrderStatus: string implements HasLabel
+{
+    case Pending = 'pending';
+    case Paid = 'paid';
+    case Shipped = 'shipped';
+    case Cancelled = 'cancelled';
+
+    public const INITIAL = self::Pending;
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::Pending =&gt; 'Pendiente de pago',
+            self::Paid =&gt; 'Pagado',
+            self::Shipped =&gt; 'Enviado',
+            self::Cancelled =&gt; 'Cancelado',
+        };
+    }
+
+    public function canTransitionTo(self $next): bool
+    {
+        return in_array($next, $this-&gt;allowedTransitions(), true);
+    }
+
+    /** @return list&lt;self&gt; */
+    private function allowedTransitions(): array
+    {
+        return match ($this) {
+            self::Pending =&gt; [self::Paid, self::Cancelled],
+            self::Paid =&gt; [self::Shipped, self::Cancelled],
+            self::Shipped, self::Cancelled =&gt; [],
+        };
+    }
+}
+
+var_dump(OrderStatus::INITIAL-&gt;canTransitionTo(OrderStatus::Shipped));</code></pre>
+          </div>
+          <p>
+            La constante <code>INITIAL</code> da nombre propio al estado inicial. La interfaz <code>HasLabel</code> deja que una vista pinte cualquier enum etiquetable sin conocerlo. Y la máquina de estados cabe en un método privado que se lee de un vistazo.
+          </p>
+          <h2 id="match">
+            match exhaustivo, sin default
+            <a href="#match" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Los dos <code>match</code> de arriba no tienen rama <code>default</code>, y es a propósito. Si mañana alguien añade <code>case Refunded</code>, un <code>match</code> que no lo cubre lanza <code>UnhandledMatchError</code> en cuanto llega ese caso, en vez de devolver una etiqueta equivocada sin avisar. Un <code>default</code> se tragaría el caso nuevo para siempre.
+          </p>
+          <p>
+            Esperar a que falle en producción no es el plan: el análisis estático lo detecta antes. PHPStan, a partir del nivel 4, informa de cada <code>match</code> sobre un enum que deja casos sin cubrir. Esto es lo que dice tras añadir <code>case Refunded</code> al enum de arriba:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · salida de PHPStan 2.x</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">vendor/bin/phpstan analyse src --level=4
+
+ ------ ---------------------------------------------------
+  Line   OrderStatus.php
+ ------ ---------------------------------------------------
+  22     Match expression does not handle remaining value:
+         OrderStatus::Refunded
+         🪪  match.unhandled
+  38     Match expression does not handle remaining value:
+         OrderStatus::Refunded
+         🪪  match.unhandled
+ ------ ---------------------------------------------------
+
+ [ERROR] Found 2 errors</code></pre>
+          </div>
+          <p>
+            Añadir un caso se convierte en una lista de tareas que te da la herramienta. Cómo subir de nivel sin ahogarte en errores lo verás en <a href="pm-phpstan.html">PHPStan a fondo</a>.
+          </p>
+          <h2 id="persistir">
+            Persistir un enum: columna y mapeo
+            <a href="#persistir" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Lo que se guarda es el <code>value</code>, nunca el <code>name</code>. El nombre del caso es código y lo renombrarás algún día; el valor es un contrato con la base de datos y con quien consuma tu API. Por eso <code>json_encode()</code> de un backed enum emite su valor, y por eso un enum sin valor no se puede serializar a JSON.
+          </p>
+          <p>
+            Para la columna, un <code>VARCHAR</code> corto es la opción menos frágil. El <code>ENUM</code> nativo de MySQL obliga a un <code>ALTER TABLE</code> por cada caso nuevo; si quieres que la base de datos también rechace valores, un <code>CHECK</code> se cambia igual de fácil y es estándar.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · migración</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">ALTER TABLE orders
+    ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'pending';</code></pre>
+          </div>
+          <p>
+            Los dos ORM habituales convierten en la frontera por ti. En Doctrine, la columna declara el enum con <code>enumType</code> y la entidad recibe el caso, no el texto. En Laravel, un <em>cast</em> hace lo mismo con Eloquent:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Doctrine y Laravel</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">#[ORM\Column(type: 'string', length: 20, enumType: OrderStatus::class)]
+private OrderStatus $status = OrderStatus::Pending;
+
+protected function casts(): array
+{
+    return [
+        'status' =&gt; OrderStatus::class,
+    ];
+}</code></pre>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Un dato desconocido en la base de datos es un bug</p>
+            <p>Ambos mapeos usan <code>from()</code>: si una fila trae <code>'refunded'</code> antes de desplegar ese caso, la carga falla con <code>ValueError</code>. Es lo correcto, y obliga a desplegar primero el código y después los datos.</p>
+            </div>
+          </div>
+          <h2 id="readonly">
+            readonly a fondo
+            <a href="#readonly" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una propiedad <code>readonly</code> se asigna una sola vez, desde el ámbito de la clase, y después cualquier escritura lanza <code>Error</code>. Lleva siempre tipo y no admite valor por defecto. Una clase <code>readonly</code> (PHP 8.2) solo ahorra repetir la palabra en cada propiedad.
+          </p>
+          <p>
+            Lo que <code>readonly</code> congela es la <strong>referencia</strong>, no lo que hay detrás. Un array <code>readonly</code> no admite <code>$bag-&gt;items[] = 2</code>, pero si la propiedad guarda un objeto mutable, como un <code>DateTime</code> o un <code>ArrayObject</code>, ese objeto sigue cambiando por dentro. Solo es inmutable de verdad si todo lo que contiene lo es: <code>DateTimeImmutable</code>, otros value objects, escalares.
+          </p>
+          <h2 id="with">
+            El método with que clona
+            <a href="#with" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un objeto inmutable no cambia: produce otro, con un método <code>withX()</code> que devuelve una copia con un campo distinto. La versión intuitiva, clonar y reasignar, choca con <code>readonly</code>:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Money.php (no funciona)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final readonly class Money
+{
+    public function __construct(
+        public int $amount,
+        public string $currency,
+    ) {
+    }
+
+    public function withAmount(int $amount): self
+    {
+        $copy = clone $this;
+        $copy-&gt;amount = $amount;
+
+        return $copy;
+    }
+}
+
+(new Money(100, 'EUR'))-&gt;withAmount(250);</code></pre>
+          </div>
+          <p>
+            Falla con <code>Cannot modify readonly property Money::$amount</code>: la copia ya nace con la propiedad inicializada. Hay tres salidas, cada una con su letra pequeña:
+          </p>
+          <ul>
+            <li><strong>Construir uno nuevo</strong>: <code>return new self($amount, $this-&gt;currency);</code>. Funciona en cualquier versión y pasa otra vez por el constructor, así que la validación se repite. Es la opción por defecto.</li>
+            <li><strong>Reinicializar en <code>__clone()</code></strong>: desde PHP 8.3, una propiedad <code>readonly</code> se puede reasignar dentro de <code>__clone()</code>. Sirve para la copia profunda de un objeto interno, pero <code>__clone()</code> no recibe argumentos, así que no resuelve el <code>with</code>.</li>
+            <li><strong>Clonar con propiedades</strong>: PHP 8.5 acepta <code>clone($this, ['amount' =&gt; $amount])</code>, que modifica la copia mientras se crea. Ojo: <strong>no llama al constructor</strong>, así que la validación que vivía allí no se ejecuta.</li>
+          </ul>
+          <h2 id="igualdad">
+            Comparar por valor
+            <a href="#igualdad" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Dos value objects con los mismos datos son el mismo valor, aunque sean instancias distintas. <code>===</code> compara identidad, así que dos <code>Money(100, 'EUR')</code> recién creados no son idénticos. <code>==</code> compara clase y propiedades, pero con comparación débil:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · ProductCode.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final readonly class ProductCode
+{
+    public function __construct(public string $value)
+    {
+    }
+
+    public function equals(self $other): bool
+    {
+        return $this-&gt;value === $other-&gt;value;
+    }
+}
+
+$first = new ProductCode('1e1');
+$second = new ProductCode('10');
+
+var_dump($first == $second);
+var_dump($first-&gt;equals($second));</code></pre>
+          </div>
+          <p>
+            El primer <code>var_dump</code> dice <code>true</code>: con <code>==</code>, dos strings numéricos se comparan como números. Un método <code>equals()</code> explícito decide qué significa «igual» para ese valor (mayúsculas, normalización, moneda). Los enums no lo necesitan: cada caso es una instancia única y <code>===</code> basta.
+          </p>
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que se cuela en las revisiones</p>
+            <ul>
+              <li><strong><code>from()</code> con entrada del usuario.</strong> Un valor raro en la petición acaba en un 500 en vez de en un 422.</li>
+              <li><strong>Guardar el <code>name</code>.</strong> Renombrar <code>Paid</code> a <code>Settled</code> rompe todas las filas existentes.</li>
+              <li><strong><code>default</code> en un <code>match</code> sobre enum.</strong> El caso nuevo cae en la rama genérica y nadie se entera.</li>
+              <li><strong><code>readonly</code> sobre un objeto mutable.</strong> Un <code>DateTime</code> dentro de un value object «inmutable» se puede seguir modificando.</li>
+              <li><strong>Validar solo en el constructor y usar <code>clone</code> con propiedades.</strong> La copia se salta la validación.</li>
+              <li><strong>Comparar value objects con <code>==</code>.</strong> Funciona en los tests con datos limpios y falla con los raros.</li>
+            </ul>
+            </div>
+          </div>
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <strong>PHPStan en nivel 4 o superior</strong> detecta los <code>match</code> incompletos y las escrituras sobre propiedades <code>readonly</code> fuera de la clase. <strong>Un test que recorre <code>cases()</code></strong> y llama a <code>label()</code> en cada caso falla en cuanto un caso nuevo no tiene etiqueta. Y <strong>un test de ida y vuelta</strong> que guarda y recarga una entidad por cada caso confirma que la columna y el mapeo aceptan todos los valores, incluido el último que añadiste.
+          </p>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Enum o value object cuando…</h4>
+              <ul>
+                <li>El conjunto de valores es cerrado y lo controla tu código: estados, tipos, canales</li>
+                <li>Cada valor arrastra reglas propias, como transiciones o etiquetas</li>
+                <li>Un dato con reglas viaja por varias capas: importes, emails, códigos</li>
+                <li>Quieres que un valor inválido no pueda ni construirse</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No compensa cuando…</h4>
+              <ul>
+                <li>Los valores los dan de alta usuarios o administradores: provincias, categorías del catálogo</li>
+                <li>El dato es un escalar sin reglas que solo se muestra</li>
+                <li>Es una entidad con identidad y ciclo de vida: eso no es un value object</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La alternativa sencilla</p>
+            <p>Si los valores cambian sin desplegar, una tabla de referencia con su clave foránea es mejor que un enum: añadir un caso no debería exigir un pull request. Y si un dato no tiene reglas, un <code>string</code> tipado basta hasta que aparezca la primera; ese es el momento de envolverlo, como propone <a href="object-calisthenics.html">Object Calisthenics</a>.</p>
+            </div>
+          </div>
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Convierte en la frontera: el texto se vuelve enum al entrar y vuelve a <code>value</code> al salir; dentro solo circulan casos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>from()</code> para datos que tienen que ser válidos, <code>tryFrom()</code> para entrada que puede no serlo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>match</code> sin <code>default</code> sobre un enum, y PHPStan nivel 4 para que un caso nuevo no pase desapercibido.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Persiste el <code>value</code> en un <code>VARCHAR</code>; el <code>name</code> es código y cambiará.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>readonly</code> congela la referencia; para un <code>with</code>, construye con <code>new self</code>, y si usas <code>clone</code> con propiedades (PHP 8.5) recuerda que no pasa por el constructor.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Compara value objects con un <code>equals()</code> explícito, no con <code>==</code>.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

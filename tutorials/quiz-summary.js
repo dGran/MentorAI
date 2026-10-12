@@ -130,5 +130,9 @@ window.MENTORAI_QUIZ_SUMMARY = {
   "seguridad-backend": {
     "total": 16,
     "passingScore": null
+  },
+  "php-moderno": {
+    "total": 16,
+    "passingScore": null
   }
 };
