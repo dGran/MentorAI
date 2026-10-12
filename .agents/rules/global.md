@@ -192,6 +192,11 @@ Backlog → In Progress → Code Review → QA → Ready for prod → Done
   `http://localhost:8000/`. El service worker y el offline solo funcionan por
   http; el resto también se comprueba abriendo `index.html` por `file://`, que es
   invariante. No hay API.
+- **Chrome headless en scripts propios** (QA, capturas, medir desbordes): el perfil se crea fuera de
+  `/tmp`, con `fs.mkdtempSync(path.join(os.homedir(), ".cache/mentorai-qa-tmp/cdp-"))`, y
+  `chrome.kill()` más `fs.rmSync(profile, { recursive: true, force: true })` van en un `finally`.
+  `/tmp` es un tmpfs con cuota por usuario: el 2026-10-11/12, 76 perfiles `cdp-*` sin borrar (~2,4 GB)
+  y 8 Chrome huérfanos de scripts que cortaban antes del `kill()` la agotaron, y Chrome y apport cayeron.
 - **Gate de calidad**: `node scripts/validar.js` y `node scripts/verificar-offline.js`
   (los mismos que corre CI en cada push y PR).
 - **Cómo se despliega**: GitHub Pages (build legacy desde `main`, raíz), automático
