@@ -58,7 +58,7 @@
         <div class="tutorial-meta">
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            14 min de lectura
+            13 min de lectura
           </span>
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -79,11 +79,13 @@
             <li><a href="#stdlib">Las interfaces de la stdlib</a></li>
             <li><a href="#type-assertion">Type assertion y type switch</a></li>
             <li><a href="#empty-interface">La interfaz vacía: any</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+                    <p class="lead">En PHP, el contrato se decide al escribir la clase: o pones <code>implements</code> o no hay contrato. En Go se decide al consumirlo, y eso cambia quién diseña la interfaz y cuántos métodos tiene. Es lo que hace testeable tu código sin contenedor de inyección ni librería de mocks.</p>
         <h2 id="que-es">
             Qué es una interfaz en Go
             <a href="#que-es" class="anchor" aria-hidden="true">#</a>
@@ -335,7 +337,20 @@ if esEmail {
 </code></pre>
           </div>
 
-        <h2 id="empty-interface">
+                  <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos</p>
+              <ul>
+                <li><strong>El <code>nil</code> que no es <code>nil</code>.</strong> Si una función con retorno <code>error</code> devuelve una variable <code>*MiError</code> que vale <code>nil</code>, la interfaz lleva tipo pero no valor, y <code>err != nil</code> es <code>true</code>. Devuelve el literal <code>nil</code>.</li>
+                <li><strong>Assertion sin <code>ok</code>.</strong> <code>n.(*EmailNotificador)</code> en su forma de un solo valor provoca un panic si el tipo concreto es otro. Usa la forma de dos valores o un type switch.</li>
+                <li><strong>Confundir valor y puntero.</strong> Si <code>Enviar</code> tiene receiver <code>*EmailNotificador</code>, pasar <code>EmailNotificador{}</code> donde se pide un <code>Notificador</code> no compila: hace falta <code>&amp;EmailNotificador{}</code>.</li>
+                <li><strong>Copiar la interfaz gorda de PHP.</strong> Una interfaz de doce métodos junto a su única implementación obliga a cada test a implementarlos todos.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="empty-interface">
             La interfaz vacía: any
             <a href="#empty-interface" class="anchor" aria-hidden="true">#</a>
           </h2>
@@ -361,7 +376,33 @@ imprimir([]string{"a", "b"})   // todo funciona
 
         <p><code>any</code> es el equivalente del tipado dinámico de PHP: flexible pero sin seguridad de tipos en tiempo de compilación. Úsala cuando genuinamente necesitas tratar valores de tipos arbitrarios (serialización, logging genérico). Si te encuentras usándola con frecuencia, suele indicar que el diseño con tipos concretos o interfaces específicas sería más robusto.</p>
 
-        <h2 id="resumen">
+                  <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Como la implementación es implícita, extraer una interfaz más tarde no cuesta nada: ningún tipo existente tiene que cambiar. Por eso en Go no se crean «por si acaso».</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Define una interfaz cuando…</h4>
+              <ul>
+                <li>Hay dos o más implementaciones reales, o una dependencia externa (BD, HTTP, reloj) que quieres sustituir en los tests</li>
+                <li>La declaras en el paquete que la consume, con los uno a tres métodos que de verdad llama</li>
+                <li>Puedes aceptar una de la stdlib: <code>io.Reader</code> en vez de <code>*os.File</code> sirve también para ficheros, peticiones HTTP y buffers</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Usa un tipo concreto cuando…</h4>
+              <ul>
+                <li>Solo hay una implementación: la interfaz por servicio de PHP (<code>UserRepositoryInterface</code>) aquí es ruido</li>
+                <li>Es lo que devuelve un constructor: «acepta interfaces, devuelve structs» deja al llamador elegir su abstracción</li>
+                <li>Te ves tirando de <code>any</code> para no decidir el tipo: con generics o tipos concretos conservas las comprobaciones del compilador</li>
+              </ul>
+            </div>
+          </div>
+          <p>Una buena señal: si para el mock de un test tienes que implementar diez métodos y solo usas dos, la interfaz está definida en el lado equivocado o es demasiado grande.</p>
+
+
+          <h2 id="resumen">
             Resumen
             <a href="#resumen" class="anchor" aria-hidden="true">#</a>
           </h2>

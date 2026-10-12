@@ -79,11 +79,13 @@
             <li><a href="#conversiones">Conversiones explícitas</a></li>
             <li><a href="#constantes">Constantes e iota</a></li>
             <li><a href="#strings">Strings en Go</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">En PHP, <code>"10" + 5</code> da 15 y un <code>null</code> se cuela hasta la base de datos sin que nadie lo note. Go corta las dos cosas en el compilador: cada valor tiene un tipo fijo y toda variable nace con un valor utilizable. Al principio parece burocracia; en la primera refactorización grande entiendes para qué sirve.</p>
         <h2 id="tipos-basicos">
             Tipos básicos
             <a href="#tipos-basicos" class="anchor" aria-hidden="true">#</a>
@@ -255,7 +257,19 @@ s3 := string(r)             // "ñ"
 </code></pre>
           </div>
 
-        <h2 id="constantes">
+        <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos con tipos y conversiones</p>
+              <ul>
+                <li><strong>Convertir un número a texto con <code>string(n)</code>.</strong> <code>string(65)</code> no da <code>"65"</code> sino <code>"A"</code>: interpreta el entero como un code point. Para texto usa <code>strconv.Itoa(n)</code> o <code>fmt.Sprint(n)</code>; <code>go vet</code> avisa de esta conversión.</li>
+                <li><strong>Esperar decimales de una división entera.</strong> En PHP <code>7 / 2</code> da <code>3.5</code>; en Go, con enteros, da <code>3</code> y el resto se pierde. Convierte antes de dividir: <code>float64(a) / float64(b)</code>.</li>
+                <li><strong>Sombrear una variable con <code>:=</code>.</strong> Dentro de un <code>if</code> o un <code>for</code>, <code>total := 10</code> no modifica el <code>total</code> de fuera: declara uno nuevo que muere al cerrar el bloque. Para reasignar, usa <code>=</code>.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="constantes">
             Constantes e iota
             <a href="#constantes" class="anchor" aria-hidden="true">#</a>
           </h2>
@@ -350,7 +364,20 @@ saludo := "Hola" + ", " + "mundo"
             </div>
           </div>
 
-        <h2 id="resumen">
+        <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Go te obliga a elegir tipo en cada declaración. Estos criterios te ahorran pensarlo cada vez:</p>
+          <ul>
+            <li><strong><code>:=</code> dentro de funciones siempre que haya valor inicial.</strong> <code>var x T</code> cuando quieres el zero value a propósito (<code>var total int</code> antes de un bucle) y a nivel de paquete, donde <code>:=</code> no existe.</li>
+            <li><strong><code>int</code> y <code>float64</code> por defecto.</strong> Tamaños fijos (<code>int32</code>, <code>uint8</code>…) solo cuando el formato lo impone: un protocolo binario, una API, una columna concreta. Y <code>uint</code> no sirve para decir «nunca es negativo»: restar <code>a - b</code> con <code>a &lt; b</code> da la vuelta a un número enorme, sin error.</li>
+            <li><strong>Dinero, nunca en <code>float64</code>.</strong> Guárdalo en céntimos en un <code>int64</code>, o usa un tipo decimal de una librería.</li>
+            <li><strong>Un tipo propio con <code>iota</code> para enumeraciones cerradas</strong> (estados, niveles). Si el valor se guarda en base de datos o viaja en JSON, dale valores explícitos: insertar una constante en medio de un bloque con <code>iota</code> renumera las siguientes y corrompe lo ya guardado.</li>
+            <li><strong>Puntero cuando el zero value es un valor válido</strong> y necesitas distinguir «no informado»: en un PATCH, <code>""</code> puede ser «bórralo» o «no lo toques». Ahí <code>*string</code> separa <code>nil</code> de vacío; en el resto de casos, el zero value basta.</li>
+          </ul>
+
+          <h2 id="resumen">
             Resumen
             <a href="#resumen" class="anchor" aria-hidden="true">#</a>
           </h2>

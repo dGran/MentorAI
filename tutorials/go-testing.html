@@ -58,7 +58,7 @@
         <div class="tutorial-meta">
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            13 min de lectura
+            11 min de lectura
           </span>
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -79,11 +79,13 @@
             <li><a href="#interfaces-test">Interfaces para tests: sin mocks</a></li>
             <li><a href="#httptest">httptest: tests de handlers HTTP</a></li>
             <li><a href="#benchmarks">Benchmarks</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">En PHP, testear empieza por instalar PHPUnit, configurarlo y elegir librería de mocks. En Go el runner, la cobertura, los benchmarks y el detector de races ya vienen con <code>go test</code>, así que la pregunta deja de ser con qué testear. Pasa a ser cómo diseñar el código para que se deje testear.</p>
         <h2 id="estructura">
             Estructura de un test
             <a href="#estructura" class="anchor" aria-hidden="true">#</a>
@@ -304,7 +306,20 @@ func TestListarProductos(t *testing.T) {
 </code></pre>
           </div>
 
-        <h2 id="benchmarks">
+        <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos al testear en Go</p>
+              <ul>
+                <li><strong>Llamar a <code>t.Fatal</code> desde otra goroutine.</strong> Solo puede llamarse desde la goroutine del test; en otra no para el test como esperas. Devuelve el error por un channel y comprueba en el test principal, o usa <code>t.Error</code>.</li>
+                <li><strong>Fiarse de un «ok» cacheado.</strong> <code>go test ./...</code> reutiliza resultados si el código del paquete no ha cambiado, y lo marca con <code>(cached)</code>. Si el test depende de algo externo (una base de datos, una API), fuerza la ejecución con <code>-count=1</code>.</li>
+                <li><strong>Fakes gigantes porque la interfaz es gigante.</strong> Si para testear tienes que implementar veinte métodos, la interfaz está mal cortada. Defínela en el paquete que la consume, con solo los métodos que usa.</li>
+                <li><strong>No pasar <code>-race</code> en CI.</strong> Los tests en paralelo y los handlers concurrentes esconden races que solo salen con el detector activado.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="benchmarks">
             Benchmarks
             <a href="#benchmarks" class="anchor" aria-hidden="true">#</a>
           </h2>
@@ -346,7 +361,19 @@ go test -bench=. -benchmem ./...
 
         <p><code>b.Loop()</code> (Go 1.24+) decide cuántas vueltas dar, mide solo el cuerpo del bucle (la preparación previa no cuenta) y evita que el compilador elimine lo que mides. El patrón clásico <code>for i := 0; i &lt; b.N; i++</code> sigue funcionando, pero tiene trampa: el compilador inlinea una función trivial como <code>Suma</code> y, como su resultado no se usa, la borra. El benchmark mide entonces un bucle vacío, y por eso salen cifras como 0.3 ns/op.</p>
 
-        <h2 id="resumen">
+        <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+<ul>
+            <li><strong>Table-driven tests</strong> cuando una función tiene varias entradas y salidas esperadas: validadores, parsers, cálculos. Si cada caso necesita una preparación distinta, escribe tests separados; meter <code>if</code> dentro de la tabla para distinguirlos es peor que repetir.</li>
+            <li><strong>Fakes con interfaces pequeñas</strong> cuando tu código depende de algo lento o externo: email, pagos, una API. Para la base de datos, un fake suele mentir; un test de integración contra una base real en Docker te da más confianza.</li>
+            <li><strong><code>httptest</code></strong> para los handlers: comprueba códigos, cabeceras y cuerpo sin abrir puertos. <code>httptest.NewServer</code> sirve además para simular la API externa a la que llama tu cliente.</li>
+            <li><strong>Benchmarks</strong> solo cuando hay una duda de rendimiento concreta y vas a comparar alternativas. No midas lo que nadie ha visto ir lento.</li>
+          </ul>
+          <p>Cuándo <strong>no</strong> conviene una librería como <code>testify</code>: si solo te ahorra un <code>if</code>. Puede compensar en suites grandes por legibilidad, pero empieza con <code>testing</code> a secas y añádela cuando la repetición duela.</p>
+
+          <h2 id="resumen">
             Resumen
             <a href="#resumen" class="anchor" aria-hidden="true">#</a>
           </h2>

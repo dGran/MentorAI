@@ -58,7 +58,7 @@
         <div class="tutorial-meta">
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            14 min de lectura
+            12 min de lectura
           </span>
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -79,11 +79,13 @@
             <li><a href="#range">Iterar con range</a></li>
             <li><a href="#maps">Maps</a></li>
             <li><a href="#maps-vs-php">Maps vs arrays PHP</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+                    <p class="lead">El array de PHP lo hace todo, así que nunca te preguntas qué hay debajo. En Go esa pregunta importa: un slice es una ventana sobre memoria que puede compartir con otro, y un <code>append</code> inocente puede pisar datos que creías aislados. Entender esa ventana separa el código que funciona del que funciona casi siempre.</p>
         <h2 id="array-vs-slice">
             Array vs slice
             <a href="#array-vs-slice" class="anchor" aria-hidden="true">#</a>
@@ -425,7 +427,35 @@ if !existe {
 
         <p>Cuando necesitas flexibilidad de tipos en Go, puedes usar <code>map[string]any</code> (<code>any</code> es el alias de <code>interface{}</code>), aunque suele indicar que hay un diseño mejor con structs tipados.</p>
 
-        <h2 id="resumen">
+                  <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El primer paso al traducir de PHP es decidir qué era cada array: una lista, un diccionario o un registro disfrazado.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Elige así…</h4>
+              <ul>
+                <li><strong>Slice</strong> para secuencias ordenadas de longitud variable: resultados de una consulta, líneas de un fichero, un buffer</li>
+                <li><code>make([]T, 0, n)</code> cuando conoces el tamaño final: evitas realojar el backing array en cada <code>append</code></li>
+                <li><strong>Map</strong> para buscar por clave, contar apariciones o hacer conjuntos con <code>map[string]struct{}</code></li>
+                <li><strong>Array</strong> solo cuando el tamaño es parte del contrato, como el <code>[32]byte</code> que devuelve <code>sha256.Sum256</code></li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Evita…</h4>
+              <ul>
+                <li>Un <code>map[string]any</code> para un registro con campos fijos (el <code>$usuario['nombre']</code> de PHP): usa un struct</li>
+                <li>Un map cuando necesitas orden: guarda las claves en un slice y ordénalo con <code>slices.Sort</code></li>
+                <li>Un map compartido entre goroutines que escriben, sin protegerlo con un <code>sync.Mutex</code></li>
+                <li>Devolver un subslice de un slice enorme y guardarlo: mantiene vivo en memoria el backing array entero</li>
+              </ul>
+            </div>
+          </div>
+          <p>Para colecciones pequeñas, recorrer un slice suele ser tan rápido como un map y conserva el orden. Pasa a un map cuando las búsquedas por clave se repitan sobre muchos elementos, no por costumbre.</p>
+
+
+          <h2 id="resumen">
             Resumen
             <a href="#resumen" class="anchor" aria-hidden="true">#</a>
           </h2>

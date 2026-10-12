@@ -84,19 +84,20 @@
             <li><a href="#fortalezas">Las fortalezas del lenguaje</a></li>
             <li><a href="#vs-php">Go vs PHP: dos modelos de ejecución</a></li>
             <li><a href="#proyectos">Para qué proyectos es ideal</a></li>
-            <li><a href="#cuando-no">Cuándo NO elegir Go</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#vs-rust">Go vs Rust: la pregunta inevitable</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">Tu API en PHP aguanta bien el CRUD, pero un día te piden un servicio que mantenga diez mil websockets abiertos, o un CLI que el equipo de sistemas instale sin tener PHP. Ahí PHP-FPM pelea contra su propio modelo de un proceso por petición. Esta lección va de reconocer ese momento antes de reescribir nada.</p>
         <h2 id="origen">
             De dónde viene Go
             <a href="#origen" class="anchor" aria-hidden="true">#</a>
           </h2>
         <p>Go lo crearon en Google en 2007 tres ingenieros que estaban hartos de esperar a que compilasen los programas en C++ y de la complejidad acumulada del lenguaje. Robert Griesemer, Rob Pike y Ken Thompson (el mismo que creó Unix y C) se pusieron un objetivo inusual: un lenguaje tan rápido de compilar que la compilación se note como instantánea, tan simple que la especificación completa quepa en una tarde de lectura, y con concurrencia de primera clase porque Google necesitaba gestionar millones de conexiones simultáneas.</p>
-        <p>Go 1.0 salió en 2012 con una promesa de compatibilidad: el código escrito para Go 1.0 compila con cualquier versión posterior. Esa promesa se ha mantenido. En 2024 ya va por la 1.23.</p>
+        <p>Go 1.0 salió en 2012 con una promesa de compatibilidad: el código escrito para Go 1.0 compila con cualquier versión posterior. Esa promesa se ha mantenido, con una versión nueva cada seis meses.</p>
 
         <h2 id="fortalezas">
             Las fortalezas del lenguaje
@@ -190,7 +191,7 @@ nombre = 42  // error: cannot use 42 (type int) as type string</code></pre>
           </div>
 
         <h3>Garbage collection con baja latencia</h3>
-        <p>Go tiene GC como PHP, pero el compilador de Go 1.5 en adelante lo tiene ajustado para pausas por debajo de 1 ms. No tienes que gestionar memoria manualmente, pero tampoco sufres las pausas de GC que afectan a lenguajes JVM en servicios de baja latencia.</p>
+        <p>Go tiene GC como PHP, pero desde Go 1.5 el runtime usa un GC concurrente, y desde 1.8 sus pausas suelen quedar por debajo de 1 ms. No tienes que gestionar memoria manualmente, pero tampoco sufres las pausas de GC que afectan a lenguajes JVM en servicios de baja latencia.</p>
 
         <h3>Especificación mínima y legibilidad forzada</h3>
         <p>Go tiene exactamente 25 palabras reservadas. La especificación completa tiene unas 100 páginas. No hay clases, no hay herencia, no hay excepciones, no hay sobrecarga de funciones, no hay anotaciones/decoradores. Lo que parece una limitación es una decisión: todo el código Go escrito por cualquier persona tiene el mismo estilo porque <code>gofmt</code> lo formatea automáticamente y el compilador rechaza código que no sigue ciertas convenciones (variables no usadas = error, imports no usados = error).</p>
@@ -226,7 +227,20 @@ nombre = 42  // error: cannot use 42 (type int) as type string</code></pre>
 
         <p>Ninguno de los dos modelos es mejor en absoluto. PHP-FPM es más sencillo de razonar (cada petición es un mundo aislado). Go es más eficiente cuando el coste de arranque del proceso o el número de conexiones simultáneas es un problema.</p>
 
-        <h2 id="proyectos">
+        <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos al llegar desde PHP</p>
+              <ul>
+                <li><strong>Guardar datos de la petición en variables de paquete.</strong> En PHP cada petición empieza con la memoria limpia; en Go el proceso es el mismo para todas, así que lo que dejes en una variable global lo ve la siguiente petición, y varias goroutines la pisan a la vez.</li>
+                <li><strong>Pensar que las goroutines son gratis también en corrección.</strong> Son baratas en memoria, pero escribir en un map o en un contador compartido sin <code>sync.Mutex</code> o channels es una condición de carrera. <code>go test -race</code> la detecta.</li>
+                <li><strong>Esperar a las goroutines con <code>time.Sleep</code></strong>, como en el ejemplo de arriba. Sirve para enseñar; en código real se usa <code>sync.WaitGroup</code> o channels, porque un sleep o se queda corto o desperdicia tiempo.</li>
+                <li><strong>Buscar el <code>try/catch</code>.</strong> Go no tiene excepciones: los errores son valores que la función devuelve y quien llama comprueba (<a href="go-errores.html">go-errores</a>).</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="proyectos">
             Para qué proyectos es ideal
             <a href="#proyectos" class="anchor" aria-hidden="true">#</a>
           </h2>
@@ -246,19 +260,33 @@ nombre = 42  // error: cannot use 42 (type int) as type string</code></pre>
             </div>
           </div>
 
-        <h2 id="cuando-no">
-            Cuándo NO elegir Go
-            <a href="#cuando-no" class="anchor" aria-hidden="true">#</a>
+        <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
           </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Elige Go cuando…</h4>
+              <ul>
+                <li><strong>El cuello de botella es la concurrencia</strong>: muchas conexiones abiertas a la vez (websockets, streaming, proxies) o varias llamadas a otros servicios en paralelo dentro de una misma petición.</li>
+                <li><strong>Tienes que distribuir un ejecutable</strong>: CLIs, agentes o workers que se instalan copiando un binario, sin runtime ni dependencias.</li>
+                <li><strong>El arranque por petición te pesa</strong>: quieres pools de conexiones, cachés en memoria o configuración cargada una sola vez y viva entre peticiones.</li>
+                <li><strong>Es un servicio acotado con contrato claro</strong>: un gateway, un servicio de notificaciones, un exportador de métricas que el resto de la plataforma consume.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No lo elijas cuando…</h4>
+              <ul>
+                <li><strong>El dominio vive de jerarquías de tipos ricas</strong>: Go no tiene herencia, y PHP o Java modelan esas jerarquías con menos fricción.</li>
+                <li><strong>Necesitas control máximo de memoria o latencia sub-milisegundo garantizada</strong>: Go tiene GC; para eso <a href="rust-que-es.html">Rust es la alternativa</a> (sin GC, sin runtime).</li>
+                <li><strong>Estás prototipando para explorar una idea</strong>: Go es explícito y verboso; Python o PHP te dejan tirar código y cambiarlo más rápido.</li>
+                <li><strong>Dependes de un ecosistema de nicho</strong>: machine learning (Python), móvil (Swift/Kotlin), juegos (C++).</li>
+              </ul>
+            </div>
+          </div>
+          <p>La alternativa por defecto sigue siendo PHP: si la aplicación es lógica de negocio sobre una base de datos, Laravel o Symfony te dan mucho más hecho. Y no reescribas un monolito entero en Go: extrae solo el servicio cuyo problema Go resuelve, mídelo y decide con datos.</p>
 
-        <ul>
-          <li><strong>Dominio con jerarquías de tipos ricas</strong> — Go no tiene herencia. Si tu modelo de negocio se beneficia de jerarquías OOP complejas, PHP o Java son más cómodos.</li>
-          <li><strong>Control máximo de memoria o latencia sub-microsegundo</strong> — Go tiene GC. Para sistemas embebidos, drivers o código donde cada byte importa, <a href="rust-que-es.html">Rust es la alternativa</a> (sin GC, sin runtime).</li>
-          <li><strong>Prototipado muy rápido</strong> — Go es explícito y verboso comparado con Python o PHP. Para explorar ideas rápido, lenguajes dinámicos ganan.</li>
-          <li><strong>Ecosistema de librerías muy específico</strong> — machine learning (Python), móvil (Swift/Kotlin), juegos (C++). Go no tiene el ecosistema de nicho que otros lenguajes llevan décadas construyendo.</li>
-        </ul>
-
-        <h2 id="vs-rust">
+          <h2 id="vs-rust">
             Go vs Rust: la pregunta inevitable
             <a href="#vs-rust" class="anchor" aria-hidden="true">#</a>
           </h2>

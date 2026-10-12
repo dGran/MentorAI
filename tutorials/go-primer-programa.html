@@ -87,11 +87,13 @@
             <li><a href="#fmt-vet">go fmt y go vet</a></li>
             <li><a href="#argumentos">Leer argumentos</a></li>
             <li><a href="#servidor">Un servidor HTTP en 10 líneas</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">Leer sobre un lenguaje no te dice dónde te va a morder; compilar tu primer programa, sí. En unos minutos vas a ver al compilador rechazar código que PHP habría ejecutado sin quejarse, y a entender por qué eso es una ventaja y no una molestia.</p>
         <h2 id="estructura">
             Estructura de un fichero Go
             <a href="#estructura" class="anchor" aria-hidden="true">#</a>
@@ -243,7 +245,19 @@ func main() {
 
         <p>El compilador da el fichero, la línea y el mensaje exacto. No hay que adivinar nada. Esta precisión es una de las razones por las que el código Go en equipos grandes sigue siendo manejable: los errores se detectan antes de ejecutar.</p>
 
-        <h2 id="fmt-vet">
+        <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos del primer programa</p>
+              <ul>
+                <li><strong>Poner la llave de apertura en la línea siguiente</strong>, como pide PSR-12 para clases y métodos. Go inserta un punto y coma al final de la línea de <code>func main()</code> y el compilador responde con un <code>syntax error</code>. La llave va siempre en la misma línea; <code>gofmt</code> no puede arreglarlo porque el código ni siquiera se analiza.</li>
+                <li><strong>Usar comillas simples para un texto.</strong> <code>'hola'</code> no es un string sino un rune (un solo carácter), y falla con <code>more than one character in rune literal</code>. Los strings van entre comillas dobles, o entre acentos graves (<code>`…`</code>) si son literales sin escapes.</li>
+                <li><strong>Seguir con <code>go run main.go</code> al partir el código en varios ficheros.</strong> Así solo se compila ese fichero y lo definido en los demás da <code>undefined</code>. Ejecuta el paquete entero: <code>go run .</code></li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="fmt-vet">
             go fmt y go vet
             <a href="#fmt-vet" class="anchor" aria-hidden="true">#</a>
           </h2>
@@ -261,7 +275,7 @@ func main() {
 go vet ./...        # detecta errores comunes que no son de compilación</code></pre>
           </div>
 
-        <p><code>go vet</code> detecta errores que el compilador no puede: llamadas a <code>Printf</code> con el tipo de argumento incorrecto, variables de bucle capturadas en goroutines incorrectamente, comparaciones con <code>nil</code> que nunca son verdad.</p>
+        <p><code>go vet</code> detecta errores que el compilador no puede: llamadas a <code>Printf</code> con el tipo de argumento incorrecto, structs con un <code>sync.Mutex</code> copiados por valor, comparaciones con <code>nil</code> que nunca son verdad.</p>
 
         <div class="code-block">
             <div class="code-block__head">
@@ -408,7 +422,20 @@ curl http://localhost:8080/api/usuarios
             </div>
           </div>
 
-        <h2 id="resumen">
+        <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Cada herramienta de esta lección tiene su momento, y confundirlos es lo que hace lento el principio:</p>
+          <ul>
+            <li><strong><code>go run .</code> para iterar.</strong> Compila en un directorio temporal y ejecuta. No sirve para desplegar ni para medir rendimiento: necesita el toolchain instalado y recompila lo que haya cambiado en cada ejecución.</li>
+            <li><strong><code>go build</code> para distribuir o desplegar</strong>, y <code>go build ./...</code> para comprobar de un vistazo que todo el módulo compila.</li>
+            <li><strong><code>go vet ./...</code> en CI, siempre</strong>, junto a los tests. Es barato y caza errores que compilan pero fallan, como un <code>Printf</code> con el verbo equivocado. <code>go test</code> ya ejecuta una parte de esos chequeos, no todos.</li>
+            <li><strong><code>os.Args</code> para uno o dos argumentos posicionales.</strong> En cuanto aparezcan opciones (<code>-v</code>, <code>-n 10</code>), pasa al paquete <code>flag</code> de la stdlib en lugar de parsearlas a mano.</li>
+            <li><strong><code>http.HandleFunc</code> sobre el mux global, solo para aprender</strong> o para un endpoint de salud. En un servicio real crea tu <code>http.NewServeMux()</code> y un <code>http.Server</code> con timeouts (<a href="go-http.html">go-http</a>): el mux global lo puede tocar cualquier paquete que importes, y <code>ListenAndServe</code> sin timeouts deja conexiones lentas ocupando recursos.</li>
+          </ul>
+
+          <h2 id="resumen">
             Resumen
             <a href="#resumen" class="anchor" aria-hidden="true">#</a>
           </h2>

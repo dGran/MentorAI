@@ -84,11 +84,13 @@
             <li><a href="#imports">Imports y alias</a></li>
             <li><a href="#dependencias">Gestionar dependencias</a></li>
             <li><a href="#internal">El directorio internal</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">En PHP, el namespace y el autoloader de Composer deciden dónde vive cada clase, y la visibilidad la marca cada método. Go traslada esas dos decisiones al paquete: qué ficheros van juntos y qué nombres ven los demás. Organizarlo bien desde el principio te ahorra el error que más frena a quien llega de PHP: los ciclos de importación.</p>
         <h2 id="paquetes">
             Qué es un paquete
             <a href="#paquetes" class="anchor" aria-hidden="true">#</a>
@@ -319,7 +321,20 @@ require (
 </code></pre>
           </div>
 
-        <h2 id="dependencias">
+        <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos al organizar paquetes</p>
+              <ul>
+                <li><strong>Importar por el nombre de la carpeta.</strong> <code>import "matematicas"</code> falla con <code>package matematicas is not in std</code>: Go busca en la stdlib. La ruta es siempre la del módulo que declara <code>go.mod</code> más la carpeta: <code>"mi-proyecto/matematicas"</code>.</li>
+                <li><strong>Crear ciclos de importación.</strong> En PHP el autoloader deja que A use B y B use A; Go lo rechaza con <code>import cycle not allowed</code>. Se resuelve moviendo lo común a un tercer paquete, o haciendo que uno dependa de una interfaz que define él mismo.</li>
+                <li><strong>Un paquete por clase.</strong> Trasladar la estructura de <code>src/</code> de PHP crea decenas de paquetes diminutos que se importan entre sí y acaban en ciclos. Agrupa por responsabilidad.</li>
+                <li><strong>Repetir el nombre del paquete en lo que exporta.</strong> <code>usuarios.UsuarioService</code> se lee «usuarios usuario service»; en Go es <code>usuarios.Service</code>. Y evita paquetes <code>utils</code> o <code>common</code>: no dicen qué contienen y acaban importados por todo.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="dependencias">
             Gestionar dependencias
             <a href="#dependencias" class="anchor" aria-hidden="true">#</a>
           </h2>
@@ -352,7 +367,7 @@ go mod download
         <div class="callout callout--tip">
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
             <div class="callout__body">
-              <p><code>go mod tidy</code> es el equivalente a <code>composer install</code> + <code>composer dump-autoload</code>. Ejecútalo antes de cada commit para que <code>go.mod</code> y <code>go.sum</code> estén sincronizados.</p>
+              <p><code>go mod tidy</code> no tiene equivalente exacto en Composer: añade a <code>go.mod</code> lo que importas y no estaba, quita lo que ya no usas y completa <code>go.sum</code>. Ejecútalo antes de cada commit para que <code>go.mod</code> y <code>go.sum</code> reflejen los imports reales.</p>
             </div>
           </div>
 
@@ -360,7 +375,7 @@ go mod download
             El directorio internal
             <a href="#internal" class="anchor" aria-hidden="true">#</a>
           </h2>
-        <p>Go tiene un mecanismo de encapsulamiento a nivel de módulo: el directorio <code>internal/</code>. La herramienta <code>go</code> impide importar paquetes de <code>internal/</code> desde fuera del módulo al que pertenecen. No es una convención: <code>go build</code> falla con <code>use of internal package … not allowed</code>.</p>
+        <p>Go tiene un mecanismo de encapsulamiento a nivel de módulo: el directorio <code>internal/</code>. La herramienta <code>go</code> impide importar un paquete de <code>internal/</code> desde fuera del árbol que cuelga de su directorio padre; si <code>internal/</code> está en la raíz, eso es el módulo entero. No es una convención: <code>go build</code> falla con <code>use of internal package … not allowed</code>.</p>
 
         <div class="code-block">
             <div class="code-block__head">
@@ -384,7 +399,20 @@ go mod download
 
         <p>La convención es: <code>internal/</code> para código privado del módulo; <code>pkg/</code> para código que quieres ofrecer a otros módulos.</p>
 
-        <h2 id="resumen">
+        <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La pregunta de diseño en Go no es «¿en qué clase va esto?» sino «¿en qué paquete?», y la respuesta por defecto es: en menos de los que crees.</p>
+          <ul>
+            <li><strong>Un paquete nuevo por responsabilidad con API propia</strong> que otros consumen (<code>internal/auth</code>, <code>internal/db</code>), no uno por tipo como harías con PSR-4. Un paquete puede tener diez ficheros y está bien.</li>
+            <li><strong>Exporta solo lo que otro paquete necesita llamar.</strong> Empieza en minúscula y súbelo cuando haga falta: añadir una exportación no rompe a nadie, quitarla rompe a quien la usaba.</li>
+            <li><strong><code>internal/</code> por defecto en una aplicación.</strong> <code>pkg/</code> solo si de verdad otros módulos van a importar ese código; en un servicio que nadie importa es una carpeta de más.</li>
+            <li><strong>Una dependencia externa cuando ahorra trabajo real</strong>: un driver de base de datos, el cliente de un servicio concreto. Para HTTP, JSON, logs estructurados (<code>log/slog</code>) o tests, la stdlib suele bastar, y cada <code>require</code> es código que tendrás que auditar y actualizar.</li>
+            <li><strong>Alias de import solo para resolver un choque de nombres</strong>, no por gusto: quien lee busca <code>gin.New</code>, no el apodo que le pusiste.</li>
+          </ul>
+
+          <h2 id="resumen">
             Resumen
             <a href="#resumen" class="anchor" aria-hidden="true">#</a>
           </h2>
@@ -408,11 +436,11 @@ go mod download
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span><code>go get</code> añade dependencias; <code>go mod tidy</code> las sincroniza. Equivale a <code>composer require</code> y <code>composer install</code>.</span>
+                <span><code>go get</code> añade dependencias, como <code>composer require</code>; <code>go mod tidy</code> deja <code>go.mod</code> y <code>go.sum</code> en línea con los imports reales.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>El directorio <code>internal/</code> es código privado del módulo: el compilador impide importarlo desde fuera.</span>
+                <span>El directorio <code>internal/</code> es código privado: la herramienta <code>go</code> impide importarlo desde fuera del árbol de su directorio padre.</span>
               </li>
             </ul>
           </div>

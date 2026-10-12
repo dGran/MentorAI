@@ -58,7 +58,7 @@
         <div class="tutorial-meta">
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            13 min de lectura
+            12 min de lectura
           </span>
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -79,11 +79,13 @@
             <li><a href="#value-vs-pointer">Value receiver vs pointer receiver</a></li>
             <li><a href="#constructores">El patrón constructor en Go</a></li>
             <li><a href="#structs-anidados">Structs anidados</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+                    <p class="lead">En PHP, lo primero al modelar algo es decidir qué clase crear. En Go la pregunta es otra: qué datos viajan juntos y quién tiene derecho a cambiarlos. Si eliges mal el receiver, el método compila, se ejecuta y no cambia nada: es el bug más desconcertante de las primeras semanas.</p>
         <h2 id="structs">
             Definir y crear structs
             <a href="#structs" class="anchor" aria-hidden="true">#</a>
@@ -315,7 +317,19 @@ fmt.Println(p.Precio)    // 269.99 (modificado)
           <li>Si un método de un tipo usa pointer receiver, lo habitual es que <em>todos</em> los métodos del tipo usen pointer receiver, para consistencia.</li>
         </ul>
 
-        <h2 id="constructores">
+                  <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos</p>
+              <ul>
+                <li><strong>El método que «no hace nada».</strong> Un value receiver que asigna campos modifica una copia que se descarta al volver. Si el método muta, el receiver es <code>*T</code>.</li>
+                <li><strong>Esperar que <code>b := a</code> comparta.</strong> En PHP, asignar un objeto comparte el mismo objeto; en Go copia el struct entero, y los cambios en <code>b</code> no llegan a <code>a</code>.</li>
+                <li><strong>Olvidar que el receiver decide qué interfaces cumple el tipo.</strong> Si <code>String()</code> tiene receiver <code>*Producto</code>, solo <code>*Producto</code> satisface <code>fmt.Stringer</code>: al imprimir un <code>Producto</code> por valor, <code>fmt</code> no usa tu método.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="constructores">
             El patrón constructor en Go
             <a href="#constructores" class="anchor" aria-hidden="true">#</a>
           </h2>
@@ -393,7 +407,35 @@ fmt.Println(c.Direccion.Ciudad)   // "Madrid"
 </code></pre>
           </div>
 
-        <h2 id="resumen">
+                  <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un struct es la herramienta por defecto para cualquier dato con forma fija. La decisión que de verdad tomas en cada tipo es otra: si sus métodos trabajan sobre una copia o sobre el original.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Struct con métodos cuando…</h4>
+              <ul>
+                <li>Los datos tienen sentido de dominio y viajan juntos: <code>Pedido</code>, <code>Cliente</code>, <code>Dinero</code></li>
+                <li>Hay invariantes que proteger: campos no exportados y un <code>NewTipo</code> que valida</li>
+                <li><strong>Pointer receiver</strong> si el método modifica, si el tipo lleva un <code>sync.Mutex</code> o si es grande</li>
+                <li><strong>Value receiver</strong> para tipos pequeños que se comportan como valores, al estilo de <code>time.Time</code></li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Otra cosa cuando…</h4>
+              <ul>
+                <li>La lógica no depende del estado: función de paquete, que en Go no hay métodos estáticos</li>
+                <li>Solo devuelves dos o tres valores: retorno múltiple, no un struct de usar y tirar</li>
+                <li>Es un contenedor de datos sin reglas: struct con campos exportados, sin getters ni setters</li>
+                <li>Necesitas polimorfismo: una interfaz, no más métodos en el struct</li>
+              </ul>
+            </div>
+          </div>
+          <p>Viniendo de PHP, la tentación es reproducir la clase entera: todo privado, un getter por campo y un constructor obligatorio. En Go solo merece la pena cuando hay una regla que proteger. Si no la hay, un struct con campos exportados y un literal con nombres de campo es más corto e igual de seguro.</p>
+
+
+          <h2 id="resumen">
             Resumen
             <a href="#resumen" class="anchor" aria-hidden="true">#</a>
           </h2>

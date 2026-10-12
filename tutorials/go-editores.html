@@ -86,11 +86,13 @@
             <li><a href="#gofmt">gofmt y goimports</a></li>
             <li><a href="#delve">Depurar con delve</a></li>
             <li><a href="#contenedor">Apuntar el editor al contenedor</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">Abres un proyecto Go con el editor recién instalado y todo sale en rojo: imports que «no existen», funciones sin autocompletar, aunque dentro del contenedor el código compila sin problema. Casi siempre es lo mismo: el editor no encuentra un Go con el que analizar tu código. Esta lección te deja un editor que entiende el proyecto y un depurador que para donde tú digas.</p>
         <h2 id="gopls">
             gopls: el corazón del tooling
             <a href="#gopls" class="anchor" aria-hidden="true">#</a>
@@ -293,7 +295,32 @@ sudo tar -C /usr/local -xzf go1.23.linux-amd64.tar.gz
 echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.zshrc</code></pre>
           </div>
 
-        <h2 id="resumen">
+        <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos al configurar el editor</p>
+              <ul>
+                <li><strong>Tener en el host una versión de Go distinta de la del contenedor.</strong> El editor marca errores que al compilar no existen, o al revés: no ve funciones de la stdlib que tu Go local aún no trae. Usa la misma versión que fija la imagen.</li>
+                <li><strong>Dejar las dependencias solo en el volumen del contenedor.</strong> El gopls del host busca los módulos en su propia caché (<code>go env GOMODCACHE</code>), no en el volumen de Docker, y marca los imports externos como no encontrados. Ejecuta <code>go mod download</code> también en el host.</li>
+                <li><strong>Esperar que el IDE se conecte a un <code>dlv debug</code> normal.</strong> Ese modo abre una consola interactiva; para depurar desde el editor contra el contenedor, delve tiene que arrancar con <code>--headless --listen=:2345</code> y ese puerto debe estar publicado en el compose.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Los tres montajes dan el mismo autocompletado porque todos hablan con gopls; lo que eliges es cuánta fricción aceptas y dónde.</p>
+          <ul>
+            <li><strong>GoLand</strong> si ya vives en PhpStorm y tienes licencia: cero configuración, los mismos atajos y depurador gráfico contra el contenedor.</li>
+            <li><strong>VS Code con la extensión Go</strong> si quieres algo gratuito o el equipo ya lo usa. Añade <strong>Dev Containers</strong> cuando quieras que el editor trabaje dentro del mismo contenedor que ejecuta el código, sin dos instalaciones de Go que mantener alineadas.</li>
+            <li><strong>Go en el host solo para el editor</strong> cuando quieres empezar hoy: es lo más sencillo, a cambio de actualizar a mano su versión cada vez que cambie la de la imagen.</li>
+            <li><strong>delve</strong> cuando el problema es de estado («¿qué vale esto justo aquí?») y los logs no bastan. Para un fallo que sabes reproducir, un test que lo demuestre suele llegar antes, y además se queda.</li>
+          </ul>
+          <p>Lo que no se elige es el formato: <code>gofmt</code> (o <code>goimports</code>) al guardar, sin configuraciones de estilo propias. En Go el estilo no se discute en las revisiones, y quien lo cambia se pelea con todo el ecosistema.</p>
+
+          <h2 id="resumen">
             Resumen
             <a href="#resumen" class="anchor" aria-hidden="true">#</a>
           </h2>

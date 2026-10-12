@@ -58,7 +58,7 @@
         <div class="tutorial-meta">
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            14 min de lectura
+            13 min de lectura
           </span>
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -79,11 +79,13 @@
             <li><a href="#context">context.Context</a></li>
             <li><a href="#cancel">WithCancel y WithTimeout</a></li>
             <li><a href="#propagacion">Propagación del contexto</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">Una petición llega, tu handler consulta la base de datos y llama a dos APIs, y a mitad el usuario cierra la pestaña. En PHP ese trabajo suele seguir hasta el final sin que nadie lo espere. En Go se puede cortar toda la cadena de golpe, y proteger el estado que comparten las goroutines sin montar una arquitectura de channels para cada contador.</p>
         <h2 id="mutex">
             sync.Mutex
             <a href="#mutex" class="anchor" aria-hidden="true">#</a>
@@ -372,7 +374,32 @@ func procesarEnBucle(ctx context.Context) {
             </div>
           </div>
 
-        <h2 id="resumen">
+        <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos con sync y context</p>
+              <ul>
+                <li><strong>Copiar un struct que contiene un <code>Mutex</code>.</strong> Un receptor por valor (<code>func (c Contador)</code>) copia el lock, y cada copia bloquea su propio mutex: la protección desaparece sin error. Usa receptores por puntero; <code>go vet</code> lo detecta.</li>
+                <li><strong>Pasar de <code>RLock</code> a <code>Lock</code> sin soltar antes.</strong> El <code>Lock</code> espera a que terminen todas las lecturas, incluida la tuya: deadlock. Suelta el <code>RLock</code>, toma el <code>Lock</code> y vuelve a comprobar el estado, porque otro puede haberlo cambiado entre medias.</li>
+                <li><strong>Olvidar el <code>cancel()</code>.</strong> El contexto derivado y su temporizador viven hasta que vence el plazo o se cancela el padre. <code>defer cancel()</code> justo después de crearlo, siempre; <code>go vet</code> también avisa.</li>
+                <li><strong>Recibir <code>ctx</code> y no usarlo.</strong> El contexto no interrumpe nada por arte de magia: solo cancela lo que lo consulta. Si tu bucle largo no mira <code>ctx.Done()</code> o llamas a <code>Query</code> en vez de <code>QueryContext</code>, la cancelación no llega.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+<p>Son dos herramientas para dos problemas distintos, y conviene no mezclarlas:</p>
+          <ul>
+            <li><strong><code>sync.Mutex</code></strong> cuando varias goroutines tocan el mismo estado: un mapa en memoria, un contador, una caché. Si las lecturas superan con mucho a las escrituras y has medido contención, pasa a <code>RWMutex</code>; si no, el <code>Mutex</code> normal es más simple y a menudo igual de rápido.</li>
+            <li><strong><code>sync.Once</code></strong> para inicializar algo caro una sola vez y bajo demanda. Si puedes crearlo en <code>main</code> e inyectarlo, mejor: es más explícito y más fácil de testear.</li>
+            <li><strong><code>context.Context</code></strong> en toda función que haga E/S o pueda tardar: consultas, llamadas HTTP, esperas. Se recibe como primer parámetro y se pasa hacia abajo, aunque tú no lo uses.</li>
+          </ul>
+          <p>Cuándo <strong>no</strong>: no uses un mutex para pasar datos de una goroutine a otra (eso es un channel), ni <code>context.WithValue</code> para pasar parámetros normales de una función. Los valores del contexto son para datos transversales de la petición, como un ID de traza o el usuario autenticado; lo demás va en la firma, donde el compilador lo ve.</p>
+
+          <h2 id="resumen">
             Resumen
             <a href="#resumen" class="anchor" aria-hidden="true">#</a>
           </h2>

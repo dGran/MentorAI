@@ -58,7 +58,7 @@
         <div class="tutorial-meta">
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            14 min de lectura
+            11 min de lectura
           </span>
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -79,11 +79,13 @@
             <li><a href="#database-sql">database/sql: conectar y consultar</a></li>
             <li><a href="#scan">Escanear resultados</a></li>
             <li><a href="#transacciones">Transacciones</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">Casi toda API de backend hace lo mismo: recibe JSON, consulta la base de datos y responde JSON. En PHP, <code>json_decode</code> y Eloquent o Doctrine esconden casi todo ese trabajo. En Go lo haces explícito, con structs y SQL a la vista, y a cambio no hay magia que depurar cuando algo falla.</p>
         <h2 id="json-encode">
             Serializar structs a JSON
             <a href="#json-encode" class="anchor" aria-hidden="true">#</a>
@@ -349,7 +351,44 @@ func listarProductos(ctx context.Context, db *sql.DB) ([]Producto, error) {
 
         <p>El patrón <code>defer tx.Rollback()</code> justo después de <code>BeginTx</code> garantiza que la transacción se revierte si algo falla antes del <code>Commit</code>. Si <code>Commit</code> tuvo éxito, el <code>Rollback</code> del defer es un no-op.</p>
 
-        <h2 id="resumen">
+        <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos con JSON y database/sql</p>
+              <ul>
+                <li><strong>Campos en minúscula que «desaparecen».</strong> <code>encoding/json</code> ignora sin error los campos no exportados, así que <code>nombre string</code> no sale en el JSON ni se rellena al decodificar. El nombre en minúscula va en la tag, no en el campo.</li>
+                <li><strong>Confiar en que el decoder valida.</strong> Un campo que falta queda con su zero value y un campo desconocido se ignora. Si necesitas rigor, usa <code>DisallowUnknownFields()</code> y valida tú los obligatorios.</li>
+                <li><strong>Abrir un <code>sql.DB</code> por petición.</strong> Es un pool pensado para crearse una vez al arrancar y compartirse. Abrirlo en cada handler desperdicia conexiones y puede agotar el límite de la base de datos.</li>
+                <li><strong>Montar SQL concatenando strings</strong>, como en el PHP antiguo. Los valores van siempre como parámetros (<code>$1</code> en PostgreSQL, <code>?</code> en MySQL). Y para dinero, los ejemplos usan <code>float64</code> por brevedad; en código real usa enteros en céntimos o un tipo decimal.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+<p><code>encoding/json</code> con structs es la opción por defecto para cualquier API: tipas la entrada, la validas y sabes qué sale. Recurre a <code>map[string]any</code> solo cuando la forma del JSON no la controlas de verdad, como en un webhook de terceros con campos variables.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>database/sql a pelo encaja cuando…</h4>
+              <ul>
+                <li>Tienes un número manejable de consultas y quieres ver exactamente qué SQL se ejecuta</li>
+                <li>Las consultas son complejas (agregados, CTE, ventanas) y un ORM solo estorbaría</li>
+                <li>Buscas rendimiento predecible, sin consultas N+1 escondidas</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Busca otra herramienta cuando…</h4>
+              <ul>
+                <li>Repites decenas de <code>Scan</code> casi iguales: <code>sqlc</code> genera código tipado a partir de tu SQL y mantiene el control</li>
+                <li>Usas solo PostgreSQL y quieres sus tipos y su rendimiento: <code>pgx</code> en modo nativo, sin pasar por <code>database/sql</code></li>
+                <li>El equipo viene de Doctrine y necesita un ORM para ir rápido: existe <code>GORM</code>, pero asume su magia y sus consultas implícitas</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
             Resumen
             <a href="#resumen" class="anchor" aria-hidden="true">#</a>
           </h2>

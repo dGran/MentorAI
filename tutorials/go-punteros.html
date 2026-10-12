@@ -58,7 +58,7 @@
         <div class="tutorial-meta">
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            13 min de lectura
+            12 min de lectura
           </span>
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -78,12 +78,13 @@
             <li><a href="#operadores">Los operadores &amp; y *</a></li>
             <li><a href="#vs-php">Comparación con PHP</a></li>
             <li><a href="#nil">El puntero nil</a></li>
-            <li><a href="#cuando-usar">Cuándo usar punteros</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+                    <p class="lead">Pasas un struct a una función, la función lo modifica y, al volver, todo sigue igual. Es la primera sorpresa de quien viene de PHP, donde los objetos viajan compartidos sin pedirlo. Aquí ves por qué Go copia y cuándo merece la pena pedirle que no lo haga.</p>
         <h2 id="paso-por-valor">
             Go pasa todo por valor
             <a href="#paso-por-valor" class="anchor" aria-hidden="true">#</a>
@@ -308,11 +309,23 @@ fmt.Println(*p)   // PANIC: runtime error: invalid memory address or nil pointer
 </code></pre>
           </div>
 
-        <h2 id="cuando-usar">
-            Cuándo usar punteros
-            <a href="#cuando-usar" class="anchor" aria-hidden="true">#</a>
-          </h2>
+                            <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos</p>
+              <ul>
+                <li><strong>Punteros por defecto, «porque en PHP todo era referencia».</strong> Acabas con comprobaciones de <code>nil</code> en cada función y con datos que cualquiera puede mutar sin que la firma lo avise.</li>
+                <li><strong>Derreferenciar sin mirar.</strong> Un <code>*Producto</code> que viene de un campo opcional o de una búsqueda cuyo error ignoraste puede ser <code>nil</code>, y acceder a <code>p.Nombre</code> provoca un panic.</li>
+                <li><strong>Miedo a devolver <code>&amp;local</code>.</strong> Quien viene de C lo evita, pero en Go es seguro: el compilador detecta que el valor sobrevive a la función y lo coloca en el heap.</li>
+              </ul>
+            </div>
+          </div>
 
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La pregunta no es «¿es más rápido?», sino «¿quién más tiene que ver este cambio?». Un puntero es una promesa de que el dato se comparte. Si nadie más lo necesita, la copia es más simple y más difícil de romper.</p>
         <div class="table-wrap">
         <table>
           <thead><tr><th>Situación</th><th>Recomendación</th></tr></thead>
@@ -332,8 +345,11 @@ fmt.Println(*p)   // PANIC: runtime error: invalid memory address or nil pointer
               <p><strong>Go no tiene aritmética de punteros.</strong> No puedes hacer <code>p + 1</code> para avanzar al siguiente elemento de un array como en C. Los punteros de Go solo pueden apuntar a variables existentes. Esto elimina toda una clase de vulnerabilidades de seguridad.</p>
             </div>
           </div>
+          <p>Cuándo no: «por rendimiento» sin haber medido. Copiar un struct de pocos campos es barato, y devolver un puntero puede obligar al compilador a mover el valor al heap, con más trabajo para el recolector de basura. Tampoco pases punteros a maps o canales: ya se comparten al pasarlos. Un slice comparte su contenido; si la función le añade elementos, devuelve el slice nuevo, igual que <code>append</code>, en vez de recibir un <code>*[]T</code>.</p>
+          <p>En un retorno opcional, <code>v, ok</code> se lee mejor que un puntero que puede ser <code>nil</code>.</p>
 
-        <h2 id="resumen">
+
+          <h2 id="resumen">
             Resumen
             <a href="#resumen" class="anchor" aria-hidden="true">#</a>
           </h2>

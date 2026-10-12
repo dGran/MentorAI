@@ -58,7 +58,7 @@
         <div class="tutorial-meta">
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            15 min de lectura
+            13 min de lectura
           </span>
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -79,11 +79,13 @@
             <li><a href="#range-close">Range y close</a></li>
             <li><a href="#select">Select: multiplexar channels</a></li>
             <li><a href="#patrones">Patrones habituales</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
 
         <article class="prose">
+          <p class="lead">Lanzar goroutines es fácil; lo difícil es que se pasen datos y se avisen sin pisarse. Los channels son la respuesta de Go: en vez de proteger una variable compartida con un lock, una goroutine le entrega el dato a otra y ese traspaso ya es la sincronización. Bien usados, el flujo del programa se lee en el propio código.</p>
         <h2 id="que-es">
             Qué es un channel
             <a href="#que-es" class="anchor" aria-hidden="true">#</a>
@@ -374,7 +376,47 @@ close(trabajos)
 </code></pre>
           </div>
 
-        <h2 id="resumen">
+        <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos con channels</p>
+              <ul>
+                <li><strong>Enviar a un channel que nadie va a leer.</strong> En uno sin buffer, el envío se queda bloqueado para siempre y la goroutine con él. Pasa mucho cuando el receptor sale antes por un error o un timeout: o das buffer suficiente, o el emisor también escucha un <code>done</code> o <code>ctx.Done()</code> en un <code>select</code>.</li>
+                <li><strong>Cerrar desde el receptor, o cerrar dos veces.</strong> Cerrar dos veces da <code>panic</code> al instante. Cerrar desde el receptor no falla por sí mismo, pero el emisor no se entera y su siguiente envío al channel cerrado sí provoca <code>panic</code>. Cierra quien envía, y si hay varios emisores, cierra una única goroutine coordinadora después de esperarlos con un <code>WaitGroup</code>.</li>
+                <li><strong>Un <code>select</code> con <code>default</code> dentro de un <code>for</code> sin nada que espere.</strong> El bucle gira sin parar y se come un core al 100 %. El <code>default</code> sirve para no bloquear una vez, no para esperar.</li>
+                <li><strong>Usar un channel que vale <code>nil</code>.</strong> Si se declara con <code>var ch chan int</code> y nunca se hace <code>make</code>, enviar o recibir se bloquea para siempre, sin error.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+<p>La duda real no es si usar channels, sino <strong>channel o mutex</strong>. El criterio: ¿estás pasando datos o un aviso de una goroutine a otra, o protegiendo un estado que varias consultan?</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Usa un channel cuando…</h4>
+              <ul>
+                <li>Hay un flujo de trabajo: un productor genera tareas y uno o varios consumidores las procesan</li>
+                <li>Quieres repartir trabajo entre N workers o juntar sus resultados (fan-out / fan-in)</li>
+                <li>Necesitas señalar un evento: «para», «ya está listo», «ha vencido el tiempo» (con <code>select</code>)</li>
+                <li>Quieres limitar la concurrencia: un channel con buffer de N hace de semáforo</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Usa otra cosa cuando…</h4>
+              <ul>
+                <li>Solo proteges un contador, un mapa o una caché que varias goroutines leen y escriben: <code>sync.Mutex</code> es más simple y más rápido</li>
+                <li>Solo esperas a que un grupo termine, sin recoger resultados: <code>sync.WaitGroup</code></li>
+                <li>La cancelación debe cruzar varias capas del programa: <code>context.Context</code>, que por dentro ya es un channel</li>
+                <li>Todo ocurre en una sola goroutine: un channel ahí solo añade bloqueos posibles</li>
+              </ul>
+            </div>
+          </div>
+          <p>Si al dibujar el diseño te salen cinco channels cruzados para un problema sencillo, probablemente era un mutex.</p>
+
+          <h2 id="resumen">
             Resumen
             <a href="#resumen" class="anchor" aria-hidden="true">#</a>
           </h2>
