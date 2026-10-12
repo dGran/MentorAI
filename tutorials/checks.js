@@ -3143,10 +3143,10 @@ window.MENTORAI_CHECKS = {
       w: "En InnoDB, FOR SHARE y FOR UPDATE son lecturas con bloqueo: leen la última versión confirmada, no la foto del SELECT normal. B ya confirmó, así que no hay bloqueo que esperar." },
     { id: "c59eee7", q: "Leer en PHP, calcular y escribir el saldo pierde dinero en MySQL REPEATABLE READ. ¿Por qué en Postgres REPEATABLE READ no se pierde?",
       o: ["Porque Postgres bloquea la fila desde el primer SELECT","Porque Postgres escribe siempre sobre la foto de cada transacción","Porque Postgres aborta a B si la fila cambió tras su foto"], a: 2,
-      w: "Postgres no deja modificar una fila que otra transacción cambió después de tu foto: devuelve 40001. InnoDB sí, porque su UPDATE lee la última versión. Ningún SELECT normal bloquea, ni en un motor ni en otro." },
+      w: "Postgres no deja modificar una fila que otra transacción cambió después de tu foto: devuelve 40001. InnoDB sí, porque su UPDATE lee la última versión. En REPEATABLE READ ningún SELECT normal bloquea, ni en un motor ni en otro." },
     { id: "c6d8e02", q: "En Postgres 17 con REPEATABLE READ, dos médicos dejan la guardia a la vez y quedan cero. ¿Qué lo habría impedido?",
       o: ["Bajar a READ COMMITTED para ver datos más frescos","Pasar a SERIALIZABLE y reintentar la transacción que aborte","Añadir un índice sobre la columna de_guardia"], a: 1,
-      w: "Es write skew: cada transacción escribe una fila distinta, así que REPEATABLE READ no ve conflicto. SERIALIZABLE detecta el ciclo de lecturas y escrituras y aborta una con 40001; READ COMMITTED lo empeora y un índice no cambia el aislamiento." },
+      w: "Es write skew: cada transacción escribe una fila distinta, así que REPEATABLE READ no ve conflicto. SERIALIZABLE detecta el ciclo de lecturas y escrituras y aborta una con 40001; READ COMMITTED tampoco lo impide y un índice no cambia el aislamiento." },
   ],
   "bd-bloqueo-pesimista": [
     { id: "c1a31df", q: "La sesión A tiene una fila bloqueada con SELECT … FOR UPDATE. ¿Qué pasa con un SELECT normal de esa fila desde la sesión B?",
@@ -3179,7 +3179,7 @@ window.MENTORAI_CHECKS = {
       w: "El volcado de las transacciones llega al log, pero «Transactions deadlock detected» y «WE ROLL BACK TRANSACTION» son mensajes [Note], y con la verbosidad 2 por defecto se filtran. Con log_error_verbosity = 3 aparecen." },
     { id: "c71b7a0", q: "En PostgreSQL 17, dos transacciones forman un deadlock. ¿Cuál aborta el motor?",
       o: ["La que menos filas ha modificado, igual que hace InnoDB","La que antes cumple deadlock_timeout y encuentra el ciclo","La que cerró el ciclo al lanzar su última sentencia"], a: 1,
-      w: "Postgres no comprueba al formarse el ciclo: cada proceso que espera revisa tras deadlock_timeout (1 s por defecto) y, si encuentra el ciclo, se aborta a sí mismo. No mira cuánto trabajo lleva cada transacción; eso lo hace InnoDB." },
+      w: "Postgres no comprueba al formarse el ciclo: cada proceso que espera revisa tras deadlock_timeout (1 s por defecto) y, si encuentra el ciclo, se aborta a sí mismo. No mira cuánto trabajo lleva cada transacción; eso lo hace InnoDB. Como revisa una sola vez, si el ciclo se cerró pasado el deadlock_timeout del primero, cae el que lo cerró." },
   ],
   "bd-migraciones-sin-caida": [
     { id: "c03f7f8", q: "Un ALTER TABLE con ALGORITHM=INSTANT deja un SELECT por clave primaria esperando 16 segundos. ¿Por qué?",

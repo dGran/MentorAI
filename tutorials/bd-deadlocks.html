@@ -308,13 +308,13 @@ STATEMENT:  UPDATE cuentas SET saldo = saldo + 50 WHERE id = 1;</code></pre>
               <h4>Postgres 17</h4>
               <ul>
                 <li>Quien espera revisa si hay ciclo tras <code>deadlock_timeout</code>.</li>
-                <li>Si lo encuentra, se aborta a sí mismo: cae el primero en cumplir la espera, sin mirar cuánto trabajo lleva.</li>
+                <li>Si lo encuentra, se aborta a sí mismo, sin mirar cuánto trabajo lleva. Cada proceso revisa una sola vez: cae el primero cuya revisión ya encuentra el ciclo, que es quien lo cerró si se cerró pasado el <code>deadlock_timeout</code> del primero en esperar.</li>
                 <li>La transacción queda abortada y rechaza todo hasta el <code>ROLLBACK</code>.</li>
               </ul>
             </div>
           </div>
           <p>
-            Con una transacción que antes insertaba 200 filas (5.000 en Postgres), MySQL deshizo la ligera y Postgres abortó la pesada, que fue la primera en esperar.
+            Con una transacción que antes insertaba 200 filas (5.000 en Postgres), MySQL deshizo la ligera y Postgres abortó la pesada: fue la primera en esperar y el ciclo se cerró antes de que venciera su <code>deadlock_timeout</code>.
           </p>
 
           <h2 id="causas">
@@ -378,7 +378,7 @@ function transfer(PDO $connection, int $fromId, int $toId, int $amount): void
 }</code></pre>
           </div>
           <p>
-            La primera cura es el <strong>orden consistente</strong>: bloquear siempre por id ascendente, sea cual sea el sentido. Entre transferencias ya no hay ciclo: la segunda espera y sigue. Es el mismo <code>FOR UPDATE</code> de <a href="bd-bloqueo-pesimista.html">bloqueo pesimista</a>, con el orden como regla.
+            La primera cura es el <strong>orden consistente</strong>: bloquear siempre por id ascendente, sea cual sea el sentido. Entre transferencias ya no hay ciclo: la segunda espera y sigue. Es el mismo <code>FOR UPDATE</code> de <a href="bd-bloqueo-pesimista.html">bloqueo pesimista</a>, con el orden como regla. La transacción la abre quien llama: el reintento de más abajo.
           </p>
           <div class="code-block">
             <div class="code-block__head">
@@ -598,7 +598,7 @@ WHERE cardinality(pg_blocking_pids(pid)) &gt; 0;</code></pre>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>InnoDB detecta al instante y deshace la transacción más pequeña; Postgres revisa tras <code>deadlock_timeout</code> y cae quien esperaba antes.</span>
+                <span>InnoDB detecta al instante y deshace la transacción más pequeña; Postgres revisa una vez tras <code>deadlock_timeout</code> y cae el primero cuya revisión encuentra el ciclo.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
