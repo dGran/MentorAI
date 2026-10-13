@@ -85,6 +85,12 @@ sea teoría sin criterio de uso. Desde #114 la llevan todos los tutoriales y
 `validar.js` da ERROR si falta, con su ancla de plantilla como cualquier otro `h2`
 (#112).
 
+Una lección **nueva** lleva enlaces de entrada desde 1-2 lecciones existentes que ya
+tocan el tema: sin ellos solo se llega por el curso o el buscador. Quien revisa la
+lección los propone como pares exactos (frase actual → frase con el enlace) y se
+comprueba que el clic llega. En la tanda del 2026-10-12 se olvidaron en dos PRs
+hasta que se pidieron en la review.
+
 El hero copia los minutos y el nivel del manifest, con el nivel escrito igual
 («Principiante», «Intermedio», «Avanzado»): `validar.js` falla si difieren.
 
