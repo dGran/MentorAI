@@ -5022,4 +5022,19 @@ window.ACADEMIA_TUTORIALS = [
     status: "published",
     date: "2026-10-12",
   },
+  {
+    slug: "opentelemetry-en-php",
+    title: "OpenTelemetry en PHP",
+    description:
+      "Trazas de verdad en PHP con OpenTelemetry: SDK y spans manuales, la extensión de autoinstrumentación, exportar por OTLP a un collector con Jaeger en Docker, propagación W3C traceparent, muestreo en el SDK y en el collector, y qué SLI sacar de las trazas.",
+    href: "tutorials/opentelemetry-en-php.html",
+    categories: ["observabilidad"],
+    topic: "Observabilidad",
+    tags: ["OpenTelemetry", "Trazas", "Jaeger", "SLO"],
+    level: "Avanzado",
+    minutes: 26,
+    icon: "signal",
+    status: "published",
+    date: "2026-10-12",
+  },
 ];

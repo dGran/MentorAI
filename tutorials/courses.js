@@ -544,6 +544,13 @@ window.MENTORAI_COURSES = [
         lessons: ["grafana-dashboards", "loki-logql"],
       },
       {
+        title: "Trazas con OpenTelemetry",
+        summary: "Instrumentar un servicio PHP con el estándar abierto, exportar por OTLP y sacar de las trazas los SLI que alimentan las alertas.",
+        lessons: [
+          "opentelemetry-en-php",
+        ],
+      },
+      {
         title: "Alerting",
         summary: "Alertas que se atienden: síntomas, SLO, error budget y fatiga cero.",
         lessons: ["alerting"],

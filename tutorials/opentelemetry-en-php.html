@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OpenTelemetry en PHP — MentorAI</title>
+    <meta name="description" content="OpenTelemetry en PHP: SDK y spans manuales, la extensión de autoinstrumentación, exportar por OTLP a un collector con Jaeger en Docker, propagación W3C traceparent, muestreo y qué SLI sacar de las trazas." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Observabilidad</span>
+        </nav>
+        <h1 class="tutorial-hero__title">OpenTelemetry en PHP</h1>
+        <p class="tutorial-hero__lead">El identificador de correlación te dice qué líneas de log son de la misma petición, pero no cuánto tardó cada salto. OpenTelemetry te da la línea de tiempo completa con un estándar que no te ata a ningún proveedor: instrumentas una vez y decides después dónde mirar.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            26 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">Un SDK por proveedor</a></li>
+            <li><a href="#modelo">API, SDK, OTLP y collector</a></li>
+            <li><a href="#manual">Spans manuales</a></li>
+            <li><a href="#auto">Autoinstrumentación</a></li>
+            <li><a href="#docker">Collector y Jaeger en Docker</a></li>
+            <li><a href="#propagacion">traceparent entre servicios</a></li>
+            <li><a href="#muestreo">Muestreo</a></li>
+            <li><a href="#sli">SLI desde las trazas</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">En <a href="sd-trazas-distribuidas.html#php">trazas distribuidas</a> te quedaste a propósito en el identificador de correlación. Aquí das el paso siguiente: spans de verdad, exportados por un protocolo estándar a un backend que puedes levantar en tu portátil. Todo lo que verás se ha ejecutado con PHP 8.5, un collector y Jaeger en Docker.</p>
+
+          <h2 id="problema">
+            Un SDK por proveedor
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Hasta hace poco, trazar significaba elegir proveedor primero: el agente de Datadog, el de New Relic, el SDK de Sentry. Cada uno con su API, sus nombres de atributo y su formato de envío. Cambiar de herramienta era reinstrumentar la aplicación entera, y mezclar dos (Sentry para errores, otra para latencia) era instrumentar dos veces.</p>
+          <p><strong>OpenTelemetry</strong> separa esas dos decisiones. Tu código habla con una API neutral; un SDK la implementa; un protocolo común, <strong>OTLP</strong>, transporta los datos; y el destino se elige por configuración. Es el estándar de la CNCF que ya nombraba <a href="observabilidad-pilares.html#trazas">los tres pilares</a>.</p>
+
+          <h2 id="modelo">
+            API, SDK, OTLP y collector
+            <a href="#modelo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Las piezas son cuatro y cada una tiene un motivo:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Pieza</th><th>Qué hace</th><th>Por qué existe</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>API</td><td>Crea spans y propaga contexto</td><td>Las librerías instrumentan sin depender del SDK; sin SDK, todo es no-op</td></tr>
+                <tr><td>SDK</td><td>Muestrea, agrupa en lotes y exporta</td><td>La política vive aquí, configurable con variables <code>OTEL_*</code></td></tr>
+                <tr><td>OTLP</td><td>El protocolo de envío (HTTP o gRPC)</td><td>Un solo formato para cualquier destino</td></tr>
+                <tr><td>Collector</td><td>Recibe, procesa y reenvía</td><td>Saca de tu proceso PHP el muestreo, los reintentos y la elección de backend</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>PHP con el SDK</b><small>Spans manuales o autoinstrumentados</small></span>
+              </div>
+              <div class="flow__arrow" data-label="OTLP · http/protobuf :4318"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>OpenTelemetry Collector</b><small>Lotes, muestreo por cola, métricas</small></span>
+              </div>
+              <div class="flow__arrow" data-label="OTLP · gRPC :4317"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Jaeger o Tempo</b><small>Almacena y te deja buscar trazas</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Cambiar de backend es tocar el collector, no la aplicación.</p>
+          </div>
+
+          <h2 id="manual">
+            Spans manuales
+            <a href="#manual" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El SDK y el exportador son paquetes de Composer. Con <code>OTEL_PHP_AUTOLOAD_ENABLED</code> el SDK se configura solo a partir de variables de entorno, sin código de arranque:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · instalar y configurar</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">composer require open-telemetry/sdk open-telemetry/exporter-otlp guzzlehttp/guzzle
+
+export OTEL_PHP_AUTOLOAD_ENABLED=true
+export OTEL_SERVICE_NAME=checkout
+export OTEL_TRACES_EXPORTER=otlp
+export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318</code></pre>
+          </div>
+          <p>Antes tenías esto: un identificador inventado, una cabecera propia y nada de tiempos.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · antes</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$idTraza = $_SERVER['HTTP_X_TRACE_ID'] ?? bin2hex(random_bytes(16));
+$logger-&gt;info('Consultando inventario', ['trace_id' =&gt; $idTraza]);
+$cliente-&gt;get('http://inventario/stock/ABC-1', ['headers' =&gt; ['X-Trace-Id' =&gt; $idTraza]]);</code></pre>
+          </div>
+          <p>Después, cada operación es un span con padre, duración y estado, y la cabecera es la estándar:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · checkout.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+require __DIR__ . '/vendor/autoload.php';
+
+use GuzzleHttp\Client;
+use OpenTelemetry\API\Globals;
+use OpenTelemetry\API\Trace\SpanKind;
+use OpenTelemetry\API\Trace\StatusCode;
+
+$tracer = Globals::tracerProvider()-&gt;getTracer('checkout');
+
+$raiz = $tracer-&gt;spanBuilder('POST /checkout')
+    -&gt;setSpanKind(SpanKind::KIND_SERVER)
+    -&gt;startSpan();
+$scopeRaiz = $raiz-&gt;activate();
+
+try {
+    $llamada = $tracer-&gt;spanBuilder('GET inventario')
+        -&gt;setSpanKind(SpanKind::KIND_CLIENT)
+        -&gt;startSpan();
+    $scopeLlamada = $llamada-&gt;activate();
+
+    try {
+        $cabeceras = [];
+        Globals::propagator()-&gt;inject($cabeceras);
+        (new Client())-&gt;get('http://127.0.0.1:8099/stock/ABC-1', ['headers' =&gt; $cabeceras]);
+    } finally {
+        $scopeLlamada-&gt;detach();
+        $llamada-&gt;end();
+    }
+} catch (Throwable $error) {
+    $raiz-&gt;recordException($error);
+    $raiz-&gt;setStatus(StatusCode::STATUS_ERROR, $error-&gt;getMessage());
+    throw $error;
+} finally {
+    $scopeRaiz-&gt;detach();
+    $raiz-&gt;end();
+}</code></pre>
+          </div>
+          <p>Fíjate en el patrón: <code>activate()</code> convierte el span en el contexto actual, así el siguiente que crees cuelga de él sin pasarlo a mano. El <code>finally</code> no es opcional: un scope sin <code>detach()</code> deja el contexto cambiado para el resto de la petición, y un span sin <code>end()</code> nunca se exporta.</p>
+
+          <h2 id="auto">
+            Autoinstrumentación
+            <a href="#auto" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Escribir un span por cada consulta y llamada HTTP no escala. La extensión <code>opentelemetry</code> engancha funciones de PHP por fuera, y unos paquetes por librería usan esos ganchos para crear spans sin tocar tu código:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · extensión (imagen oficial de PHP) y paquete de Guzzle</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">pecl install opentelemetry
+docker-php-ext-enable opentelemetry
+php --ri opentelemetry
+
+composer require open-telemetry/opentelemetry-auto-guzzle</code></pre>
+          </div>
+          <p>Con eso, un script de dos líneas que solo hace <code>$cliente-&gt;get(...)</code> produjo en Jaeger un span <code>GET</code> de tipo cliente con <code>url.full</code>, <code>server.address</code> y el código de estado, y el servicio de destino recibió su <code>traceparent</code> sin que nadie lo inyectara. Hay paquetes equivalentes para Symfony, Laravel, PDO y clientes PSR-18.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Autoinstrumentación</h4>
+              <ul>
+                <li>Cubre HTTP, base de datos y framework en minutos</li>
+                <li>Nombres y atributos según las convenciones semánticas</li>
+                <li>Necesita la extensión en todas las imágenes</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Spans manuales</h4>
+              <ul>
+                <li>Solo ven lo que tú escribes</li>
+                <li>Son los únicos que conocen tu dominio: pedido, pasarela, regla de negocio</li>
+                <li>Funcionan sin extensión, solo con el SDK</li>
+              </ul>
+            </div>
+          </div>
+          <p>No compiten: la autoinstrumentación pone el esqueleto y los spans manuales añaden lo que solo tu código sabe, como el id del pedido en un atributo.</p>
+
+          <h2 id="docker">
+            Collector y Jaeger en Docker
+            <a href="#docker" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Jaeger 2 acepta OTLP directamente, así que el collector no es imprescindible para probar. Lo pones igual: en producción ahí vivirán el muestreo y las métricas.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">yaml · compose.yaml</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="yaml">services:
+  jaeger:
+    image: jaegertracing/jaeger:2.22.0
+    ports:
+      - "16686:16686"
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.162.0
+    volumes:
+      - ./otel-collector.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "8889:8889"
+    depends_on:
+      - jaeger</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">yaml · otel-collector.yaml</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="yaml">receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch: {}
+
+exporters:
+  otlp_grpc/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp_grpc/jaeger]</code></pre>
+          </div>
+          <p>Con <code>docker compose up -d</code>, el script de arriba y un segundo servicio PHP escuchando en el 8099, la interfaz de Jaeger en <code>http://localhost:16686</code> mostró una traza de tres spans de dos servicios:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · lo que se vio en Jaeger</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">checkout   | POST /checkout   | 62a3e8e68b6a0d75 | sin padre        | 159 ms
+checkout   | GET inventario   | db6adc0dc819bc98 | 62a3e8e68b6a0d75 | 158 ms
+inventario | GET /stock/{sku} | 068a1a00c82f8be4 | db6adc0dc819bc98 | 120 ms</code></pre>
+          </div>
+          <p>Con el stack de Grafana, Tempo ocupa el lugar de Jaeger: cambia el exportador del collector, no la aplicación.</p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Nombres que han cambiado</p>
+              <p>En el collector 0.162 el exportador <code>otlp</code> y el conector <code>spanmetrics</code> siguen funcionando, pero el arranque avisa de que son alias obsoletos de <code>otlp_grpc</code> y <code>span_metrics</code>. Muchos ejemplos de internet usan los nombres viejos.</p>
+            </div>
+          </div>
+
+          <h2 id="propagacion">
+            traceparent entre servicios
+            <a href="#propagacion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El formato de la cabecera ya lo viste en <a href="sd-trazas-distribuidas.html#propagacion">trazas distribuidas</a>. Lo nuevo es quién la escribe: <code>Globals::propagator()</code>, que por defecto usa W3C Trace Context y Baggage. En la prueba, el checkout envió <code>00-5ff963b1…e290-db6adc0dc819bc98-01</code> y el inventario recibió exactamente eso: el segundo campo es el id de traza y el tercero el del span cliente, que pasa a ser el padre del span de servidor.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · inventario/index.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+require __DIR__ . '/../vendor/autoload.php';
+
+use OpenTelemetry\API\Globals;
+use OpenTelemetry\API\Trace\SpanKind;
+
+$contextoEntrante = Globals::propagator()-&gt;extract(getallheaders());
+
+$span = Globals::tracerProvider()
+    -&gt;getTracer('inventario')
+    -&gt;spanBuilder('GET /stock/{sku}')
+    -&gt;setParent($contextoEntrante)
+    -&gt;setSpanKind(SpanKind::KIND_SERVER)
+    -&gt;startSpan();
+$scope = $span-&gt;activate();
+
+try {
+    echo json_encode(['sku' =&gt; 'ABC-1', 'stock' =&gt; 3]);
+} finally {
+    $scope-&gt;detach();
+    $span-&gt;end();
+}</code></pre>
+          </div>
+          <p>En una cola es lo mismo con otro transporte: <code>inject()</code> sobre las cabeceras del mensaje al publicar y <code>extract()</code> al consumir.</p>
+
+          <h2 id="muestreo">
+            Muestreo
+            <a href="#muestreo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La diferencia entre decidir al principio y al final ya está en <a href="sd-trazas-distribuidas.html#muestreo">trazas distribuidas</a>. En OpenTelemetry cada una vive en un sitio: la decisión al principio, en el SDK; la de al final, en el collector.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · muestreo en el SDK</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">export OTEL_TRACES_SAMPLER=parentbased_traceidratio
+export OTEL_TRACES_SAMPLER_ARG=0.1</code></pre>
+          </div>
+          <p>Con 10.000 spans raíz se quedaron 969, el 10 % previsto. Lo importante es el prefijo <code>parentbased_</code>: un span hijo de un <code>traceparent</code> con flag <code>01</code> se muestreó siempre. Con <code>traceidratio</code> a secas, ese mismo hijo se descartó aunque el servicio anterior ya hubiera guardado su parte: trazas con agujeros. Sin configurar nada, el SDK guardó las 10.000.</p>
+          <p>El muestreo por cola lo hace el procesador <code>tail_sampling</code> del collector. Con esta política, de 400 trazas lanzadas en dos tandas Jaeger guardó 31: los dos errores, las dos lentas y unas cuantas normales al azar:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">yaml · otel-collector.yaml (procesador)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="yaml">processors:
+  tail_sampling:
+    decision_wait: 10s
+    policies:
+      - name: errores
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      - name: lentas
+        type: latency
+        latency:
+          threshold_ms: 500
+      - name: resto
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 5</code></pre>
+          </div>
+          <p>Para que funcione, todos los spans de una traza tienen que llegar al mismo collector. Con varias réplicas, eso exige repartir por id de traza delante.</p>
+
+          <h2 id="sli">
+            SLI desde las trazas
+            <a href="#sli" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Qué es un SLO, el error budget y cómo alertar por ritmo de consumo está en <a href="alerting.html#slo">Alerting</a>. Las trazas aportan la materia prima: cada span de servidor es una petición con duración y estado, medida donde la vive el usuario.</p>
+          <p>El conector <code>span_metrics</code> del collector convierte spans en métricas de Prometheus. La trampa está en el orden: si cuentas después del muestreo por cola, guardas el 100 % de los errores y el 5 % del resto, y la tasa de error sale inflada. Por eso va en un pipeline propio que recibe todos los spans, y con <code>resource_metrics_key_attributes</code>: cada proceso PHP lleva su <code>process.pid</code> en el recurso y, sin limitar la clave, cada uno abre su propio contador y Prometheus solo ve el último:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">yaml · otel-collector.yaml (pipelines)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="yaml">connectors:
+  span_metrics:
+    resource_metrics_key_attributes: [service.name]
+    histogram:
+      explicit:
+        buckets: [100ms, 300ms, 500ms, 1s, 2s]
+
+exporters:
+  prometheus:
+    endpoint: 0.0.0.0:8889
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [span_metrics]
+    traces/muestreadas:
+      receivers: [otlp]
+      processors: [tail_sampling, batch]
+      exporters: [otlp_grpc/jaeger]
+    metrics:
+      receivers: [span_metrics]
+      exporters: [prometheus]</code></pre>
+          </div>
+          <p>En <code>:8889/metrics</code> aparecen <code>traces_span_metrics_calls_total</code> y el histograma <code>traces_span_metrics_duration_milliseconds</code>, con etiquetas <code>service_name</code>, <code>span_name</code>, <code>span_kind</code> y <code>status_code</code>. De ahí salen los dos SLI clásicos, siempre sobre spans de servidor:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">PromQL · disponibilidad y latencia</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>sum(rate(traces_span_metrics_calls_total{service_name="checkout", span_kind="SPAN_KIND_SERVER", status_code!="STATUS_CODE_ERROR"}[5m]))
+/
+sum(rate(traces_span_metrics_calls_total{service_name="checkout", span_kind="SPAN_KIND_SERVER"}[5m]))
+
+sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name="checkout", span_kind="SPAN_KIND_SERVER", le="500"}[5m]))
+/
+sum(rate(traces_span_metrics_duration_milliseconds_count{service_name="checkout", span_kind="SPAN_KIND_SERVER"}[5m]))</code></pre>
+          </div>
+          <p>Elige como SLI lo que el usuario nota: la proporción de peticiones correctas y la de peticiones por debajo de un umbral. Los spans internos, como una consulta SQL, sirven para diagnosticar, no para el objetivo. Y ojo con <code>span_name</code>: si lleva ids en vez de la plantilla de ruta, cada pedido crea una serie nueva, la misma <a href="observabilidad-pilares.html#cardinalidad">trampa de la cardinalidad</a>.</p>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que se ve en cuanto lo montas</p>
+              <ul>
+                <li><strong>Olvidar <code>OTEL_PHP_AUTOLOAD_ENABLED</code>.</strong> Sin ella, <code>Globals</code> devuelve un <code>NoopTracerProvider</code>: todo compila, nada falla y el id de traza es una ristra de ceros.</li>
+                <li><strong><code>traceidratio</code> sin <code>parentbased_</code>.</strong> Cada servicio vuelve a decidir con su propio porcentaje: si el anterior guardó la traza con otra regla u otro porcentaje, el hijo la descarta y las trazas llegan a Jaeger con huecos.</li>
+                <li><strong>Calcular el SLI con trazas ya muestreadas.</strong> El muestreo por cola guarda todos los errores y unas pocas correctas: la tasa de error sale disparada.</li>
+                <li><strong>Exportar lejos del proceso.</strong> Con el destino caído, un script que tardaba 0,09 s tardó 0,6 s en terminar mientras el exportador reintentaba. Un collector cerca de la aplicación absorbe eso.</li>
+                <li><strong>Desplegar los paquetes <code>auto-*</code> en una imagen sin la extensión.</strong> Composer se niega a instalarlos sin ella, pero si <code>vendor/</code> se construyó en otra imagen o con <code>--ignore-platform-reqs</code>, PHP solo da un aviso y no crea ningún span.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <ul>
+            <li>Imprime <code>$span-&gt;getContext()-&gt;getTraceId()</code> una vez: si son ceros, el SDK no está cargado.</li>
+            <li>Añade el exportador <code>debug</code> del collector mientras pruebas: su log dice cuántos spans recibe en cada lote.</li>
+            <li>Busca en Jaeger por id de traza y comprueba que el span de servidor de cada servicio cuelga del span cliente del anterior. Si aparece como raíz, alguien no propaga.</li>
+            <li>Con el muestreo activo, genera un error a propósito y confirma que esa traza está en Jaeger.</li>
+          </ul>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>OpenTelemetry cuando…</h4>
+              <ul>
+                <li>Una petición cruza varios servicios o colas y la lentitud no se localiza</li>
+                <li>Quieres SLI medidos en la petición real, no en el balanceador</li>
+                <li>No quieres atarte a un proveedor o ya usas dos</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No hace falta cuando…</h4>
+              <ul>
+                <li>Es un monolito y el perfilado y los logs ya te dicen dónde se va el tiempo</li>
+                <li>No tienes dónde guardar trazas ni quien las mire</li>
+                <li>No puedes instalar la extensión y solo te cabrían spans a mano</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La alternativa sencilla</p>
+              <p>El identificador de correlación en los <a href="logs-estructurados.html#correlacion">logs estructurados</a> y las métricas de <a href="metricas-prometheus.html#php">Prometheus</a> resuelven buena parte del dolor. Si migras más tarde, usa ya la cabecera <code>traceparent</code> en vez de una propia: OpenTelemetry la continuará sin cambios.</p>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>OpenTelemetry separa instrumentar de elegir backend: API y SDK en PHP, OTLP como transporte y el collector decidiendo el destino.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Sin <code>OTEL_PHP_AUTOLOAD_ENABLED</code> o un SDK configurado, todo es no-op y no avisa.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La extensión y los paquetes <code>auto-*</code> ponen el esqueleto; los spans manuales, el dominio.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El propagador escribe y lee <code>traceparent</code>; en colas, lo llamas tú al publicar y al consumir.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Muestrea con <code>parentbased_</code> en el SDK y por cola en el collector.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los SLI salen de los spans de servidor, contados antes del muestreo.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="loki-logql.html">
+              <small>← Anterior</small>
+              <b>Loki y LogQL</b>
+            </a>
+            <a href="alerting.html" class="next">
+              <small>Siguiente →</small>
+              <b>Alerting</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
