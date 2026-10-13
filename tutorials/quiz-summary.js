@@ -138,5 +138,9 @@ window.MENTORAI_QUIZ_SUMMARY = {
   "concurrencia-en-bd": {
     "total": 16,
     "passingScore": null
+  },
+  "oficio-de-ingenieria": {
+    "total": 18,
+    "passingScore": null
   }
 };

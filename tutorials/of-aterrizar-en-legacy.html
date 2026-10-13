@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aterrizar en un código legacy — MentorAI</title>
+    <meta name="description" content="Los primeros días en un código heredado: leer siguiendo un caso real, encontrar a quien sabe, mapear riesgos, el primer cambio seguro y sustituir por partes con el estrangulador." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Oficio</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Aterrizar en un código legacy</h1>
+        <p class="tutorial-hero__lead">Llegas a un proyecto con diez años de historia, sin tests y con un fichero de 3.000 líneas que todos evitan. Las primeras semanas deciden si te conviertes en quien lo entiende o en quien propone tirarlo. Esta lección va de lo primero.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            25 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">Las ganas de tirarlo todo</a></li>
+            <li><a href="#leer">Leer antes de cambiar</a></li>
+            <li><a href="#personas">Buscar a quien sabe</a></li>
+            <li><a href="#riesgos">Mapear los riesgos</a></li>
+            <li><a href="#primer-cambio">El primer cambio, pequeño y seguro</a></li>
+            <li><a href="#estrangulador">Sustituir por partes: el estrangulador</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo saber que vas bien</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            El código legacy no es código malo: es código que funciona, que da dinero y que nadie de los que están ahora escribió entero. Tu trabajo los primeros días no es mejorarlo, sino entender por qué es como es antes de que tus cambios lo descubran por las malas.
+          </p>
+          <h2 id="problema">
+            Las ganas de tirarlo todo
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Abres la tienda: un <code>CheckoutController</code> de 1.400 líneas, variables llamadas <code>$tmp2</code>, un <code>sleep(2)</code> antes de llamar a la pasarela de pagos y cero tests. La reacción natural es pensar que lo harías mejor desde cero. Casi siempre es una trampa, por tres motivos.
+          </p>
+          <ul>
+            <li><strong>Lo raro suele tener un motivo.</strong> Ese <code>sleep(2)</code> puede ser la única defensa contra un fallo de la pasarela que se descubrió con un cobro duplicado. Es la valla de Chesterton: no quites una valla hasta saber por qué la pusieron.</li>
+            <li><strong>El código viejo guarda conocimiento que no está escrito en ningún otro sitio.</strong> Cada <code>if</code> extraño es un caso de negocio que alguien sufrió. Reescribir es redescubrirlos uno a uno, en producción.</li>
+            <li><strong>Aún no sabes leerlo.</strong> «Ilegible» muchas veces significa «no conozco el dominio». En dos semanas, la mitad de lo absurdo tendrá sentido.</li>
+          </ul>
+          <p>
+            Así que el orden es: leer, preguntar, mapear riesgos, hacer un cambio pequeño y solo después proponer cambios grandes.
+          </p>
+          <h2 id="leer">
+            Leer antes de cambiar
+            <a href="#leer" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Leer el proyecto de arriba abajo no funciona: no hay hilo. Lo que funciona es <strong>seguir un caso real de punta a punta</strong>. Elige una operación que el negocio haga cada día, como una devolución parcial de un pedido, y persíguela desde la petición HTTP hasta la tabla donde acaba escrita.
+          </p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Entrada</b><small>La ruta, el comando o el cron que dispara la operación</small></span>
+              </div>
+              <div class="flow__arrow" data-label="depurador o grep"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Camino</b><small>Las clases y métodos por los que pasa, en orden</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Efectos</b><small>Qué escribe, a quién avisa, qué deja para un proceso posterior</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>Notas</b><small>Lo que no entiendes y lo que parece raro, sin tocar nada</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Un caso real recorrido entero enseña más que diez ficheros leídos sueltos.</p>
+          </div>
+          <p>
+            Si puedes levantarlo en local, un punto de ruptura en la entrada y avanzar paso a paso es lo más rápido. Si no, <code>grep</code> desde la ruta hacia dentro. Apunta lo que encuentres en un cuaderno con esta forma, que luego te sirve para preguntar:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">texto · cuaderno-de-aterrizaje.txt</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>Caso seguido: devolución parcial del pedido 1042
+Entrada: POST /admin/pedidos/1042/devolucion → OrderAdminController::refund
+Camino: RefundService::refund → PaymentGateway::refundCharge → tabla refunds
+Efectos laterales: email al cliente, asiento en contabilidad (cron nocturno)
+Lo que no entiendo: por qué se recalcula el IVA dos veces
+Lo que parece raro y NO toco aún: el sleep(2) antes de llamar a la pasarela
+Preguntar a: quien más ha tocado src/Payments/ en el último año</code></pre>
+          </div>
+          <p>
+            La última línea de notas es la más valiosa: separa lo que no entiendes de lo que crees que está mal. Lo que sobreviva semanas en la segunda es tu primer candidato a mejora con fundamento.
+          </p>
+          <h2 id="personas">
+            Buscar a quien sabe
+            <a href="#personas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Media hora con quien mantuvo ese módulo ahorra días de arqueología. El historial te dice quién es y qué cambió:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · quién sabe de pagos</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">git shortlog -sn --since="2 years ago" HEAD -- src/Payments/
+
+git log --date=short --format='%h %ad %an %s' -- src/Payments/RefundService.php | head -20
+
+grep -rn "RefundService" src/ config/ --include='*.php' --include='*.yaml'</code></pre>
+          </div>
+          <p>
+            Los mensajes de commit y los issues enlazados cuentan el porqué que el código no cuenta. Con nombres y contexto, ve a la conversación con preguntas que no se resuelven leyendo:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">texto · preguntas-para-quien-sabe.txt</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>1. ¿Qué parte de esto da miedo tocar, y por qué?
+2. ¿Qué se rompió la última vez que alguien cambió algo aquí?
+3. ¿Hay algo que parece un error y es a propósito?
+4. ¿Qué cliente o proceso depende de esto sin que se vea en el código?
+5. ¿A quién más le preguntarías?</code></pre>
+          </div>
+          <p>
+            Fíjate en que ninguna pregunta es «¿qué hace esta función?»: eso lo averiguas tú. Lo que buscas es lo que no está en el repositorio, como los miedos, los incidentes y las dependencias invisibles.
+          </p>
+          <h2 id="riesgos">
+            Mapear los riesgos
+            <a href="#riesgos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            No todo el legacy es igual de peligroso. Una zona fea que nadie toca no te hará daño; una zona fea que cambia cada semana, sin tests y sin dueño, sí. Cruza tres señales: ¿tiene tests?, ¿hay alguien que la conozca?, ¿cuánto cambia? Esa última te la da el historial:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · ficheros más cambiados del último año</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">git log --since="12 months ago" --name-only --format= -- src/ \
+  | sort | uniq -c | sort -rn | head -15</code></pre>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Zona</th><th>Tests</th><th>Quién sabe</th><th>Cambios (12 meses)</th><th>Riesgo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>src/Payments/</code></td><td>Ninguno</td><td>Nadie del equipo actual</td><td>Muchos</td><td><strong>Alto</strong>: toca con red y en pareja</td></tr>
+                <tr><td><code>src/Checkout/</code></td><td>Algunos, de integración</td><td>Una persona</td><td>Muchos</td><td><strong>Medio</strong>: que revise quien sabe</td></tr>
+                <tr><td><code>src/Catalog/Import/</code></td><td>Ninguno</td><td>Nadie</td><td>Casi ninguno</td><td><strong>Bajo hoy</strong>: no lo toques sin motivo</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            La tabla sirve para decidir dónde ir con cuidado y para avisar cuando alguien estime un cambio en pagos como si fuera catálogo. Compártela: casi siempre alguien corrige una fila, y esa corrección vale oro.
+          </p>
+          <h2 id="primer-cambio">
+            El primer cambio, pequeño y seguro
+            <a href="#primer-cambio" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Tu primer cambio tiene dos objetivos, y ninguno es lucirte: recorrer el ciclo completo (rama, revisión, despliegue, producción) y demostrar que puedes tocar el sistema sin romperlo. Un bug pequeño o un requisito acotado son ideales.
+          </p>
+          <p>
+            Supón que piden envío gratis para socios a partir de 50 €. El método real tiene 400 líneas, lee la base de datos y nadie lo ha probado nunca. Lo tentador es meter el <code>if</code> en medio:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Checkout.php (el if metido dentro)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class Checkout
+{
+    public function total(array $cart): float
+    {
+        $subtotal = 0.0;
+
+        foreach ($cart['lines'] as $line) {
+            $subtotal += $line['price'] * $line['qty'];
+        }
+
+        $shipping = $cart['country'] === 'ES' ? 4.95 : 12.0;
+
+        if ($cart['is_member'] &amp;&amp; $subtotal &gt;= 50.0) {
+            $shipping = 0.0;
+        }
+
+        return round($subtotal + $shipping, 2);
+    }
+}</code></pre>
+          </div>
+          <p>
+            Funciona, pero la regla nueva queda enterrada en un método que no se prueba sin base de datos. La alternativa es lo que Michael Feathers llama <em>sprout method</em> o <em>sprout class</em>: escribes la lógica nueva en una pieza aparte, con tests desde el primer minuto, y el código viejo solo la llama:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · FreeShippingRule.php (nueva, con tests)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class FreeShippingRule
+{
+    private const float THRESHOLD = 50.0;
+
+    public function applies(bool $isMember, float $subtotal): bool
+    {
+        return $isMember &amp;&amp; $subtotal &gt;= self::THRESHOLD;
+    }
+}</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · Checkout.php (después: solo llama a la regla)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class Checkout
+{
+    public function __construct(private readonly FreeShippingRule $freeShipping = new FreeShippingRule())
+    {
+    }
+
+    public function total(array $cart): float
+    {
+        $subtotal = 0.0;
+
+        foreach ($cart['lines'] as $line) {
+            $subtotal += $line['price'] * $line['qty'];
+        }
+
+        $shipping = $cart['country'] === 'ES' ? 4.95 : 12.0;
+
+        if ($this-&gt;freeShipping-&gt;applies((bool) $cart['is_member'], $subtotal)) {
+            $shipping = 0.0;
+        }
+
+        return round($subtotal + $shipping, 2);
+    }
+}</code></pre>
+          </div>
+          <p>
+            El código viejo sigue igual de feo, y eso está bien: el cambio es diminuto, revisable en un minuto y lo nuevo nace probado. Si en vez de añadir tienes que modificar algo que ya existe, primero fija lo que hace hoy con <a href="tests-de-caracterizacion.html">tests de caracterización</a>, que explica cómo aislar dependencias para ponerle red a una clase así. Y si el método pide a gritos un refactor, va en otro PR: <a href="code-smells-refactoring.html">cambiar la forma y el comportamiento a la vez</a> es la manera más rápida de no saber qué rompió qué.
+          </p>
+          <h2 id="estrangulador">
+            Sustituir por partes: el estrangulador
+            <a href="#estrangulador" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            A veces el veredicto, ya con fundamento, es que una parte debe sustituirse. Martin Fowler llamó a la forma segura de hacerlo <em>Strangler Fig Application</em>, por las higueras estranguladoras que crecen alrededor de un árbol hasta reemplazarlo. Lo nuevo crece al lado de lo viejo y una capa delante decide quién atiende cada petición:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · StranglerRouter.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class StranglerRouter
+{
+    private const array MIGRATED_PREFIXES = ['/catalogo'];
+
+    public function __construct(
+        private readonly Closure $legacyKernel,
+        private readonly Closure $newKernel,
+    ) {
+    }
+
+    public function handle(string $path): string
+    {
+        foreach (self::MIGRATED_PREFIXES as $prefix) {
+            if ($path === $prefix || str_starts_with($path, $prefix . '/')) {
+                return ($this-&gt;newKernel)($path);
+            }
+        }
+
+        return ($this-&gt;legacyKernel)($path);
+    }
+}</code></pre>
+          </div>
+          <p>
+            Hoy solo <code>/catalogo</code> va al código nuevo; pedidos y pagos siguen en el viejo. Cuando el catálogo nuevo lleva semanas estable, se añade el siguiente prefijo. En la práctica esa capa suele ser el proxy o el enrutador del framework, pero la idea es la misma: cada paso se deshace quitando una entrada y el sistema funciona entero en todo momento.
+          </p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Estrangulador</h4>
+              <ul>
+                <li>Producción recibe valor desde la primera parte migrada</li>
+                <li>Cada paso se puede deshacer</li>
+                <li>Los casos raros aparecen de uno en uno</li>
+                <li>Se puede parar a medias sin dejar nada roto</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Reescritura completa</h4>
+              <ul>
+                <li>Meses sin entregar nada mientras el viejo sigue cambiando</li>
+                <li>Un único corte de alto riesgo el día del cambio</li>
+                <li>Los casos raros aparecen todos juntos, en producción</li>
+                <li>Si se cancela, el trabajo se pierde entero</li>
+              </ul>
+            </div>
+          </div>
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que suele salir mal al aterrizar</p>
+              <ul>
+                <li><strong>Proponer la reescritura en la primera semana.</strong> Aún no sabes lo que no sabes, y pierdes la confianza del equipo que lo mantiene.</li>
+                <li><strong>Limpiar de paso.</strong> Un PR que arregla un bug y además renombra, reordena y formatea no se puede revisar, y si algo falla nadie sabe qué línea fue.</li>
+                <li><strong>Borrar lo que parece muerto.</strong> El método sin llamadas puede invocarse por nombre desde un cron, una plantilla o una cadena en configuración. Busca en todo el repositorio y mira los logs antes.</li>
+                <li><strong>Corregir un comportamiento raro sin preguntar.</strong> Algún cliente puede depender justo de ese «error».</li>
+                <li><strong>Quedarte solo con el código.</strong> Leer sin preguntar a nadie convierte días en semanas.</li>
+              </ul>
+            </div>
+          </div>
+          <h2 id="comprobar">
+            Cómo saber que vas bien
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Al cabo de unas semanas, estas señales se pueden comprobar:
+          </p>
+          <ul>
+            <li>Puedes explicar en voz alta el flujo principal, de la entrada a la tabla, sin abrir el editor.</li>
+            <li>Tu primer cambio está en producción y no hubo que revertirlo.</li>
+            <li>La lista de «lo que no entiendo» del cuaderno es más corta que la primera semana.</li>
+            <li>Tu mapa de riesgos lo ha revisado alguien y lo usa el equipo al estimar.</li>
+            <li>Cada zona que has tocado tiene ahora algún test que antes no tenía.</li>
+          </ul>
+          <p>
+            Si después de un mes sigues sin poder explicar el flujo principal, el problema no es tu velocidad: falta documentación o falta acceso a quien sabe, y eso hay que decirlo pronto. Cómo plantearlo como deuda con coste y no como queja lo trata <a href="of-deuda-tecnica.html">la deuda técnica negociada</a>.
+          </p>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Este método de aterrizaje cuando…</h4>
+              <ul>
+                <li>Llegas a un equipo o heredas un módulo que no escribiste</li>
+                <li>El código está en producción y alguien depende de él</li>
+                <li>Faltan tests, documentación o la persona que lo hizo</li>
+                <li>Te piden un cambio en una zona que nadie quiere tocar</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Sobra cuando…</h4>
+              <ul>
+                <li>Es un prototipo sin usuarios que se puede tirar sin coste</li>
+                <li>El proyecto es pequeño, tiene tests y lo lees entero en una tarde</li>
+                <li>Te incorporas a un módulo con dueño activo que te lo explica</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La alternativa sencilla</p>
+              <p>
+                Si el sistema es pequeño y su autor sigue en el equipo, sáltate el mapa de riesgos: una sesión de una hora recorriendo un caso real con esa persona, con el cuaderno abierto, te da casi todo lo demás.
+              </p>
+            </div>
+          </div>
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Lo raro suele tener un motivo: entiende por qué está antes de quitarlo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Lee siguiendo un caso real de punta a punta y apunta por separado lo que no entiendes y lo que crees que está mal.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El historial te dice a quién preguntar; pregúntale lo que no está en el código: miedos, incidentes y dependencias invisibles.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El riesgo está donde se cruzan sin tests, sin dueño y mucho cambio, no donde el código es más feo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El primer cambio es pequeño, aislado y con tests; lo nuevo crece aparte y el código viejo solo lo llama.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Para sustituir, estrangula por partes reversibles; reescribirlo todo de golpe es la opción más cara y más arriesgada.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

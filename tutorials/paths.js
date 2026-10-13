@@ -85,6 +85,7 @@ window.MENTORAI_PATHS = [
       { type: "course", ref: "cache-y-rendimiento" },
       { type: "course", ref: "sistemas-distribuidos" },
       { type: "course", ref: "protocolos-y-tiempo-real" },
+      { type: "course", ref: "oficio-de-ingenieria" },
       { type: "course", ref: "programar-con-ia" },
       { type: "course", ref: "ia-por-dentro" },
     ],
