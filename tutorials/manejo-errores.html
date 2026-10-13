@@ -100,6 +100,7 @@
             <li><a href="#null">No devolver ni pasar null</a></li>
             <li><a href="#fail-fast">Fail fast</a></li>
             <li><a href="#separar">Separar lógica y manejo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
@@ -305,6 +306,30 @@ public function __construct(private string $email)
               </p>
             </div>
           </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Lanza una excepción cuando…</h4>
+              <ul>
+                <li>Se rompe una invariante: un <code>Email</code> inválido, un importe negativo en un cobro</li>
+                <li>Falla la infraestructura: la pasarela de pago no responde, la base de datos corta la conexión</li>
+                <li>Quien llama no puede arreglarlo en el sitio y el error debe subir hasta la capa que lo traduce</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Prefiere otra salida cuando…</h4>
+              <ul>
+                <li>Validas un formulario: el usuario quiere todos los errores a la vez, no el primero; el validador de Symfony devuelve una lista de violaciones</li>
+                <li>«No existe» es una respuesta normal, como buscar por email en el login: <code>?Usuario</code></li>
+                <li>Importas diez mil filas y una mala no debe abortar el lote: acumula los errores por fila</li>
+              </ul>
+            </div>
+          </div>
+          <p>La pregunta que decide es si quien llama va a hacer algo distinto justo ahí. Si sí, el fallo es un resultado y va en el tipo de retorno. Si no, es una excepción que sube hasta quien sabe reaccionar: el controlador la convierte en un estado HTTP, como en <a href="rest-errores-y-validacion.html">errores y validación en REST</a>, y el worker decide si reintenta o manda el mensaje a la <a href="sd-dlq-y-reproceso.html">cola de mensajes muertos</a>.</p>
 
           <h2 id="resumen">
             Resumen
