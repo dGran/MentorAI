@@ -4081,7 +4081,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-08-22",
-    reviewed: "2026-10-11",
+    reviewed: "2026-10-13",
   },
   {
     slug: "ia-structured-output",
@@ -4097,7 +4097,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-08-22",
-    reviewed: "2026-08-22",
+    reviewed: "2026-10-13",
   },
   {
     slug: "ia-streaming",
@@ -4113,7 +4113,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-08-22",
-    reviewed: "2026-08-22",
+    reviewed: "2026-10-13",
   },
   {
     slug: "ia-coste-y-evaluacion",
