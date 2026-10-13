@@ -50,3 +50,26 @@ cualquier decisión de producto o de norma; borrar contenido no acordado.
 - Alcance: «#131 + #132 y auditoría (Recomendado)».
 - Automerge: «Sí, igual que antes (Recomendado)» — lo que pase review fresca, QA y CI se mergea, en loop
   y sin pausas.
+
+## Enmienda 1 (2026-10-13): la auditoría entra en la tanda
+
+La auditoría confirmó 101 hallazgos en 296 lecciones (31 falsos, 70 desfasados, más 6 errores no temporales
+que cazó de paso), cada uno con fuente oficial o ejecución en Docker. Decidido por el usuario, verbatim:
+«Crear los 9 y meterlos (Recomendado)». Mismo automerge que en § 6.
+
+| Issue | Área | Prioridad |
+|---|---|---|
+| #135 | Go y Rust (toolchain `golang:1.23` / `rust:1.80`) | P2 |
+| #136 | Python, fundamentos y la máquina | P2 |
+| #137 | Linux, systemd, nginx y TLS | P2 |
+| #138 | Docker, CI, Kubernetes y git | P2 |
+| #139 | Symfony y DBAL (framework-por-dentro, phpunit) | P2 |
+| #140 | Observabilidad | P2 |
+| #141 | Claude Code e IA | P2 |
+| #142 | Protocolos, REST, Redis, RabbitMQ, extensiones PHP | P3 |
+| #143 | Diseño y distribuidos | P3 |
+
+Mecánica: los 9 se implementan en paralelo, cada uno en su worktree, por subagentes que solo tocan los
+`.html` de sus lecciones y sus preguntas en `checks.js`/`quizzes.js`. No comparten lecciones. Cada PR
+pasa una review con contexto fresco, que vuelve a contrastar con la fuente o a ejecutar en Docker. La
+publicación es en serie: rebase, `reviewed`, índice, `VERSION` +1, gates, QA y merge.
