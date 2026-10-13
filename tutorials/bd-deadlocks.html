@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Deadlocks: leer el log y evitarlos — MentorAI</title>
+    <meta name="description" content="Provoca un deadlock real en MySQL 8.4 y Postgres 17, lee LATEST DETECTED DEADLOCK y el log del servidor, entiende qué víctima elige cada motor y evítalo con orden consistente, transacciones cortas y reintento acotado." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Bases de datos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Deadlocks: leer el log y evitarlos</h1>
+        <p class="tutorial-hero__lead">Un día aparece en el log un «Deadlock found when trying to get lock» y nadie sabe de dónde sale. No es un fallo del motor: es tu código pidiendo filas en un orden que se cruza. Aquí lo provocas a propósito, lees lo que el motor deja escrito y aprendes a que no vuelva o a sobrevivirlo.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            25 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">Un error que nadie escribió</a></li>
+            <li><a href="#provocar">Provocar uno en dos sesiones</a></li>
+            <li><a href="#mysql">Leer el deadlock en MySQL</a></li>
+            <li><a href="#postgres">Leer el deadlock en Postgres</a></li>
+            <li><a href="#victima">Qué víctima elige cada motor</a></li>
+            <li><a href="#causas">Las causas típicas</a></li>
+            <li><a href="#curas">Las curas, en PHP</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Un deadlock es un ciclo de esperas: A tiene lo que B necesita y al revés, así que el motor mata a una. Evitarlos del todo no siempre se puede; reducirlos y reintentar bien, sí.
+          </p>
+
+          <h2 id="problema">
+            Un error que nadie escribió
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La idea ya la tienes de <a href="transacciones-acid.html">Transacciones y ACID</a> y de <a href="concurrencia.html">concurrencia</a>: dos transacciones se bloquean mutuamente y el motor rompe el empate. Lo que falta es lo operativo. El error solo aparece con carga real y casi nunca se reproduce en local. Por eso lo primero es saber provocarlo y leer lo que el motor guarda: ese registro dice qué dos sentencias se cruzaron y sobre qué índice.
+          </p>
+          <p>
+            Todo lo de esta lección está ejecutado en MySQL 8.4 con InnoDB y en PostgreSQL 17, en Docker, con la misma tabla de dos cuentas.
+          </p>
+
+          <h2 id="provocar">
+            Provocar uno en dos sesiones
+            <a href="#provocar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Abre dos terminales contra el mismo motor. Una transferencia va de la cuenta 1 a la 2 y otra, a la vez, de la 2 a la 1. Cada una bloquea primero la fila de su origen:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · MySQL 8.4 y Postgres 17 · preparación</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">CREATE TABLE cuentas (id INT PRIMARY KEY, titular VARCHAR(40) NOT NULL, saldo INT NOT NULL);
+INSERT INTO cuentas VALUES (1, 'Ana', 1000), (2, 'Bruno', 1000);</code></pre>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Paso</th><th>Sesión A</th><th>Sesión B</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>1</td><td><code>BEGIN;</code><br /><code>UPDATE cuentas SET saldo = saldo - 100 WHERE id = 1;</code></td><td></td></tr>
+                <tr><td>2</td><td></td><td><code>BEGIN;</code><br /><code>UPDATE cuentas SET saldo = saldo - 50 WHERE id = 2;</code></td></tr>
+                <tr><td>3</td><td></td><td><code>UPDATE cuentas SET saldo = saldo + 50 WHERE id = 1;</code> se queda esperando a A</td></tr>
+                <tr><td>4</td><td><code>UPDATE cuentas SET saldo = saldo + 100 WHERE id = 2;</code> cierra el ciclo</td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            En el paso 4 una de las dos recibe el error:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">salida · MySQL 8.4</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>ERROR 1213 (40001): Deadlock found when trying to get lock; try restarting transaction</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">salida · Postgres 17</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>ERROR:  deadlock detected
+DETAIL:  Process 109 waits for ShareLock on transaction 743; blocked by process 102.
+Process 102 waits for ShareLock on transaction 744; blocked by process 109.
+HINT:  See server log for query details.
+CONTEXT:  while updating tuple (0,1) in relation "cuentas"</code></pre>
+          </div>
+          <p>
+            En la aplicación importa el SQLSTATE: <code>40001</code> en MySQL y <code>40P01</code> en Postgres. La otra sesión confirma.
+          </p>
+
+          <h2 id="mysql">
+            Leer el deadlock en MySQL
+            <a href="#mysql" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            InnoDB guarda el último deadlock en <code>SHOW ENGINE INNODB STATUS</code>, sección <code>LATEST DETECTED DEADLOCK</code>. Este es el del ejemplo, sin los volcados hexadecimales de cada registro:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">salida · MySQL 8.4 · SHOW ENGINE INNODB STATUS\G</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>LATEST DETECTED DEADLOCK
+------------------------
+*** (1) TRANSACTION:
+TRANSACTION 1816, ACTIVE 1 sec starting index read
+LOCK WAIT 3 lock struct(s), heap size 1128, 2 row lock(s), undo log entries 1
+UPDATE cuentas SET saldo = saldo + 50 WHERE id = 1
+
+*** (1) HOLDS THE LOCK(S):
+RECORD LOCKS ... index PRIMARY of table `banco`.`cuentas` trx id 1816 lock_mode X locks rec but not gap
+ 0: len 4; hex 80000002; asc     ;;
+
+*** (1) WAITING FOR THIS LOCK TO BE GRANTED:
+RECORD LOCKS ... index PRIMARY of table `banco`.`cuentas` trx id 1816 lock_mode X locks rec but not gap waiting
+ 0: len 4; hex 80000001; asc     ;;
+
+*** (2) TRANSACTION:
+TRANSACTION 1815, ACTIVE 2 sec starting index read
+LOCK WAIT 3 lock struct(s), heap size 1128, 2 row lock(s), undo log entries 1
+UPDATE cuentas SET saldo = saldo + 100 WHERE id = 2
+
+*** (2) HOLDS THE LOCK(S):
+RECORD LOCKS ... index PRIMARY of table `banco`.`cuentas` trx id 1815 lock_mode X locks rec but not gap
+ 0: len 4; hex 80000001; asc     ;;
+
+*** (2) WAITING FOR THIS LOCK TO BE GRANTED:
+RECORD LOCKS ... index PRIMARY of table `banco`.`cuentas` trx id 1815 lock_mode X locks rec but not gap waiting
+ 0: len 4; hex 80000002; asc     ;;
+
+*** WE ROLL BACK TRANSACTION (2)</code></pre>
+          </div>
+          <p>Se lee en cuatro pasadas:</p>
+          <ul>
+            <li><strong>La sentencia</strong> de cada transacción es la que esperaba, no la que cogió el bloqueo que retiene; esa no sale.</li>
+            <li><strong>El índice</strong> (<code>index PRIMARY</code>) dice por dónde entró el bloqueo. La clave primaria en una consulta que filtraba por otra columna delata un índice que falta.</li>
+            <li><strong>El modo</strong>: <code>locks rec but not gap</code> es la fila sola; <code>locks gap before rec</code> e <code>insert intention</code> son huecos entre filas, la firma de las lecturas con bloqueo de más.</li>
+            <li><strong>La clave</strong> va en hexadecimal: <code>80000001</code> es el entero 1 con el bit de signo invertido.</li>
+          </ul>
+          <p>
+            El problema es que <code>INNODB STATUS</code> solo guarda el último. Para tener el historial, activa <code>innodb_print_all_deadlocks</code> (viene a <code>OFF</code>) y cada deadlock irá al log de errores:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ini · my.cnf</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="ini">[mysqld]
+innodb_print_all_deadlocks = ON
+log_error_verbosity = 3</code></pre>
+          </div>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Sin verbosidad 3, el log sale sin cabeceras</p>
+              <p>
+                Con el <code>log_error_verbosity = 2</code> por defecto, en 8.4 el volcado aparece en el log, pero las líneas que lo anuncian (<code>[Note] ... Transactions deadlock detected</code>) y la que dice a quién se deshizo (<code>WE ROLL BACK TRANSACTION</code>) son notas y se filtran. Te quedan bloques de transacciones sueltos sin saber cuál murió.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="postgres">
+            Leer el deadlock en Postgres
+            <a href="#postgres" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Postgres escribe cada deadlock en el log del servidor con las dos sentencias, que no aparecen en el mensaje al cliente: de ahí el <code>HINT</code>. Si además activas <code>log_lock_waits</code> (en 17 viene a <code>off</code>), registra toda espera que pase de <code>deadlock_timeout</code>, que por defecto es <code>1s</code>, y verás las esperas largas aunque no acaben en ciclo:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · Postgres 17</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">ALTER SYSTEM SET log_lock_waits = on;
+SELECT pg_reload_conf();</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">salida · log de Postgres 17</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>LOG:  process 109 detected deadlock while waiting for ShareLock on transaction 743 after 1000.107 ms
+DETAIL:  Process holding the lock: 102. Wait queue: .
+ERROR:  deadlock detected
+DETAIL:  Process 109 waits for ShareLock on transaction 743; blocked by process 102.
+        Process 102 waits for ShareLock on transaction 744; blocked by process 109.
+        Process 109: UPDATE cuentas SET saldo = saldo + 50 WHERE id = 1;
+        Process 102: UPDATE cuentas SET saldo = saldo + 100 WHERE id = 2;
+STATEMENT:  UPDATE cuentas SET saldo = saldo + 50 WHERE id = 1;</code></pre>
+          </div>
+          <p>
+            El <code>ShareLock</code> sobre una <em>transacción</em> es normal: quien quiere una fila ya modificada espera a que acabe la transacción que la tocó. Una espera larga sin ciclo deja <code>still waiting for ShareLock ... after 1000.105 ms</code>.
+          </p>
+
+          <h2 id="victima">
+            Qué víctima elige cada motor
+            <a href="#victima" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>MySQL 8.4 (InnoDB)</h4>
+              <ul>
+                <li>Detecta el ciclo en el momento en que se forma (<code>innodb_deadlock_detect</code>, a <code>ON</code>).</li>
+                <li>Deshace la transacción más pequeña, contada por filas insertadas, cambiadas o borradas.</li>
+                <li>Deshace la transacción entera, no solo la sentencia.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Postgres 17</h4>
+              <ul>
+                <li>Quien espera revisa si hay ciclo tras <code>deadlock_timeout</code>.</li>
+                <li>Si lo encuentra, se aborta a sí mismo, sin mirar cuánto trabajo lleva. Cada proceso revisa una sola vez: cae el primero cuya revisión ya encuentra el ciclo, que es quien lo cerró si se cerró pasado el <code>deadlock_timeout</code> del primero en esperar.</li>
+                <li>La transacción queda abortada y rechaza todo hasta el <code>ROLLBACK</code>.</li>
+              </ul>
+            </div>
+          </div>
+          <p>
+            Con una transacción que antes insertaba 200 filas (5.000 en Postgres), MySQL deshizo la ligera y Postgres abortó la pesada: fue la primera en esperar y el ciclo se cerró antes de que venciera su <code>deadlock_timeout</code>.
+          </p>
+
+          <h2 id="causas">
+            Las causas típicas
+            <a href="#causas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <strong>Orden distinto.</strong> Es el ejemplo de arriba: dos caminos de código bloquean las mismas filas en orden opuesto. Pasa con transferencias o con un servicio que bloquea pedido y luego cliente mientras otro hace lo contrario.
+          </p>
+          <p>
+            <strong>Índices que faltan.</strong> En MySQL un <code>UPDATE</code> bloquea lo que <em>recorre</em>, no lo que cambia. Con <code>pedidos.cliente_id</code> sin índice, <code>UPDATE pedidos ... WHERE cliente_id = 1</code> recorre toda la tabla y deja bloqueada cada fila; otra sesión que actualizaba solo el cliente 2 esperó hasta su <code>Lock wait timeout exceeded</code>. Con el índice creado, pasó sin esperar. Más filas bloqueadas, más ciclos (<a href="cr-indices-en-practica.html">índices en la práctica</a>).
+          </p>
+          <p>
+            <strong>Lecturas con bloqueo de más.</strong> El patrón «compruebo si existe con <code>FOR UPDATE</code> y, si no, inserto» en el <code>REPEATABLE READ</code> por defecto de MySQL. Sobre una fila que no existe, el <code>SELECT ... FOR UPDATE</code> bloquea el hueco donde iría, y dos sesiones pueden tener ese hueco a la vez. Cuando las dos insertan, cada una espera a la otra:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">salida · MySQL 8.4 · fragmento de LATEST DETECTED DEADLOCK</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>INSERT INTO stock VALUES ('B-200', 1)
+*** (1) HOLDS THE LOCK(S):
+... index PRIMARY of table `banco`.`stock` trx id 1878 lock_mode X locks gap before rec
+*** (1) WAITING FOR THIS LOCK TO BE GRANTED:
+... index PRIMARY of table `banco`.`stock` trx id 1878 lock_mode X locks gap before rec insert intention waiting</code></pre>
+          </div>
+          <p>
+            En <code>READ COMMITTED</code> el mismo guion no hace deadlock: la segunda recibe <code>1062 Duplicate entry</code>, un error que puedes tratar. Mejor aún, deja que la clave única decida con un <code>INSERT ... ON DUPLICATE KEY UPDATE</code> en lugar de leer antes.
+          </p>
+
+          <h2 id="curas">
+            Las curas, en PHP
+            <a href="#curas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Este código bloquea en el orden de los argumentos y, si falla, la transferencia se pierde.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · transfer.php (antes)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+function transfer(PDO $connection, int $fromId, int $toId, int $amount): void
+{
+    $connection-&gt;beginTransaction();
+
+    $connection-&gt;prepare('UPDATE cuentas SET saldo = saldo - ? WHERE id = ?')-&gt;execute([$amount, $fromId]);
+    $connection-&gt;prepare('UPDATE cuentas SET saldo = saldo + ? WHERE id = ?')-&gt;execute([$amount, $toId]);
+
+    $connection-&gt;commit();
+}</code></pre>
+          </div>
+          <p>
+            La primera cura es el <strong>orden consistente</strong>: bloquear siempre por id ascendente, sea cual sea el sentido. Entre transferencias ya no hay ciclo: la segunda espera y sigue. Es el mismo <code>FOR UPDATE</code> de <a href="bd-bloqueo-pesimista.html">bloqueo pesimista</a>, con el orden como regla. La transacción la abre quien llama: el reintento de más abajo.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · transfer.php (después)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+function transfer(PDO $connection, int $fromId, int $toId, int $amount): void
+{
+    $accountIds = [$fromId, $toId];
+    sort($accountIds);
+
+    $lockAccount = $connection-&gt;prepare('SELECT id FROM cuentas WHERE id = ? FOR UPDATE');
+
+    foreach ($accountIds as $accountId) {
+        $lockAccount-&gt;execute([$accountId]);
+    }
+
+    $connection-&gt;prepare('UPDATE cuentas SET saldo = saldo - ? WHERE id = ?')-&gt;execute([$amount, $fromId]);
+    $connection-&gt;prepare('UPDATE cuentas SET saldo = saldo + ? WHERE id = ?')-&gt;execute([$amount, $toId]);
+}</code></pre>
+          </div>
+          <p>
+            La segunda es la <strong>transacción corta</strong>: nada de llamadas HTTP ni cálculos pesados entre el <code>BEGIN</code> y el <code>COMMIT</code>. Cuanto más se retienen los bloqueos, más ventana para un ciclo.
+          </p>
+          <p>
+            La tercera es la red: un <strong>reintento acotado del bloque entero</strong>. No de la sentencia que falló, porque MySQL ya deshizo todo lo anterior y Postgres dejó la transacción inservible. Se reintenta solo ante los SQLSTATE de concurrencia, con un tope y una espera aleatoria creciente para que las dos no vuelvan a chocar al mismo ritmo:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · DeadlockRetrier.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class DeadlockRetrier
+{
+    private const int MAX_ATTEMPTS = 3;
+    private const int BASE_DELAY_MICROSECONDS = 50_000;
+    private const array RETRYABLE_SQLSTATES = ['40001', '40P01'];
+
+    public function __construct(private readonly PDO $connection)
+    {
+    }
+
+    public function run(callable $unitOfWork): mixed
+    {
+        $attempt = 1;
+
+        while (true) {
+            $this-&gt;connection-&gt;beginTransaction();
+
+            try {
+                $result = $unitOfWork($this-&gt;connection);
+                $this-&gt;connection-&gt;commit();
+
+                return $result;
+            } catch (Throwable $exception) {
+                $this-&gt;connection-&gt;rollBack();
+
+                if (!$this-&gt;isRetryable($exception) || $attempt === self::MAX_ATTEMPTS) {
+                    throw $exception;
+                }
+
+                usleep(random_int(1, 2 ** $attempt) * self::BASE_DELAY_MICROSECONDS);
+                $attempt++;
+            }
+        }
+    }
+
+    private function isRetryable(Throwable $exception): bool
+    {
+        return $exception instanceof PDOException
+            &amp;&amp; in_array($exception-&gt;errorInfo[0] ?? null, self::RETRYABLE_SQLSTATES, true);
+    }
+}</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · uso</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$retrier = new DeadlockRetrier($connection);
+$retrier-&gt;run(fn (PDO $connection) =&gt; transfer($connection, $fromId, $toId, $amount));</code></pre>
+          </div>
+          <p>
+            Se mira <code>errorInfo[0]</code>, el SQLSTATE, y no el código del driver: con <code>pdo_pgsql</code>, <code>errorInfo[1]</code> vale <code>7</code> para cualquier error. <code>40001</code> es también el fallo de serialización de Postgres, que se reintenta igual. Probado en dos procesos con la versión «antes»: sin reintento, uno falla; con él, uno termina al segundo intento.
+          </p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Si usas un framework</p>
+              <p>
+                En Laravel, <code>DB::transaction($callback, 3)</code> ya reintenta el bloque ante errores de concurrencia. Doctrine DBAL convierte el 1213 y el 40P01 en <code>DeadlockException</code>, que implementa <code>RetryableException</code>, pero no reintenta: y <code>wrapInTransaction</code> del ORM cierra el <code>EntityManager</code> al fallar, así que el reintento necesita uno nuevo. El encaje con la unidad de trabajo está en <a href="orm-transacciones-unit-of-work.html">transacciones en el ORM</a>.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que convierte un deadlock en un incidente</p>
+              <ul>
+                <li><strong>Reintentar la última sentencia</strong> en vez del bloque: en MySQL aplicas medio cambio sin la otra mitad.</li>
+                <li><strong>Tratar el 1205 como un deadlock.</strong> <code>Lock wait timeout exceeded</code> deshace solo la sentencia (comprobado: el cambio anterior seguía ahí). Si lo reintentas, haz <code>ROLLBACK</code> antes.</li>
+                <li><strong>Efectos fuera de la base de datos dentro del bloque.</strong> Si el bloque manda un correo y se reintenta, sale dos veces. Sácalo con un <a href="sd-outbox.html">outbox</a> o hazlo <a href="idempotencia.html">idempotente</a>.</li>
+                <li><strong>Reintentos sin tope</strong>: esconden el problema y multiplican la carga.</li>
+                <li><strong>Apagar <code>innodb_deadlock_detect</code></strong> para «quitar» deadlocks: el ciclo sigue ahí y acaba en el <code>Lock wait timeout</code>, a 50 s por defecto (comprobado: con la detección apagada, las dos sesiones recibieron el 1205).</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Primero, cuántos hay: los dos motores llevan un contador acumulado.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · MySQL 8.4 y Postgres 17</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">SELECT NAME, COUNT FROM information_schema.INNODB_METRICS WHERE NAME = 'lock_deadlocks';
+
+SELECT datname, deadlocks FROM pg_stat_database WHERE datname = current_database();</code></pre>
+          </div>
+          <p>
+            Después, quién bloquea a quién mientras la espera ocurre:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · MySQL 8.4 y Postgres 17</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">SELECT waiting_pid, waiting_query, blocking_pid, blocking_query, wait_age FROM sys.innodb_lock_waits;
+
+SELECT pid, pg_blocking_pids(pid) AS bloqueado_por, left(query, 60) AS query
+FROM pg_stat_activity
+WHERE cardinality(pg_blocking_pids(pid)) &gt; 0;</code></pre>
+          </div>
+          <p>
+            Y la prueba que vale: el guion de dos sesiones con tus consultas reales. Si tras la cura el segundo proceso espera y termina, el ciclo ya no existe.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Cuándo sí</h4>
+              <ul>
+                <li>El contador de deadlocks sube o el log los muestra con carga real.</li>
+                <li>Varias rutas de código bloquean las mismas tablas.</li>
+                <li>Cualquier transacción que escriba con concurrencia: el reintento acotado es barato.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Cuándo no</h4>
+              <ul>
+                <li>Transacciones de una sola sentencia sobre una fila, como <code>UPDATE ... SET x = x - 1</code>: sin un segundo bloqueo que pedir, el ciclo de esta lección no se forma.</li>
+                <li>Procesos batch de un solo trabajador sobre su propio rango.</li>
+              </ul>
+            </div>
+          </div>
+          <p>
+            Si hay una fila caliente y los reintentos se disparan, cambia de estrategia: el <a href="bd-bloqueo-optimista.html">bloqueo optimista</a> no retiene bloqueos y una cola con <code>SKIP LOCKED</code> reparte el trabajo.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un deadlock se reproduce con dos sesiones y dos filas en orden opuesto; hazlo con tus consultas antes de tocar nada.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>MySQL guarda solo el último en <code>LATEST DETECTED DEADLOCK</code>; para el historial, <code>innodb_print_all_deadlocks</code> y verbosidad 3. Postgres lo escribe siempre en el log; <code>log_lock_waits</code> añade las esperas largas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>InnoDB detecta al instante y deshace la transacción más pequeña; Postgres revisa una vez tras <code>deadlock_timeout</code> y cae el primero cuya revisión encuentra el ciclo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Causas habituales: orden distinto, índices que faltan y <code>FOR UPDATE</code> sobre filas que no existen.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Curas: orden consistente, transacciones cortas y reintento acotado del bloque entero ante <code>40001</code> y <code>40P01</code>.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

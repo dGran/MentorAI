@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bloqueo pesimista: FOR UPDATE y colas con SKIP LOCKED — MentorAI</title>
+    <meta name="description" content="SELECT FOR UPDATE y FOR SHARE reproducidos en MySQL 8.4 y Postgres 17: qué filas y huecos bloquea cada motor, NOWAIT y los tiempos de espera, una cola de trabajos con SKIP LOCKED y por qué no se llama a una API con la fila bloqueada." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Bases de datos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Bloqueo pesimista: FOR UPDATE y colas con SKIP LOCKED</h1>
+        <p class="tutorial-hero__lead">Dos peticiones leen «queda una unidad» a la vez y las dos venden. Un <code>FOR UPDATE</code> lo arregla en una línea, pero bloquea más filas de las que crees, durante más tiempo del que crees, y mal usado convierte tu API en una fila de espera. Aquí lo reproduces en MySQL 8.4 y Postgres 17.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            25 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">Leer para luego escribir</a></li>
+            <li><a href="#for-update">FOR UPDATE y FOR SHARE</a></li>
+            <li><a href="#que-bloquea">Qué bloquea de verdad</a></li>
+            <li><a href="#esperar">No esperar para siempre</a></li>
+            <li><a href="#cola">Una cola con SKIP LOCKED</a></li>
+            <li><a href="#duracion">Hasta el COMMIT: nada de HTTP dentro</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            El bloqueo pesimista parte de una sospecha: «alguien va a tocar esta fila mientras decido qué hacer con ella». Así que la reservas antes. Es la herramienta correcta con contención real, y la más fácil de usar de más.
+          </p>
+
+          <h2 id="problema">
+            Leer para luego escribir
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Lees un valor, decides en PHP y escribes: entre la lectura y la escritura hay un hueco donde se cuela otra petición. <a href="concurrencia.html">Concurrencia</a> explica la carrera, <a href="transacciones-acid.html#locks">Transacciones y ACID</a> presenta <code>FOR UPDATE</code> en concepto y <a href="bd-anomalias-en-dos-terminales.html">la lección anterior</a> reproduce las anomalías. Aquí, lo operativo: qué bloquea cada motor, cuánto dura y cómo montar una cola de trabajos.
+          </p>
+          <p>Para reproducirlo todo, levanta los dos motores y crea dos tablas pequeñas:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · los dos motores en Docker</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">docker run -d --rm --name bd-mysql -e MYSQL_ROOT_PASSWORD=x mysql:8.4
+docker run -d --rm --name bd-pg -e POSTGRES_PASSWORD=x postgres:17
+
+docker exec -it bd-mysql mysql -uroot -px
+docker exec -it bd-pg psql -U postgres</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · MySQL 8.4 y Postgres 17 · esquema</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">CREATE TABLE productos (id INT PRIMARY KEY, nombre VARCHAR(40), stock INT NOT NULL);
+INSERT INTO productos VALUES (1, 'teclado', 3), (2, 'raton', 10), (3, 'monitor', 1);
+
+CREATE TABLE pedidos (id INT PRIMARY KEY, cliente_id INT NOT NULL, estado VARCHAR(20) NOT NULL);
+CREATE INDEX idx_cliente ON pedidos (cliente_id);
+INSERT INTO pedidos VALUES (1, 10, 'pagado'), (2, 20, 'pendiente'), (3, 30, 'pagado'), (4, 40, 'pendiente');</code></pre>
+          </div>
+
+          <h2 id="for-update">
+            FOR UPDATE y FOR SHARE
+            <a href="#for-update" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <code>SELECT … FOR UPDATE</code> lee la fila y toma un bloqueo exclusivo, como si ya la hubieras modificado. <code>FOR SHARE</code> toma uno compartido: «que nadie la cambie mientras decido», pero otros pueden pedir también <code>FOR SHARE</code>. Los dos van dentro de una transacción: con autocommit, el bloqueo se suelta al terminar la sentencia.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · MySQL 8.4 · sesión A</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">START TRANSACTION;
+SELECT * FROM productos WHERE id = 1 FOR UPDATE;
+
+SELECT object_name, index_name, lock_type, lock_mode, lock_data
+FROM performance_schema.data_locks;
++-------------+------------+-----------+---------------+-----------+
+| object_name | index_name | lock_type | lock_mode     | lock_data |
++-------------+------------+-----------+---------------+-----------+
+| productos   | NULL       | TABLE     | IX            | NULL      |
+| productos   | PRIMARY    | RECORD    | X,REC_NOT_GAP | 1         |
++-------------+------------+-----------+---------------+-----------+</code></pre>
+          </div>
+          <p>
+            Una fila en exclusiva (<code>X</code>) y una intención sobre la tabla (<code>IX</code>) que no estorba a nadie. Con A abierta, esto medí desde una sesión B:
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Sesión A tiene…</th><th>Sesión B intenta…</th><th>MySQL 8.4</th><th>Postgres 17</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>FOR UPDATE</code> en la fila 1</td><td><code>SELECT</code> normal de la fila 1</td><td>Lee al momento</td><td>Lee al momento</td></tr>
+                <tr><td><code>FOR UPDATE</code> en la fila 1</td><td><code>FOR SHARE</code> de la fila 1</td><td>Espera al fin de A</td><td>Espera al fin de A</td></tr>
+                <tr><td><code>FOR UPDATE</code> en la fila 1</td><td><code>UPDATE</code> de la fila 2</td><td>Al momento</td><td>Al momento</td></tr>
+                <tr><td><code>FOR SHARE</code> en la fila 1</td><td><code>FOR SHARE</code> de la fila 1</td><td>Al momento</td><td>Al momento</td></tr>
+                <tr><td><code>FOR SHARE</code> en la fila 1</td><td><code>UPDATE</code> de la fila 1</td><td>Espera al fin de A</td><td>Espera al fin de A</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Lo que sorprende es la primera fila: un <code>SELECT</code> normal lee una instantánea (MVCC) y no espera. Por eso el bloqueo solo protege si <strong>todos</strong> los caminos que leen para escribir usan <code>FOR UPDATE</code>.
+          </p>
+
+          <h2 id="que-bloquea">
+            Qué bloquea de verdad
+            <a href="#que-bloquea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Por clave primaria, una fila. Por un índice secundario, en InnoDB con <code>REPEATABLE READ</code> (su nivel por defecto), bastante más: también los <strong>huecos</strong> entre valores del índice, para que nadie inserte una fila que tu consulta habría visto.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · MySQL 8.4 · sesión A, por índice secundario</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">START TRANSACTION;
+SELECT * FROM pedidos WHERE cliente_id = 20 FOR UPDATE;
+
++-------------+-------------+-----------+---------------+-----------+
+| object_name | index_name  | lock_type | lock_mode     | lock_data |
++-------------+-------------+-----------+---------------+-----------+
+| pedidos     | idx_cliente | RECORD    | X             | 20, 2     |
+| pedidos     | idx_cliente | RECORD    | X,GAP         | 30, 3     |
+| pedidos     | PRIMARY     | RECORD    | X,REC_NOT_GAP | 2         |
+| pedidos     | NULL        | TABLE     | IX            | NULL      |
++-------------+-------------+-----------+---------------+-----------+</code></pre>
+          </div>
+          <p>
+            <code>X</code> sobre la entrada 20 incluye el hueco anterior (de 10 a 20) y <code>X,GAP</code> cubre el de 20 a 30. Desde B, insertar un pedido del cliente 15, 20 o 25 esperó a que A terminara; del 35, entró al momento.
+          </p>
+          <p>
+            Sin índice que acote la búsqueda es peor. <code>WHERE estado = 'pendiente'</code> recorre la tabla entera y, en <code>REPEATABLE READ</code>, InnoDB deja bloqueadas <strong>todas</strong> las filas que examinó, también las que no cumplen el filtro:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · MySQL 8.4 · sesión A, sin índice en estado</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">START TRANSACTION;
+SELECT * FROM pedidos WHERE estado = 'pendiente' FOR UPDATE;
+
++------------+-----------+------------------------+
+| index_name | lock_mode | lock_data              |
++------------+-----------+------------------------+
+| PRIMARY    | X         | 1                      |
+| PRIMARY    | X         | 2                      |
+| PRIMARY    | X         | 3                      |
+| PRIMARY    | X         | 4                      |
+| PRIMARY    | X         | supremum pseudo-record |
++------------+-----------+------------------------+</code></pre>
+          </div>
+          <p>
+            El pedido 3 está pagado, pero un <code>UPDATE</code> sobre él desde B esperó al final de A. <code>supremum pseudo-record</code> es el hueco tras la última fila: tampoco entra ningún <code>INSERT</code>.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Caso, con <code>FOR UPDATE</code></th><th>MySQL 8.4, <code>REPEATABLE READ</code></th><th>MySQL 8.4, <code>READ COMMITTED</code></th><th>Postgres 17, <code>READ COMMITTED</code></th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Por índice secundario</td><td>Filas y huecos vecinos</td><td>Solo las filas</td><td>Solo las filas</td></tr>
+                <tr><td>Sin índice</td><td>Todas las filas recorridas</td><td>Solo las que cumplen</td><td>Solo las que cumplen</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Postgres no bloquea huecos: solo las filas que devuelve. En MySQL, <code>READ COMMITTED</code> quita los huecos, pero cambia lo que leen tus transacciones. Lo barato es un índice que acote cada <code>FOR UPDATE</code> (<a href="cr-indices-en-practica.html">Índices en la práctica</a>).
+          </p>
+
+          <h2 id="esperar">
+            No esperar para siempre
+            <a href="#esperar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            ¿Cuánto espera B? En MySQL, <code>innodb_lock_wait_timeout</code>: 50 segundos. En Postgres, <code>lock_timeout</code> vale 0: sin límite. O no esperas nada con <code>NOWAIT</code>, o fijas un tope.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · MySQL 8.4 · sesión B, con A bloqueando la fila 1</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">SELECT * FROM productos WHERE id = 1 FOR UPDATE NOWAIT;
+ERROR 3572 (HY000): Statement aborted because lock(s) could not be acquired immediately and NOWAIT is set.
+
+SET SESSION innodb_lock_wait_timeout = 2;
+SELECT * FROM productos WHERE id = 1 FOR UPDATE;
+ERROR 1205 (HY000): Lock wait timeout exceeded; try restarting transaction</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · Postgres 17 · sesión B, con A bloqueando la fila 1</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">\set VERBOSITY verbose
+SELECT * FROM productos WHERE id = 1 FOR UPDATE NOWAIT;
+ERROR:  55P03: could not obtain lock on row in relation "productos"
+
+SET lock_timeout = '1s';
+SELECT * FROM productos WHERE id = 1 FOR UPDATE;
+ERROR:  55P03: canceling statement due to lock timeout
+CONTEXT:  while locking tuple (0,1) in relation "productos"</code></pre>
+          </div>
+          <p>
+            En PDO llegan como <code>PDOException</code>: en MySQL, con <code>getCode()</code> a <code>HY000</code>, el número está en <code>$error-&gt;errorInfo[1]</code> (3572 o 1205); en Postgres, el SQLSTATE es <code>55P03</code>. <code>NOWAIT</code> encaja cuando esperar no tiene sentido («otro ya procesa este pedido»: 409); el tope, cuando sí, por debajo del timeout de tu petición HTTP.
+          </p>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El 1205 de MySQL no deshace tu transacción</p>
+              <p>
+                Con <code>innodb_rollback_on_timeout</code> a <code>OFF</code> (por defecto), solo se deshace la sentencia que esperaba: un <code>UPDATE</code> previo sobrevivió al 1205 y quedó grabado con el <code>COMMIT</code>. Ante el 1205, <code>ROLLBACK</code> y reintenta entera. Postgres no deja ese margen: tras el error, la transacción queda abortada, rechaza cualquier sentencia y su <code>COMMIT</code> responde <code>ROLLBACK</code>.
+              </p>
+            </div>
+          </div>
+          <p>
+            Ojo: <code>lock_wait_timeout</code>, sin <code>innodb_</code>, es la espera de bloqueos de metadatos (un <code>ALTER TABLE</code>) y vale 31.536.000 segundos, un año.
+          </p>
+
+          <h2 id="cola">
+            Una cola con SKIP LOCKED
+            <a href="#cola" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Con <code>SKIP LOCKED</code> la consulta ni espera ni falla: se salta las filas bloqueadas y te da la siguiente libre. Justo lo que pide una tabla de trabajos con varios workers.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · MySQL 8.4 y Postgres 17 · tomar un trabajo</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">CREATE TABLE trabajos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    estado VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+    carga VARCHAR(100) NOT NULL,
+    reclamado_en TIMESTAMP NULL
+);
+CREATE INDEX idx_estado ON trabajos (estado, id);
+
+SELECT id, carga FROM trabajos
+WHERE estado = 'pendiente'
+ORDER BY id
+LIMIT 1
+FOR UPDATE SKIP LOCKED;</code></pre>
+          </div>
+          <p>
+            En Postgres, <code>SERIAL</code> en vez de <code>INT AUTO_INCREMENT</code>. La prueba: nueve trabajos de un segundo y tres workers, cada uno tomando, procesando y marcando en la misma transacción:
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Forma de tomar el trabajo</th><th>Tiempo total</th><th>Ejecuciones de los 9 trabajos</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>FOR UPDATE SKIP LOCKED</code></td><td>3,7 s en MySQL, 4,0 s en Postgres</td><td>9, tres por worker</td></tr>
+                <tr><td><code>FOR UPDATE</code> a secas</td><td>10,3 s en MySQL, 10,0 s en Postgres</td><td>9, pero de uno en uno</td></tr>
+                <tr><td>Sin bloqueo</td><td>10,3 s en MySQL</td><td>27: cada trabajo, tres veces</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Sin bloqueo, los tres hacen el mismo trabajo. Con <code>FOR UPDATE</code> a secas, hacen cola tras el primero y tres valen lo que uno. Con <code>SKIP LOCKED</code>, cada uno se lleva una fila distinta.
+          </p>
+          <p>
+            El índice <code>(estado, id)</code> importa: sin él, en MySQL, el worker que tomó el trabajo 5 dejó bloqueados también el 1 al 4, ya hechos, porque los recorrió.
+          </p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El outbox es este mismo patrón</p>
+              <p>
+                El publicador de <a href="sd-outbox.html">Outbox transaccional</a> usa <code>FOR UPDATE SKIP LOCKED</code> para que sus réplicas no publiquen lo mismo. Allí, el porqué del outbox; aquí, el bloqueo por debajo.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="duracion">
+            Hasta el COMMIT: nada de HTTP dentro
+            <a href="#duracion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un bloqueo de fila dura hasta el <code>COMMIT</code> o el <code>ROLLBACK</code>, no hasta que dejas de necesitarlo. Lo que hagas entre medias lo pagan los que esperan. La tentación: llamar a una API con la fila bloqueada.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · TrabajadorConHttpDentro.php (antes)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class TrabajadorConHttpDentro
+{
+    private const SIGUIENTE = "SELECT id, carga FROM trabajos WHERE estado = 'pendiente' ORDER BY id LIMIT 1 FOR UPDATE SKIP LOCKED";
+    private const MARCAR_HECHO = "UPDATE trabajos SET estado = 'hecho' WHERE id = ?";
+
+    public function __construct(
+        private readonly PDO $pdo,
+        private readonly Notificador $notificador,
+    ) {
+    }
+
+    public function procesarSiguiente(): bool
+    {
+        $this-&gt;pdo-&gt;beginTransaction();
+        $trabajo = $this-&gt;pdo-&gt;query(self::SIGUIENTE)-&gt;fetch(PDO::FETCH_ASSOC);
+
+        if ($trabajo === false) {
+            $this-&gt;pdo-&gt;commit();
+
+            return false;
+        }
+
+        $this-&gt;notificador-&gt;enviar($trabajo['carga']);
+        $this-&gt;pdo-&gt;prepare(self::MARCAR_HECHO)-&gt;execute([$trabajo['id']]);
+        $this-&gt;pdo-&gt;commit();
+
+        return true;
+    }
+}</code></pre>
+          </div>
+          <p>
+            Si la API tarda 30 segundos, la transacción, la conexión y el bloqueo viven 30 segundos, y quien necesite esa fila espera o se come el 1205. Y si el <code>COMMIT</code> falla tras un envío correcto, el trabajo vuelve a pendiente y se envía otra vez.
+          </p>
+          <p>
+            La versión buena separa: una transacción corta que <strong>reclama</strong> el trabajo (<code>en_curso</code>) y la llamada lenta fuera.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · TrabajadorDeCola.php (después)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+interface Notificador
+{
+    public function enviar(string $carga): void;
+}
+
+final class TrabajadorDeCola
+{
+    private const RECLAMAR = &lt;&lt;&lt;'SQL'
+        SELECT id, carga FROM trabajos
+        WHERE estado = 'pendiente'
+        ORDER BY id
+        LIMIT 1
+        FOR UPDATE SKIP LOCKED
+        SQL;
+    private const MARCAR_EN_CURSO = "UPDATE trabajos SET estado = 'en_curso', reclamado_en = CURRENT_TIMESTAMP WHERE id = ?";
+    private const MARCAR_HECHO = "UPDATE trabajos SET estado = 'hecho' WHERE id = ?";
+
+    public function __construct(
+        private readonly PDO $pdo,
+        private readonly Notificador $notificador,
+    ) {
+    }
+
+    public function procesarSiguiente(): bool
+    {
+        $trabajo = $this-&gt;reclamar();
+
+        if ($trabajo === null) {
+            return false;
+        }
+
+        $this-&gt;notificador-&gt;enviar($trabajo['carga']);
+        $this-&gt;pdo-&gt;prepare(self::MARCAR_HECHO)-&gt;execute([$trabajo['id']]);
+
+        return true;
+    }
+
+    private function reclamar(): ?array
+    {
+        $this-&gt;pdo-&gt;beginTransaction();
+        $trabajo = $this-&gt;pdo-&gt;query(self::RECLAMAR)-&gt;fetch(PDO::FETCH_ASSOC);
+
+        if ($trabajo === false) {
+            $this-&gt;pdo-&gt;commit();
+
+            return null;
+        }
+
+        $this-&gt;pdo-&gt;prepare(self::MARCAR_EN_CURSO)-&gt;execute([$trabajo['id']]);
+        $this-&gt;pdo-&gt;commit();
+
+        return $trabajo;
+    }
+}</code></pre>
+          </div>
+          <p>
+            Con tres procesos PHP 8.4 contra MySQL y nueve trabajos de un segundo: cuatro segundos, cada trabajo enviado una vez. El bloqueo dura milisegundos. El precio: si un worker muere tras reclamar, el trabajo queda en <code>en_curso</code>, y un proceso periódico lo devuelve a la cola según <code>reclamado_en</code>.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · MySQL 8.4 · recuperar huérfanos (en Postgres, INTERVAL '5 minutes')</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">UPDATE trabajos
+SET estado = 'pendiente'
+WHERE estado = 'en_curso'
+  AND reclamado_en &lt; CURRENT_TIMESTAMP - INTERVAL 5 MINUTE;</code></pre>
+          </div>
+          <p>
+            La cola queda en «al menos una vez»: el receptor debe tolerar repeticiones, y para eso está la <a href="idempotencia.html">idempotencia</a>.
+          </p>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que muerde en producción</p>
+              <ul>
+                <li><strong><code>FOR UPDATE</code> con autocommit:</strong> el bloqueo acaba con la sentencia.</li>
+                <li><strong>Un camino que decide con un <code>SELECT</code> normal:</strong> la carrera sigue ahí.</li>
+                <li><strong><code>FOR UPDATE</code> sin índice en MySQL:</strong> bloquea todo lo recorrido.</li>
+                <li><strong>Seguir tras un 1205:</strong> el <code>COMMIT</code> guarda media operación.</li>
+                <li><strong>HTTP, colas o correos con la fila bloqueada:</strong> el bloqueo dura lo que tarde el otro.</li>
+                <li><strong>Bloquear filas en distinto orden en cada camino:</strong> receta de <a href="bd-deadlocks.html">deadlock</a>.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Si algo «va lento a ratos», mira quién espera a quién. En MySQL, con el esquema <code>sys</code>:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · MySQL 8.4 · quién bloquea</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">SELECT wait_age, locked_table, waiting_query, blocking_pid, blocking_query
+FROM sys.innodb_lock_waits\G
+
+      wait_age: 00:00:01
+  locked_table: `tienda`.`productos`
+ waiting_query: UPDATE productos SET stock=stock-1 WHERE id=1
+  blocking_pid: 142
+blocking_query: DO SLEEP(4)</code></pre>
+          </div>
+          <p>
+            <code>blocking_query</code> muestra lo que el culpable hace <em>ahora</em>, no el <code>FOR UPDATE</code> que bloqueó; si la sesión está parada esperando una respuesta HTTP, sale <code>NULL</code>. En Postgres, el síntoma tiene nombre:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · Postgres 17 · quién bloquea</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">SELECT pid, state, wait_event_type, pg_blocking_pids(pid) AS bloqueado_por,
+       now() - xact_start AS en_transaccion, left(query, 50) AS query
+FROM pg_stat_activity
+WHERE datname = 'tienda' AND pid &lt;&gt; pg_backend_pid();
+
+ pid |        state        | wait_event_type | bloqueado_por | en_transaccion  |                     query
+-----+---------------------+-----------------+---------------+-----------------+------------------------------------------------
+ 452 | idle in transaction | Client          | {}            | 00:00:01.693527 | SELECT * FROM productos WHERE id=1 FOR UPDATE;
+ 459 | active              | Lock            | {452}         | 00:00:00.976613 | UPDATE productos SET stock=stock-1 WHERE id=1;</code></pre>
+          </div>
+          <p>
+            <code>idle in transaction</code> es el worker que bloqueó y se fue a otra cosa. <code>idle_in_transaction_session_timeout</code> (0 por defecto) las corta: con <code>'1s'</code>, la sesión cayó con <code>FATAL: terminating connection due to idle-in-transaction timeout</code>. Es red de seguridad, no arreglo.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>FOR UPDATE o SKIP LOCKED cuando…</h4>
+              <ul>
+                <li>Lees, decides en código y escribes, y la misma fila recibe mucha concurrencia</li>
+                <li>El conflicto es caro de reintentar: cobros, stock escaso, asignar un recurso único</li>
+                <li>Varios workers consumen una tabla de trabajos y no quieres montar un broker</li>
+                <li>La transacción es corta y no sale de la base de datos</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No lo uses cuando…</h4>
+              <ul>
+                <li>Basta un <code>UPDATE … SET stock = stock - 1 WHERE stock &gt;= 1</code> atómico, con el nivel por defecto</li>
+                <li>Los conflictos son raros y el usuario tarda minutos en editar</li>
+                <li>Entre leer y escribir hay una llamada a otro sistema</li>
+                <li>Necesitas exclusión entre máquinas sobre algo que no es una fila</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La alternativa</p>
+              <p>
+                Si la escritura cabe en una sentencia, deja que el motor la serialice sin bloqueo explícito. Si el conflicto es raro o la edición es larga, el <a href="bd-bloqueo-optimista.html">bloqueo optimista</a> con columna de versión no retiene nada mientras el usuario piensa. Y antes de inventar un bloqueo fuera de la base de datos, lee <a href="sd-locks-distribuidos.html">Locks distribuidos</a>.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>FOR UPDATE</code> bloquea en exclusiva y <code>FOR SHARE</code> en compartido; un <code>SELECT</code> normal no espera a ninguno de los dos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>InnoDB en <code>REPEATABLE READ</code> bloquea también huecos del índice, y sin índice todo lo que recorre; Postgres, solo las filas devueltas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>NOWAIT</code> falla al momento; <code>innodb_lock_wait_timeout</code> (50 s) y <code>lock_timeout</code> (0, sin límite) acotan la espera. Tras un 1205, <code>ROLLBACK</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>FOR UPDATE SKIP LOCKED</code> reparte una tabla de trabajos entre workers sin duplicados ni colas de espera.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El bloqueo dura hasta el <code>COMMIT</code>: reclama en una transacción corta y haz la llamada lenta fuera.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

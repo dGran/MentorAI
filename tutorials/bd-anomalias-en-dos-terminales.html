@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Anomalías de aislamiento, reproducidas en dos terminales — MentorAI</title>
+    <meta name="description" content="Lectura no repetible, lost update, fantasmas y write skew reproducidos paso a paso en MySQL 8.4 y PostgreSQL 17: qué impide de verdad cada nivel de aislamiento y por qué SERIALIZABLE obliga a reintentar." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Bases de datos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Anomalías de aislamiento, reproducidas en dos terminales</h1>
+        <p class="tutorial-hero__lead">La tabla de niveles de aislamiento te la sabes. Lo que no dice es que el mismo «REPEATABLE READ» se comporta distinto en MySQL y en Postgres, y que en los dos deja pasar un fallo que la tabla clásica no nombra. Abre dos terminales y míralo pasar.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            26 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">La tabla no es el motor</a></li>
+            <li><a href="#montaje">El montaje: dos sesiones, dos motores</a></li>
+            <li><a href="#no-repetible">Lectura no repetible</a></li>
+            <li><a href="#lost-update">Lost update: leer, calcular, escribir</a></li>
+            <li><a href="#fantasma">Fantasmas y lecturas con bloqueo</a></li>
+            <li><a href="#write-skew">Write skew: el que nadie nombra</a></li>
+            <li><a href="#serializable">SERIALIZABLE obliga a reintentar</a></li>
+            <li><a href="#mapa">Qué impide cada nivel de verdad</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Dos peticiones leen un saldo de 100. Una suma 50, la otra suma 30. El saldo final es 130 y nadie ha visto un error. No es un bug de tu ORM ni de PHP: es el nivel de aislamiento por defecto haciendo exactamente lo que promete, que es menos de lo que creías.</p>
+
+          <h2 id="problema">
+            La tabla no es el motor
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En <a href="transacciones-acid.html">Transacciones y ACID</a> viste las anomalías y los niveles del estándar SQL: lo <em>mínimo</em> que cada nivel debe impedir, no cómo lo implementa cada motor. MySQL con InnoDB y PostgreSQL usan los dos MVCC: cada transacción lee una foto de los datos en lugar de esperar a que otros terminen. Pero deciden distinto cuándo se toma esa foto, qué lecturas la ignoran y qué pasa cuando dos transacciones escriben la misma fila.
+          </p>
+          <p>
+            Por eso esta lección no explica: reproduce cada anomalía en dos sesiones y en los dos motores, con la salida real.
+          </p>
+
+          <h2 id="montaje">
+            El montaje: dos sesiones, dos motores
+            <a href="#montaje" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Levanta los dos motores y abre <strong>dos terminales por motor</strong>. A partir de aquí, «A» y «B» son esas dos sesiones.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · levantar MySQL 8.4 y PostgreSQL 17</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">docker run -d --rm --name lab-mysql -e MYSQL_ROOT_PASSWORD=x mysql:8.4
+docker run -d --rm --name lab-pg -e POSTGRES_PASSWORD=x postgres:17
+
+docker exec -it lab-mysql mysql -uroot -px
+docker exec -it lab-pg psql -U postgres</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · el mismo esquema en los dos motores</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">CREATE TABLE cuentas (id INT PRIMARY KEY, titular VARCHAR(20) NOT NULL, saldo INT NOT NULL);
+INSERT INTO cuentas VALUES (1, 'Ana', 100), (2, 'Luis', 500);
+
+CREATE TABLE medicos (id INT PRIMARY KEY, nombre VARCHAR(20) NOT NULL, de_guardia BOOLEAN NOT NULL);
+INSERT INTO medicos VALUES (1, 'Alicia', TRUE), (2, 'Bruno', TRUE);</code></pre>
+          </div>
+          <p>Lo primero es saber de qué nivel partes, porque no es el mismo:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Motor</th><th>Consulta</th><th>Salida</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>MySQL 8.4</td><td><code>SELECT @@transaction_isolation;</code></td><td><code>REPEATABLE-READ</code></td></tr>
+                <tr><td>PostgreSQL 17</td><td><code>SHOW default_transaction_isolation;</code></td><td><code>read committed</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Las sentencias sueltas de B van en autocommit. Reinicia los datos entre experimentos.</p>
+
+          <h2 id="no-repetible">
+            Lectura no repetible
+            <a href="#no-repetible" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>A lee un saldo, B lo cambia y confirma, A vuelve a leer. En Postgres, con su <code>READ COMMITTED</code> por defecto, cada sentencia toma una foto nueva:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · PostgreSQL 17, READ COMMITTED</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">A&gt; BEGIN;
+A&gt; SELECT saldo FROM cuentas WHERE id = 1;            -- 100
+B&gt; UPDATE cuentas SET saldo = 150 WHERE id = 1;       -- UPDATE 1
+A&gt; SELECT saldo FROM cuentas WHERE id = 1;            -- 150
+A&gt; COMMIT;</code></pre>
+          </div>
+          <p>En MySQL, con <code>REPEATABLE READ</code>, la segunda lectura devuelve 100. Pero añade <code>FOR SHARE</code> a la misma consulta, dentro de la misma transacción:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · MySQL 8.4, REPEATABLE READ</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">A&gt; START TRANSACTION;
+A&gt; SELECT saldo FROM cuentas WHERE id = 1;              -- 100
+B&gt; UPDATE cuentas SET saldo = 150 WHERE id = 1;         -- 1 row affected
+A&gt; SELECT saldo FROM cuentas WHERE id = 1;              -- 100
+A&gt; SELECT saldo FROM cuentas WHERE id = 1 FOR SHARE;    -- 150
+A&gt; COMMIT;</code></pre>
+          </div>
+          <p>
+            Esa es la clave de InnoDB: tiene <strong>dos tipos de lectura</strong>. La <em>lectura consistente</em> (un <code>SELECT</code> normal) lee la foto. La <em>lectura con bloqueo</em> (<code>FOR SHARE</code>, <code>FOR UPDATE</code>, y lo que leen <code>UPDATE</code> y <code>DELETE</code>) lee la última versión confirmada y la bloquea. La misma transacción ve dos valores según cómo pregunte.
+          </p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La foto se toma en la primera lectura, no en el BEGIN</p>
+              <p>En REPEATABLE READ, en los dos motores, si B confirma un cambio entre tu <code>BEGIN</code> y tu primer <code>SELECT</code>, lo ves. Lo comprobamos: A abre, B pone 150, A lee 150; B pone 170, A sigue leyendo 150.</p>
+            </div>
+          </div>
+
+          <h2 id="lost-update">
+            Lost update: leer, calcular, escribir
+            <a href="#lost-update" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El patrón más común en una aplicación: lees en PHP, calculas y escribes el resultado. Así suele estar escrito:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · addFunds.php (pierde ingresos)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+function addFunds(PDO $connection, int $accountId, int $amount): void
+{
+    $connection-&gt;beginTransaction();
+    $select = $connection-&gt;prepare('SELECT saldo FROM cuentas WHERE id = ?');
+    $select-&gt;execute([$accountId]);
+    $balance = (int) $select-&gt;fetchColumn();
+
+    $connection-&gt;prepare('UPDATE cuentas SET saldo = ? WHERE id = ?')-&gt;execute([$balance + $amount, $accountId]);
+    $connection-&gt;commit();
+}</code></pre>
+          </div>
+          <p>Dos peticiones a la vez, una con +50 y otra con +30, son esto:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · MySQL 8.4, REPEATABLE READ</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">A&gt; START TRANSACTION;
+B&gt; START TRANSACTION;
+A&gt; SELECT saldo FROM cuentas WHERE id = 1;              -- 100
+B&gt; SELECT saldo FROM cuentas WHERE id = 1;              -- 100
+A&gt; UPDATE cuentas SET saldo = 150 WHERE id = 1;
+B&gt; UPDATE cuentas SET saldo = 130 WHERE id = 1;         -- espera al bloqueo de A
+A&gt; COMMIT;
+                                                        -- B: 1 row affected (1.20 sec)
+B&gt; COMMIT;
+A&gt; SELECT saldo FROM cuentas WHERE id = 1;              -- 130</code></pre>
+          </div>
+          <p>
+            El bloqueo de fila actúa: B espera a que A confirme. Pero luego escribe el 130 que calculó con un dato viejo y los 50 de A desaparecen. Postgres en <code>READ COMMITTED</code> da el mismo 130; en <code>REPEATABLE READ</code> se niega:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · PostgreSQL 17, REPEATABLE READ</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">A&gt; BEGIN ISOLATION LEVEL REPEATABLE READ;
+B&gt; BEGIN ISOLATION LEVEL REPEATABLE READ;
+A&gt; SELECT saldo FROM cuentas WHERE id = 1;              -- 100
+B&gt; SELECT saldo FROM cuentas WHERE id = 1;              -- 100
+A&gt; UPDATE cuentas SET saldo = 150 WHERE id = 1;
+B&gt; UPDATE cuentas SET saldo = 130 WHERE id = 1;         -- espera
+A&gt; COMMIT;
+B&gt; ERROR:  40001: could not serialize access due to concurrent update
+B&gt; COMMIT;                                             -- ROLLBACK
+A&gt; SELECT saldo FROM cuentas WHERE id = 1;              -- 150</code></pre>
+          </div>
+          <p>
+            Es la diferencia más importante entre los dos <code>REPEATABLE READ</code>: Postgres no deja que una transacción modifique una fila que otra cambió después de su foto; InnoDB sí, porque su <code>UPDATE</code> es una lectura con bloqueo y trabaja sobre la última versión. La corrección para los dos motores es leer ya con bloqueo:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · addFunds.php (corregido)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+function addFunds(PDO $connection, int $accountId, int $amount): void
+{
+    $connection-&gt;beginTransaction();
+    $select = $connection-&gt;prepare('SELECT saldo FROM cuentas WHERE id = ? FOR UPDATE');
+    $select-&gt;execute([$accountId]);
+    $balance = (int) $select-&gt;fetchColumn();
+
+    $connection-&gt;prepare('UPDATE cuentas SET saldo = ? WHERE id = ?')-&gt;execute([$balance + $amount, $accountId]);
+    $connection-&gt;commit();
+}</code></pre>
+          </div>
+          <p>
+            Con <code>FOR UPDATE</code>, B se queda esperando en su <code>SELECT</code> y, cuando A confirma, lee 150, no 100. Lo vimos igual en MySQL y en Postgres, cada uno en su nivel por defecto. Si el cálculo cabe en SQL, <code>SET saldo = saldo + 30</code> también da 180 en los dos, como cuenta <a href="concurrencia.html">Concurrencia</a>. El bloqueo pesimista a fondo, con colas y <code>SKIP LOCKED</code>, está en <a href="bd-bloqueo-pesimista.html">Bloqueo pesimista</a>; la alternativa sin bloqueo, en <a href="bd-bloqueo-optimista.html">Bloqueo optimista</a>.
+          </p>
+
+          <h2 id="fantasma">
+            Fantasmas y lecturas con bloqueo
+            <a href="#fantasma" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un fantasma es una fila nueva que aparece al repetir una consulta con <code>WHERE</code>. Con <code>SELECT COUNT(*) FROM cuentas WHERE saldo &gt;= 100</code> en A y un <code>INSERT</code> de B en medio, esto es lo que medimos:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Lectura de A tras el INSERT de B</th><th>PG READ COMMITTED</th><th>PG REPEATABLE READ</th><th>MySQL REPEATABLE READ</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>SELECT COUNT(*)</code></td><td>3</td><td>2</td><td>2</td></tr>
+                <tr><td><code>... FOR SHARE</code></td><td>no aplica</td><td>no aplica</td><td>3</td></tr>
+                <tr><td><code>UPDATE ... WHERE saldo &gt;= 100</code></td><td>3 filas</td><td>2 filas</td><td>3 filas</td></tr>
+                <tr><td><code>SELECT COUNT(*)</code> tras ese UPDATE</td><td>3</td><td>2</td><td>3</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            La última fila es la que sorprende. En InnoDB el <code>UPDATE</code> es lectura con bloqueo y alcanza la fila de B; al modificarla, pasa a ser tuya y aparece en tu foto. El fantasma se cuela por la escritura. Postgres en <code>REPEATABLE READ</code> no lo ve ni para leer ni para escribir.
+          </p>
+          <p>InnoDB sí tiene una forma de cerrar la puerta: la lectura con bloqueo de un rango bloquea también los huecos.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · MySQL 8.4, bloqueo de rango</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">A&gt; START TRANSACTION;
+A&gt; SELECT id FROM cuentas WHERE id BETWEEN 1 AND 10 FOR UPDATE;   -- 1, 2
+B&gt; INSERT INTO cuentas VALUES (3, 'Eva', 300);                    -- espera
+A&gt; COMMIT;
+                                                                  -- B: 1 row affected (3.00 sec)
+
+SELECT index_name, lock_mode, lock_data FROM performance_schema.data_locks;
+-- PRIMARY  X  supremum pseudo-record
+-- PRIMARY  X  1
+-- PRIMARY  X  2</code></pre>
+          </div>
+          <p>El bloqueo sobre <code>supremum pseudo-record</code>, el final del índice, es el que deja a B esperando: nadie puede insertar detrás del 2 hasta que A termine. Si A no confirma, B se rinde a los 50 segundos de <code>innodb_lock_wait_timeout</code>.</p>
+
+          <h2 id="write-skew">
+            Write skew: el que nadie nombra
+            <a href="#write-skew" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La regla del hospital: al menos un médico de guardia. Alicia y Bruno quieren salir a la vez. Cada uno comprueba que quedan dos y se quita <em>a sí mismo</em>. No escriben la misma fila, así que no hay conflicto de escritura que detectar:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · PostgreSQL 17 y MySQL 8.4, REPEATABLE READ</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">A&gt; BEGIN ISOLATION LEVEL REPEATABLE READ;   -- en MySQL: START TRANSACTION;
+B&gt; BEGIN ISOLATION LEVEL REPEATABLE READ;
+A&gt; SELECT COUNT(*) FROM medicos WHERE de_guardia;    -- 2
+B&gt; SELECT COUNT(*) FROM medicos WHERE de_guardia;    -- 2
+A&gt; UPDATE medicos SET de_guardia = FALSE WHERE id = 1;
+B&gt; UPDATE medicos SET de_guardia = FALSE WHERE id = 2;
+A&gt; COMMIT;
+B&gt; COMMIT;
+A&gt; SELECT COUNT(*) FROM medicos WHERE de_guardia;    -- 0</code></pre>
+          </div>
+          <p>
+            Cero médicos de guardia, en los dos motores y sin un error. Cada transacción vio datos coherentes y decidió bien con lo que vio; el resultado conjunto viola la regla. Es el <strong>write skew</strong>, y la tabla clásica no lo menciona.
+          </p>
+
+          <h2 id="serializable">
+            SERIALIZABLE obliga a reintentar
+            <a href="#serializable" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Repite el escenario con <code>BEGIN ISOLATION LEVEL SERIALIZABLE</code> en Postgres. Todo va igual hasta el segundo <code>COMMIT</code>:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · PostgreSQL 17, SERIALIZABLE</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">A&gt; COMMIT;
+B&gt; COMMIT;
+ERROR:  40001: could not serialize access due to read/write dependencies among transactions
+DETAIL:  Reason code: Canceled on identification as a pivot, during commit attempt.
+HINT:  The transaction might succeed if retried.</code></pre>
+          </div>
+          <p>
+            Postgres no bloquea más: vigila qué leyó y qué escribió cada transacción y, si las dependencias forman un ciclo que ningún orden en serie explicaría, aborta una. Queda un médico de guardia. B no ha fallado por un bug, sino porque otra transacción llegó antes; repetida, verá un solo médico y decidirá distinto. Por eso <code>SERIALIZABLE</code> sin reintento es un error 500 esperando su momento.
+          </p>
+          <p>
+            MySQL llega al mismo sitio por otro camino: en <code>SERIALIZABLE</code>, los <code>SELECT</code> de una transacción toman bloqueos compartidos (<code>S</code> en <code>data_locks</code>). Cada sesión espera al bloqueo de lectura de la otra y el motor rompe el ciclo: <code>ERROR 1213 (40001): Deadlock found when trying to get lock; try restarting transaction</code>. Mismo SQLSTATE, misma conclusión: reintentar.
+          </p>
+          <p>Así se ve el reintento en la aplicación, para Postgres:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · SerializableTransaction.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class SerializableTransaction
+{
+    private const SERIALIZATION_FAILURE = '40001';
+    private const DEADLOCK_DETECTED = '40P01';
+    private const MAX_ATTEMPTS = 3;
+    private const BASE_BACKOFF_MICROSECONDS = 20_000;
+
+    public function __construct(private readonly PDO $connection)
+    {
+    }
+
+    public function run(callable $work): mixed
+    {
+        for ($attempt = 1; ; $attempt++) {
+            try {
+                return $this-&gt;runOnce($work);
+            } catch (Throwable $exception) {
+                $this-&gt;rollBackIfOpen();
+
+                if (!$this-&gt;isRetryable($exception) || $attempt === self::MAX_ATTEMPTS) {
+                    throw $exception;
+                }
+
+                usleep(self::BASE_BACKOFF_MICROSECONDS * $attempt + random_int(0, self::BASE_BACKOFF_MICROSECONDS));
+            }
+        }
+    }
+
+    private function runOnce(callable $work): mixed
+    {
+        $this-&gt;connection-&gt;beginTransaction();
+        $this-&gt;connection-&gt;exec('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
+        $result = $work($this-&gt;connection);
+        $this-&gt;connection-&gt;commit();
+
+        return $result;
+    }
+
+    private function isRetryable(Throwable $exception): bool
+    {
+        return $exception instanceof PDOException
+            &amp;&amp; in_array($exception-&gt;getCode(), [self::SERIALIZATION_FAILURE, self::DEADLOCK_DETECTED], true);
+    }
+
+    private function rollBackIfOpen(): void
+    {
+        if ($this-&gt;connection-&gt;inTransaction()) {
+            $this-&gt;connection-&gt;rollBack();
+        }
+    }
+}</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · OnCallSchedule.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class LastDoctorOnCall extends DomainException
+{
+}
+
+final class OnCallSchedule
+{
+    private const MINIMUM_ON_CALL = 1;
+
+    public function __construct(private readonly SerializableTransaction $transaction)
+    {
+    }
+
+    public function goOffCall(int $doctorId): void
+    {
+        $this-&gt;transaction-&gt;run(function (PDO $connection) use ($doctorId): void {
+            $onCall = (int) $connection-&gt;query('SELECT COUNT(*) FROM medicos WHERE de_guardia')-&gt;fetchColumn();
+
+            if ($onCall &lt;= self::MINIMUM_ON_CALL) {
+                throw new LastDoctorOnCall('No puede quedarse la guardia vacía');
+            }
+
+            $connection-&gt;prepare('UPDATE medicos SET de_guardia = FALSE WHERE id = ?')-&gt;execute([$doctorId]);
+        });
+    }
+}</code></pre>
+          </div>
+          <p>
+            Lo ejecutamos con dos conexiones PDO contra Postgres 17: el primer intento falla con <code>40001</code>; el segundo ve un solo médico y lanza <code>LastDoctorOnCall</code>. El trabajo va como función porque se repite <strong>la transacción entera, lecturas incluidas</strong>.
+          </p>
+
+          <h2 id="mapa">
+            Qué impide cada nivel de verdad
+            <a href="#mapa" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Anomalía</th><th>PG READ COMMITTED</th><th>PG REPEATABLE READ</th><th>PG SERIALIZABLE</th><th>MySQL REPEATABLE READ</th><th>MySQL SERIALIZABLE</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>No repetible</td><td>ocurre</td><td>no</td><td>no</td><td>no en lectura consistente</td><td>no: B espera</td></tr>
+                <tr><td>Lost update</td><td>ocurre</td><td>error 40001</td><td>error 40001</td><td>ocurre</td><td>deadlock 1213</td></tr>
+                <tr><td>Fantasma</td><td>ocurre</td><td>no</td><td>no</td><td>no al leer; sí al escribir</td><td>no: B espera</td></tr>
+                <tr><td>Write skew</td><td>ocurre</td><td>ocurre</td><td>error 40001</td><td>ocurre</td><td>deadlock 1213</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Cada casilla sale de un experimento de esta lección. «B espera» significa que la escritura de la otra sesión se queda bloqueada hasta que A confirma: el aislamiento se paga en esperas.</p>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que muerde en producción</p>
+              <ul>
+                <li><strong>Creer que REPEATABLE READ evita el lost update en MySQL.</strong> No lo evita: lo has visto con 130 en lugar de 180.</li>
+                <li><strong>Comprobar en un SELECT normal y escribir después.</strong> En InnoDB, la comprobación lee la foto y la escritura la última versión; pueden no coincidir.</li>
+                <li><strong>Subir a SERIALIZABLE sin reintento.</strong> Cambias datos corruptos por errores 40001 en los logs.</li>
+                <li><strong>Hacer rollback solo ante <code>PDOException</code>.</strong> Si la regla lanza su propia excepción, la transacción queda abierta. Nos pasó con la primera versión del helper: el siguiente <code>beginTransaction()</code> falló con «There is already an active transaction».</li>
+                <li><strong>Fijar el nivel en el sitio equivocado.</strong> Postgres acepta <code>SET TRANSACTION</code> tras el <code>BEGIN</code> pero no después de la primera consulta. MySQL no lo acepta ni justo después de <code>START TRANSACTION</code> (<code>ERROR 1568</code>): ahí va antes de abrirla.</li>
+                <li><strong>Reintentar con efectos fuera de la base de datos.</strong> Si el trabajo envía un correo o llama a una API, se repite con él; esos efectos van tras el commit o con <a href="idempotencia.html">idempotencia</a>.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Primero, el nivel real de tus conexiones: <code>SELECT @@transaction_isolation</code> en MySQL y <code>SHOW transaction_isolation</code> en Postgres, desde la aplicación, porque un ORM o un pool pueden cambiarlo. Segundo, qué bloquea cada consulta: en MySQL, <code>performance_schema.data_locks</code> con la transacción abierta. Tercero, convierte la reproducción en un test: dos conexiones PDO, el guion intercalado a mano y una aserción sobre el estado final; es determinista porque tú decides el orden. En producción, cuenta los <code>40001</code> y los <code>1213</code>: si crecen, el reintento está tapando contención.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Sube el aislamiento o bloquea cuando…</h4>
+              <ul>
+                <li>Lees en la aplicación, calculas y escribes el resultado (saldos, stock, contadores)</li>
+                <li>Una regla depende de varias filas: guardias, cupos, reservas que no se solapan</li>
+                <li>Un informe necesita varias consultas coherentes entre sí</li>
+                <li>Puedes repetir la transacción entera sin efectos externos</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No hace falta cuando…</h4>
+              <ul>
+                <li>La escritura cabe en un <code>UPDATE</code> relativo o en una restricción <code>UNIQUE</code> o <code>CHECK</code></li>
+                <li>Cada petición toca filas que solo son suyas</li>
+                <li>Son lecturas para mostrar, donde un dato de hace un segundo no rompe nada</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La alternativa sencilla</p>
+              <p>Antes de cambiar el nivel de toda la conexión, materializa el conflicto: <code>FOR UPDATE</code> sobre las filas que decides, o sobre una fila que represente la regla (el turno de guardia). Bloqueas solo lo que importa y no necesitas reintento. Si eso provoca esperas cruzadas, sigue en <a href="bd-deadlocks.html">Deadlocks</a>.</p>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>MySQL 8.4 arranca en REPEATABLE READ y PostgreSQL 17 en READ COMMITTED: el mismo código se comporta distinto según el motor.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>InnoDB tiene dos lecturas: la consistente lee la foto; la de bloqueo, y también UPDATE y DELETE, la última versión confirmada.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El lost update de leer, calcular y escribir pasa en MySQL REPEATABLE READ; Postgres REPEATABLE READ lo corta con 40001. FOR UPDATE lo arregla en los dos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El write skew atraviesa REPEATABLE READ en los dos motores; solo SERIALIZABLE o un bloqueo explícito lo paran.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En Postgres, SERIALIZABLE aborta en lugar de esperar: repite la transacción entera ante 40001, con rollback ante cualquier excepción.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

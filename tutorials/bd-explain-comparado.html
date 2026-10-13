@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EXPLAIN real: MySQL y Postgres frente a frente — MentorAI</title>
+    <meta name="description" content="La misma consulta y los mismos datos en MySQL 8.4 y PostgreSQL 17: leer EXPLAIN ANALYZE en los dos, estimadas frente a reales, loops y BUFFERS, estadísticas viejas, Index Only Scan y el mapa de visibilidad." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Bases de datos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">EXPLAIN real: MySQL y Postgres frente a frente</h1>
+        <p class="tutorial-hero__lead">Sabes leer un plan de MySQL. Lanzas el mismo EXPLAIN ANALYZE en Postgres y sale otro árbol, con otras palabras y un índice que allí cubría la consulta y aquí no. La consulta es la misma; lo que cambia es cómo cada motor guarda las filas y cuenta lo que hace.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            25 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">Mismo SQL, dos motores</a></li>
+            <li><a href="#banco">El banco de pruebas</a></li>
+            <li><a href="#postgres">Leer el árbol de Postgres</a></li>
+            <li><a href="#mysql">Leer el árbol de MySQL</a></li>
+            <li><a href="#estadisticas">Cuando la estimación miente</a></li>
+            <li><a href="#diferencias">Lo que muerde al cambiar de motor</a></li>
+            <li><a href="#php">El plan desde PHP</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Un plan de ejecución es la confesión del motor: qué esperaba y qué pasó. MySQL y Postgres confiesan en idiomas distintos porque guardan las filas de forma distinta. Aquí leen los dos la misma consulta sobre los mismos datos.
+          </p>
+          <h2 id="problema">
+            Mismo SQL, dos motores
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En <a href="cr-consultas-lentas.html">Consultas lentas</a> quedó el método: aislar la consulta, <code>EXPLAIN ANALYZE</code>, cambiar una cosa y volver a medir. Ese método vale en los dos motores. Lo que no viaja de uno a otro es la lectura, por dos diferencias de fondo:
+          </p>
+          <ul>
+            <li><strong>Cómo guardan la tabla.</strong> InnoDB guarda las filas dentro del índice de la clave primaria, y cada índice secundario lleva la clave primaria en sus hojas. Postgres guarda las filas en un <em>heap</em> sin orden, y cada índice apunta a una posición de ese heap.</li>
+            <li><strong>Dónde vive la visibilidad.</strong> En Postgres, saber si una versión de fila es visible para tu transacción exige mirar el heap. Por eso un índice que «tiene todas las columnas» no siempre le ahorra ir a la tabla.</li>
+          </ul>
+          <p>
+            Resultado: un índice que en MySQL resolvía la consulta entera, en Postgres obliga a visitar la tabla. Diseñar los índices está en <a href="cr-indices-en-practica.html">Índices en la práctica</a>; aquí se leen.
+          </p>
+          <h2 id="banco">
+            El banco de pruebas
+            <a href="#banco" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Dos contenedores y la misma tabla <code>pedidos</code> de <a href="cr-consultas-lentas.html">Consultas lentas</a>: 200 000 pedidos de 5 000 clientes (40 por cliente), el 90 % en estado <code>confirmado</code>, y dos líneas por pedido en <code>lineas_pedido</code>. Los datos salen de fórmulas, no de aleatorios, para que tus números se parezcan a los de aquí.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · dos motores en local</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">docker run -d --rm --name explain-mysql -e MYSQL_ROOT_PASSWORD=x mysql:8.4
+docker run -d --rm --name explain-pg -e POSTGRES_PASSWORD=x postgres:17
+sleep 30   # MySQL tarda unos 15-20 s en aceptar conexiones
+
+docker exec -i explain-mysql mysql -uroot -px &lt; mysql.sql
+docker exec -i explain-pg psql -U postgres &lt; postgres.sql</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · postgres.sql (Postgres 17)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">CREATE DATABASE tienda;
+\c tienda
+CREATE TABLE pedidos (
+  id INT PRIMARY KEY,
+  id_cliente INT NOT NULL,
+  estado VARCHAR(20) NOT NULL,
+  creado_en TIMESTAMP NOT NULL,
+  total NUMERIC(10,2) NOT NULL
+);
+CREATE TABLE lineas_pedido (
+  id SERIAL PRIMARY KEY,
+  pedido_id INT NOT NULL,
+  cantidad INT NOT NULL
+);
+CREATE INDEX idx_lineas_pedido ON lineas_pedido (pedido_id);
+
+INSERT INTO pedidos
+SELECT i, 1 + (i * 7919) % 5000,
+  CASE WHEN i % 1000 &lt; 900 THEN 'confirmado' WHEN i % 1000 &lt; 960 THEN 'enviado'
+       WHEN i % 1000 &lt; 997 THEN 'pendiente' ELSE 'devuelto' END,
+  TIMESTAMP '2025-01-01' + make_interval(mins =&gt; i * 37 % 525600),
+  (i * 13 % 50000) / 100.0
+FROM generate_series(1, 200000) AS i;
+INSERT INTO lineas_pedido (pedido_id, cantidad)
+SELECT id, 1 + id % 5 FROM pedidos UNION ALL SELECT id, 2 FROM pedidos;
+VACUUM ANALYZE pedidos, lineas_pedido;</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · mysql.sql (MySQL 8.4)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">CREATE DATABASE tienda;
+USE tienda;
+CREATE TABLE pedidos (
+  id INT PRIMARY KEY,
+  id_cliente INT NOT NULL,
+  estado VARCHAR(20) NOT NULL,
+  creado_en DATETIME NOT NULL,
+  total DECIMAL(10,2) NOT NULL
+);
+CREATE TABLE lineas_pedido (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  pedido_id INT NOT NULL,
+  cantidad INT NOT NULL,
+  KEY idx_lineas_pedido (pedido_id)
+);
+
+SET SESSION cte_max_recursion_depth = 200000;
+INSERT INTO pedidos
+WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i &lt; 200000)
+SELECT i, 1 + (i * 7919) % 5000,
+  CASE WHEN i % 1000 &lt; 900 THEN 'confirmado' WHEN i % 1000 &lt; 960 THEN 'enviado'
+       WHEN i % 1000 &lt; 997 THEN 'pendiente' ELSE 'devuelto' END,
+  TIMESTAMP('2025-01-01') + INTERVAL (i * 37 % 525600) MINUTE,
+  (i * 13 % 50000) / 100
+FROM n;
+INSERT INTO lineas_pedido (pedido_id, cantidad)
+SELECT id, 1 + id % 5 FROM pedidos UNION ALL SELECT id, 2 FROM pedidos;
+ANALYZE TABLE pedidos, lineas_pedido;</code></pre>
+          </div>
+          <p>
+            El <code>cte_max_recursion_depth</code> hace falta porque MySQL corta la recursión a las 1 000 vueltas por defecto. La consulta de partida es la de Consultas lentas, todavía sin índice sobre el cliente:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · la misma en los dos motores</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">EXPLAIN ANALYZE                     -- en Postgres: EXPLAIN (ANALYZE, BUFFERS)
+SELECT p.id, p.total
+FROM pedidos p
+WHERE p.id_cliente = 4871
+  AND p.estado = 'confirmado'
+ORDER BY p.creado_en DESC
+LIMIT 20;</code></pre>
+          </div>
+          <h2 id="postgres">
+            Leer el árbol de Postgres
+            <a href="#postgres" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">Postgres 17 · salida</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code> Limit  (cost=4421.18..4423.48 rows=20 width=18) (actual time=9.319..11.691 rows=20 loops=1)
+   Buffers: shared hit=1712
+   -&gt;  Gather Merge  (cost=4421.18..4423.59 rows=21 width=18) (actual time=9.317..11.685 rows=20 loops=1)
+         Workers Planned: 1
+         Workers Launched: 1
+         Buffers: shared hit=1712
+         -&gt;  Sort  (cost=3421.17..3421.22 rows=21 width=18) (actual time=6.927..6.930 rows=15 loops=2)
+               Sort Key: creado_en DESC
+               Sort Method: quicksort  Memory: 26kB
+               Buffers: shared hit=1712
+               Worker 0:  Sort Method: quicksort  Memory: 26kB
+               -&gt;  Parallel Seq Scan on pedidos p  (cost=0.00..3420.71 rows=21 width=18) (actual time=0.080..6.855 rows=20 loops=2)
+                     Filter: ((id_cliente = 4871) AND ((estado)::text = 'confirmado'::text))
+                     Rows Removed by Filter: 99980
+                     Buffers: shared hit=1656
+ Planning Time: 0.423 ms
+ Execution Time: 11.746 ms</code></pre>
+          </div>
+          <p>
+            Se lee de dentro afuera: el nodo más indentado produce filas y se las pasa a su padre. En cada nodo hay dos paréntesis, y la lección entera consiste en compararlos:
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Campo</th><th>Qué dice</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>cost=4421.18..4423.48</code></td><td>Coste estimado hasta la primera fila y hasta el final. Unidades del planificador, no milisegundos.</td></tr>
+                <tr><td><code>rows=21</code> (primer paréntesis)</td><td>Filas que el planificador <strong>cree</strong> que saldrán de ese nodo.</td></tr>
+                <tr><td><code>actual … rows=20 loops=2</code></td><td>Filas reales <strong>por vuelta</strong>. El escaneo paralelo corre en dos procesos (líder y worker): 20 × 2 = 40.</td></tr>
+                <tr><td><code>Rows Removed by Filter</code></td><td>Descartadas por vuelta: casi toda la tabla para quedarse con 40.</td></tr>
+                <tr><td><code>Buffers: shared hit=1656</code></td><td>Páginas de 8 kB tocadas: <code>hit</code> estaba en caché, <code>read</code> vino de disco. 1 656 son todas las páginas de la tabla.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Compara buffers, no solo milisegundos</p>
+              <p>Lanzado dos veces, este plan tardó 15 ms y 11 ms, y tocó 1 712 páginas las dos. El tiempo depende de la caché; las páginas miden el trabajo. En Postgres 17, <code>BUFFERS</code> hay que pedirlo.</p>
+            </div>
+          </div>
+          <h2 id="mysql">
+            Leer el árbol de MySQL
+            <a href="#mysql" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">MySQL 8.4 · salida</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>-&gt; Limit: 20 row(s)  (cost=20216 rows=20) (actual time=80.6..80.6 rows=20 loops=1)
+    -&gt; Sort: p.creado_en DESC, limit input to 20 row(s) per chunk  (cost=20216 rows=200481) (actual time=80.6..80.6 rows=20 loops=1)
+        -&gt; Filter: ((p.estado = 'confirmado') and (p.id_cliente = 4871))  (cost=20216 rows=200481) (actual time=1.31..80.5 rows=40 loops=1)
+            -&gt; Table scan on p  (cost=20216 rows=200481) (actual time=0.337..49.4 rows=200000 loops=1)</code></pre>
+          </div>
+          <p>
+            La forma es la misma: árbol de dentro afuera, estimación <code>(cost rows)</code> frente a lo real <code>(actual time rows loops)</code>, con milisegundos hasta la primera fila y hasta la última. Tres diferencias:
+          </p>
+          <ul>
+            <li><strong>Solo hay formato árbol.</strong> <code>EXPLAIN ANALYZE FORMAT=JSON</code> devuelve un error en 8.4. <code>EXPLAIN FORMAT=TREE</code> da el árbol sin ejecutar.</li>
+            <li><strong>No cuenta páginas.</strong> Sin <code>Buffers</code>, el trabajo se lee en filas: 200 000 leídas para devolver 40.</li>
+            <li><strong>La estimación del filtro puede ser absurda.</strong> Sin índice ni histograma en esas columnas, estima 200 481 filas donde salen 40. Postgres estimó 21 por proceso.</li>
+          </ul>
+          <p>
+            Con el índice <code>(id_cliente, estado, creado_en)</code> de Índices en la práctica, creado en los dos, los planes se parecen mucho:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">MySQL 8.4 · con índice</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>-&gt; Limit: 20 row(s)  (cost=14 rows=20) (actual time=0.197..0.208 rows=20 loops=1)
+    -&gt; Index lookup on p using idx_pedidos_cliente_estado_fecha (id_cliente=4871, estado='confirmado') (reverse)  (cost=14 rows=40) (actual time=0.196..0.205 rows=20 loops=1)</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">Postgres 17 · con índice</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code> Limit  (cost=0.42..83.04 rows=20 width=18) (actual time=0.072..0.103 rows=20 loops=1)
+   Buffers: shared hit=20 read=3
+   -&gt;  Index Scan Backward using idx_pedidos_cliente_estado_fecha on pedidos p  (cost=0.42..149.14 rows=36 width=18) (actual time=0.071..0.099 rows=20 loops=1)
+         Index Cond: ((id_cliente = 4871) AND ((estado)::text = 'confirmado'::text))
+         Buffers: shared hit=20 read=3
+ Execution Time: 0.135 ms</code></pre>
+          </div>
+          <p>
+            Los dos recorren el índice hacia atrás para servir el <code>DESC</code>. 20 filas reales frente a 40 o 36 estimadas no es un error: el <code>LIMIT</code> corta en 20. En Postgres, 23 páginas frente a 1 712.
+          </p>
+          <h2 id="estadisticas">
+            Cuando la estimación miente
+            <a href="#estadisticas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El planificador elige con lo que <em>cree</em> que encontrará; con estadísticas de antes de un cambio grande, elige mal. Para verlo, importamos 60 000 pedidos nuevos del cliente 4871 con su línea cada uno. Los planes desde aquí suponen ya creados los índices <code>(id_cliente, estado, creado_en)</code> e <code>idx_pedidos_cobertura</code> de la sección «Lo que muerde». En Postgres, el autoanalyze salta cuando cambia más de 50 filas más el 10 % de la tabla, así que en local lo apagamos; en producción, el hueco es el job que importa y consulta acto seguido.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · Postgres 17</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">ALTER TABLE pedidos SET (autovacuum_enabled = off);
+ALTER TABLE lineas_pedido SET (autovacuum_enabled = off);
+
+INSERT INTO pedidos
+SELECT 200000 + i, 4871, 'confirmado', TIMESTAMP '2026-10-01' + make_interval(secs =&gt; i), 10
+FROM generate_series(1, 60000) AS i;
+INSERT INTO lineas_pedido (pedido_id, cantidad) SELECT id, 1 FROM pedidos WHERE id &gt; 200000;
+
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT SUM(l.cantidad)
+FROM pedidos p JOIN lineas_pedido l ON l.pedido_id = p.id
+WHERE p.id_cliente = 4871 AND p.estado = 'confirmado';</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">Postgres 17 · antes de ANALYZE</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code> Aggregate  (cost=585.75..585.76 rows=1 width=8) (actual time=237.275..237.278 rows=1 loops=1)
+   Buffers: shared hit=241399
+   -&gt;  Nested Loop  (cost=0.84..585.54 rows=83 width=4) (actual time=0.099..225.451 rows=60080 loops=1)
+         -&gt;  Index Only Scan using idx_pedidos_cobertura on pedidos p  (cost=0.42..49.36 rows=47 width=4) (actual time=0.032..30.704 rows=60040 loops=1)
+               Heap Fetches: 60040
+         -&gt;  Index Scan using idx_lineas_pedido on lineas_pedido l  (cost=0.42..11.39 rows=2 width=8) (actual time=0.002..0.003 rows=1 loops=60040)
+               Buffers: shared hit=240200
+ Execution Time: 237.360 ms</code></pre>
+          </div>
+          <p>
+            Estimó 47 pedidos y salieron 60 040. Para 47, un <em>nested loop</em> es lo sensato; con 60 040, el bucle interior da 60 040 vueltas y toca 240 200 páginas. Tras <code>ANALYZE pedidos</code>, el escaneo de pedidos estima 23 189 filas por proceso, del orden de las 30 020 reales, y el plan cambia:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">Postgres 17 · después de ANALYZE</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code> Finalize Aggregate  (cost=11574.00..11574.01 rows=1 width=8) (actual time=127.426..134.833 rows=1 loops=1)
+   Buffers: shared hit=4149
+   ...
+               -&gt;  Parallel Hash Join  (cost=4526.55..10429.12 rows=57909 width=4) (actual time=25.954..120.744 rows=30040 loops=2)
+                     Hash Cond: (l.pedido_id = p.id)
+                     -&gt;  Parallel Seq Scan on lineas_pedido l  (cost=0.00..5192.39 rows=270539 width=8) (actual time=0.018..27.174 rows=230000 loops=2)
+                     -&gt;  Parallel Hash  (cost=4236.68..4236.68 rows=23189 width=4) (actual time=24.306..24.307 rows=30020 loops=2)
+ Execution Time: 134.892 ms</code></pre>
+          </div>
+          <p>
+            De 241 399 páginas a 4 149, y de 237 ms a 135. La consulta no cambió; cambió lo que el motor sabía.
+          </p>
+          <p>
+            MySQL, con la misma importación y el recálculo automático apagado (<code>STATS_AUTO_RECALC = 0</code>), estimó 122 860 pedidos: el doble, pero del orden correcto. Para igualdades y rangos sobre un índice, el optimizador baja a contar en el índice al planificar (<em>index dive</em>), sin fiarse de la estadística guardada, que seguía en 5 017 combinaciones de cliente y estado. Donde se engaña es en columnas sin índice, que estima con <strong>histogramas</strong>, y un <code>ANALYZE TABLE</code> normal no los rehace:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · MySQL 8.4</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">ANALYZE TABLE pedidos UPDATE HISTOGRAM ON total WITH 64 BUCKETS;
+-- importación de 60 000 pedidos con total = 10
+ANALYZE TABLE pedidos;
+EXPLAIN ANALYZE SELECT COUNT(*) FROM pedidos WHERE total &lt; 20;
+-- Filter: (pedidos.total &lt; 20.00)  (cost=26169 rows=11835) (actual time=0.206..126 rows=68000 loops=1)
+ANALYZE TABLE pedidos UPDATE HISTOGRAM ON total WITH 64 BUCKETS;
+-- Filter: (pedidos.total &lt; 20.00)  (cost=26169 rows=76201) (actual time=0.252..120 rows=68000 loops=1)</code></pre>
+          </div>
+          <p>
+            En 8.4 puedes crear el histograma con <code>AUTO UPDATE</code> al final, y entonces cada <code>ANALYZE TABLE</code> lo rehace también.
+          </p>
+          <h2 id="diferencias">
+            Lo que muerde al cambiar de motor
+            <a href="#diferencias" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La que más sorprende es la más tonta: el <code>id</code> y la fecha de los pedidos de un cliente, con el índice <code>(id_cliente, estado, creado_en)</code> ya creado.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · los dos motores</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">SELECT id, creado_en FROM pedidos WHERE id_cliente = 4871 AND estado = 'confirmado';</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">MySQL 8.4 · salida</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>-&gt; Covering index lookup on pedidos using idx_pedidos_cliente_estado_fecha (id_cliente=4871, estado='confirmado')  (cost=5.45 rows=40) (actual time=0.0348..0.0444 rows=40 loops=1)</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">Postgres 17 · salida</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code> Bitmap Heap Scan on pedidos  (cost=4.79..133.41 rows=36 width=12) (actual time=0.036..0.295 rows=40 loops=1)
+   Recheck Cond: ((id_cliente = 4871) AND ((estado)::text = 'confirmado'::text))
+   Heap Blocks: exact=40
+   Buffers: shared hit=43
+   -&gt;  Bitmap Index Scan on idx_pedidos_cliente_estado_fecha  (cost=0.00..4.78 rows=36 width=0) (actual time=0.017..0.018 rows=40 loops=1)</code></pre>
+          </div>
+          <p>
+            En InnoDB el <code>id</code> viene gratis en la hoja de cualquier índice secundario. En Postgres no, así que visita 40 bloques del heap. Para cubrirla hay que pedirlo:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · Postgres 17</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">CREATE INDEX idx_pedidos_cobertura ON pedidos (id_cliente, estado, creado_en) INCLUDE (id);
+-- Index Only Scan using idx_pedidos_cobertura on pedidos  (... rows=40 loops=1)
+--   Heap Fetches: 0
+--   Buffers: shared hit=1 read=3</code></pre>
+          </div>
+          <p>
+            <em>Index Only Scan</em> no garantiza no tocar la tabla: Postgres mira el <strong>mapa de visibilidad</strong> y solo se fía del índice en páginas marcadas como visibles para todos. Las marca <code>VACUUM</code>; cualquier cambio las desmarca:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · Postgres 17</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">UPDATE pedidos SET total = total + 1 WHERE id_cliente = 4871;
+-- Index Only Scan ... Heap Fetches: 80  Buffers: shared hit=85
+VACUUM pedidos;
+-- Index Only Scan ... Heap Fetches: 0   Buffers: shared hit=5</code></pre>
+          </div>
+          <p>
+            80 visitas para 40 filas: el índice aún apunta a las 40 versiones viejas del <code>UPDATE</code>. <code>ANALYZE</code> no lo arregla: tras la importación seguía habiendo 60 040 <code>Heap Fetches</code>.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th></th><th>MySQL 8.4 (InnoDB)</th><th>Postgres 17</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>EXPLAIN ANALYZE UPDATE</code> de una tabla</td><td>No lo ejecuta: <code>&lt;not executable by iterator executor&gt;</code></td><td>Lo ejecuta y cambia los datos</td></tr>
+                <tr><td>Páginas leídas</td><td>No aparecen</td><td><code>BUFFERS</code></td></tr>
+                <tr><td>Clave primaria en el índice</td><td>Implícita en cada secundario</td><td>Solo con <code>INCLUDE</code> o como columna</td></tr>
+                <tr><td>Solo índice depende de</td><td>Que estén las columnas</td><td>Las columnas y el mapa de visibilidad</td></tr>
+                <tr><td>Estimaciones sobre índice</td><td>Index dives al planificar</td><td>Estadísticas de <code>ANALYZE</code></td></tr>
+                <tr><td>Columnas sin índice</td><td>Histogramas, a mano o <code>AUTO UPDATE</code></td><td>Las mismas estadísticas de <code>ANALYZE</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Crear esos índices en producción sin bloquear la tabla es otro problema: lo trata <a href="bd-migraciones-sin-caida.html">Migraciones sin caída</a>.
+          </p>
+          <h2 id="php">
+            El plan desde PHP
+            <a href="#php" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Lo habitual es mirar el plan con un valor de ejemplo y sin ejecutar:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · antes</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$connection = new PDO('mysql:host=127.0.0.1;dbname=tienda', 'app', 'secret');
+
+$statement = $connection-&gt;query(
+    "EXPLAIN SELECT id, total FROM pedidos WHERE id_cliente = 1 AND estado = 'confirmado' ORDER BY creado_en DESC LIMIT 20"
+);
+print_r($statement-&gt;fetchAll(PDO::FETCH_ASSOC));</code></pre>
+          </div>
+          <p>
+            Estima sin ejecutar y con el cliente 1, que no es el que va lento. Esta clase usa los parámetros reales, pide el <code>EXPLAIN ANALYZE</code> de cada motor y lo envuelve en una transacción que siempre se deshace, porque en Postgres un <code>DELETE</code> analizado borra:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · QueryPlan.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class QueryPlan
+{
+    private const array EXPLAIN_PREFIX_BY_DRIVER = [
+        'mysql' =&gt; 'EXPLAIN ANALYZE ',
+        'pgsql' =&gt; 'EXPLAIN (ANALYZE, BUFFERS) ',
+    ];
+
+    public function __construct(private readonly PDO $connection)
+    {
+    }
+
+    public function analyze(string $sql, array $parameters): string
+    {
+        $this-&gt;connection-&gt;beginTransaction();
+
+        try {
+            $statement = $this-&gt;connection-&gt;prepare($this-&gt;explainPrefix() . $sql);
+            $statement-&gt;execute($parameters);
+
+            return implode(PHP_EOL, $statement-&gt;fetchAll(PDO::FETCH_COLUMN));
+        } finally {
+            $this-&gt;connection-&gt;rollBack();
+        }
+    }
+
+    private function explainPrefix(): string
+    {
+        $driver = $this-&gt;connection-&gt;getAttribute(PDO::ATTR_DRIVER_NAME);
+
+        return self::EXPLAIN_PREFIX_BY_DRIVER[$driver]
+            ?? throw new LogicException("EXPLAIN ANALYZE no soportado para {$driver}");
+    }
+}</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · uso</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$plan = new QueryPlan($connection);
+
+echo $plan-&gt;analyze(
+    'SELECT id, total FROM pedidos WHERE id_cliente = ? AND estado = ? ORDER BY creado_en DESC LIMIT 20',
+    [4871, 'confirmado'],
+);</code></pre>
+          </div>
+          <p>
+            Probada con PHP 8.4 contra los dos contenedores. Úsala en local o en un comando de diagnóstico, nunca en cada petición: ejecuta la consulta.
+          </p>
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que se lee mal al cambiar de motor</p>
+              <ul>
+                <li><strong>Comparar el <code>cost</code> de un motor con el del otro.</strong> Son unidades internas de cada planificador.</li>
+                <li><strong>Olvidar multiplicar por <code>loops</code>.</strong> <code>rows=1 loops=60040</code> son 60 040 filas.</li>
+                <li><strong>Analizar un <code>DELETE</code> en Postgres fuera de una transacción.</strong> Lo borra; en MySQL ni se ejecuta.</li>
+                <li><strong>Dar por cubierta en Postgres la consulta que en MySQL cubría la clave primaria.</strong> Sin <code>INCLUDE</code>, va al heap.</li>
+                <li><strong>Esperar que <code>ANALYZE</code> baje los <code>Heap Fetches</code>.</strong> Eso lo hace <code>VACUUM</code>.</li>
+                <li><strong>Fiarse de un histograma de MySQL sin mirar su fecha.</strong> Sin <code>AUTO UPDATE</code>, <code>ANALYZE TABLE</code> no lo toca.</li>
+              </ul>
+            </div>
+          </div>
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Compara nodo a nodo filas estimadas con reales (por <code>loops</code>). El nodo más interno donde se separan un orden de magnitud es la decisión mala; los de encima heredan el error. Luego mira cuándo se calcularon las estadísticas:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · Postgres 17</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">SELECT relname, n_mod_since_analyze, last_analyze, last_autoanalyze
+FROM pg_stat_user_tables
+WHERE relname = 'pedidos';</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · MySQL 8.4</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">SELECT table_name, n_rows, last_update
+FROM mysql.innodb_table_stats
+WHERE database_name = 'tienda';
+
+SELECT table_name, column_name, JSON_UNQUOTE(histogram-&gt;'$."last-updated"') AS actualizado
+FROM information_schema.column_statistics;</code></pre>
+          </div>
+          <p>
+            Para medir un cambio, compara <code>Buffers</code> en Postgres y filas por nodo en MySQL.
+          </p>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Lee el plan de los dos motores cuando…</h4>
+              <ul><li>Migras de un motor a otro y quieres saber qué índices dejan de servir</li><li>La aplicación corre sobre los dos</li><li>Una consulta va lenta justo después de una carga masiva</li><li>Un <em>Index Only Scan</em> tarda más de lo que su nombre promete</li></ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No hace falta cuando…</h4>
+              <ul><li>Solo usas un motor y no tienes planes de cambiar</li><li>El tiempo se va en un N+1 o en llamadas externas, no en una consulta</li><li>La tabla es tan pequeña que da igual el plan</li></ul>
+            </div>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La alternativa sencilla</p>
+              <p>Con un solo motor basta el método de <a href="cr-consultas-lentas.html">Consultas lentas</a> comparando estimadas frente a reales.</p>
+            </div>
+          </div>
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los dos dan un árbol con estimación frente a realidad en cada nodo: leer es compararlas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Las filas reales son por vuelta: multiplica por <code>loops</code>, también en los nodos paralelos de Postgres.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En Postgres pide <code>BUFFERS</code>: las páginas son más estables que los milisegundos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Tras una carga masiva, Postgres planifica con estadísticas viejas hasta el <code>ANALYZE</code>. MySQL cuenta en el índice, pero sus histogramas no se rehacen solos sin <code>AUTO UPDATE</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>InnoDB lleva la clave primaria en cada índice; Postgres no, y su <em>Index Only Scan</em> depende de <code>VACUUM</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>EXPLAIN ANALYZE</code> ejecuta: en Postgres, las escrituras analizadas van en una transacción que se deshace.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
