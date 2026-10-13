@@ -3186,7 +3186,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-06-27",
-    reviewed: "2026-06-27",
+    reviewed: "2026-10-13",
   },
   {
     slug: "cqrs-event-sourcing",
@@ -3931,7 +3931,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-08-22",
-    reviewed: "2026-08-22",
+    reviewed: "2026-10-13",
   },
   {
     slug: "cc-contexto-finito",
@@ -3947,13 +3947,13 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-08-22",
-    reviewed: "2026-08-22",
+    reviewed: "2026-10-13",
   },
   {
     slug: "cc-plan-y-verificacion",
     title: "Planificar y verificar",
     description:
-      "Las dos disciplinas que hacen rentable a un agente: el modo plan (explorar en solo lectura y aprobar antes de tocar) y la verificación ejecutada — tests y comandos reales en vez de «debería funcionar», con ojo a los tests debilitados.",
+      "Las dos disciplinas que hacen rentable a un agente: el modo plan (explorar sin editar y aprobar antes de tocar) y la verificación ejecutada — tests y comandos reales en vez de «debería funcionar», con ojo a los tests debilitados.",
     href: "tutorials/cc-plan-y-verificacion.html",
     categories: ["ia"],
     topic: "Claude Code",
@@ -3963,7 +3963,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-08-22",
-    reviewed: "2026-08-22",
+    reviewed: "2026-10-13",
   },
   {
     slug: "cc-subagentes",
@@ -4043,7 +4043,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-08-22",
-    reviewed: "2026-08-22",
+    reviewed: "2026-10-13",
   },
   {
     slug: "cc-hooks-y-permisos",
@@ -4075,7 +4075,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-08-22",
-    reviewed: "2026-08-22",
+    reviewed: "2026-10-13",
   },
   {
     slug: "cc-flujo-de-equipo",
@@ -4155,7 +4155,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-08-22",
-    reviewed: "2026-08-22",
+    reviewed: "2026-10-13",
   },
   {
     slug: "maq-cpu",
@@ -4321,7 +4321,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-10-06",
-    reviewed: "2026-10-07",
+    reviewed: "2026-10-13",
   },
   {
     slug: "llm-atencion-y-contexto",

@@ -2428,8 +2428,8 @@ window.MENTORAI_CHECKS = {
   ],
   "cc-plan-y-verificacion": [
     { id: "ca5c19b", q: "¿Qué garantiza el modo plan de Claude Code mientras está activo?",
-      o: ["Que el plan resultante será correcto antes de ejecutarlo","Que lee y busca, pero no escribe hasta que apruebes","Que la sesión gastará menos tokens que trabajando sin plan"], a: 1,
-      w: "Es la frontera de permisos al servicio del método: explorar sin tocar, y tú decides cuándo se pasa a implementar." },
+      o: ["Que el plan resultante será correcto antes de ejecutarlo","Que explora, pero no edita ficheros hasta que apruebes","Que la sesión gastará menos tokens que trabajando sin plan"], a: 1,
+      w: "Es la frontera de permisos al servicio del método: explorar sin editar, y tú decides cuándo se pasa a implementar. Los comandos no se bloquean: pasan por el clasificador o por tu confirmación." },
     { id: "c67ecb4", q: "¿Cuál de estas señales delata un plan NO aprobable?",
       o: ["Nombra ficheros y funciones concretas del repo","Dice explícitamente qué no va a tocar","Sus pasos valdrían para cualquier proyecto"], a: 2,
       w: "Un plan genérico es señal de que no hubo exploración: estás aprobando deseos, no un plan." },
