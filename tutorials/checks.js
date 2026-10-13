@@ -3236,4 +3236,15 @@ window.MENTORAI_CHECKS = {
       o: ["Del id del bloque tool_use, que identifica cada llamada de forma única","Del id de la ejecución y de la acción, que no cambian si se reintenta","De la hora de la petición, que distingue un reembolso de uno posterior"], a: 1,
       w: "Si el trabajo se reintenta, el modelo genera bloques tool_use con ids nuevos y una clave basada en ellos no detecta el duplicado. La ejecución y la acción se mantienen." },
   ],
+  "sd-messenger-en-php": [
+    { id: "ce7bdd5", q: "Un mensaje está enrutado al transport async, pero no hay ningún messenger:consume en marcha. ¿Qué pasa al hacer dispatch?",
+      o: ["Se guarda en el transport y espera a que un worker lo consuma","Se ejecuta el handler en la petición, porque no hay worker activo","Se descarta y queda apuntado en el transport de fallidos"], a: 0,
+      w: "Enrutado, el dispatch solo guarda el mensaje; el handler corre en el worker. Ejecutarlo en la petición es lo que pasa cuando no hay routing, no cuando falta el worker. Por eso una cola que solo crece suele ser un worker caído." },
+    { id: "c1a52da", q: "Supervisor tiene autorestart con su valor por defecto (unexpected) y el despliegue lanza messenger:stop-workers. ¿Qué ocurre?",
+      o: ["Los workers acaban su mensaje y Supervisor los relanza con el código nuevo","Los workers salen limpios con código 0 y nadie los relanza","Los workers se cortan a mitad del mensaje y este vuelve a la cola"], a: 1,
+      w: "stop-workers no mata: el worker termina su mensaje y sale con código 0. Con autorestart=unexpected esa salida cuenta como esperada y Supervisor no lo vuelve a arrancar. Hace falta autorestart=true, o Restart=always en systemd." },
+    { id: "ce39d4f", q: "¿Por qué con doctrine://default un dispatch dentro de una transacción no deja la doble escritura que sí aparece con AMQP?",
+      o: ["Porque el worker confirma el mensaje en la misma transacción que el handler","Porque Doctrine reintenta el envío al broker hasta que se hace el commit","Porque el mensaje se inserta por la misma conexión y el rollback también lo deshace"], a: 2,
+      w: "La cola es una tabla de tu base de datos: el INSERT del mensaje va en tu transacción y desaparece con el rollback, como un outbox gratis. Con AMQP el mensaje ya está en el broker aunque tu transacción se deshaga." },
+  ],
 };

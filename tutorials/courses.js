@@ -173,6 +173,7 @@ window.MENTORAI_COURSES = [
           "sd-garantias-de-entrega",
           "sd-outbox",
           "sd-colas-y-topicos",
+          "sd-messenger-en-php",
         ],
       },
       {

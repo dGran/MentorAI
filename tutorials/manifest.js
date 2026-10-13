@@ -4947,4 +4947,19 @@ window.ACADEMIA_TUTORIALS = [
     date: "2026-10-13",
     reviewed: "2026-10-13",
   },
+  {
+    slug: "sd-messenger-en-php",
+    title: "Symfony Messenger de punta a punta",
+    description:
+      "Las colas montadas en PHP: mensaje y handler con #[AsMessageHandler], transport Doctrine frente a AMQP, el worker con sus límites, por qué reiniciarlo en cada despliegue y cómo probarlo con el transport in-memory.",
+    href: "tutorials/sd-messenger-en-php.html",
+    categories: ["distribuidos"],
+    topic: "Sistemas distribuidos",
+    tags: ["Messenger", "Symfony", "Workers", "Colas"],
+    level: "Avanzado",
+    minutes: 23,
+    icon: "signal",
+    status: "published",
+    date: "2026-10-12",
+  },
 ];
