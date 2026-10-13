@@ -5082,4 +5082,19 @@ window.ACADEMIA_TUTORIALS = [
     status: "published",
     date: "2026-10-12",
   },
+  {
+    slug: "fechas-y-zonas-horarias",
+    title: "Fechas y zonas horarias sin sorpresas",
+    description:
+      "DateTimeImmutable frente a DateTime, guardar en UTC y mostrar en local, la hora que no existe y la que se repite con el cambio de hora, ISO 8601 en APIs, DATETIME frente a TIMESTAMP y timestamptz, y un reloj PSR-20 para los tests.",
+    href: "tutorials/fechas-y-zonas-horarias.html",
+    categories: ["representacion"],
+    topic: "Fundamentos",
+    tags: ["Fechas", "Zonas horarias", "UTC", "PSR-20"],
+    level: "Intermedio",
+    minutes: 25,
+    icon: "code",
+    status: "published",
+    date: "2026-10-12",
+  },
 ];

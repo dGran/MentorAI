@@ -3335,4 +3335,15 @@ window.MENTORAI_CHECKS = {
       o: ["El segundo `up` recrea el contenedor del primero","El segundo `up` falla por nombre de proyecto repetido","Cada `up` levanta su stack, porque las rutas difieren"], a: 0,
       w: "Sin nombre explícito, el proyecto es el nombre de la carpeta, y los dos son `api`. Compose no lo ve como un conflicto: es el mismo proyecto, así que recrea su contenedor montando el código del segundo worktree." },
   ],
+  "fechas-y-zonas-horarias": [
+    { id: "c9aaa5a", q: "En Europe/Madrid, `new DateTimeImmutable('2026-10-25 02:30:00', $madrid)` cae en la hora que se repite al retrasar el reloj. ¿Qué hace PHP?",
+      o: ["Lanza una excepción porque la hora es ambigua","Elige uno de los dos instantes sin avisar","Devuelve la primera aparición, la de +02:00"], a: 1,
+      w: "No hay error ni aviso: con PHP 8.5 sale 2026-10-25T02:30:00+01:00, la segunda pasada. Si necesitas un instante concreto, constrúyelo en UTC." },
+    { id: "ce966fa", q: "En MySQL insertas '2026-07-01 08:00:00' en una columna TIMESTAMP con la sesión en '+00:00', y lo lees con la sesión en 'Europe/Madrid'. ¿Qué obtienes?",
+      o: ["2026-07-01 10:00:00, convertido a la zona de la sesión","2026-07-01 08:00:00, tal cual se escribió en la tabla","2026-07-01 06:00:00, restando el offset de la sesión"], a: 0,
+      w: "TIMESTAMP guarda un instante en UTC y lo convierte a la zona de cada conexión al escribir y al leer. DATETIME sí devolvería 08:00, porque no toca la zona." },
+    { id: "c1f7693", q: "Una política de prueba gratuita hace `new DateTimeImmutable()` dentro de `hasExpired()`. ¿Por qué cuesta testearla?",
+      o: ["Porque una fecha inmutable no se puede adelantar en el test","Porque DateTimeImmutable no se puede comparar con >=","Porque el resultado depende del momento en que se ejecuta"], a: 2,
+      w: "El reloj del sistema es una dependencia oculta. Pide un ClockInterface de PSR-20 por constructor y fija la hora en el test, un segundo antes y justo en el límite." },
+  ],
 };

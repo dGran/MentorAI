@@ -451,7 +451,7 @@ window.MENTORAI_COURSES = [
       {
         title: "Representación de datos",
         summary: "La materia prima: todo son bits. Lo demás se apoya en esto.",
-        lessons: ["bits-y-bytes", "texto-unicode", "numeros-flotantes"],
+        lessons: ["bits-y-bytes", "texto-unicode", "numeros-flotantes", "fechas-y-zonas-horarias"],
       },
       {
         title: "Datos y algoritmos",
