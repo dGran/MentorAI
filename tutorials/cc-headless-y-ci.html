@@ -143,16 +143,19 @@
 claude -p "Resume que cambia este diff y si toca alguna API publica" \
   --output-format json &lt; cambios.diff
 
-# Acotado: sin permisos de escritura, solo estas herramientas
+# Acotado: la sesion solo tiene estas herramientas, ni Bash ni Edit
 claude -p "Lista los endpoints sin test de integracion" \
-  --allowedTools "Read,Grep,Glob"</code></pre>
+  --tools "Read,Grep,Glob"</code></pre>
           </div>
 
           <p>
             Los tres mandos que importan: el <strong>formato de salida</strong>
             (JSON estructurado si otro programa va a consumir el resultado — el
             texto libre es para humanos), las <strong>herramientas
-            permitidas</strong> (en desatendido, la lista corta es la norma) y
+            disponibles</strong> (en desatendido, la lista corta es la norma; la
+            fija <code>--tools</code>, porque <code>--allowedTools</code> solo
+            aprueba sin preguntar las que nombra y deja las demás en el
+            catálogo) y
             el <strong>prompt</strong>, que aquí trabaja sin red: nadie va a
             aclararle las ambigüedades a mitad de tarea, así que <a href="prompting-para-codigo.html">las reglas de
             prompting</a> del curso de fundamentos se aplican con doble motivo.
@@ -263,24 +266,44 @@ on: pull_request
 jobs:
   revisar:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with: { fetch-depth: 0 }
+      - name: Preparar el diff
+        run: git diff origin/main...HEAD &gt; cambios.diff
       - name: Revisar el diff con el agente
-        run: |
-          git diff origin/main...HEAD &gt; cambios.diff
-          claude -p "Revisa este diff contra las rules del repo.
-            Solo hallazgos verificables, con fichero:linea." \
-            --allowedTools "Read,Grep,Glob" \
-            --output-format json &gt; hallazgos.json
+        id: revision
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Revisa cambios.diff contra las rules del repo.
+            Solo hallazgos verificables, con fichero:linea.
+          claude_args: |
+            --tools "Read,Grep,Glob"
+            --max-turns 10
+            --json-schema '{"type":"object","properties":{"hallazgos":{"type":"array","items":{"type":"string"}}},"required":["hallazgos"]}'
       - name: Publicar comentarios
-        run: node scripts/publicar-hallazgos.js hallazgos.json</code></pre>
+        env:
+          HALLAZGOS: ${{ steps.revision.outputs.structured_output }}
+        run: |
+          echo "$HALLAZGOS" &gt; hallazgos.json
+          node scripts/publicar-hallazgos.js hallazgos.json</code></pre>
           </div>
 
           <p>
-            Los detalles que lo hacen serio: herramientas de solo lectura, el
-            prompt pide hallazgos <em>verificables</em> con ubicación (contra el
-            ruido de opiniones), la salida es JSON que otro script procesa, y
+            Los detalles que lo hacen serio: el runner no trae Claude Code, así
+            que el job usa la acción oficial
+            <code>anthropics/claude-code-action</code>, que lo instala y recibe
+            la clave del secreto <code>ANTHROPIC_API_KEY</code> (y se autentica en GitHub como la Claude GitHub App, que hay que instalar en el repo, de ahí <code>id-token: write</code>); los flags de
+            siempre viajan en <code>claude_args</code>. Herramientas de solo
+            lectura, el prompt pide hallazgos <em>verificables</em> con
+            ubicación (contra el ruido de opiniones), la salida es JSON validado
+            contra un esquema que otro script procesa, y
             las rules del repo — que el agente lee — hacen que la revisión
             aplique <em>vuestro</em> criterio, no uno genérico.
           </p>

@@ -190,7 +190,8 @@
           </h2>
           <p>
             Por debajo, MCP es JSON-RPC: mensajes con <code>method</code> y
-            <code>params</code>. Con el SDK oficial, un servidor con una tool
+            <code>params</code>. Con el SDK oficial de TypeScript (la v2, paquete
+            <code>@modelcontextprotocol/server</code>), un servidor con una tool
             útil — consultar tu base de datos de desarrollo, con conexión de
             solo lectura — cabe en una pantalla:
           </p>
@@ -203,16 +204,20 @@
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
-            <pre><code>import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { z } from "zod";
+            <pre><code>import { McpServer } from "@modelcontextprotocol/server";
+import { StdioServerTransport } from "@modelcontextprotocol/server/stdio";
+import * as z from "zod/v4";
 
 const server = new McpServer({ name: "mi-bd-dev", version: "1.0.0" });
 
-server.tool(
+server.registerTool(
   "consulta_solo_lectura",
-  "Ejecuta un SELECT sobre la BD de desarrollo y devuelve las filas",
-  { sql: z.string().describe("Consulta SELECT unica, sin ; multiples") },
+  {
+    description: "Ejecuta un SELECT sobre la BD de desarrollo y devuelve las filas",
+    inputSchema: z.object({
+      sql: z.string().describe("Consulta SELECT unica, sin ; multiples"),
+    }),
+  },
   async ({ sql }) =&gt; {
     if (!/^\s*select\b/i.test(sql)) {
       return { content: [{ type: "text", text: "Solo se aceptan SELECT" }] };

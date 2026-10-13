@@ -1838,8 +1838,8 @@ window.MENTORAI_QUIZZES = {
       w: "Localizar antes de leer: lo que no entra en la ventana no desplaza a lo que ya estaba.",
       lesson: "cc-contexto-finito" },
     { id: "q241f4a", q: "¿Qué garantiza exactamente el modo plan?",
-      o: ["Que el plan propuesto será correcto antes de implementarlo","Que la tarea gastará menos tokens al planificar antes","Que solo lee y no escribe nada hasta que lo apruebes","Que no se ejecutará ningún comando hasta que lo apruebes"], a: 2,
-      w: "Es la frontera de permisos al servicio del método: leer y buscar sí, editar no. Tu aprobación desbloquea la escritura.",
+      o: ["Que el plan propuesto será correcto antes de implementarlo","Que la tarea gastará menos tokens al planificar antes","Que no editará ficheros hasta que apruebes el plan","Que no se ejecutará ningún comando hasta que lo apruebes"], a: 2,
+      w: "Es la frontera de permisos al servicio del método: explorar sí, editar no. Los comandos no quedan bloqueados (los revisa el clasificador o te piden confirmación); tu aprobación desbloquea las ediciones.",
       lesson: "cc-plan-y-verificacion" },
     { id: "q99465c", q: "«He actualizado el código; los tests deberían pasar.» ¿Estado del trabajo?",
       o: ["Terminado, si el diff se ve bien y es coherente","Terminado: el agente afirma que está hecho","Pendiente solo de una revisión manual del código","Sin verificar: falta ejecutar y ver la salida"], a: 3,
@@ -2043,8 +2043,8 @@ window.MENTORAI_QUIZZES = {
   /* -------- La IA por dentro (16) -------- */
   "ia-por-dentro": { questions: [
     { id: "qdabf6b", q: "Un prompt de sistema de 2.000 palabras en español se envía en cada llamada de tu feature. ¿Qué es lo primero que deberías hacer para estimar su coste?",
-      o: ["Contar las palabras y multiplicar por el precio por palabra","Contar sus tokens reales con la herramienta del proveedor","Calcular los caracteres y dividir entre cuatro, como en inglés","Suponer que la caché de prompt lo deja prácticamente gratis siempre"], a: 1,
-      w: "Contexto y precio se miden en tokens, y la regla de cuatro caracteres engaña con el español: se mide, no se estima.",
+      o: ["Contar las palabras y multiplicar por el precio por palabra","Contar sus tokens reales con la herramienta del proveedor","Calcular los caracteres y dividir entre cuatro, la regla clásica","Suponer que la caché de prompt lo deja prácticamente gratis siempre"], a: 1,
+      w: "Contexto y precio se miden en tokens, y la regla de cuatro caracteres depende del tokenizador y engaña aún más con el español: se mide, no se estima.",
       lesson: "llm-de-texto-a-tokens" },
     { id: "q699dfe", q: "Tu feature compara importes de diez cifras dentro del prompt y a veces se equivoca. ¿Qué cambio ataca la causa?",
       o: ["Subir la temperatura para que explore más opciones","Pedirle al modelo que se concentre mucho más en los números del prompt","Hacer la comparación en código y darle al modelo el resultado","Escribir los importes en letra en lugar de en cifras"], a: 2,

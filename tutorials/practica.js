@@ -1070,7 +1070,7 @@ window.MENTORAI_PRACTICE = {
         "Crea un servidor MCP con una sola tool que consulte algo tuyo de verdad (tu BD de desarrollo con conexión de solo lectura, o un fichero de datos). Conéctalo con .mcp.json, abre una sesión y pídele al agente algo que necesite esa tool. Después intenta colarle una operación de escritura y comprueba que el servidor la rechaza.",
       code: {
         lang: "bash",
-        source: "npm init -y && npm install @modelcontextprotocol/sdk zod",
+        source: "npm init -y && npm install @modelcontextprotocol/server zod",
       },
       solution:
         "Al pedirle el dato, el agente descubre tu tool en el catálogo y la invoca sin que tú toques nada — el bucle de siempre con un brazo ejecutor nuevo. La parte importante es el segundo paso: la escritura la rechaza tu validación dentro del servidor (y la credencial de solo lectura), no la buena voluntad del modelo. Esa es la frontera determinista de todo el curso, ahora escrita por ti.",
