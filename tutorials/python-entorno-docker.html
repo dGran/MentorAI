@@ -126,14 +126,14 @@
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
-            <pre><code data-lang="bash">FROM python:3.12-slim
+            <pre><code data-lang="bash">FROM python:3.14-slim
 
 WORKDIR /app
 
 RUN pip install uv
 
 COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen
+RUN uv sync --frozen --no-install-project
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -143,11 +143,11 @@ CMD ["uv", "run", "uvicorn", "src.main:app", \
           </div>
           <p>Tres decisiones importantes aquí:</p>
           <ul>
-            <li><strong><code>python:3.12-slim</code> frente a <code>python:3.12-alpine</code></strong>: slim usa glibc; alpine usa musl libc. Muchos paquetes Python con extensiones C (NumPy, Pillow) no tienen wheels para musl y se compilan desde fuente, multiplicando el tiempo de build. slim es la elección pragmática para la mayoría de proyectos.</li>
+            <li><strong><code>python:3.14-slim</code> frente a <code>python:3.14-alpine</code></strong>: slim usa glibc; alpine usa musl libc. Los paquetes grandes con extensiones C (NumPy, Pillow, pandas, cryptography) ya publican wheels para musl, pero algunas dependencias aún no los tienen y se compilan desde fuente, multiplicando el tiempo de build; además, musl difiere de glibc en rendimiento y comportamiento. slim es la elección pragmática para la mayoría de proyectos.</li>
             <li><strong><code>PYTHONDONTWRITEBYTECODE=1</code></strong>: elimina los archivos <code>.pyc</code> dentro del contenedor. En un entorno efímero no aportan nada y ensucian el sistema de ficheros.</li>
             <li><strong><code>PYTHONUNBUFFERED=1</code></strong>: fuerza que stdout y stderr se escriban inmediatamente sin buffer. Sin esto, los logs de la aplicación no aparecen en <code>docker compose logs</code> hasta que el buffer se llena.</li>
           </ul>
-          <p>Copiar <code>pyproject.toml</code> y <code>uv.lock</code> <em>antes</em> del código fuente aprovecha la caché de capas de Docker: si solo cambia el código, la capa de instalación de dependencias no se reconstruye.</p>
+          <p>Copiar <code>pyproject.toml</code> y <code>uv.lock</code> <em>antes</em> del código fuente aprovecha la caché de capas de Docker: si solo cambia el código, la capa de instalación de dependencias no se reconstruye. Por eso esa capa lleva <code>--no-install-project</code>: instala solo las dependencias, porque el código del propio proyecto aún no está en la imagen y, sin el flag, <code>uv sync</code> falla intentando construirlo.</p>
 
           <h2 id="compose">
             Compose con hot-reload
@@ -299,7 +299,7 @@ docker compose down</code></pre>
             <ul>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span><code>python:3.12-slim</code> es la imagen base recomendada: tiene glibc (compatibilidad con wheels binarios) y es significativamente más pequeña que la imagen completa.</span>
+                <span><code>python:3.14-slim</code> es la imagen base recomendada: tiene glibc (compatibilidad con wheels binarios) y es significativamente más pequeña que la imagen completa.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>

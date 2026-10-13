@@ -1965,7 +1965,7 @@ window.MENTORAI_QUIZZES = {
       lesson: "maq-de-codigo-a-programa" },
     { id: "q0fa05f", q: "¿Qué es una syscall?",
       o: ["Una llamada a una función de la librería estándar de tu lenguaje, como printf","Una interrupción que el hardware lanza al kernel cuando llega un dato","Una llamada de un proceso a otro a través de un socket local","Una petición al kernel para usar disco, red o memoria, que tu proceso no toca solo"], a: 3,
-      w: "Tu echo es write(1, \"hola\", 5). Todo lenguaje de alto nivel desemboca en ese menú de ~350 llamadas.",
+      w: "Tu echo es write(1, \"hola\", 5). Todo lenguaje de alto nivel desemboca en ese menú de ~400 llamadas.",
       lesson: "maq-kernel-y-syscalls" },
     { id: "q58f1bf", q: "¿Por qué existe el buffering de salida?",
       o: ["Para que los datos lleguen en orden aunque se escriban desde varios hilos","Porque los terminales solo pintan líneas completas y no caracteres sueltos uno a uno","Porque cada write cruza a modo kernel, y escribir de golpe ahorra esos cruces","Para no perder datos si el proceso muere antes de escribirlos"], a: 2,

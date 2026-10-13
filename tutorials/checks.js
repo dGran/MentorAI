@@ -1917,7 +1917,7 @@ window.MENTORAI_CHECKS = {
       w: "Y cuando el rendimiento importa, se delega en librerías escritas en C: por eso NumPy es rápido aunque Python no lo sea." },
     { id: "cda8a41", q: "¿Qué es el GIL y qué implica?",
       o: ["Un gestor de paquetes global que instala las librerías para todos los proyectos del sistema","Un recolector de basura que pausa todos los hilos cada vez que libera memoria de los objetos","Un cerrojo que deja ejecutar bytecode a un solo hilo a la vez, sin paralelismo de CPU"], a: 2,
-      w: "Para CPU se usan procesos (`multiprocessing`); para I/O, hilos o async, que sí aprovechan la espera." },
+      w: "En la build por defecto, para CPU se usan procesos (`multiprocessing`); para I/O, hilos o async, que sí aprovechan la espera. La build free-threaded (3.14t) lo quita, pero es opcional." },
   ],
 
   "python-entorno-docker": [
