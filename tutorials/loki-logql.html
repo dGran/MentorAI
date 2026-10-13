@@ -102,7 +102,7 @@
             Loki: labels vs contenido
             <a href="#loki" class="anchor" aria-hidden="true">#</a>
           </h2>
-          <p>Elasticsearch indexa el contenido de cada campo de cada log — por eso es potente pero también caro en CPU, memoria y disco. Loki solo indexa las <strong>etiquetas</strong> (labels) que defines en el colector (Promtail, Alloy o similar): <code>app</code>, <code>env</code>, <code>container</code>. El contenido de cada línea de log se comprime y almacena sin indexar.</p>
+          <p>Elasticsearch indexa el contenido de cada campo de cada log — por eso es potente pero también caro en CPU, memoria y disco. Loki solo indexa las <strong>etiquetas</strong> (labels) que defines en el colector (Grafana Alloy; Promtail está retirado): <code>app</code>, <code>env</code>, <code>container</code>. El contenido de cada línea de log se comprime y almacena sin indexar.</p>
           <p>Las consecuencias son importantes: las etiquetas de Loki deben ser, como las de Prometheus, de <strong>cardinalidad baja</strong> — los mismos valores que repetirías en miles de líneas. El nombre del contenedor, el servicio, el entorno. Nunca el <code>request_id</code> como etiqueta — eso es texto que va dentro de la línea y que LogQL filtrará en el pipeline.</p>
           <div class="callout callout--info">
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
@@ -275,8 +275,10 @@ topk(10,
 )
 
 # usuarios afectados por pagos fallidos hoy
-count_distinct_over_time(
-  {app="api"} | json | reason = "card_declined" | unwrap user_id [24h]
+count(
+  sum by (user_id) (
+    count_over_time({app="api"} | json | reason = "card_declined" [24h])
+  )
 )
 
 # correlación: spikes de errores con deployments

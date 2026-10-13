@@ -244,16 +244,19 @@ $logger-&gt;error('Payment failed', [
             </div>
             <pre><code data-lang="php">&lt;?php
 
+use Monolog\Logger;
+use Monolog\LogRecord;
+
 final class RequestIdMiddleware
 {
-    public function __construct(private readonly LoggerInterface $logger) {}
+    public function __construct(private readonly Logger $logger) {}
 
     public function process(Request $request, RequestHandler $handler): Response
     {
         $requestId = $request-&gt;headers-&gt;get('X-Request-Id') ?? bin2hex(random_bytes(8));
 
         $this-&gt;logger-&gt;pushProcessor(
-            fn(array $record) =&gt; array_merge($record, ['extra' =&gt; ['request_id' =&gt; $requestId]])
+            fn(LogRecord $record) =&gt; $record-&gt;with(extra: [...$record-&gt;extra, 'request_id' =&gt; $requestId])
         );
 
         $response = $handler-&gt;handle($request);
@@ -263,6 +266,7 @@ final class RequestIdMiddleware
     }
 }</code></pre>
           </div>
+          <p>En Monolog 3 el processor recibe un <code>LogRecord</code> inmutable, no un array: <code>with()</code> devuelve una copia con el campo añadido. Y <code>pushProcessor()</code> es de Monolog, no de PSR-3, así que este middleware, que configura el logger, recibe <code>Monolog\Logger</code>; el resto del código sigue dependiendo de la interfaz.</p>
           <p>Con esto, todos los logs de la petición comparten el mismo <code>request_id</code>. Cuando alguien reporta un error, pide el valor de la cabecera <code>X-Request-Id</code> y búscalo en Loki o en tu almacén de logs: obtienes toda la secuencia de eventos de esa petición exacta.</p>
 
           <h2 id="psr3">

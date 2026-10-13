@@ -2260,6 +2260,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-07-04",
+    reviewed: "2026-10-13",
   },
   {
     slug: "loki-logql",
@@ -2275,6 +2276,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-07-04",
+    reviewed: "2026-10-13",
   },
   {
     slug: "grafana-dashboards",
@@ -2305,6 +2307,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-07-04",
+    reviewed: "2026-10-13",
   },
   {
     slug: "metricas-prometheus",
@@ -2320,6 +2323,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-07-04",
+    reviewed: "2026-10-13",
   },
   {
     slug: "sentry-a-fondo",
@@ -2335,6 +2339,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-07-04",
+    reviewed: "2026-10-13",
   },
   {
     slug: "sentry-error-tracking",
@@ -2350,6 +2355,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-07-04",
+    reviewed: "2026-10-13",
   },
   {
     slug: "logs-estructurados",
@@ -2365,6 +2371,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-07-04",
+    reviewed: "2026-10-13",
   },
   {
     slug: "observabilidad-pilares",

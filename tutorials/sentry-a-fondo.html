@@ -154,21 +154,12 @@ sentry-cli releases finalize "$VERSION"</code></pre>
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
-            <pre><code data-lang="php">$span = \Sentry\startSpan(
-    new \Sentry\Tracing\SpanContext('payment.gateway.charge')
-);
-
-try {
-    $result = $this-&gt;gateway-&gt;charge($order);
-    $span-&gt;setStatus(\Sentry\Tracing\SpanStatus::ok());
-    return $result;
-} catch (\Throwable $exception) {
-    $span-&gt;setStatus(\Sentry\Tracing\SpanStatus::internalError());
-    throw $exception;
-} finally {
-    $span-&gt;finish();
-}</code></pre>
+            <pre><code data-lang="php">return \Sentry\trace(
+    fn () =&gt; $this-&gt;gateway-&gt;charge($order),
+    \Sentry\Tracing\SpanContext::make()-&gt;setOp('payment.gateway.charge')
+);</code></pre>
           </div>
+          <p><code>\Sentry\trace()</code> abre un span hijo de la transacción activa, ejecuta la función, devuelve su resultado y cierra el span aunque la función lance. Si no hay una transacción muestreada, solo ejecuta la función: no hace falta envolverla en un <code>if</code>.</p>
 
           <h2 id="sampling">
             Sampling: no envíes todo
