@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tests de contrato entre servicios — MentorAI</title>
+    <meta name="description" content="Por qué dos servicios con mocks en verde se rompen al hablar de verdad, y cómo evitarlo con Pact en PHP o validando contra OpenAPI." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Testing</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Tests de contrato entre servicios</h1>
+        <p class="tutorial-hero__lead">
+          Dos servicios, dos suites en verde y una integración rota en producción. Un test de
+          contrato pone por escrito lo que el consumidor espera y obliga al proveedor a
+          demostrarlo, sin levantar el sistema entero.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            25 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Testing
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">Verde por separado, rojo al hablar</a></li>
+            <li><a href="#concepto">Qué es un contrato</a></li>
+            <li><a href="#pact">Pact en PHP</a></li>
+            <li><a href="#broker">El broker y can-i-deploy</a></li>
+            <li><a href="#openapi">La alternativa con OpenAPI</a></li>
+            <li><a href="#ci">Dónde encaja en CI</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Dos equipos, dos servicios y dos suites en verde. El lunes se despliega el catálogo, el
+            martes el checkout empieza a cobrar cero euros y nadie entiende cómo: cada lado probó su
+            parte contra lo que <em>creía</em> que hacía el otro. Un test de contrato convierte esa
+            creencia en algo que se comprueba en ambos extremos.
+          </p>
+
+          <h2 id="problema">
+            Verde por separado, rojo al hablar
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El checkout pide al catálogo el precio de un producto. Su cliente HTTP es pequeño y está
+            bien probado: un test unitario con un <a href="test-doubles.html">doble</a> que devuelve
+            el JSON que el equipo vio en la documentación hace seis meses.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · src/CatalogClient.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace Checkout;
+
+use GuzzleHttp\Client;
+
+final readonly class CatalogClient
+{
+    public function __construct(private Client $http)
+    {
+    }
+
+    public function priceInCents(int $productId): int
+    {
+        $response = $this-&gt;http-&gt;get("/products/{$productId}", [
+            'headers' =&gt; ['Accept' =&gt; 'application/json'],
+        ]);
+        $product = json_decode((string) $response-&gt;getBody(), true, flags: JSON_THROW_ON_ERROR);
+
+        return $product['price_cents'];
+    }
+}</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · antes: el test con mock</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace Checkout\Tests\Consumer;
+
+use Checkout\CatalogClient;
+use GuzzleHttp\Client;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Psr7\Response;
+use PHPUnit\Framework\TestCase;
+
+final class CatalogClientMockTest extends TestCase
+{
+    public function test_reads_the_price_of_a_product(): void
+    {
+        $catalog = new MockHandler([
+            new Response(200, ['Content-Type' =&gt; 'application/json'], '{"id": 42, "price_cents": 1999}'),
+        ]);
+        $client = new CatalogClient(new Client(['handler' =&gt; HandlerStack::create($catalog)]));
+
+        $this-&gt;assertSame(1999, $client-&gt;priceInCents(42));
+    }
+}</code></pre>
+          </div>
+          <p>
+            Mientras tanto, el equipo del catálogo renombra <code>price_cents</code> a
+            <code>price</code> y lo pasa a decimal. Sus tests comprueban su nueva respuesta y pasan.
+            Los del checkout siguen devolviendo el JSON antiguo desde el mock y también pasan. Nadie
+            miente: cada suite prueba su lado contra una copia del otro, y las copias
+            <strong>no se actualizan solas</strong>.
+          </p>
+          <p>
+            El <a href="tipos-de-test.html#e2e">e2e</a> lo habría pillado, pero levantar los dos
+            servicios con sus bases de datos para cada cambio es lento, y con diez servicios deja de
+            ser viable. Hace falta algo con la velocidad del mock y la honestidad de la llamada real.
+          </p>
+
+          <h2 id="concepto">
+            Qué es un contrato y quién lo escribe
+            <a href="#concepto" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un contrato es la descripción de las peticiones y respuestas que dos servicios se
+            comprometen a intercambiar. El truco está en usarla <strong>dos veces</strong>: el
+            consumidor la usa para levantar su doble y el proveedor para comprobarse contra ella. Si
+            el doble del consumidor y la verificación del proveedor salen del mismo fichero, ya no
+            pueden divergir sin que algo se ponga rojo. Lo que cambia entre enfoques es quién escribe
+            ese fichero.
+          </p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Dirigido por el consumidor</h4>
+              <ul>
+                <li>Cada consumidor declara solo lo que usa de verdad</li>
+                <li>El proveedor sabe qué campos puede tocar sin romper a nadie</li>
+                <li>Hace falta código en los dos lados y un sitio donde compartir contratos</li>
+                <li>Herramienta de referencia: Pact</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Esquema del proveedor (OpenAPI)</h4>
+              <ul>
+                <li>El proveedor publica todo lo que ofrece</li>
+                <li>No sabe qué campos usa cada consumidor ni cuáles puede retirar</li>
+                <li>Encaja si la especificación ya existe, que es lo habitual en una API pública</li>
+                <li>Basta un validador en los tests del proveedor</li>
+              </ul>
+            </div>
+          </div>
+          <p>
+            La diferencia importa al cambiar cosas. Con un esquema sabes que tu respuesta cumple lo
+            publicado; con contratos de consumidor sabes además <em>a quién</em> romperías quitando un
+            campo, que es justo la pregunta de <a href="pr-compatibilidad.html">versionar sin
+            romper</a>.
+          </p>
+
+          <h2 id="pact">
+            Pact: el consumidor escribe, el proveedor verifica
+            <a href="#pact" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Test del consumidor</b><small>Habla con un mock server de Pact, no con un doble a mano</small></span>
+              </div>
+              <div class="flow__arrow" data-label="genera"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Fichero de contrato</b><small>checkout-catalog.json, con las interacciones usadas</small></span>
+              </div>
+              <div class="flow__arrow" data-label="se publica en"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Broker</b><small>Guarda contratos y resultados por versión</small></span>
+              </div>
+              <div class="flow__arrow" data-label="lo descarga"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>Verificación del proveedor</b><small>Reproduce cada petición contra el servicio real</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">El mismo contrato alimenta el doble del consumidor y la prueba del proveedor.</p>
+          </div>
+          <p>
+            En PHP la librería es <code>pact-foundation/pact-php</code>. La rama estable es la 10
+            (la 11 sigue en alfa): pide PHP 8.1 o superior y la extensión <code>ffi</code> habilitada,
+            porque por debajo llama a la librería en Rust que comparten todos los lenguajes de Pact.
+            Al instalarla, un plugin de Composer descarga ese binario.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · instalar en el consumidor y en el proveedor</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">composer config allow-plugins.pact-foundation/composer-downloads-plugin true
+composer require --dev pact-foundation/pact-php
+php -m | grep -i ffi</code></pre>
+          </div>
+          <p>
+            El test del consumidor sustituye el <code>MockHandler</code> por una interacción
+            declarada. Fíjate en los <em>matchers</em>: <code>integer(1999)</code> no exige ese valor,
+            exige un entero. Así el contrato fija la forma y no los datos de ejemplo.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · después: el test del consumidor con Pact</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace Checkout\Tests\Consumer;
+
+use Checkout\CatalogClient;
+use GuzzleHttp\Client;
+use PhpPact\Consumer\InteractionBuilder;
+use PhpPact\Consumer\Matcher\Matcher;
+use PhpPact\Consumer\Model\ConsumerRequest;
+use PhpPact\Consumer\Model\ProviderResponse;
+use PhpPact\Standalone\MockService\MockServerConfig;
+use PHPUnit\Framework\TestCase;
+
+final class CatalogClientPactTest extends TestCase
+{
+    public function test_reads_the_price_of_an_existing_product(): void
+    {
+        $matcher = new Matcher();
+
+        $request = (new ConsumerRequest())
+            -&gt;setMethod('GET')
+            -&gt;setPath('/products/42')
+            -&gt;addHeader('Accept', 'application/json');
+
+        $response = (new ProviderResponse())
+            -&gt;setStatus(200)
+            -&gt;addHeader('Content-Type', 'application/json')
+            -&gt;setBody([
+                'id' =&gt; $matcher-&gt;integer(42),
+                'price_cents' =&gt; $matcher-&gt;integer(1999),
+            ]);
+
+        $config = (new MockServerConfig())
+            -&gt;setConsumer('checkout')
+            -&gt;setProvider('catalog')
+            -&gt;setPactDir(__DIR__ . '/../../pacts');
+
+        $builder = new InteractionBuilder($config);
+        $builder
+            -&gt;given('product 42 exists')
+            -&gt;uponReceiving('a request for the price of product 42')
+            -&gt;with($request)
+            -&gt;willRespondWith($response);
+
+        $client = new CatalogClient(new Client(['base_uri' =&gt; (string) $config-&gt;getBaseUri()]));
+
+        $this-&gt;assertSame(1999, $client-&gt;priceInCents(42));
+        $this-&gt;assertTrue($builder-&gt;verify());
+    }
+}</code></pre>
+          </div>
+          <p>
+            <code>willRespondWith()</code> va la última porque es la que registra la interacción y
+            arranca el mock server; <code>verify()</code> comprueba que el cliente hizo exactamente las
+            peticiones declaradas y, si todo cuadra, escribe <code>pacts/checkout-catalog.json</code>.
+            El <code>given()</code> es un <em>provider state</em>: el nombre de una situación que el
+            proveedor tendrá que preparar antes de recibir la petición.
+          </p>
+          <p>En el lado del catálogo, un único test reproduce el contrato contra el servicio levantado:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · la verificación del proveedor</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace Catalog\Tests\Provider;
+
+use GuzzleHttp\Psr7\Uri;
+use PhpPact\Standalone\ProviderVerifier\Model\VerifierConfig;
+use PhpPact\Standalone\ProviderVerifier\Verifier;
+use PHPUnit\Framework\TestCase;
+
+final class CatalogPactVerificationTest extends TestCase
+{
+    public function test_honours_every_consumer_contract(): void
+    {
+        $config = new VerifierConfig();
+        $config-&gt;getProviderInfo()
+            -&gt;setName('catalog')
+            -&gt;setHost('localhost')
+            -&gt;setPort(8080);
+        $config-&gt;getProviderState()
+            -&gt;setStateChangeUrl(new Uri('http://localhost:8080/_pact/provider-states'));
+
+        $verifier = new Verifier($config);
+        $verifier-&gt;addFile(__DIR__ . '/../../pacts/checkout-catalog.json');
+
+        $this-&gt;assertTrue($verifier-&gt;verify());
+    }
+}</code></pre>
+          </div>
+          <p>Con el catálogo ya renombrado, la verificación dice exactamente qué se rompió y para quién:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">salida · vendor/bin/phpunit tests/Provider</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>Verifying a pact between checkout and catalog
+
+  a request for the price of product 42
+     Given product 42 exists
+    returns a response which
+      has status code 200 (OK)
+      includes headers
+        "Content-Type" with value "application/json" (OK)
+      has a matching body (FAILED)
+
+Failures:
+
+1) Verifying a pact between checkout and catalog Given product 42 exists - a request for the price of product 42
+    1.1) has a matching body
+           $ -&gt; Actual map is missing the following keys: price_cents</code></pre>
+          </div>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Los campos de más no rompen</p>
+              <p>
+                Si el catálogo devuelve <code>price_cents</code> y además <code>price</code> y
+                <code>name</code>, la verificación pasa: el consumidor solo declaró lo que lee. Por eso
+                expandir y contraer funciona con Pact sin tocar ningún contrato.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="broker">
+            El broker y can-i-deploy
+            <a href="#broker" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Compartir el JSON copiándolo entre repositorios funciona una semana. El
+            <strong>Pact Broker</strong> (o PactFlow, su versión gestionada) guarda cada contrato
+            asociado a la versión del consumidor que lo generó y cada verificación asociada a la
+            versión del proveedor. Con esa matriz responde la pregunta que importa antes de
+            desplegar: ¿esta versión es compatible con lo que ya hay en producción?
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · el ciclo con la CLI del broker</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">pact-broker publish pacts/ --consumer-app-version "$GIT_SHA" --branch main \
+  --broker-base-url "$PACT_BROKER_BASE_URL"
+
+pact-broker can-i-deploy --pacticipant checkout --version "$GIT_SHA" \
+  --to-environment production --broker-base-url "$PACT_BROKER_BASE_URL"
+
+pact-broker record-deployment --pacticipant checkout --version "$GIT_SHA" \
+  --environment production --broker-base-url "$PACT_BROKER_BASE_URL"</code></pre>
+          </div>
+          <p>
+            <code>can-i-deploy</code> falla si falta una verificación en verde contra lo desplegado, y
+            <code>record-deployment</code> le dice al broker qué hay en cada entorno para la siguiente
+            consulta. Un webhook del broker (evento
+            <code>contract_requiring_verification_published</code>) puede lanzar la verificación del
+            proveedor en cuanto un consumidor publica un contrato nuevo.
+          </p>
+
+          <h2 id="openapi">
+            La alternativa ligera: validar contra OpenAPI
+            <a href="#openapi" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Si el proveedor ya publica una especificación OpenAPI, puedes sacarle partido sin broker ni
+            FFI: sus propios tests validan cada respuesta real contra el esquema. Con
+            <code>league/openapi-psr7-validator</code> (OpenAPI 3.0) cualquier respuesta PSR-7 vale:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">yaml · openapi.yaml (fragmento)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="yaml">/products/{id}:
+  get:
+    responses:
+      '200':
+        description: A product
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, name, price_cents]
+              properties:
+                id: { type: integer }
+                name: { type: string }
+                price_cents: { type: integer }</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · el test del proveedor</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace Catalog\Tests;
+
+use GuzzleHttp\Client;
+use League\OpenAPIValidation\PSR7\OperationAddress;
+use League\OpenAPIValidation\PSR7\ValidatorBuilder;
+use PHPUnit\Framework\TestCase;
+
+final class ProductEndpointMatchesSpecTest extends TestCase
+{
+    public function test_product_response_matches_the_published_spec(): void
+    {
+        $validator = (new ValidatorBuilder())
+            -&gt;fromYamlFile(__DIR__ . '/../openapi.yaml')
+            -&gt;getResponseValidator();
+
+        $response = (new Client(['base_uri' =&gt; 'http://localhost:8080']))-&gt;get('/products/42');
+
+        $validator-&gt;validate(new OperationAddress('/products/{id}', 'get'), $response);
+
+        $this-&gt;addToAssertionCount(1);
+    }
+}</code></pre>
+          </div>
+          <p>
+            Con el renombrado, el test falla con <code>InvalidBody</code> y la causa:
+            <em>Required property 'price_cents' must be present in the object</em>. El límite es el que
+            ya viste en la comparativa: protege la promesa del proveedor, no lo que lee el consumidor.
+            Si el checkout lee un campo que la especificación nunca prometió, este test no se entera;
+            para cerrar ese hueco, el consumidor también debe validar sus dobles contra el mismo
+            fichero.
+          </p>
+
+          <h2 id="ci">
+            Dónde encaja en CI
+            <a href="#ci" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Pipeline</th><th>Qué corre</th><th>Qué bloquea</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Consumidor, en cada push</td><td>Tests de Pact junto a los unitarios; publica el contrato con el SHA y la rama</td><td>Un cliente que no cumple su propio contrato</td></tr>
+                <tr><td>Proveedor, en cada push</td><td>Verifica los contratos de la rama principal y de lo desplegado</td><td>Romper a un consumidor que ya está en producción</td></tr>
+                <tr><td>Proveedor, por webhook</td><td>Verifica el contrato nuevo de un consumidor</td><td>Que el consumidor despliegue algo que el proveedor aún no ofrece</td></tr>
+                <tr><td>Antes de cada despliegue</td><td><code>can-i-deploy</code> y, tras desplegar, <code>record-deployment</code></td><td>Subir una versión sin verificación en verde</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Son tests rápidos: no levantan el otro servicio, solo el que se prueba. Por eso caben en
+            cada push, a diferencia del e2e, que se queda para los pocos caminos críticos.
+          </p>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que convierte el contrato en otro mock</p>
+              <ul>
+                <li><strong>Valores exactos en vez de matchers.</strong> El contrato exige <code>1999</code> y el proveedor tiene que sembrar ese precio para pasar. Fija tipos y formatos, no datos.</li>
+                <li><strong>Probar la lógica del proveedor en el contrato.</strong> Que un descuento se calcule bien es un test del proveedor; el contrato solo comprueba la forma del intercambio.</li>
+                <li><strong>Declarar la respuesta entera.</strong> Si copias todos los campos aunque leas dos, el proveedor ya no puede retirar ninguno sin pelearse contigo.</li>
+                <li><strong>Provider states que no preparan nada.</strong> Si el endpoint de estados no crea el producto 42, la verificación depende de lo que haya en la base de datos ese día.</li>
+                <li><strong>Generar el contrato y no publicarlo.</strong> Un JSON que se queda en el repositorio del consumidor no lo verifica nadie.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un test de contrato que nunca has visto fallar no demuestra nada. Antes de fiarte, rómpelo
+            a propósito por los dos lados:
+          </p>
+          <ul>
+            <li><strong>En el proveedor</strong>, renombra el campo en la respuesta: la verificación debe señalar la clave que falta y el consumidor afectado.</li>
+            <li><strong>En el consumidor</strong>, cambia la ruta que pide el cliente: el mock server de Pact responde <code>500</code> con <code>Unexpected-Request</code> y el test cae, porque la petición real no coincide con la declarada.</li>
+            <li><strong>En el broker</strong>, lanza <code>can-i-deploy</code> con un SHA sin verificar: tiene que negarse.</li>
+          </ul>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Compensa cuando…</h4>
+              <ul>
+                <li>Varios servicios se despliegan por separado y los mantienen equipos distintos</li>
+                <li>Ya te ha mordido un campo renombrado que ninguna suite detectó</li>
+                <li>El e2e entre servicios es tan lento o frágil que nadie lo corre antes de subir</li>
+                <li>Quieres retirar un campo y necesitas saber quién lo usa</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No compensa cuando…</h4>
+              <ul>
+                <li>Es un monolito, o los dos servicios se despliegan siempre juntos</li>
+                <li>Consumes una API de terceros que nunca verificará tu contrato</li>
+                <li>Hay un solo consumidor y lo mantiene el mismo equipo en el mismo repositorio</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La alternativa sencilla</p>
+              <p>
+                Si el proveedor ya tiene su OpenAPI, empieza por validarla en sus tests: es una
+                dependencia de desarrollo y un test. Da el salto a Pact cuando necesites saber qué usa
+                cada consumidor. Con una API de terceros, envuelve el cliente en un adaptador y prueba
+                ese adaptador contra su <em>sandbox</em> en un test de integración. Y si dudas de si
+                deberías tener servicios separados, lee antes
+                <a href="sd-cuando-no-distribuir.html">cuándo no distribuir</a>.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un mock escrito a mano es una copia del otro servicio que <strong>no se actualiza sola</strong>: dos suites en verde no garantizan que hablen el mismo idioma.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El contrato sirve dos veces: genera el doble del consumidor y verifica al proveedor real.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Con Pact el consumidor declara solo lo que usa, con matchers de tipo; el broker y <code>can-i-deploy</code> deciden si una versión puede salir.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Validar contra OpenAPI es más ligero y protege la promesa del proveedor, pero no ve lo que lee cada consumidor.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Compensa con despliegues independientes y equipos distintos; en un monolito o con una API de terceros, no.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="tests-e2e-playwright.html">
+              <small>← Anterior</small>
+              <b>Tests end-to-end con Playwright</b>
+            </a>
+            <a href="../cursos.html" class="next">
+              <small>Fin del bloque →</small>
+              <b>Cursos</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

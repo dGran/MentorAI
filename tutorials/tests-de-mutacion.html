@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mutation testing con Infection — MentorAI</title>
+    <meta name="description" content="Mutation testing en PHP con Infection y PHPUnit: qué es un mutante, MSI y covered MSI, umbrales y diff en CI, mutantes equivalentes y el coste en tiempo." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Testing</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Mutation testing con Infection</h1>
+        <p class="tutorial-hero__lead">
+          Una suite en verde con un 100 % de cobertura puede dejar pasar un <code>&gt;=</code> cambiado por un <code>&gt;</code>. El mutation testing mete esos fallos a propósito y mira si tus tests los cazan: mide lo que la cobertura no puede, si las aserciones comprueban algo.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            25 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Testing
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#cobertura">La cobertura no mira las aserciones</a></li>
+            <li><a href="#mutante">Qué es un mutante</a></li>
+            <li><a href="#infection">Infection con PHPUnit</a></li>
+            <li><a href="#msi">MSI y covered MSI</a></li>
+            <li><a href="#superviviente">Leer un superviviente</a></li>
+            <li><a href="#ci">En CI: umbral y solo lo cambiado</a></li>
+            <li><a href="#coste">El coste en tiempo</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Tu suite pasa en verde con un 100 % de cobertura. Cambia un <code>&gt;=</code> por un <code>&gt;</code> en la regla de envío gratis y relánzala: si sigue en verde, ese 100 % no protegía la regla. El mutation testing hace eso mismo, automático y cientos de veces.</p>
+
+          <h2 id="cobertura">
+            La cobertura no mira las aserciones
+            <a href="#cobertura" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Ya viste en <a href="tests-que-no-estorban.html#cobertura">tests que no estorban</a> que la cobertura dice qué se ejecutó, no qué se comprobó, y en <a href="phpunit-excepciones-cobertura.html#leer">el informe de cobertura</a> que una línea verde es un techo optimista. Este es el siguiente paso: dejar de adivinar si tus tests comprueban algo y medirlo.</p>
+          <p>El ejemplo es una regla pequeña y realista: el envío es gratis a partir de 50 €, y si no cuesta 4,99 €.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · src/ShippingCost.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace App;
+
+final class ShippingCost
+{
+    private const int FREE_SHIPPING_THRESHOLD_CENTS = 5000;
+    private const int FLAT_RATE_CENTS = 499;
+
+    public function forCartTotal(int $cartTotalCents): int
+    {
+        if ($cartTotalCents &gt;= self::FREE_SHIPPING_THRESHOLD_CENTS) {
+            return 0;
+        }
+
+        return self::FLAT_RATE_CENTS;
+    }
+}</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · antes: tests/ShippingCostTest.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Tests;
+
+use App\ShippingCost;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+
+final class ShippingCostTest extends TestCase
+{
+    #[Test]
+    public function charges_the_flat_rate_on_small_carts(): void
+    {
+        self::assertSame(499, new ShippingCost()-&gt;forCartTotal(1000));
+    }
+
+    #[Test]
+    public function ships_big_carts_for_free(): void
+    {
+        self::assertSame(0, new ShippingCost()-&gt;forCartTotal(9000));
+    }
+}</code></pre>
+          </div>
+          <p>Dos tests con aserciones de verdad. PHPUnit 13 con pcov informa de <strong>100 % de líneas</strong>, y aun así nadie ha comprobado un carrito de 50 € justos, justo donde se equivoca quien implementa la regla.</p>
+
+          <h2 id="mutante">
+            Qué es un mutante
+            <a href="#mutante" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un <strong>mutante</strong> es una copia de tu código con un único cambio pequeño, del tipo que podría colar un despiste: <code>&gt;=</code> por <code>&gt;</code>, un <code>return</code> borrado, un <code>+</code> por un <code>-</code>, un <code>public</code> que pasa a <code>protected</code>. Cada regla que genera un tipo de cambio se llama <strong>mutador</strong>.</p>
+          <p>La herramienta lanza tus tests contra cada mutante. La lógica es la inversa de lo habitual: aquí quieres que los tests <em>fallen</em>, porque eso demuestra que notan el cambio.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Resultado</th><th>Qué significa</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Muerto</strong> (<code>.</code>)</td><td>Algún test falla con el cambio. Bien: tu suite lo detecta.</td></tr>
+                <tr><td><strong>Escapado</strong> (<code>M</code>)</td><td>Todos los tests pasan con el cambio. Falta una aserción o el mutante es equivalente.</td></tr>
+                <tr><td><strong>No cubierto</strong> (<code>U</code>)</td><td>Ningún test ejecuta esa línea. Lo mismo que el rojo del informe de cobertura.</td></tr>
+                <tr><td><strong>Timeout</strong> (<code>T</code>) o <strong>error</strong> (<code>E</code>)</td><td>El mutante cuelga o revienta el proceso. Cuenta como detectado.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="infection">
+            Infection con PHPUnit
+            <a href="#infection" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>En PHP la herramienta es <strong>Infection</strong>. Necesita cobertura para saber qué tests pasan por cada línea, así que el contenedor de desarrollo debe tener pcov o Xdebug, como ya pedía <a href="phpunit-excepciones-cobertura.html#medir">medir la cobertura</a>. Con la imagen oficial <code>php:8.5-cli</code>:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · dentro del contenedor de desarrollo</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">pecl install pcov &amp;&amp; docker-php-ext-enable pcov
+composer require --dev phpunit/phpunit infection/infection</code></pre>
+          </div>
+          <p>Composer pide permiso para el plugin <code>infection/extension-installer</code>: acéptalo para que quede en <code>allow-plugins</code> del <code>composer.json</code>, o en CI la instalación sin interacción fallará. La configuración va en <code>infection.json5</code>, en la raíz:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">json5 · infection.json5</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>{
+    "$schema": "vendor/infection/infection/resources/schema.json",
+    "source": {
+        "directories": ["src"]
+    },
+    "logs": {
+        "text": "infection.log",
+        "html": "infection.html"
+    },
+    "mutators": {
+        "@default": true
+    }
+}</code></pre>
+          </div>
+          <p><code>source</code> dice qué mutar (nunca <code>vendor/</code>) y <code>@default</code> activa los mutadores estándar. Infection lee tu <code>phpunit.xml</code>, lanza la suite una vez para medir cobertura y después la vuelve a lanzar contra cada mutante:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">salida · vendor/bin/infection --threads=max --show-mutations</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>M.....
+Escaped mutants:
+================
+
+1) /app/src/ShippingCost.php:14    [M] GreaterThanOrEqualTo
+
+@@ @@
+     public function forCartTotal(int $cartTotalCents): int
+     {
+-        if ($cartTotalCents &gt;= self::FREE_SHIPPING_THRESHOLD_CENTS) {
++        if ($cartTotalCents &gt; self::FREE_SHIPPING_THRESHOLD_CENTS) {
+             return 0;
+         }
+
+6 mutations were generated:
+       5 mutants were killed by Test Framework
+       1 covered mutants were not detected
+
+Metrics:
+         Mutation Code Coverage: 100%
+         Covered Code MSI: 83%</code></pre>
+          </div>
+          <p>Seis mutantes, cinco muertos y uno escapado: el que cambia el umbral.</p>
+
+          <h2 id="msi">
+            MSI y covered MSI
+            <a href="#msi" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Infection resume el resultado en tres porcentajes. Desde la versión 0.31 <strong>no muta el código sin cubrir</strong> salvo que pases <code>--with-uncovered</code>, y por eso la salida anterior solo enseña dos.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Métrica</th><th>Cálculo</th><th>Qué te dice</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>MSI</strong></td><td>Detectados / todos los mutantes</td><td>La nota global, castigando también lo que nadie ejecuta.</td></tr>
+                <tr><td><strong>Mutation Code Coverage</strong></td><td>Cubiertos / todos</td><td>La cobertura vista desde los mutantes.</td></tr>
+                <tr><td><strong>Covered Code MSI</strong></td><td>Detectados / cubiertos</td><td>La calidad de las aserciones donde sí hay tests.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Para verlo, añade a la clase un método <code>expressSurchargeFor()</code> sin test y lanza con <code>--with-uncovered</code>: siete mutantes, cinco muertos, uno escapado y uno sin cubrir. MSI 71 %, cobertura 85 %, covered MSI 83 %. El covered MSI no se mueve porque mide otra cosa: si lo que pruebas lo pruebas bien.</p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Cuál mirar</p>
+              <p>El covered MSI es el que la cobertura no te puede dar: cuánto de lo «probado» se comprueba de verdad. El MSI global mezcla eso con la cobertura.</p>
+            </div>
+          </div>
+
+          <h2 id="superviviente">
+            Leer un superviviente
+            <a href="#superviviente" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Cada mutante escapado obliga a una decisión. La pregunta es: <strong>¿existe una entrada con la que el código original y el mutante se comporten distinto?</strong></p>
+          <p>Si existe, falta un test. En el envío, la entrada es 5.000 céntimos: el original devuelve 0 y el mutante 499. Es un test de frontera de los de siempre:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · después: el test que mata al mutante</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Tests;
+
+use App\ShippingCost;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+
+final class ShippingCostThresholdTest extends TestCase
+{
+    #[Test]
+    public function ships_for_free_exactly_at_the_threshold(): void
+    {
+        self::assertSame(0, new ShippingCost()-&gt;forCartTotal(5000));
+    }
+}</code></pre>
+          </div>
+          <p>Si no existe esa entrada, el mutante es <strong>equivalente</strong>: el cambio no altera el comportamiento observable y ningún test podrá matarlo. Mira este:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · src/ParcelWeight.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace App;
+
+final class ParcelWeight
+{
+    /** @param list&lt;int&gt; $parcelWeightsInGrams */
+    public function totalInGrams(array $parcelWeightsInGrams): int
+    {
+        if ($parcelWeightsInGrams === []) {
+            return 0;
+        }
+
+        return array_sum($parcelWeightsInGrams);
+    }
+}</code></pre>
+          </div>
+          <p>Infection borra el <code>return 0;</code> (mutador <code>ReturnRemoval</code>) y el mutante escapa: con un array vacío, <code>array_sum()</code> ya devuelve 0. El mutante no señala un test que falte, sino <strong>código que sobra</strong>. Quita la guarda y el mutante desaparece: la clase queda en una línea y el covered MSI vuelve al 100 %.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Falta un test</h4>
+              <ul>
+                <li>Hay una entrada que distingue original y mutante</li>
+                <li>Suele ser una frontera, un signo o un valor de retorno</li>
+                <li>Se arregla con una aserción, no tocando producción</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Mutante equivalente</h4>
+              <ul>
+                <li>Ninguna entrada los distingue</li>
+                <li>Primero intenta simplificar: a menudo es código redundante</li>
+                <li>Si no se puede, ignóralo en <code>infection.json5</code> por mutador y método</li>
+              </ul>
+            </div>
+          </div>
+          <p>Para ignorarlo, cada mutador admite una lista <code>ignore</code> con <code>Clase::método</code>: <code>"ReturnRemoval": { "ignore": ["App\\ParcelWeight::totalInGrams"] }</code> dentro de <code>mutators</code>. Con nombre y apellidos, nunca apagando el mutador entero.</p>
+
+          <h2 id="ci">
+            En CI: umbral y solo lo cambiado
+            <a href="#ci" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p><code>--min-msi</code> y <code>--min-covered-msi</code> hacen que Infection salga con código 1 si el porcentaje queda por debajo, y eso rompe el job. Pasar la suite entera en cada PR es caro, así que lo habitual es mutar solo lo que cambia la rama:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · solo las líneas tocadas respecto a main</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">vendor/bin/infection --threads=max \
+    --git-diff-lines --git-diff-base=origin/main \
+    --min-covered-msi=80 --ignore-msi-with-no-mutations</code></pre>
+          </div>
+          <p><code>--git-diff-filter=AM</code> muta los ficheros añadidos o modificados; <code>--git-diff-lines</code> afina a las líneas añadidas o modificadas. Con <code>--ignore-msi-with-no-mutations</code>, un PR que en <code>src/</code> solo cambia un docblock no falla por tener cero mutantes: sin la opción, un covered MSI de 0 % sobre nada rompe el job. En GitHub Actions, Infection detecta el entorno y anota los supervivientes en el diff del PR.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">yaml · .github/workflows/mutation.yml (paso)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="yaml">- uses: actions/checkout@v5
+  with:
+    fetch-depth: 0
+- uses: shivammathur/setup-php@v2
+  with:
+    php-version: '8.4'
+    coverage: pcov
+- run: composer install --no-progress
+- run: vendor/bin/infection --threads=max --git-diff-lines --git-diff-base=origin/main --min-covered-msi=80 --ignore-msi-with-no-mutations</code></pre>
+          </div>
+          <p>El resto del pipeline lo tienes en <a href="ci-para-php.html">CI para PHP</a>.</p>
+
+          <h2 id="coste">
+            El coste en tiempo
+            <a href="#coste" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Infection ejecuta los tests que cubren cada línea mutada, una vez por mutante. El coste crece con mutantes × tests que los cubren, no con el tamaño de la suite a secas. Medido en un contenedor con 12 núcleos, sobre diez clases como la del ejemplo y 40 tests con 100 ms de preparación cada uno (lo que tarda un test que toca disco o base de datos):</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Ejecución</th><th>Tiempo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>PHPUnit, la suite completa</td><td>4 s</td></tr>
+                <tr><td>Infection, 70 mutantes, <code>--threads=1</code></td><td>39 s</td></tr>
+                <tr><td>Infection, <code>--threads=4</code></td><td>13 s</td></tr>
+                <tr><td>Infection, <code>--threads=max</code></td><td>10 s</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Unas diez veces la suite en un hilo. Con una suite de cinco minutos, eso es casi una hora: de ahí el filtro por diff en cada PR y la pasada completa en una ejecución nocturna. Si tus tests son lentos por clase, <code>--only-covering-test-cases</code> ejecuta solo los métodos que cubren la línea, no la clase entera.</p>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Dónde se tuerce</p>
+              <ul>
+                <li><strong>Perseguir el 100 % de MSI.</strong> Es la misma ley de Goodhart que con la cobertura: acabas con tests que fijan detalles internos para matar mutantes que no importan.</li>
+                <li><strong>Matar mutantes atándote a la implementación.</strong> Probar un método por reflexión para matar un <code>PublicVisibility</code> estorba más que el mutante.</li>
+                <li><strong>Lanzarlo sin driver de cobertura.</strong> Sin pcov ni Xdebug no hay mapa de qué test cubre qué, y Infection no puede trabajar.</li>
+                <li><strong>Probar el filtro por diff sin commit.</strong> <code>--git-diff-filter</code> lee <code>git diff</code>: los ficheros sin seguimiento no cuentan y te dirá que no hay nada que mutar.</li>
+                <li><strong>Leer el MSI sin <code>--with-uncovered</code> como si fuera global.</strong> Desde 0.31 lo no cubierto queda fuera y el número sale más alto de lo que es.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Tras añadir el test de frontera, relanza y exige el máximo para confirmar que no queda nada vivo:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · el umbral como prueba</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">vendor/bin/infection --threads=max --min-covered-msi=100
+echo $?</code></pre>
+          </div>
+          <p>Con el test de los 5.000 céntimos, todos los mutantes mueren y el código de salida es 0. Quita ese test y vuelve a 1. Abre <code>infection.html</code> para ver cada mutante sobre el código fuente, igual que el informe de cobertura.</p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Pásalo cuando…</h4>
+              <ul>
+                <li>El código decide dinero o permisos: precios, descuentos, impuestos, quién puede hacer qué</li>
+                <li>La cobertura ya es alta y quieres saber si esos tests comprueban algo</li>
+                <li>Revisas un PR con tests nuevos: filtra por diff y mira si los supervivientes señalan aserciones flojas</li>
+                <li>Heredas una suite y necesitas saber cuánto puedes fiarte de ella antes de refactorizar</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No compensa cuando…</h4>
+              <ul>
+                <li>La cobertura es baja: el rojo del informe ya te dice dónde faltan tests, y es más barato</li>
+                <li>Es código pegamento sin decisiones: controladores finos, DTO, configuración</li>
+                <li>La suite tarda tanto que una pasada completa bloquearía cada PR</li>
+              </ul>
+            </div>
+          </div>
+          <p>La alternativa barata ya la conoces: cobertura para encontrar huecos y revisar qué afirma cada test. Infection es la segunda capa, donde un <code>&gt;=</code> mal puesto cuesta dinero.</p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La cobertura mide qué se ejecuta; el <strong>mutation testing</strong> mide si los tests notan un cambio en el código.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un mutante <strong>muere</strong> si algún test falla y <strong>escapa</strong> si todos pasan. Timeouts y errores cuentan como detectados.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Infection necesita pcov o Xdebug; desde 0.31 solo muta lo cubierto salvo <code>--with-uncovered</code>. El <strong>covered MSI</strong> mide la calidad de las aserciones.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Ante un superviviente: si hay una entrada que lo distingue, falta un test; si no, es <strong>equivalente</strong> y a menudo señala código que sobra.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Cuesta del orden de diez veces la suite: en CI, <code>--git-diff-lines</code> con <code>--min-covered-msi</code>, y la pasada completa fuera del PR.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="tests-de-contrato.html">
+              <small>← Anterior</small>
+              <b>Tests de contrato entre servicios</b>
+            </a>
+            <a href="../cursos.html" class="next">
+              <small>Fin del bloque →</small>
+              <b>Cursos</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
