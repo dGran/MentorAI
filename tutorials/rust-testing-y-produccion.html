@@ -360,7 +360,8 @@ mod tests {
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
-            <pre><code data-lang="rust">use criterion::{black_box, criterion_group, criterion_main, Criterion};
+            <pre><code data-lang="rust">use criterion::{criterion_group, criterion_main, Criterion};
+use std::hint::black_box;
 
 fn benchmark_total_carrito(c: &amp;mut Criterion) {
     let mut carrito = Carrito::new();
@@ -386,7 +387,7 @@ criterion_main!(benches);</code></pre>
               </button>
             </div>
             <pre><code data-lang="rust">[dev-dependencies]
-criterion = { version = "0.5", features = ["html_reports"] }
+criterion = { version = "0.8", features = ["html_reports"] }
 
 [[bench]]
 name = "carrito"
@@ -404,7 +405,7 @@ harness = false</code></pre>
 cargo bench -- "total de 1000"    # filtra por nombre</code></pre>
           </div>
           <p>Criterion ejecuta cada benchmark múltiples veces, calcula la media y la desviación estándar, y detecta regresiones comparando con una ejecución anterior. Genera un informe HTML en <code>target/criterion/</code>.</p>
-          <p><code>black_box</code> previene que el compilador optimice el código bajo test y lo elimine, lo que daría mediciones falsas.</p>
+          <p><code>black_box</code>, de <code>std::hint</code> (el de Criterion está deprecado), previene que el compilador optimice el código bajo test y lo elimine, lo que daría mediciones falsas.</p>
 
           <h2 id="compilacion-produccion">
             Compilación para producción
@@ -470,7 +471,7 @@ cargo build --release --target x86_64-unknown-linux-musl</code></pre>
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
-            <pre><code data-lang="bash">FROM rust:1.80-slim AS builder
+            <pre><code data-lang="bash">FROM rust:1.99-slim AS builder
 
 WORKDIR /app
 
@@ -482,7 +483,7 @@ RUN cargo build --release --locked
 COPY src ./src
 RUN touch src/main.rs &amp;&amp; cargo build --release --locked
 
-FROM debian:bookworm-slim AS runtime
+FROM debian:trixie-slim AS runtime
 
 RUN apt-get update &amp;&amp; apt-get install -y \
     ca-certificates \
@@ -503,7 +504,7 @@ CMD ["mi-servicio"]</code></pre>
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
-            <pre><code data-lang="bash">FROM rust:1.80-slim AS builder
+            <pre><code data-lang="bash">FROM rust:1.99-slim AS builder
 
 RUN rustup target add x86_64-unknown-linux-musl
 RUN apt-get update &amp;&amp; apt-get install -y musl-tools
@@ -562,7 +563,7 @@ ENTRYPOINT ["/mi-servicio"]</code></pre>
               </ul>
             </div>
           </div>
-          <p>Para la imagen, <code>debian:bookworm-slim</code> con el binario de glibc es la opción por defecto: pequeña, con <code>ca-certificates</code> y sin sorpresas. Baja a <code>scratch</code> con musl cuando el tamaño o la superficie de ataque importen de verdad y hayas comprobado que el servicio no echa nada en falta.</p>
+          <p>Para la imagen, <code>debian:trixie-slim</code> (la misma Debian que el builder <code>rust:1.99-slim</code>) con el binario de glibc es la opción por defecto: pequeña, con <code>ca-certificates</code> y sin sorpresas. Baja a <code>scratch</code> con musl cuando el tamaño o la superficie de ataque importen de verdad y hayas comprobado que el servicio no echa nada en falta.</p>
 
           <h2 id="resumen">
             Resumen

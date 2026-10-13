@@ -123,7 +123,7 @@
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
-            <pre><code data-lang="bash">FROM rust:1.80-slim
+            <pre><code data-lang="bash">FROM rust:1.99-slim
 
 WORKDIR /app
 
@@ -135,10 +135,10 @@ RUN apt-get update &amp;&amp; apt-get install -y \
 ENV CARGO_HOME=/cargo-cache
 ENV PATH="$CARGO_HOME/bin:$PATH"
 
-CMD ["cargo", "watch", "-x", "run"]</code></pre>
+CMD ["watchexec", "-r", "-e", "rs,toml", "--", "cargo", "run"]</code></pre>
           </div>
-          <p>La imagen oficial <code>rust:1.80-slim</code> incluye <code>rustc</code>, <code>cargo</code> y <code>rustup</code>. La variable <code>CARGO_HOME</code> mueve el caché fuera del contenedor (lo explicamos abajo).</p>
-          <p>Para desarrollo activo, <code>cargo-watch</code> recarga al guardar igual que <code>nodemon</code>:</p>
+          <p>La imagen oficial <code>rust:1.99-slim</code> incluye <code>rustc</code>, <code>cargo</code> y <code>rustup</code>. La variable <code>CARGO_HOME</code> mueve el caché fuera del contenedor (lo explicamos abajo).</p>
+          <p>Para desarrollo activo, <code>watchexec</code> relanza <code>cargo run</code> al guardar, igual que <code>nodemon</code>. Es lo que recomienda el propio <code>cargo-watch</code>, archivado y sin mantenimiento desde enero de 2025. Si prefieres una vista en la terminal con errores y tests en vivo, la otra opción que recomienda es <code>bacon</code>:</p>
           <div class="code-block">
             <div class="code-block__head">
               <span class="code-block__lang">bash</span>
@@ -147,7 +147,7 @@ CMD ["cargo", "watch", "-x", "run"]</code></pre>
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
-            <pre><code data-lang="bash">RUN cargo install --root /usr/local cargo-watch</code></pre>
+            <pre><code data-lang="bash">RUN cargo install --locked --root /usr/local watchexec-cli</code></pre>
           </div>
 
           <h2 id="compose">
@@ -178,7 +178,7 @@ CMD ["cargo", "watch", "-x", "run"]</code></pre>
 volumes:
   cargo-cache:</code></pre>
           </div>
-          <p>El volumen <code>.:/app</code> monta el código fuente del host dentro del contenedor, igual que en PHP/Go. Los cambios en el editor son inmediatos para <code>cargo-watch</code>.</p>
+          <p>El volumen <code>.:/app</code> monta el código fuente del host dentro del contenedor, igual que en PHP/Go. Los cambios en el editor son inmediatos para <code>watchexec</code>.</p>
 
           <h2 id="cache-cargo">
             Caché de dependencias
@@ -211,7 +211,7 @@ volumes:
             <div class="callout__body">
               <p class="callout__title">Errores típicos al dockerizar Rust</p>
               <p><strong>Escuchar en <code>127.0.0.1</code> dentro del contenedor.</strong> El <code>ports: "3000:3000"</code> publica el puerto, pero si tu servidor hace bind a <code>127.0.0.1:3000</code> solo acepta conexiones desde dentro del propio contenedor y el navegador del host no llega. Haz bind a <code>0.0.0.0:3000</code>.</p>
-              <p><strong>Instalar herramientas donde luego monta un volumen.</strong> Con <code>CARGO_HOME=/cargo-cache</code>, <code>cargo install cargo-watch</code> deja el binario en <code>/cargo-cache/bin</code> de la imagen. Un volumen nombrado vacío copia ese contenido la primera vez, pero si el volumen ya existía lo tapa y aparece <code>no such command: watch</code>. Instala las herramientas fuera del volumen, por ejemplo con <code>cargo install --root /usr/local cargo-watch</code>.</p>
+              <p><strong>Instalar herramientas donde luego monta un volumen.</strong> Con <code>CARGO_HOME=/cargo-cache</code>, <code>cargo install watchexec-cli</code> deja el binario en <code>/cargo-cache/bin</code> de la imagen. Un volumen nombrado vacío copia ese contenido la primera vez, pero si el volumen ya existía lo tapa y el arranque falla porque no encuentra <code>watchexec</code>. Instala las herramientas fuera del volumen, por ejemplo con <code>cargo install --root /usr/local watchexec-cli</code>.</p>
               <p><strong>Ficheros de root en tu máquina.</strong> En Linux el contenedor corre como root por defecto, así que lo que genera en el bind mount (<code>Cargo.lock</code>, un <code>cargo new</code>) aparece con dueño root en el host. Ejecuta el servicio con tu UID (<code>user:</code> en compose) y ajusta los permisos de los volúmenes.</p>
               <p><strong>Dejar <code>target/</code> en el bind mount.</strong> Crece a varios gigas y, en macOS y Windows, la E/S compartida lo hace todo más lento. El volumen <code>target-cache</code> lo saca del host.</p>
             </div>
@@ -244,7 +244,7 @@ docker compose exec app cargo add tokio --features full
 # Ejecutar tests
 docker compose exec app cargo test
 
-# Ver logs del compilador en vivo (cargo-watch lo hace solo)
+# Ver logs del compilador en vivo (watchexec lo hace solo)
 # Guardar cualquier .rs → cargo recompila y relanza</code></pre>
           </div>
           <div class="callout callout--tip">
@@ -303,7 +303,7 @@ docker compose exec app cargo test
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span><code>cargo-watch -x run</code> relanza el servidor al guardar, igual que <code>nodemon</code> en Node.</span>
+                <span><code>watchexec -r -e rs,toml -- cargo run</code> relanza el servidor al guardar, igual que <code>nodemon</code> en Node; <code>cargo-watch</code> está archivado.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
