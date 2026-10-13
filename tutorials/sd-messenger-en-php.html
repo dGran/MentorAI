@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Symfony Messenger de punta a punta — MentorAI</title>
+    <meta name="description" content="Symfony Messenger en PHP de punta a punta: mensaje y handler, transport Doctrine o AMQP, el worker y sus límites, reiniciarlo al desplegar y probarlo con el transport in-memory." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Sistemas distribuidos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Symfony Messenger de punta a punta</h1>
+        <p class="tutorial-hero__lead">Las colas dejan de ser diagramas: un mensaje, su handler, un transport y un worker que sobrevive a los despliegues. Todo ejecutado en una app Symfony real.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            23 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">La petición que espera a un PDF</a></li>
+            <li><a href="#piezas">Mensaje, handler y bus</a></li>
+            <li><a href="#sincrono">Síncrono o asíncrono</a></li>
+            <li><a href="#transport">Doctrine o AMQP</a></li>
+            <li><a href="#worker">El worker y sus límites</a></li>
+            <li><a href="#despliegue">Reiniciar al desplegar</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#probar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Hasta aquí las colas han sido diagramas: quién reparte, qué se garantiza, dónde acaban
+            los mensajes que fallan. Esta lección las monta en PHP con Symfony Messenger, desde el
+            primer mensaje hasta el worker que sobrevive a un despliegue. Todo lo que verás se ha
+            ejecutado en una app Symfony 8.1 mínima, con PHP 8.5 y el transport Doctrine sobre
+            SQLite.
+          </p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Antes de esta lección</p>
+              <p>
+                Parte de <a href="sd-colas-y-topicos.html">Colas y topics</a> (qué es un broker y
+                cuándo compensa) y de <a href="sd-garantias-de-entrega.html">las garantías de
+                entrega</a>: Messenger entrega <em>al menos una vez</em>, así que el handler tiene
+                que ser idempotente. Los reintentos y el transport de fallidos tienen su propia
+                lección, <a href="sd-dlq-y-reproceso.html">colas de muertos y reproceso</a>, y aquí
+                no se repiten.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="problema">
+            La petición que espera a un PDF
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Confirmar un pedido es escribir una fila. Generar la factura en PDF y mandarla por
+            correo es otra cosa: tarda, depende de un SMTP ajeno y puede fallar. Si las dos van en
+            la misma petición, el cliente espera al PDF y un correo caído tumba la confirmación.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · antes: ConfirmarPedido.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Pedido;
+
+final readonly class ConfirmarPedido
+{
+    public function __construct(
+        private Pedidos $pedidos,
+        private Facturas $facturas,
+    ) {
+    }
+
+    public function __invoke(int $idPedido): void
+    {
+        $this-&gt;pedidos-&gt;confirmar($idPedido);
+        $this-&gt;facturas-&gt;generarYEnviar($idPedido);
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            El porqué de sacarlo fuera no es solo la latencia. Es que la confirmación deja de
+            depender del correo: si el SMTP está caído, el pedido se confirma igual y la factura
+            sale cuando vuelva.
+          </p>
+
+          <h2 id="piezas">
+            Mensaje, handler y bus
+            <a href="#piezas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Messenger reparte el trabajo en tres piezas. El <strong>mensaje</strong> es un objeto
+            inmutable que describe qué hay que hacer. El <strong>handler</strong> sabe hacerlo. El
+            <strong>bus</strong> los une: recibe el mensaje y decide si lo ejecuta ya o lo manda a
+            un transport.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · src/Message/EnviarFactura.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Message;
+
+final readonly class EnviarFactura
+{
+    public function __construct(
+        public int $idPedido,
+    ) {
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            El mensaje lleva el <strong>id</strong>, no la entidad. Viaja serializado y puede
+            esperar minutos en la cola: el handler debe leer el pedido tal como está cuando lo
+            procesa, no como estaba al encolarlo.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · src/MessageHandler/EnviarFacturaHandler.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace App\MessageHandler;
+
+use App\Message\EnviarFactura;
+use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+
+#[AsMessageHandler]
+final readonly class EnviarFacturaHandler
+{
+    public function __construct(
+        private Pedidos $pedidos,
+        private Facturas $facturas,
+    ) {
+    }
+
+    public function __invoke(EnviarFactura $mensaje): void
+    {
+        $pedido = $this-&gt;pedidos-&gt;buscar($mensaje-&gt;idPedido);
+
+        if ($pedido-&gt;facturaEnviada()) {
+            return;
+        }
+
+        $this-&gt;facturas-&gt;generarYEnviar($pedido);
+        $this-&gt;pedidos-&gt;marcarFacturaEnviada($pedido);
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            <code>#[AsMessageHandler]</code> registra la clase sin tocar configuración, y el tipo
+            del argumento de <code>__invoke</code> dice qué mensaje atiende. El <code>if</code> es el
+            consumidor idempotente de <a href="sd-garantias-de-entrega.html">las garantías de
+            entrega</a>: si el worker muere tras enviar y antes de confirmar, el mensaje vuelve.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · después: ConfirmarPedido.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Pedido;
+
+use App\Message\EnviarFactura;
+use Symfony\Component\Messenger\MessageBusInterface;
+
+final readonly class ConfirmarPedido
+{
+    public function __construct(
+        private Pedidos $pedidos,
+        private MessageBusInterface $bus,
+    ) {
+    }
+
+    public function __invoke(int $idPedido): void
+    {
+        $this-&gt;pedidos-&gt;confirmar($idPedido);
+        $this-&gt;bus-&gt;dispatch(new EnviarFactura($idPedido));
+    }
+}</code></pre>
+          </div>
+
+          <h2 id="sincrono">
+            El mismo bus, síncrono o asíncrono
+            <a href="#sincrono" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Ese <code>dispatch</code> no decide nada por sí mismo. Si el mensaje <strong>no está
+            enrutado</strong> a ningún transport, el bus llama al handler en ese momento, dentro de
+            la petición: es un bus síncrono con otra sintaxis. En la prueba, sin la línea de
+            <code>routing</code>, la factura salía antes de que el comando imprimiera «Pedido
+            confirmado».
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Síncrono (sin routing)</h4>
+              <ul>
+                <li>El handler corre dentro del <code>dispatch</code></li>
+                <li>Una excepción del handler llega a quien despacha</li>
+                <li>No hace falta worker</li>
+                <li>Útil para empezar o para casos de uso internos</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Asíncrono (enrutado a un transport)</h4>
+              <ul>
+                <li>El <code>dispatch</code> solo guarda el mensaje</li>
+                <li>Quien despacha nunca ve los errores del handler</li>
+                <li>Sin worker, el mensaje espera para siempre</li>
+                <li>Reintentos y fallidos pasan a ser cosa del worker</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            Pasar de una columna a otra es una línea de YAML, y esa es la ventaja de empezar con
+            el bus aunque todo sea síncrono.
+          </p>
+
+          <h2 id="transport">
+            Enrutar a un transport: Doctrine o AMQP
+            <a href="#transport" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">yaml · config/packages/messenger.yaml</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="yaml">framework:
+    messenger:
+        transports:
+            async: '%env(MESSENGER_TRANSPORT_DSN)%'
+        routing:
+            'App\Message\EnviarFactura': async
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                async: 'in-memory://'</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · .env y preparación</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">MESSENGER_TRANSPORT_DSN=doctrine://default
+
+php bin/console messenger:setup-transports
+php bin/console messenger:stats</code></pre>
+          </div>
+
+          <p>
+            Con <code>doctrine://default</code> la cola es la tabla <code>messenger_messages</code>
+            de tu propia base de datos. Con <code>amqp://…</code> es RabbitMQ, que necesita la
+            extensión <code>amqp</code> de PHP y el paquete <code>symfony/amqp-messenger</code>. El
+            handler y el <code>dispatch</code> no cambian.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Criterio</th><th>Doctrine</th><th>AMQP (RabbitMQ)</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Infraestructura nueva</td><td>Ninguna: tu base de datos</td><td>Un broker que operar</td></tr>
+                <tr><td>Cómo se entera el worker</td><td>Consulta la tabla cada <code>--sleep</code> (1 s por defecto); en PostgreSQL, LISTEN/NOTIFY</td><td>El broker le empuja los mensajes</td></tr>
+                <tr><td>Transacción con tus datos</td><td>Sí, si comparten conexión</td><td>No: es otro sistema</td></tr>
+                <tr><td>Volumen</td><td>Modesto; la tabla es un punto caliente</td><td>Alto y con muchos consumidores</td></tr>
+                <tr><td>Enrutado</td><td>Por nombre de cola, poco más</td><td>Exchanges, claves y prioridades</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            La tercera fila es la que más pesa y menos se cuenta. Con Doctrine, un
+            <code>dispatch</code> dentro de una transacción que acaba en <em>rollback</em>
+            desaparece con ella: lo comprobamos y la cola quedó a cero. Es un
+            <a href="sd-outbox.html">outbox</a> gratis. Con AMQP el mensaje ya salió al broker
+            aunque tu transacción se deshaga, y vuelves a tener la doble escritura de esa lección.
+          </p>
+
+          <h2 id="worker">
+            El worker y sus límites
+            <a href="#worker" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un mensaje asíncrono solo se procesa si alguien lo consume. Ese alguien es
+            <code>messenger:consume</code>, un proceso PHP de larga vida que lee, despacha al
+            handler y confirma.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · consumir</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">php bin/console messenger:consume async -vv
+php bin/console messenger:consume async --limit=1000 --time-limit=3600 --memory-limit=256M</code></pre>
+          </div>
+
+          <p>
+            Los tres límites existen por lo que cuenta <a href="workers-php.html">Workers en
+            PHP</a>: un proceso que vive horas acumula memoria y estado. Ninguno mata el proceso a
+            medias; el worker termina el mensaje en curso, sale con código 0 y deja que alguien lo
+            relance.
+          </p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Opción</th><th>Sale cuando…</th><th>Mensaje en el log</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>--limit=N</code></td><td>Ha procesado N mensajes</td><td><code>maximum count of N messages processed</code></td></tr>
+                <tr><td><code>--time-limit=S</code></td><td>Lleva S segundos en marcha</td><td><code>time limit of Ss exceeded</code></td></tr>
+                <tr><td><code>--memory-limit=M</code></td><td>Tras un mensaje, la memoria supera M</td><td><code>memory limit of … bytes exceeded</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="despliegue">
+            Reiniciar los workers al desplegar
+            <a href="#despliegue" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un worker carga el código al arrancar y no lo vuelve a leer. Despliegas la versión
+            nueva y los workers siguen ejecutando la vieja, con handlers que quizá ya no casan con
+            tu esquema. Por eso el despliegue termina avisándoles:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · al final del despliegue</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">php bin/console cache:warmup --env=prod
+php bin/console messenger:stop-workers</code></pre>
+          </div>
+
+          <p>
+            <code>stop-workers</code> no mata procesos: deja una marca en la caché de la app y cada
+            worker, al acabar su mensaje, la ve y sale limpio. En la prueba, el log decía
+            <code>Worker stopped because a restart was requested</code> y el contenedor salió con
+            código 0. Relanzarlo es trabajo del supervisor: una unidad de systemd con
+            <code>Restart=always</code>, como la de <a href="inf-systemd.html">systemd para
+            servicios</a>, o Supervisor. En Kubernetes, el reinicio progresivo del
+            <em>Deployment</em> hace el papel de <code>stop-workers</code>.
+          </p>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que se rompe en producción</p>
+              <ul>
+                <li><strong>Supervisor sin <code>autorestart=true</code>.</strong> Su valor por defecto es <code>unexpected</code>, y la salida limpia (código 0) de un límite o de <code>stop-workers</code> cuenta como esperada: el worker no vuelve. Con systemd pasa lo mismo con <code>Restart=on-failure</code>.</li>
+                <li><strong>Varios servidores y caché local.</strong> La marca de <code>stop-workers</code> vive en <code>cache.app</code>; si cada máquina tiene la suya en disco, solo se reinician los workers de la máquina donde lo lanzaste. Hace falta una caché compartida, como Redis.</li>
+                <li><strong>Matar en vez de parar.</strong> Sin la extensión <code>pcntl</code>, un <code>SIGTERM</code> corta el handler a medias. Con ella, el worker termina el mensaje antes de salir, si el orquestador le da tiempo de gracia.</li>
+                <li><strong>Renombrar la clase del mensaje con mensajes en cola.</strong> El transport guarda el mensaje serializado con el nombre de la clase; tras el renombrado, el worker falla con <code>Could not decode Envelope</code>. Vacía la cola antes o mantén la clase vieja un despliegue más.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="probar">
+            Cómo comprobarlo
+            <a href="#probar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En los tests no quieres un worker ni una base de datos: quieres saber que confirmar un
+            pedido <strong>encola</strong> la factura, no que la envía. El transport
+            <code>in-memory://</code> del bloque <code>when@test</code> guarda los mensajes en un
+            array, y Symfony lo vacía entre tests de <code>KernelTestCase</code>.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · tests/ConfirmarPedidoTest.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace App\Tests;
+
+use App\Message\EnviarFactura;
+use App\Pedido\ConfirmarPedido;
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Messenger\Transport\InMemory\InMemoryTransport;
+
+final class ConfirmarPedidoTest extends KernelTestCase
+{
+    public function testConfirmarEncolaLaFacturaSinEnviarla(): void
+    {
+        self::bootKernel();
+        $confirmarPedido = self::getContainer()-&gt;get(ConfirmarPedido::class);
+
+        $confirmarPedido(42);
+
+        $transport = self::getContainer()-&gt;get('messenger.transport.async');
+        self::assertInstanceOf(InMemoryTransport::class, $transport);
+        self::assertCount(1, $transport-&gt;getSent());
+        self::assertEquals(new EnviarFactura(42), $transport-&gt;getSent()[0]-&gt;getMessage());
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            El handler se prueba aparte, como una clase normal: lo instancias con dobles y llamas
+            a <code>__invoke</code>. En un entorno real, <code>messenger:stats</code> te dice cuántos
+            mensajes esperan en cada transport, y <code>debug:messenger</code> qué handler atiende
+            cada mensaje. Una cola que solo crece es un worker caído.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Messenger asíncrono cuando…</h4>
+              <ul>
+                <li>El trabajo es lento o depende de un tercero: correos, PDF, APIs</li>
+                <li>La respuesta al usuario no necesita el resultado</li>
+                <li>Quieres reintentos sin escribirlos tú</li>
+                <li>Ya usas Symfony; con Doctrine no añades infraestructura</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No lo hagas asíncrono cuando…</h4>
+              <ul>
+                <li>El usuario necesita el resultado en la misma respuesta</li>
+                <li>Nadie va a operar ni vigilar los workers</li>
+                <li>Es una tarea periódica, no una reacción a algo que pasó</li>
+                <li>El volumen y el fan-out piden un registro de eventos</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            Las alternativas: para lo periódico, un timer de <a href="inf-systemd.html">systemd</a>
+            o un cron; para muchos consumidores o rebobinar, el registro de eventos de
+            <a href="sd-colas-y-topicos.html">Colas y topics</a>. Y si el volumen crece pero no
+            necesitas rebobinar, cambiar el DSN a <a href="rabbitmq.html">RabbitMQ</a> no toca tu
+            código.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Mensaje inmutable con ids, handler con <code>#[AsMessageHandler]</code> e idempotente, y un <code>dispatch</code> que no sabe si es síncrono.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Sin <code>routing</code> el handler corre dentro del <code>dispatch</code>; enrutado, el mensaje espera a un worker.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Doctrine no añade infraestructura y comparte transacción con tus datos; AMQP escala y enruta mejor, pero reabre la doble escritura.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>--limit</code>, <code>--time-limit</code> y <code>--memory-limit</code> reciclan el worker con salida limpia; el supervisor debe relanzarlo también entonces.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Cada despliegue acaba en <code>messenger:stop-workers</code>, con caché compartida si hay varias máquinas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En tests, <code>in-memory://</code> comprueba que se encola sin enviar nada.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
