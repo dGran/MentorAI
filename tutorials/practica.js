@@ -540,7 +540,7 @@ window.MENTORAI_PRACTICE = {
       solutionCode: {
         lang: "bash",
         source:
-          "FROM golang:1.23 AS builder\nWORKDIR /src\nCOPY . .\nRUN CGO_ENABLED=0 go build -o /app\n\nFROM scratch\nCOPY --from=builder /app /app\nENTRYPOINT [\"/app\"]",
+          "FROM golang:1.27 AS builder\nWORKDIR /src\nCOPY . .\nRUN CGO_ENABLED=0 go build -o /app\n\nFROM scratch\nCOPY --from=builder /app /app\nENTRYPOINT [\"/app\"]",
       },
     },
   ],
