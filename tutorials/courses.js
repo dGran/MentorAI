@@ -509,6 +509,10 @@ window.MENTORAI_COURSES = [
       "tdd-ciclo",
       "test-doubles",
       "tests-que-no-estorban",
+      "tests-e2e-playwright",
+      "tests-de-contrato",
+      "tests-de-mutacion",
+      "tests-de-caracterizacion",
     ],
   },
   {

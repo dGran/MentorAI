@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tests end-to-end con Playwright — MentorAI</title>
+    <meta name="description" content="Qué cubre un test end-to-end que no cubren los demás y por qué son pocos: Playwright con Node contra tu app PHP en Docker, localizadores por rol, esperas automáticas, datos aislados por test, trazas en CI y cómo atajar los tests inestables." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Testing</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Tests end-to-end con Playwright</h1>
+        <p class="tutorial-hero__lead">
+          Todos tus tests unitarios pasan, la integración con la base de datos
+          también, y el botón de «Añadir» no hace nada porque alguien renombró un
+          campo del formulario. Solo un test que abre el navegador y lo pulsa,
+          como haría tu usuario, lo habría visto.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            26 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Testing
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">Lo que ningún otro test ve</a></li>
+            <li><a href="#montaje">Playwright contra tu app en Docker</a></li>
+            <li><a href="#localizadores">Localizadores por rol, no por CSS</a></li>
+            <li><a href="#esperas">Esperas automáticas, no sleeps</a></li>
+            <li><a href="#datos">Datos aislados por test</a></li>
+            <li><a href="#ci">En CI, con trazas y capturas</a></li>
+            <li><a href="#flaky">Tests inestables</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Un test end-to-end recorre la aplicación entera por la misma puerta que el usuario: navegador, HTML, JavaScript, rutas, PHP, base de datos y vuelta. Es caro, así que escribes pocos, y esos pocos tienen que ser fiables.
+          </p>
+          <h2 id="problema">
+            Lo que ningún otro test ve
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En <a href="tipos-de-test.html">La pirámide de tests</a> viste los tres niveles. El unitario prueba una clase con <a href="test-doubles.html">dobles</a>; el de integración, tu repositorio contra una base de datos real, como en <a href="phpunit-integracion-bbdd.html">PHPUnit con base de datos</a>. Ninguno de los dos carga la página. Queda fuera lo que se rompe al unir piezas: el <code>name</code> del input que ya no lee el controlador, el JavaScript que no carga, la sesión que no se guarda.
+          </p>
+          <p>
+            El e2e lo cubre todo de una vez, y por eso mismo cuesta: segundos por test en vez de milisegundos, un navegador que levantar y más motivos para fallar. De ahí la cúspide estrecha: <strong>un e2e por camino crítico</strong> (registrarse, comprar, pagar), no uno por variación. Las variaciones (el IVA de cada país, los mensajes de validación) bajan a unitarios, donde cuestan cien veces menos.
+          </p>
+          <h2 id="montaje">
+            Playwright contra tu app en Docker
+            <a href="#montaje" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Playwright controla Chromium, Firefox y WebKit desde Node. Que tu app sea PHP da igual: el test solo habla HTTP y DOM. Lo cómodo son dos servicios en Compose: la app y la imagen oficial de Playwright, con los navegadores ya instalados.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">yaml · compose.yaml</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="yaml">services:
+  app:
+    image: php:8.5-cli
+    working_dir: /app
+    command: php -S 0.0.0.0:8000 -t public
+    environment:
+      APP_ENV: test
+      PHP_CLI_SERVER_WORKERS: 4
+    volumes:
+      - ./app:/app
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(file_get_contents('http://localhost:8000/health') === 'ok' ? 0 : 1);"]
+      interval: 2s
+      retries: 10
+
+  e2e:
+    image: mcr.microsoft.com/playwright:v1.62.1-noble
+    working_dir: /e2e
+    environment:
+      BASE_URL: http://app:8000
+      CI: ${CI:-}
+    volumes:
+      - ./e2e:/e2e
+    depends_on:
+      app:
+        condition: service_healthy
+    ipc: host
+    init: true
+    command: sh -c "npm ci &amp;&amp; npx playwright test"</code></pre>
+          </div>
+          <p>
+            Cuatro detalles con motivo. El <em>healthcheck</em> pide una ruta <code>/health</code> que solo responde <code>ok</code>, así los tests no arrancan hasta que PHP acepta peticiones. La etiqueta de la imagen tiene que coincidir con la versión de <code>@playwright/test</code> de tu <code>package.json</code>: si no, Playwright no encuentra los navegadores. <code>ipc: host</code> lo recomienda la documentación para Chromium, que sin él puede quedarse sin memoria. Y <code>PHP_CLI_SERVER_WORKERS</code> deja que el servidor integrado atienda varias peticiones a la vez; sin él, los tests en paralelo hacen cola.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">js · e2e/playwright.config.js</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>const { defineConfig, devices } = require('@playwright/test');
+
+module.exports = defineConfig({
+  testDir: './tests',
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  reporter: [['list'], ['html', { open: 'never' }]],
+  use: {
+    baseURL: process.env.BASE_URL ?? 'http://localhost:8000',
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+  },
+  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+});</code></pre>
+          </div>
+          <p>
+            <code>baseURL</code> apunta al servicio <code>app</code> de la red de Compose, así que los tests escriben rutas relativas y valen igual en local y en CI.
+          </p>
+          <h2 id="localizadores">
+            Localizadores por rol, no por CSS
+            <a href="#localizadores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un selector CSS como <code>form .btn.btn-primary</code> describe la maquetación, no lo que ve el usuario. El día que alguien cambia la clase del botón, el test se rompe sin que la funcionalidad haya cambiado: es el test frágil de <a href="tests-que-no-estorban.html">Tests que no estorban</a>. Playwright propone buscar como busca una persona: por rol accesible y nombre (<code>getByRole</code>), por etiqueta del campo (<code>getByLabel</code>) o por texto (<code>getByText</code>).
+          </p>
+          <p>
+            Eso exige que el HTML diga lo que es, y ahí entra tu PHP. Esta plantilla funciona en pantalla, pero no tiene etiqueta ni botón de verdad:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · TaskForm.php (antes)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+function renderTaskForm(int $listId): string
+{
+    return &lt;&lt;&lt;HTML
+        &lt;form action="/lists/{$listId}/tasks" method="post"&gt;
+          &lt;input name="title" placeholder="Nueva tarea"&gt;
+          &lt;div class="btn btn-primary" onclick="submitTask()"&gt;Añadir&lt;/div&gt;
+        &lt;/form&gt;
+        HTML;
+}</code></pre>
+          </div>
+          <p>
+            Aquí <code>getByLabel('Nueva tarea')</code> no encuentra nada (un <code>placeholder</code> no es una etiqueta) y <code>getByRole('button', { name: 'Añadir' })</code> tampoco: un <code>div</code> no es un botón. El arreglo es pequeño:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · TaskForm.php (después)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+function renderTaskForm(int $listId): string
+{
+    return &lt;&lt;&lt;HTML
+        &lt;form action="/lists/{$listId}/tasks" method="post"&gt;
+          &lt;label&gt;Nueva tarea &lt;input name="title" required&gt;&lt;/label&gt;
+          &lt;button class="btn btn-primary"&gt;Añadir&lt;/button&gt;
+        &lt;/form&gt;
+        &lt;p role="status"&gt;&lt;/p&gt;
+        HTML;
+}</code></pre>
+          </div>
+          <p>
+            De regalo, el formulario ahora funciona con lector de pantalla. Si un localizador por rol no encuentra tu elemento, muchas veces el fallo es de accesibilidad.
+          </p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El orden de preferencia</p>
+              <p>
+                Rol con nombre, etiqueta, texto. <code>getByTestId</code> queda para lo que no tiene rol ni texto estable, como un gráfico; el CSS, como último recurso.
+              </p>
+            </div>
+          </div>
+          <h2 id="esperas">
+            Esperas automáticas, no sleeps
+            <a href="#esperas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El segundo enemigo es el tiempo. Al pulsar «Añadir», el formulario envía la tarea por <code>fetch</code> y la pinta cuando el servidor responde. Este test, con los localizadores de antes, falla aunque la funcionalidad vaya bien:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">js · e2e/tests/fragil.spec.js (antes)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>test('añade una tarea', async ({ page }) =&gt; {
+  await page.goto('/lists/1');
+  await page.locator('input[name=title]').fill('Comprar pan');
+  await page.locator('form .btn.btn-primary').click();
+
+  const count = await page.locator('ul.tasks &gt; li').count();
+  expect(count).toBe(1);
+});</code></pre>
+          </div>
+          <p>
+            <code>count()</code> mira el DOM una sola vez, en el instante del clic, y la tarea aún no ha llegado: recibe 0. La tentación es meter <code>page.waitForTimeout(500)</code>. Con un servidor que tarda 400 ms, esperar 300 sigue fallando y esperar 600 pasa en tu portátil y falla en un CI cargado. Una espera fija siempre es demasiado corta o demasiado larga.
+          </p>
+          <p>
+            Playwright lo resuelve de dos formas. Las acciones (<code>click</code>, <code>fill</code>) esperan solas a que el elemento sea accionable: visible y habilitado; para el clic, además quieto y sin nada encima que lo tape, y para el <code>fill</code>, editable. Y las aserciones web, las que llevan <code>await expect(locator)</code>, reintentan hasta que se cumplen o vence su plazo, 5 segundos por defecto:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">js · e2e/tests/tareas.spec.js (después)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>const { test, expect } = require('@playwright/test');
+
+test.beforeEach(async ({ page, request }, testInfo) =&gt; {
+  const response = await request.post('/test/lists', {
+    data: { name: `Compra ${testInfo.testId}-${testInfo.repeatEachIndex}-${testInfo.retry}` },
+  });
+  expect(response.status()).toBe(201);
+  const { id } = await response.json();
+  await page.goto(`/lists/${id}`);
+});
+
+test('añade una tarea a la lista', async ({ page }) =&gt; {
+  await page.getByLabel('Nueva tarea').fill('Comprar pan');
+  await page.getByRole('button', { name: 'Añadir' }).click();
+
+  await expect(page.getByRole('status')).toHaveText('Tarea añadida');
+  await expect(page.getByRole('listitem')).toHaveText(['Comprar pan']);
+});</code></pre>
+          </div>
+          <p>
+            <code>toHaveText</code> espera a que la lista tenga exactamente esa tarea. Si llega en 50 ms, el test sigue a los 50 ms; si no llega nunca, falla a los 5 segundos con un mensaje que dice qué esperaba y qué vio.
+          </p>
+          <h2 id="datos">
+            Datos aislados por test
+            <a href="#datos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En PHPUnit aislabas cada test con una transacción y un rollback. Aquí no sirve: el navegador habla con la app por HTTP, en otro proceso y con otra conexión, y no ve lo que tu test haya abierto en una transacción. Si todos usan la lista 1, el primero pasa y los siguientes encuentran las tareas del anterior; en paralelo, depende de quién llegue antes.
+          </p>
+          <p>
+            La salida es que <strong>cada test cree sus propios datos</strong>, con nombres únicos, y no dependa de ningún otro. La forma más rápida es un endpoint de preparación que solo existe en el entorno de test:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · public/index.php (fragmento)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$method = $_SERVER['REQUEST_METHOD'];
+$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+
+if ($method === 'POST' &amp;&amp; $path === '/test/lists' &amp;&amp; getenv('APP_ENV') === 'test') {
+    $payload = json_decode(file_get_contents('php://input'), true, flags: JSON_THROW_ON_ERROR);
+    $database-&gt;prepare('INSERT INTO lists (name) VALUES (?)')-&gt;execute([$payload['name']]);
+    http_response_code(201);
+    header('Content-Type: application/json');
+    echo json_encode(['id' =&gt; (int) $database-&gt;lastInsertId()]);
+
+    return;
+}</code></pre>
+          </div>
+          <p>
+            El <code>beforeEach</code> lo llama con <code>request</code>, el cliente HTTP de Playwright, y navega a la lista nueva. Preparar datos por API es mucho más rápido que rellenar formularios. La guarda de <code>APP_ENV</code> no es opcional: sin ella, cualquiera crea listas en producción.
+          </p>
+          <h2 id="ci">
+            En CI, con trazas y capturas
+            <a href="#ci" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En CI se ejecuta lo mismo que en local, con dos cambios que ya hace la configuración cuando existe la variable <code>CI</code>: reintentos y <code>forbidOnly</code>, que hace fallar la suite si alguien se dejó un <code>test.only</code>. Si ya tienes el pipeline de <a href="ci-para-php.html">CI para un proyecto PHP</a>, el job de e2e se añade aparte:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">yaml · .github/workflows/e2e.yml</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="yaml">name: e2e
+
+on: [push, pull_request]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: docker compose run --rm e2e
+        env:
+          CI: true
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 30</code></pre>
+          </div>
+          <p>
+            El <code>if: ${{ !cancelled() }}</code> es lo importante: sin él, el paso de subir el informe se salta justo cuando hay fallos, que es cuando lo necesitas. El informe HTML incluye la captura de cada fallo (<code>screenshot: 'only-on-failure'</code>) y la traza del primer reintento (<code>trace: 'on-first-retry'</code>). La traza graba el DOM, la red y la consola de cada acción; se abre con <code>npx playwright show-trace</code> y ahorra reproducir el fallo en local.
+          </p>
+          <h2 id="flaky">
+            Tests inestables
+            <a href="#flaky" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un test <em>flaky</em> falla a veces sin que cambie el código. Es el peor tipo de test: enseña al equipo a pulsar «reintentar» y a ignorar el rojo. Con reintentos activos, Playwright lo marca como <em>flaky</em> en vez de ocultarlo: falló y luego pasó. Las causas se repiten:
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Causa</th><th>Síntoma</th><th>Remedio</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Esperas fijas o lecturas instantáneas</td><td>Falla más en CI que en local</td><td>Aserciones web con <code>await expect(locator)</code></td></tr>
+                <tr><td>Datos compartidos entre tests</td><td>Falla según el orden o en paralelo</td><td>Datos propios con nombre único por test</td></tr>
+                <tr><td>Dependencias externas reales</td><td>Falla cuando la pasarela de pago tarda</td><td>Un sandbox propio o interceptar con <code>page.route</code></td></tr>
+                <tr><td>Fechas, zonas horarias, animaciones</td><td>Falla a medianoche o en otra máquina</td><td>Fijar reloj, <code>timezoneId</code> y <code>locale</code> en la configuración</td></tr>
+                <tr><td>Localizadores ambiguos</td><td>Pulsa el primer «Guardar» de dos</td><td>Acotar dentro de un contenedor con <code>getByRole</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Los reintentos son un diagnóstico, no un arreglo: un test inestable se investiga con su traza o se aparta con un issue.
+          </p>
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que convierte una suite e2e en un estorbo</p>
+              <ul>
+                <li><strong>Usar el e2e para probar variaciones.</strong> Veinte e2e del formulario de alta, uno por regla de validación, son el cono de helado. Las reglas van a unitarios; el e2e prueba que el alta funciona.</li>
+                <li><strong>Leer el DOM sin esperar.</strong> <code>expect(await locator.count()).toBe(1)</code> mira una vez; <code>await expect(locator).toHaveCount(1)</code> reintenta. Se parecen mucho y no se comportan igual.</li>
+                <li><strong>Depender del orden de los tests.</strong> Un test que da por hecho que otro ya creó al usuario se rompe al ejecutarlo solo o en paralelo.</li>
+                <li><strong>Subir los reintentos hasta que pase.</strong> Tapa la causa y alarga cada ejecución en rojo.</li>
+              </ul>
+            </div>
+          </div>
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Que un test pase una vez no dice que sea estable. Repítelo en paralelo: si comparte datos o depende del tiempo, falla aquí y no en el CI de la semana que viene.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · terminal</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">docker compose run --rm e2e npx playwright test --repeat-each=20 --workers=4
+docker compose run --rm e2e npx playwright test --retries=2 --fail-on-flaky-tests</code></pre>
+          </div>
+          <p>
+            <code>--repeat-each</code> ejecuta cada test N veces. <code>--fail-on-flaky-tests</code> hace que un test que solo pasa al reintentar cuente como fallo. Y para saber que el test sirve, rompe a propósito la funcionalidad (el <code>name</code> del input) y mira que falla con un mensaje que entiendes.
+          </p>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Un e2e cuando…</h4>
+              <ul>
+                <li>Es un camino crítico del negocio: alta, login, compra, pago</li>
+                <li>El fallo estaría en la unión de piezas: formulario, JavaScript y controlador</li>
+                <li>Quieres un smoke test tras desplegar que confirme que la app arranca</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No hace falta cuando…</h4>
+              <ul>
+                <li>Pruebas una regla de cálculo o de validación</li>
+                <li>Es una API sin interfaz: basta un test HTTP de integración</li>
+                <li>La pantalla cambia cada semana y nadie mantendrá el test</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La alternativa más barata</p>
+              <p>
+                Si lo que quieres comprobar es que un endpoint responde bien, un test funcional del framework (<code>WebTestCase</code> en Symfony, <code>$this-&gt;getJson()</code> en Laravel) recorre rutas, controlador y base de datos sin navegador, en milisegundos. Sube a Playwright solo cuando el JavaScript o el HTML forman parte de lo que puede romperse.
+              </p>
+            </div>
+          </div>
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El e2e es el único test que prueba la unión de todas las piezas; por eso es valioso y por eso es caro. Uno por camino crítico, no uno por variación.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Playwright corre en Node contra tu app PHP: dos servicios en Compose, con la imagen oficial en la misma versión que <code>@playwright/test</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Localiza por rol, etiqueta y texto. Si no encuentras un elemento así, probablemente el HTML no es accesible.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Nada de esperas fijas: las acciones y <code>await expect(locator)</code> esperan solas hasta su plazo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Cada test crea sus datos con nombre único; el rollback por transacción no llega al navegador.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En CI, reintentos con traza en el primero, capturas al fallar y el informe subido con <code>!cancelled()</code>.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="tests-que-no-estorban.html">
+              <small>← Anterior</small>
+              <b>Tests que no estorban</b>
+            </a>
+            <a href="tests-de-contrato.html" class="next">
+              <small>Siguiente →</small>
+              <b>Tests de contrato entre servicios</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

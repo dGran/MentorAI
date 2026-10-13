@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tests de caracterización para tocar código sin tests — MentorAI</title>
+    <meta name="description" content="Cómo poner red a código heredado sin tests: tests de caracterización con PHPUnit, snapshots con spatie/phpunit-snapshot-assertions, seams para aislar dependencias y el orden caracterizar, refactorizar, cambiar." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Testing</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Tests de caracterización para tocar código sin tests</h1>
+        <p class="tutorial-hero__lead">
+          Para cambiar código sin tests necesitas tests, y para ponerle tests necesitas cambiarlo. Los tests de caracterización rompen el círculo: fijan lo que el código hace hoy, sea correcto o no, y te dan la red para refactorizar antes de tocar la regla.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            24 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Testing
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">Cambiar código sin red</a></li>
+            <li><a href="#concepto">Fijar lo que hace, no lo que debería</a></li>
+            <li><a href="#seams">Puntos de corte para aislar dependencias</a></li>
+            <li><a href="#phpunit">Capturar la salida con PHPUnit</a></li>
+            <li><a href="#snapshots">Snapshots: muchas entradas de golpe</a></li>
+            <li><a href="#orden">Caracterizar, refactorizar, cambiar</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Te piden cambiar una regla en una clase de 300 líneas que nadie ha probado nunca. No sabes qué hace exactamente, solo que lleva años en producción y que alguien depende de ella. Antes de arreglar nada, necesitas saber qué hace hoy y enterarte si dejas de hacerlo.
+          </p>
+
+          <h2 id="problema">
+            Cambiar código sin red
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            En <a href="code-smells-refactoring.html">code smells y refactoring</a> viste la regla: no se refactoriza sin tests. El código heredado la pone a prueba, porque casi nunca los tiene y casi nunca se deja probar: crea su propia conexión a la base de datos, lee la fecha del sistema y escribe con <code>echo</code> en vez de devolver un valor.
+          </p>
+          <p>
+            Michael Feathers lo resumió en <em>Working Effectively with Legacy Code</em>: código heredado es código sin tests. Y añadió el dilema que lo bloquea todo: para cambiarlo con seguridad necesitas tests, y para ponerle tests necesitas cambiarlo. La salida es hacer el mínimo cambio mecánico que permita probarlo y, a partir de ahí, avanzar siempre con red.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · src/ShippingQuote.php (heredado)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace Demo\Legacy;
+
+class ShippingQuote
+{
+    public function printQuote(int $orderId): void
+    {
+        $lines = Database::connection()
+            -&gt;query("SELECT weight, country FROM order_lines WHERE order_id = {$orderId}")
+            -&gt;fetchAll();
+        $total = 0;
+
+        foreach ($lines as $line) {
+            if ($line['country'] == 'ES') {
+                $total += $line['weight'] * 1.2;
+            } elseif ($line['country'] == 'PT') {
+                $total += $line['weight'] * 1.5 + 3;
+            } else {
+                $total += 25;
+            }
+        }
+
+        if ((int) date('N') &gt;= 6) {
+            $total = $total * 1.1;
+        }
+
+        echo "Pedido {$orderId}\n";
+        echo 'Envío: ' . round($total, 2) . " EUR\n";
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            Esta clase calcula el coste de envío de un pedido. Para ejecutarla en un test hace falta una base de datos con datos concretos, y el resultado cambia según el día de la semana. Ni siquiera sabes si <code>'es'</code> en minúsculas llega alguna vez desde la base de datos ni qué pasa entonces.
+          </p>
+
+          <h2 id="concepto">
+            Fijar lo que hace, no lo que debería
+            <a href="#concepto" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            Un <strong>test de caracterización</strong> describe el comportamiento real del código, no el deseado. No partes de una especificación: ejecutas el código con una entrada, miras qué sale y escribes una aserción que fija exactamente eso. Si sale algo raro, también lo fijas.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Test de caracterización</h4>
+              <ul>
+                <li>La fuente de verdad es el código que hay en producción</li>
+                <li>Un resultado raro se fija y se anota, no se corrige</li>
+                <li>Detecta cualquier cambio, deseado o no</li>
+                <li>Es provisional: dura lo que dura el refactor</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Test de comportamiento</h4>
+              <ul>
+                <li>La fuente de verdad es la regla de negocio</li>
+                <li>Un resultado raro es un fallo que hay que arreglar</li>
+                <li>Solo se rompe si cambia lo que la regla exige</li>
+                <li>Se queda mientras exista la regla</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>
+            ¿Por qué fijar un posible bug? Porque no sabes si lo es. Puede que un cliente ya cuente con esa tarifa plana, o que un informe dependa de ese redondeo. Tu tarea ahora es no cambiar nada sin enterarte; decidir qué es correcto llega después, como un cambio aparte y consciente.
+          </p>
+
+          <h2 id="seams">
+            Puntos de corte para aislar dependencias
+            <a href="#seams" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            Feathers llama <strong>seam</strong> (punto de corte) a un sitio donde puedes cambiar lo que hace el código sin editarlo en ese punto. El tipo más útil en PHP heredado es el seam de objeto, que se abre con <em>subclass and override method</em>: sacas cada dependencia rebelde a un método <code>protected</code> y, en el test, una subclase lo sobrescribe.
+          </p>
+          <p>
+            Extraer esos dos métodos es el único cambio que haces sin red, así que tiene que ser mecánico: el refactor «extraer método» del IDE, sin tocar una sola condición.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · los dos seams extraídos en ShippingQuote</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">    protected function linesOf(int $orderId): array
+    {
+        return Database::connection()
+            -&gt;query("SELECT weight, country FROM order_lines WHERE order_id = {$orderId}")
+            -&gt;fetchAll();
+    }
+
+    protected function isWeekend(): bool
+    {
+        return (int) date('N') &gt;= 6;
+    }
+}
+</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · el doble: una clase anónima que sobrescribe los seams</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">private function quoteWith(array $lines, bool $isWeekend): ShippingQuote
+{
+    $quote = new class extends ShippingQuote {
+        public array $fakeLines = [];
+        public bool $isFakeWeekend = false;
+
+        protected function linesOf(int $orderId): array
+        {
+            return $this-&gt;fakeLines;
+        }
+
+        protected function isWeekend(): bool
+        {
+            return $this-&gt;isFakeWeekend;
+        }
+    };
+    $quote-&gt;fakeLines = $lines;
+    $quote-&gt;isFakeWeekend = $isWeekend;
+
+    return $quote;
+}</code></pre>
+          </div>
+
+          <p>
+            Fíjate en que la clase anónima no declara constructor y recibe los datos por propiedades. Si declarase uno propio sin llamar al padre, el día que el refactor añada un constructor a <code>ShippingQuote</code> los tests se romperían por la herramienta, no por el comportamiento. Es la técnica manual que generalizan los <a href="test-doubles.html">dobles de test</a>.
+          </p>
+
+          <h2 id="phpunit">
+            Capturar la salida con PHPUnit
+            <a href="#phpunit" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            Como el código escribe con <code>echo</code>, la aserción va contra la salida. PHPUnit trae <code>expectOutputString()</code>, que captura todo lo que se imprime durante el test y lo compara al terminar. Para un caso suelto es lo más directo.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · tests/ShippingQuoteCharacterizationTest.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">public function test_un_pedido_espanol_entre_semana(): void
+{
+    $quote = $this-&gt;quoteWith([['weight' =&gt; 10, 'country' =&gt; 'ES']], isWeekend: false);
+
+    $this-&gt;expectOutputString("Pedido 7\nEnvío: 12 EUR\n");
+
+    $quote-&gt;printQuote(7);
+}
+
+public function test_el_pais_en_minusculas_cobra_tarifa_plana(): void
+{
+    $quote = $this-&gt;quoteWith([['weight' =&gt; 10, 'country' =&gt; 'es']], isWeekend: false);
+
+    $this-&gt;expectOutputString("Pedido 7\nEnvío: 25 EUR\n");
+
+    $quote-&gt;printQuote(7);
+}</code></pre>
+          </div>
+
+          <p>
+            El segundo test es el importante: el nombre dice lo que pasa, no lo que debería pasar. Un pedido a <code>'es'</code> paga 25 € de tarifa plana en vez de 12 €, y queda escrito. El método para dar con esos valores es dejar la aserción vacía o con un valor absurdo, ejecutar y copiar lo que PHPUnit dice que salió.
+          </p>
+
+          <h2 id="snapshots">
+            Snapshots: muchas entradas de golpe
+            <a href="#snapshots" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            Escribir a mano un test por combinación no escala. El <strong>snapshot testing</strong> (o approval testing) automatiza el paso de copiar lo que salió: la primera ejecución guarda la salida en un fichero y las siguientes la comparan. En PHP la librería de referencia es <code>spatie/phpunit-snapshot-assertions</code>, que en su versión 5.4 funciona con PHPUnit 9.6 a 13. También existe ApprovalTests.php, pero en Packagist no tiene versiones publicadas, solo la rama de desarrollo.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · un snapshot con todas las combinaciones</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">public function test_combinaciones_de_pais_peso_y_dia(): void
+{
+    $report = '';
+
+    foreach (['ES', 'PT', 'FR', 'es', ''] as $country) {
+        foreach ([0, 1, 2.5, 10] as $weight) {
+            foreach ([false, true] as $isWeekend) {
+                $quote = $this-&gt;quoteWith([['weight' =&gt; $weight, 'country' =&gt; $country]], $isWeekend);
+                ob_start();
+                $quote-&gt;printQuote(1);
+                $report .= sprintf("%-2s %4s %-5s → %s", $country, $weight, $isWeekend ? 'finde' : 'lab', ob_get_clean());
+            }
+        }
+    }
+
+    $this-&gt;assertMatchesTextSnapshot($report);
+}</code></pre>
+          </div>
+
+          <p>
+            Cinco países, cuatro pesos y dos tipos de día dan 40 casos en un solo fichero de texto bajo <code>tests/__snapshots__/</code>. Ese fichero se sube al repositorio: es la red. Un extracto de lo que se guardó:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">texto · extracto del snapshot</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>es    1 lab   → Pedido 1
+Envío: 25 EUR
+es    1 finde → Pedido 1
+Envío: 27.5 EUR
+PT  2.5 finde → Pedido 1
+Envío: 7.43 EUR</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · ciclo de vida del snapshot</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">composer require --dev spatie/phpunit-snapshot-assertions
+
+vendor/bin/phpunit
+vendor/bin/phpunit --display-incomplete
+
+vendor/bin/update-snapshots tests/ShippingQuoteCharacterizationTest.php
+
+CREATE_SNAPSHOTS=false vendor/bin/phpunit</code></pre>
+          </div>
+
+          <p>
+            La primera ejecución marca el test como incompleto («Snapshot created for…») en vez de pasarlo. <code>update-snapshots</code> reescribe los ficheros cuando el cambio es deseado, y <code>CREATE_SNAPSHOTS=false</code> hace que en CI un snapshot que falta sea un fallo, no un fichero nuevo que nadie revisa.
+          </p>
+
+          <h2 id="orden">
+            Caracterizar, refactorizar, cambiar
+            <a href="#orden" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Caracterizar</b><small>Seams mínimos y tests que fijan lo que sale hoy</small></span>
+              </div>
+              <div class="flow__arrow" data-label="todo en verde"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Refactorizar</b><small>Pasos pequeños; los tests no se tocan</small></span>
+              </div>
+              <div class="flow__arrow" data-label="lógica con nombre"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Cambiar</b><small>Test de comportamiento nuevo y caracterización sustituida</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Cada paso en un commit propio: si algo se pone rojo, sabes cuál fue.</p>
+          </div>
+
+          <p>
+            Con la red puesta, el refactor saca el cálculo a una clase pura, sin base de datos ni reloj. Los tres tests de caracterización siguen en verde sin tocar una línea: es la prueba de que el comportamiento no se movió.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · src/ShippingCost.php (después)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace Demo\Legacy;
+
+final class ShippingCost
+{
+    private const float SPAIN_RATE_PER_KILO = 1.2;
+    private const float PORTUGAL_RATE_PER_KILO = 1.5;
+    private const float PORTUGAL_FIXED_FEE = 3;
+    private const float FLAT_RATE = 25;
+    private const float WEEKEND_SURCHARGE = 1.1;
+
+    public function forLines(array $lines, bool $isWeekend): float
+    {
+        $total = array_sum(array_map($this-&gt;forLine(...), $lines));
+
+        return $isWeekend ? $total * self::WEEKEND_SURCHARGE : $total;
+    }
+
+    private function forLine(array $line): float
+    {
+        return match ($line['country']) {
+            'ES' =&gt; $line['weight'] * self::SPAIN_RATE_PER_KILO,
+            'PT' =&gt; $line['weight'] * self::PORTUGAL_RATE_PER_KILO + self::PORTUGAL_FIXED_FEE,
+            default =&gt; self::FLAT_RATE,
+        };
+    }
+}</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · ShippingQuote delega el cálculo</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">public function __construct(private ShippingCost $cost = new ShippingCost())
+{
+}
+
+public function printQuote(int $orderId): void
+{
+    $total = $this-&gt;cost-&gt;forLines($this-&gt;linesOf($orderId), $this-&gt;isWeekend());
+
+    echo "Pedido {$orderId}\n";
+    echo 'Envío: ' . round($total, 2) . " EUR\n";
+}</code></pre>
+          </div>
+
+          <p>
+            Ahora sí toca el cambio: aceptar el país en minúsculas. Lo haces en <code>ShippingCost</code> con un test de comportamiento normal, que no necesita salida ni subclases. Al cambiarlo, el test de las minúsculas y el snapshot se ponen rojos, y es justo lo que esperabas: el diff muestra qué casos cambiaron y confirmas que son solo esos.
+          </p>
+          <p>
+            Ese es el momento de <strong>borrar</strong> la caracterización. Ya no fija un comportamiento dudoso: fija detalles, como el formato del <code>echo</code>, que la lógica ya no necesita. Cuando los tests de <code>ShippingCost</code> cubren cada regla, el snapshot solo estorba, como explica <a href="tests-que-no-estorban.html">tests que no estorban</a>. Si el formato de salida es un contrato que alguien consume, se queda un test que lo fije, no los 40 casos.
+          </p>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que convierte la red en una trampa</p>
+              <ul>
+                <li><strong>Corregir mientras caracterizas.</strong> Ves el bug de las minúsculas y lo arreglas «ya que estás». Has mezclado dos cambios y el test ya no describe producción.</li>
+                <li><strong>Aceptar el snapshot sin leerlo.</strong> <code>update-snapshots</code> en verde no significa correcto: significa que el fichero dice lo mismo que el código.</li>
+                <li><strong>Entradas que no cubren las ramas.</strong> Cuarenta casos de España no prueban Portugal. Elige valores que pasen por cada <code>if</code> y por los bordes, como el peso cero.</li>
+                <li><strong>Dejar dentro lo no determinista.</strong> Si el reloj o un aleatorio llegan a la salida, el snapshot falla a ratos. Sácalos a un seam antes de capturar.</li>
+                <li><strong>Convertir la red en permanente.</strong> Un snapshot de 40 casos que nadie borra se rompe con cada cambio legítimo de formato.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <p>
+            Que los tests pasen no prueba que vigilen algo. Comprueba que la red detecta: estropea a propósito una rama (cambia el <code>1.5</code> de Portugal por <code>1.6</code>) y ejecuta. Si nada se pone rojo, a tus entradas les falta un caso. La versión automática de este truco es el <a href="tests-de-mutacion.html">mutation testing</a>, que hace lo mismo con cientos de cambios.
+          </p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La cobertura como mapa</p>
+              <p>Antes de refactorizar, mira la <a href="phpunit-excepciones-cobertura.html#medir">cobertura</a> de la clase (necesita pcov o Xdebug) con los tests de caracterización. Una rama sin ejecutar es una rama que podrías romper sin enterarte: añade una entrada que pase por ella.</p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Caracteriza cuando…</h4>
+              <ul>
+                <li>Vas a tocar código sin tests que está en producción y no tienes especificación fiable</li>
+                <li>La salida es compleja (un informe, un HTML, un CSV) y escribir cada aserción a mano no compensa</li>
+                <li>Vas a migrar una pieza (de versión de PHP, de framework) y quieres saber si algo cambió de rebote</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No hace falta cuando…</h4>
+              <ul>
+                <li>El código ya tiene tests de comportamiento que cubren lo que vas a tocar</li>
+                <li>Escribes código nuevo: ahí el test sale de la regla, con el <a href="tdd-ciclo.html">ciclo de TDD</a></li>
+                <li>Vas a reescribir la pieza entera con otra interfaz y nadie consume su salida actual</li>
+              </ul>
+            </div>
+          </div>
+          <p>
+            Si la pieza es tan grande que no admite seams baratos, la alternativa es caracterizar más arriba: un test de integración o end-to-end que fije la respuesta de toda la página (los niveles los viste en <a href="tipos-de-test.html">la pirámide de tests</a>). Es más lento, pero da la misma red mientras partes la pieza.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un test de caracterización fija lo que el código <strong>hace hoy</strong>, incluso lo raro; decidir qué es correcto es un cambio aparte.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los <strong>seams</strong> (métodos <code>protected</code> sobrescritos en una subclase) aíslan base de datos y reloj con el mínimo cambio mecánico.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>expectOutputString()</code> para casos sueltos; <code>spatie/phpunit-snapshot-assertions</code> para muchas combinaciones, con <code>CREATE_SNAPSHOTS=false</code> en CI.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El orden es caracterizar, refactorizar y cambiar, cada paso en su commit; al final, los tests de comportamiento sustituyen a la caracterización.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="tests-de-mutacion.html">
+              <small>← Anterior</small>
+              <b>Mutation testing con Infection</b>
+            </a>
+            <a href="../cursos.html" class="next">
+              <small>Fin del curso →</small>
+              <b>Ver todos los cursos</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

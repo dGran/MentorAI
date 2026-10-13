@@ -68,7 +68,7 @@ window.MENTORAI_QUIZ_SUMMARY = {
     "passingScore": null
   },
   "testing": {
-    "total": 10,
+    "total": 14,
     "passingScore": null
   },
   "observabilidad": {
