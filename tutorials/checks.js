@@ -3346,4 +3346,15 @@ window.MENTORAI_CHECKS = {
       o: ["Porque una fecha inmutable no se puede adelantar en el test","Porque DateTimeImmutable no se puede comparar con >=","Porque el resultado depende del momento en que se ejecuta"], a: 2,
       w: "El reloj del sistema es una dependencia oculta. Pide un ClockInterface de PSR-20 por constructor y fija la hora en el test, un segundo antes y justo en el límite." },
   ],
+  "busqueda-full-text": [
+    { id: "c80d17e", q: "Tu buscador usa `WHERE nombre LIKE '%running%'` y la columna `nombre` ya tiene un índice B-tree. ¿Qué hace el motor?",
+      o: ["Recorre toda la tabla: el comodín delante impide usar el B-tree","Aprovecha el índice de `nombre`: la columna del filtro está indexada","Usa el índice: el B-tree solo se descarta en tablas de millones de filas"], a: 0,
+      w: "El B-tree está ordenado por el principio del valor. Con el comodín delante no sabe por dónde entrar, y el EXPLAIN muestra un recorrido completo." },
+    { id: "c5c17ae", q: "En MySQL 8.4, `MATCH(nombre, descripcion) AGAINST ('hd')` no encuentra el «Monitor HD» aunque el índice FULLTEXT existe. ¿Qué cambias?",
+      o: ["Pasar la consulta a modo booleano escribiendo `'+hd'`","Bajar `innodb_ft_min_token_size`, reiniciar y reconstruir el índice","Lanzar `SET GLOBAL innodb_ft_min_token_size = 2` y repetirla"], a: 1,
+      w: "Con el mínimo por defecto de 3 caracteres, «hd» nunca entra en el índice, sea cual sea el modo. La variable es de solo lectura: se cambia en la configuración, se reinicia y se recrea el índice." },
+    { id: "c0d8f3b", q: "En Postgres, con 50.000 filas y un GIN sobre la columna generada `busqueda`, `WHERE to_tsvector('spanish', nombre) @@ ...` hace un Seq Scan. ¿Por qué?",
+      o: ["Porque GIN solo se usa con `to_tsquery`, no con `websearch_to_tsquery`","Porque con esas filas el planificador prefiere leer la tabla entera","Porque la expresión consultada no es la misma que la indexada"], a: 2,
+      w: "El planificador solo usa un índice si la expresión del WHERE coincide con la indexada. Consulta `busqueda @@ ...`, no un `to_tsvector` distinto." },
+  ],
 };
