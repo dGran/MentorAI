@@ -150,6 +150,8 @@
 Description = Worker de la cola de pedidos
 After = network-online.target rabbitmq.service
 Wants = network-online.target
+StartLimitBurst = 5
+StartLimitIntervalSec = 60
 
 [Service]
 Type = simple
@@ -159,8 +161,6 @@ WorkingDirectory = /srv/aplicacion
 ExecStart = /usr/bin/php bin/console messenger:consume pedidos --time-limit=3600
 Restart = always
 RestartSec = 5
-StartLimitBurst = 5
-StartLimitIntervalSec = 60
 LimitNOFILE = 65535
 MemoryMax = 512M
 NoNewPrivileges = true
@@ -182,7 +182,7 @@ WantedBy = multi-user.target</code></pre>
               </thead>
               <tbody>
                 <tr><td><code>Restart=always</code> + <code>RestartSec</code></td><td>Que una caída puntual deje el worker muerto hasta que alguien lo note</td></tr>
-                <tr><td><code>StartLimitBurst</code></td><td>El bucle de reinicios: si falla 5 veces en 60 s, systemd se rinde y lo deja parado <b>y visible</b></td></tr>
+                <tr><td><code>StartLimitBurst</code></td><td>El bucle de reinicios: si falla 5 veces en 60 s, systemd se rinde y lo deja parado <b>y visible</b>. Va en <code>[Unit]</code>: en <code>[Service]</code>, <code>StartLimitIntervalSec</code> se ignora</td></tr>
                 <tr><td><code>--time-limit=3600</code></td><td>Que un proceso PHP de larga vida acumule memoria: se recicla cada hora y systemd lo relanza</td></tr>
                 <tr><td><code>MemoryMax</code></td><td>Que una fuga se coma la máquina entera y el OOM killer mate al servidor web</td></tr>
                 <tr><td><code>ProtectSystem=strict</code></td><td>Que el proceso pueda escribir fuera de lo que declaras en <code>ReadWritePaths</code></td></tr>

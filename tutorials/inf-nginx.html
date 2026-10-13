@@ -145,25 +145,36 @@
 
           <div class="code-block">
             <div class="code-block__head">
-              <span class="code-block__lang">ini · /etc/nginx/sites-available/aplicacion</span>
+              <span class="code-block__lang">nginx · /etc/nginx/sites-available/aplicacion</span>
               <button class="copy-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
-            <pre><code data-lang="ini">server_name = ejemplo.com
-root = /srv/aplicacion/public
-index = index.php
+            <pre><code>server {
+    listen 80;
+    server_name ejemplo.com;
+    root /srv/aplicacion/public;
+    index index.php;
 
-client_max_body_size = 12M
-gzip = on
-gzip_min_length = 1024
-gzip_types = application/json text/css application/javascript
+    client_max_body_size 12M;
+    gzip on;
+    gzip_min_length 1024;
+    gzip_types application/json text/css application/javascript;
 
-fastcgi_pass = unix:/run/php/php8.3-fpm.sock
-fastcgi_connect_timeout = 2s
-fastcgi_read_timeout = 30s
-fastcgi_buffering = on</code></pre>
+    location / {
+        try_files $uri /index.php$is_args$args;
+    }
+
+    location ~ \.php$ {
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+        fastcgi_connect_timeout 2s;
+        fastcgi_read_timeout 30s;
+        fastcgi_buffering on;
+    }
+}</code></pre>
           </div>
 
           <div class="callout callout--warning">
@@ -179,6 +190,13 @@ fastcgi_buffering = on</code></pre>
               </p>
             </div>
           </div>
+
+          <p>
+            Cada directiva termina en <code>;</code> y vive dentro de su bloque: <code>server</code>
+            agrupa el sitio y cada <code>location</code> decide qué hacer con un tipo de ruta. El <code>location /</code> manda a <code>index.php</code> toda ruta que no
+            sea un fichero real, y el <code>location ~ \.php$</code> es el único que habla con
+            PHP-FPM.
+          </p>
 
           <p>
             El <code>root</code> apuntando a <code>public/</code> y no a la raíz del proyecto no
@@ -246,19 +264,29 @@ fastcgi_buffering = on</code></pre>
 
           <div class="code-block">
             <div class="code-block__head">
-              <span class="code-block__lang">ini · limitar tasa en el borde</span>
+              <span class="code-block__lang">nginx · limitar tasa en el borde</span>
               <button class="copy-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
-            <pre><code data-lang="ini">limit_req_zone = $binary_remote_addr zone=login:10m rate=5r/m
-limit_req = zone=login burst=3 nodelay
-limit_req_status = 429</code></pre>
+            <pre><code>limit_req_zone $binary_remote_addr zone=login:10m rate=5r/m;
+
+server {
+    server_name ejemplo.com;
+
+    location = /login {
+        limit_req zone=login burst=3 nodelay;
+        limit_req_status 429;
+        try_files $uri /index.php$is_args$args;
+    }
+}</code></pre>
           </div>
 
           <p>
-            Cinco intentos de login por minuto y por IP, con un pequeño margen de ráfaga. Es una
+            La zona se declara fuera del bloque <code>server</code>, en el contexto
+            <code>http</code>, y el límite se aplica solo en el <code>location</code> que
+            proteges. Cinco intentos de login por minuto y por IP, con un pequeño margen de ráfaga. Es una
             defensa complementaria a la de la aplicación, no un sustituto —la tuya sabe de
             usuarios, esta solo de IP—, pero es la que aguanta cuando llegan diez mil peticiones
             por segundo y tu PHP no las vería ni de lejos.
