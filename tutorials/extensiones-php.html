@@ -181,7 +181,7 @@
               <h4>De PECL</h4>
               <ul>
                 <li>Repositorio externo de extensiones de la comunidad</li>
-                <li>Se instalan aparte (<code>pecl install</code>)</li>
+                <li>Se instalan aparte (<code>pie install</code>; antes, <code>pecl install</code>)</li>
                 <li><code>redis</code>, <code>imagick</code>, <code>xdebug</code>, <code>apcu</code>…</li>
                 <li>No las trae PHP; las añades tú</li>
               </ul>
@@ -194,7 +194,10 @@
             distribuyen con el core. En la práctica, en una distro moderna casi
             nunca compilas a mano: instalas un paquete del sistema
             (<code>php8.3-redis</code>) que por debajo es esa extensión de PECL ya
-            compilada para tu versión de PHP.
+            compilada para tu versión de PHP. Para instalarlas a mano, el
+            comando <code>pecl</code> está deprecado: su sustituto oficial es
+            <strong>PIE</strong> (<em>PHP Installer for Extensions</em>), que las
+            descarga, compila y habilita en un paso.
           </p>
 
           <!-- ============ Cómo se cargan ============ -->
@@ -220,12 +223,15 @@
 extension=redis
 
 ; Las de tipo Zend (cambian el motor) usan otra directiva
-zend_extension=opcache</code></pre>
+zend_extension=xdebug</code></pre>
           </div>
 
           <p>
-            Fíjate en el detalle: <code>opcache</code> y <code>xdebug</code> se
-            cargan con <code>zend_extension</code>, no con <code>extension</code>.
+            Fíjate en el detalle: <code>xdebug</code> y <code>opcache</code> son de
+            tipo Zend, las que se cargan con <code>zend_extension</code> y no con
+            <code>extension</code>. OPcache, además, va integrado en el binario
+            desde PHP 8.5: ya no lleva línea de carga, y añadir
+            <code>zend_extension=opcache</code> solo produce un warning.
             Son <strong>extensiones de Zend</strong>: no solo añaden funciones,
             sino que se enganchan en el motor de ejecución para alterar cómo corre
             el código (cachear opcodes, depurar paso a paso). El resto, las
@@ -458,8 +464,10 @@ php -m | grep -iE "redis|intl"</code></pre>
 
           <p>
             En un contenedor Docker con la imagen oficial de PHP el patrón es
-            distinto: existen unos helpers para compilar extensiones del core y
-            para instalar las de PECL.
+            distinto: existen unos helpers para compilar extensiones del core, y
+            las de PECL se instalan con PIE. PIE no viene en la imagen: se copia
+            de la suya con
+            <code>COPY --from=ghcr.io/php/pie:bin /pie /usr/bin/pie</code>.
           </p>
 
           <div class="code-block">
@@ -473,9 +481,9 @@ php -m | grep -iE "redis|intl"</code></pre>
             <pre><code data-lang="bash"># Extensiones del core: configurar (si hace falta) e instalar
 docker-php-ext-install pdo_mysql intl bcmath
 
-# Extensiones de PECL: instalar y luego habilitar
-pecl install redis
-docker-php-ext-enable redis</code></pre>
+# Extensiones de PECL: PIE necesita unzip, y las compila y habilita
+apt-get update &amp;&amp; apt-get install -y unzip
+pie install phpredis/phpredis</code></pre>
           </div>
 
           <div class="callout callout--danger">
