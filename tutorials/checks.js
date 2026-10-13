@@ -616,7 +616,7 @@ window.MENTORAI_CHECKS = {
       w: "`git stash` guarda y limpia; se recupera con `git stash pop`. `reset --hard` haría lo contrario: descartar los cambios sin posibilidad de recuperarlos." },
     { id: "c0f4418", q: "Quieres ver qué han subido tus compañeros sin que se mezcle aún con tu trabajo.",
       o: ["`git pull`, que descarga sin integrar","`git merge origin/main` sin descargar antes","`git fetch`, que descarga sin integrar"], a: 2,
-      w: "`fetch` descarga y ya está; `pull` es `fetch` + `merge`, o sea que sí integra. Mirar antes de integrar es la razón de usar `fetch` suelto." },
+      w: "`fetch` descarga y ya está; `pull` descarga e integra (con merge o rebase, según tu configuración). Mirar antes de integrar es la razón de usar `fetch` suelto." },
   ],
 
   "git-ramas-y-flujo": [
@@ -1052,7 +1052,7 @@ window.MENTORAI_CHECKS = {
   ],
 
   "docker-compose": [
-    { id: "c9ff93e", q: "Ejecutas `docker-compose down -v` y desaparecen los datos de tu base local.",
+    { id: "c9ff93e", q: "Ejecutas `docker compose down -v` y desaparecen los datos de tu base local.",
       o: ["Es normal, porque `down` siempre borra los volúmenes, con o sin `-v`","El `-v` borra también los volúmenes nombrados, y sin él sobreviven","El `-v` solo borra los volúmenes anónimos, así que los datos se perdieron por otra causa"], a: 1,
       w: "Es la diferencia entre reiniciar el entorno y perderlo." },
     { id: "ccea533", q: "¿Cómo conecta tu app con el contenedor de MySQL en compose?",

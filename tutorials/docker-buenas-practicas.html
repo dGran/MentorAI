@@ -115,13 +115,13 @@
                 <tr><th>Etiqueta</th><th>Qué trae</th><th>Tamaño orientativo</th></tr>
               </thead>
               <tbody>
-                <tr><td><code>php:8.3</code></td><td>Imagen completa, con muchas utilidades del sistema</td><td>Grande (~500&nbsp;MB)</td></tr>
-                <tr><td><code>php:8.3-slim</code></td><td>Recortada: solo lo esencial</td><td>Media</td></tr>
-                <tr><td><code>php:8.3-alpine</code></td><td>Sobre Alpine Linux, minimalista</td><td>Pequeña (~80&nbsp;MB)</td></tr>
+                <tr><td><code>php:8.3</code></td><td>Sobre Debian, con compiladores y cabeceras para instalar extensiones</td><td>Grande (~530&nbsp;MB)</td></tr>
+                <tr><td><code>php:8.3-fpm</code></td><td>La misma base Debian, con php-fpm como proceso principal</td><td>Grande (~500&nbsp;MB)</td></tr>
+                <tr><td><code>php:8.3-fpm-alpine</code></td><td>Sobre Alpine Linux, minimalista</td><td>Pequeña (~90&nbsp;MB)</td></tr>
               </tbody>
             </table>
           </div>
-          <p>Partir de <code>slim</code> o <code>alpine</code> en lugar de la imagen completa recorta cientos de megas casi gratis. Alpine es la más pequeña, con un matiz: usa una librería de C distinta (musl en vez de glibc), que de vez en cuando da problemas con según qué extensiones nativas. Para PHP, <code>slim</code> suele ser el equilibrio más cómodo entre tamaño y compatibilidad.</p>
+          <p>Muchas imágenes oficiales, como <code>python</code> o <code>node</code>, publican además una variante <code>slim</code>: Debian recortada a lo esencial. La de PHP no: solo tiene la familia Debian (sin sufijo, o con <code>-bookworm</code>/<code>-trixie</code> para fijar la versión de Debian) y la Alpine, y un <code>FROM php:8.3-slim</code> falla porque esa etiqueta no existe. Partir de <code>alpine</code> recorta cientos de megas casi gratis, con un matiz: usa una librería de C distinta (musl en vez de glibc), que de vez en cuando da problemas con según qué extensiones nativas. Para PHP, la variante Debian es la opción compatible y Alpine la pequeña.</p>
 
           <h2 id="multi-stage">
             Multi-stage builds
@@ -144,7 +144,7 @@ RUN composer install --no-dev --optimize-autoloader
 COPY . .
 
 # --- etapa 2: la imagen final, limpia ---
-FROM php:8.3-fpm-slim
+FROM php:8.3-fpm
 WORKDIR /app
 COPY --from=build /app /app
 CMD ["php-fpm"]</code></pre>
@@ -220,7 +220,7 @@ CMD ["php-fpm"]</code></pre>
             <div class="compare__col compare__col--good">
               <h4>Úsalo cuando…</h4>
               <ul>
-                <li>Producción general: elige <code>slim</code>, buen equilibrio tamaño/compatibilidad sin sorpresas de libc.</li>
+                <li>Producción general: la variante Debian (<code>php:8.3-fpm</code>), sin sorpresas de libc, y con multi-stage para dejar fuera las herramientas de construcción.</li>
                 <li>Tamaño mínimo crítico (pipelines, funciones): <code>alpine</code>, pero verifica compatibilidad con musl si usas extensiones nativas.</li>
                 <li>Seguridad máxima: <code>distroless</code>, sin shell ni gestores de paquetes, solo el binario de tu app.</li>
               </ul>
@@ -250,7 +250,7 @@ CMD ["php-fpm"]</code></pre>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Parte de una base recortada (<code>slim</code>/<code>alpine</code>) en vez de la imagen completa: cientos de megas menos casi gratis.</span>
+                <span>Parte de una base recortada (<code>alpine</code>, o <code>slim</code> en las imágenes que la publican) en vez de la imagen completa: cientos de megas menos casi gratis.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>

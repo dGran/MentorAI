@@ -555,7 +555,7 @@ window.MENTORAI_PRACTICE = {
       solutionCode: {
         lang: "yaml",
         source:
-          "name: CI\non: [push, pull_request]\n\njobs:\n  tests:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: shivammathur/setup-php@v2\n        with:\n          php-version: '8.3'\n      - run: composer install --prefer-dist --no-progress\n      - run: vendor/bin/phpunit",
+          "name: CI\non: [push, pull_request]\n\njobs:\n  tests:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v7\n      - uses: shivammathur/setup-php@v2\n        with:\n          php-version: '8.3'\n      - run: composer install --prefer-dist --no-progress\n      - run: vendor/bin/phpunit",
       },
     },
     {
@@ -568,7 +568,7 @@ window.MENTORAI_PRACTICE = {
       solutionCode: {
         lang: "yaml",
         source:
-          "- uses: actions/cache@v4\n  with:\n    path: vendor\n    key: composer-${{ hashFiles('composer.lock') }}",
+          "- uses: actions/cache@v6\n  with:\n    path: vendor\n    key: composer-${{ hashFiles('composer.lock') }}",
       },
     },
     {

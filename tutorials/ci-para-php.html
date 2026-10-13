@@ -137,7 +137,7 @@
     extensions: pdo_mysql, intl
     coverage: none
 
-- uses: actions/cache@v4
+- uses: actions/cache@v6
   with:
     path: ~/.cache/composer
     key: composer-${{ hashFiles('composer.lock') }}
@@ -225,12 +225,16 @@ vendor/bin/phpstan analyse</code></pre>
   needs: [estilo, estatico, tests]
   if: github.ref == 'refs/heads/main'
   runs-on: ubuntu-latest
+  permissions:
+    contents: read
+    packages: write
   steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
+    - run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
     - run: docker build -t ghcr.io/mi-org/mi-app:${{ github.sha }} .
     - run: docker push ghcr.io/mi-org/mi-app:${{ github.sha }}</code></pre>
           </div>
-          <p>El <code>needs</code> encadena: este job ni arranca si algo falló. El <code>if</code> limita el build a <code>main</code>: las pull requests se validan pero no producen imagen. Y la etiqueta con <code>github.sha</code> hace cada imagen trazable hasta su commit — cuando algo falle en producción sabrás exactamente qué código contiene.</p>
+          <p>El <code>needs</code> encadena: este job ni arranca si algo falló. El <code>if</code> limita el build a <code>main</code>: las pull requests se validan pero no producen imagen. Para subir la imagen a ghcr.io el job tiene que autenticarse: el <code>GITHUB_TOKEN</code> que GitHub inyecta en cada ejecución sirve para el <code>docker login</code>, pero solo si el job pide <code>packages: write</code>; sin ese paso, el <code>push</code> falla por falta de permisos. Y la etiqueta con <code>github.sha</code> hace cada imagen trazable hasta su commit — cuando algo falle en producción sabrás exactamente qué código contiene.</p>
 
           <h2 id="workflow">
             El workflow completo
@@ -277,8 +281,12 @@ jobs:
     needs: [estilo, estatico, tests]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+      - run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - run: docker build -t ghcr.io/mi-org/mi-app:${{ github.sha }} .
       - run: docker push ghcr.io/mi-org/mi-app:${{ github.sha }}</code></pre>
           </div>
