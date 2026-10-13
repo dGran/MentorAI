@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Feature flags: separar desplegar de lanzar — MentorAI</title>
+    <meta name="description" content="Feature flags en PHP: tipos de flag, evaluación detrás de una interfaz, rollout por porcentaje con hash estable, kill switch, OpenFeature y cómo retirar cada flag." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>DevOps</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Feature flags: separar desplegar de lanzar</h1>
+        <p class="tutorial-hero__lead">El código puede llegar a producción apagado y encenderse cuando toque, para quien toque. Tipos de flag, una interfaz propia en PHP, rollout por porcentaje que no cambia de bando al usuario, kill switch y la deuda que dejan las flags que nadie retira.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            25 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">Desplegar no es lanzar</a></li>
+            <li><a href="#tipos">Cuatro tipos de flag</a></li>
+            <li><a href="#interfaz">Detrás de una interfaz</a></li>
+            <li><a href="#porcentaje">Rollout por porcentaje</a></li>
+            <li><a href="#kill-switch">Kill switch</a></li>
+            <li><a href="#openfeature">OpenFeature</a></li>
+            <li><a href="#deuda">La deuda de las flags</a></li>
+            <li><a href="#probar">Probar los dos caminos</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">El viernes a las cinco nadie quiere desplegar, pero el miedo no es al deploy: es a que los usuarios vean algo roto. Si el código nuevo llega apagado, desplegar deja de ser un acontecimiento y lanzar pasa a ser una decisión que se toma con calma.</p>
+
+          <h2 id="problema">
+            Desplegar no es lanzar
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>En <a href="despliegue-continuo.html">Despliegue continuo</a> viste cómo llevar una imagen a producción sin cortar el servicio. Esas estrategias deciden <strong>qué versión del código corre</strong>. Lo que no deciden es <strong>qué funcionalidad ve cada usuario</strong>: si el checkout nuevo está en la imagen, lo ve todo el que llegue a esa versión.</p>
+          <p>Mientras vayan atadas, una funcionalidad a medias obliga a elegir: una rama que vive semanas (el integrar tarde de <a href="ci-cd-que-es.html">qué es CI/CD</a>) o un merge a <code>main</code> que enseña algo sin terminar. Y deshacerla cuesta un despliegue entero.</p>
+          <p>Una <strong>feature flag</strong> corta ese nudo: es una condición en el código cuyo valor se decide fuera del código, en tiempo de ejecución. El código viaja a producción con cada deploy; la funcionalidad se enciende cuando producto lo decide, para quien lo decide.</p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Deploy</b><small>El código nuevo llega a producción con la flag apagada</small></span>
+              </div>
+              <div class="flow__arrow" data-label="días o semanas"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Release gradual</b><small>Equipo interno, 5&nbsp;%, 50&nbsp;%, 100&nbsp;%</small></span>
+              </div>
+              <div class="flow__arrow" data-label="cuando ya nadie usa el camino viejo"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Retirada</b><small>Se borra la flag y el camino viejo en otro deploy</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">El tercer paso es el que casi todos los equipos olvidan.</p>
+          </div>
+
+          <h2 id="tipos">
+            Cuatro tipos de flag
+            <a href="#tipos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Todas son un <code>if</code>, pero no se gestionan igual. Lo que las distingue es cuánto viven y quién tiene derecho a moverlas:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Tipo</th><th>Para qué</th><th>Vida</th><th>Quién la mueve</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Release</strong></td><td>Esconder algo a medias o lanzarlo por fases</td><td>Días o semanas</td><td>El equipo que lo desarrolla</td></tr>
+                <tr><td><strong>Experimento</strong></td><td>Comparar dos variantes con métricas (test A/B)</td><td>Lo que dure el experimento</td><td>Producto o analítica</td></tr>
+                <tr><td><strong>Operación (kill switch)</strong></td><td>Apagar una pieza cara o frágil cuando falla</td><td>Permanente</td><td>Quien esté de guardia</td></tr>
+                <tr><td><strong>Permiso</strong></td><td>Dar una función a un plan o a ciertos clientes</td><td>Permanente</td><td>Negocio</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>La columna de vida es la importante: una flag de release que sigue ahí a los seis meses ya es deuda. Y una de permiso gestionada como temporal acaba siendo lógica de negocio escondida en la configuración, sin tests.</p>
+
+          <h2 id="interfaz">
+            Evaluarlas detrás de una interfaz
+            <a href="#interfaz" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La primera flag de casi todos los proyectos tiene esta pinta: una variable de entorno, un correo de la persona que prueba y la decisión repartida por el controlador.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · antes: la decisión pegada al controlador</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class CheckoutController
+{
+    public function __invoke(User $user): Response
+    {
+        if (getenv('NEW_CHECKOUT') === '1' || $user-&gt;email === 'ana@tienda.test') {
+            return $this-&gt;checkoutV2($user);
+        }
+
+        return $this-&gt;checkoutV1($user);
+    }
+}</code></pre>
+          </div>
+          <p>Cada flag nueva copia el patrón y nadie sabe cuántas hay ni dónde. Y cambiar <code>NEW_CHECKOUT</code> exige redesplegar, justo lo que querías evitar. La salida es una interfaz propia y pequeña de la que depende el negocio.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · después: el controlador solo pregunta</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final readonly class CheckoutController
+{
+    public function __construct(private FeatureFlags $flags) {}
+
+    public function __invoke(User $user): Response
+    {
+        if ($this-&gt;flags-&gt;isEnabled('checkout-v2', new FlagContext($user-&gt;id))) {
+            return $this-&gt;checkoutV2($user);
+        }
+
+        return $this-&gt;checkoutV1($user);
+    }
+}</code></pre>
+          </div>
+          <p>El controlador no sabe de dónde sale la respuesta, así que el origen (un fichero, Redis, un servicio externo) cambia sin tocarlo. La implementación más simple lee un array: usuarios con acceso directo y un porcentaje.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · src/flags.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+interface FeatureFlags
+{
+    public function isEnabled(string $flag, FlagContext $context): bool;
+}
+
+final readonly class FlagContext
+{
+    public function __construct(public string $userId) {}
+}
+
+final readonly class ConfigFeatureFlags implements FeatureFlags
+{
+    public function __construct(private array $flags) {}
+
+    public function isEnabled(string $flag, FlagContext $context): bool
+    {
+        $rule = $this-&gt;flags[$flag] ?? null;
+
+        if ($rule === null) {
+            return false;
+        }
+
+        if (in_array($context-&gt;userId, $rule['users'] ?? [], true)) {
+            return true;
+        }
+
+        return self::bucket($flag, $context-&gt;userId) &lt; ($rule['percentage'] ?? 0);
+    }
+
+    public static function bucket(string $flag, string $userId): int
+    {
+        return crc32($flag . ':' . $userId) % 100;
+    }
+}</code></pre>
+          </div>
+          <p>Una flag que no existe devuelve <code>false</code>. Es una decisión deliberada: si alguien borra la regla o el origen falla, el usuario cae en el camino conocido, no en el nuevo.</p>
+
+          <h2 id="porcentaje">
+            Rollout por porcentaje con un hash estable
+            <a href="#porcentaje" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Encender una flag para el 10&nbsp;% de los usuarios parece pedir <code>random_int(0, 99) &lt; 10</code>. Error: cada petición tira el dado otra vez y el mismo usuario ve el checkout nuevo, recarga y ve el viejo. Lo que necesitas es que cada usuario caiga siempre en la misma <strong>cubeta</strong> del 0 al 99, y eso lo da un hash de su id.</p>
+          <p><code>bucket()</code> calcula el CRC32 de <code>flag:usuario</code> y se queda con el resto entre 100. En PHP de 64 bits <code>crc32()</code> devuelve siempre un entero positivo, así que la cubeta cae entre 0 y 99. Meter el nombre de la flag en el hash importa: sin él, el mismo 10&nbsp;% de usuarios sería el conejillo de indias de todas tus flags a la vez.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · el mismo usuario cae siempre en el mismo lado</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">$ php rollout.php
+u-4: cubeta 8, checkout-v2 = sí
+u-1042: cubeta 61, checkout-v2 = no
+u-4: cubeta 8, checkout-v2 = sí
+u-1042: cubeta 61, checkout-v2 = no
+Dentro al 10 %: 9871 de 100000
+Salen al subir al 25 %: 0</code></pre>
+          </div>
+          <p>El script (<code>rollout.php</code>) evalúa dos veces a cada usuario y cuenta cien mil ids ficticios. El reparto se acerca al porcentaje pedido y, al subir del 10 al 25&nbsp;%, <strong>nadie sale</strong>: quien tenía cubeta menor que 10 también la tiene menor que 25. Con PHP 8.4 y 8.5 la salida es idéntica, así que todas las réplicas deciden lo mismo.</p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Canary y porcentaje no son lo mismo</p>
+              <p>El canary reparte <em>peticiones</em> entre dos versiones del código desplegadas. El rollout por flag reparte <em>usuarios</em> dentro de la misma versión. Se combinan bien: el canary vigila la imagen nueva, la flag decide quién ve la funcionalidad.</p>
+            </div>
+          </div>
+
+          <h2 id="kill-switch">
+            Kill switch: apagar sin desplegar
+            <a href="#kill-switch" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una flag de operación protege a la aplicación de sus dependencias. El servicio externo de recomendaciones tarda ocho segundos y arrastra la ficha de producto: quien está de guardia apaga la flag y la página sirve los más vendidos, sin esperar a un deploy.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · el camino degradado ya está escrito</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final readonly class ProductRecommendations
+{
+    public function __construct(
+        private FeatureFlags $flags,
+        private RecommenderClient $recommender,
+        private BestSellers $bestSellers,
+    ) {}
+
+    public function forUser(string $userId): array
+    {
+        if (!$this-&gt;flags-&gt;isEnabled('ops-recomendaciones-externas', new FlagContext($userId))) {
+            return $this-&gt;bestSellers-&gt;top(10);
+        }
+
+        return $this-&gt;recommender-&gt;forUser($userId);
+    }
+}</code></pre>
+          </div>
+          <p>Dos condiciones: el camino degradado existe y está probado <em>antes</em> del incidente, y el valor se cambia en caliente. Si las reglas viven en un fichero dentro de la imagen, cambiarlas es desplegar; el origen de un kill switch es una base de datos, Redis o un servicio de flags, con una caché corta delante.</p>
+
+          <h2 id="openfeature">
+            OpenFeature: el estándar
+            <a href="#openfeature" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Cuando las reglas crecen (segmentos, auditoría de quién cambió qué) toca un servicio de flags. <strong>OpenFeature</strong> es el estándar abierto de la CNCF para hablar con cualquiera de ellos con la misma API, y tiene SDK oficial de PHP: <code>open-feature/sdk</code> (versión 2.3 en octubre de 2026). Cada servicio se conecta con un <em>provider</em>, como <code>open-feature/flagd-provider</code>.</p>
+          <p>Como tu código ya depende de <code>FeatureFlags</code>, adoptarlo es escribir un adaptador más:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · el adaptador de OpenFeature</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+use OpenFeature\implementation\flags\EvaluationContext;
+use OpenFeature\interfaces\flags\Client;
+
+final readonly class OpenFeatureFlags implements FeatureFlags
+{
+    public function __construct(private Client $client) {}
+
+    public function isEnabled(string $flag, FlagContext $context): bool
+    {
+        return $this-&gt;client-&gt;getBooleanValue($flag, false, new EvaluationContext($context-&gt;userId));
+    }
+}</code></pre>
+          </div>
+          <p>El cliente sale de <code>OpenFeatureAPI::getInstance()-&gt;getClient()</code>, y el provider se registra una vez con <code>setProvider()</code>. Sin provider, el SDK usa uno que no hace nada y devuelve el valor por defecto: el <code>false</code> del segundo argumento. Lo mismo ocurre si el provider lanza una excepción, así que el valor por defecto debe ser siempre el camino seguro.</p>
+
+          <h2 id="deuda">
+            La deuda: cada flag nace con fecha de retirada
+            <a href="#deuda" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Cada flag duplica los caminos del código: con diez vivas hay más combinaciones de las que nadie prueba. Por eso una flag de release se crea con tres datos escritos en la misma pull request: <strong>dueño</strong>, <strong>fecha de retirada</strong> y el issue que la retira.</p>
+          <p>Retirarla tiene un orden: unos días al 100&nbsp;% y, en otro deploy, se borran la condición, el camino viejo y la regla, como en expandir y contraer. Si <code>grep -rn "checkout-v2" src/ tests/ config/</code> no devuelve nada, ya no queda código que la lea; el camino viejo no lleva su nombre y se comprueba aparte.</p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Errores típicos</p>
+              <ul>
+                <li><strong>Sortear en cada petición.</strong> <code>random_int()</code> o <code>mt_rand()</code> hacen que el usuario cambie de bando al recargar. La cubeta sale de un hash de su id.</li>
+                <li><strong>Reutilizar el nombre de una flag retirada.</strong> El código viejo que aún corre en alguna réplica la lee y se enciende algo que nadie esperaba.</li>
+                <li><strong>Un kill switch que nadie ha pulsado.</strong> El camino degradado nunca se ejecutó y falla justo en el incidente.</li>
+                <li><strong>Flags dentro de flags.</strong> Un <code>if</code> de una flag dentro del de otra multiplica los casos y hace imposible saber qué ve un usuario.</li>
+                <li><strong>Esconder un cambio de esquema tras una flag.</strong> La flag apaga código, no migraciones: la base de datos sigue necesitando <a href="inf-despliegues-sin-caida.html#expandir-contraer">expandir y contraer</a>.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="probar">
+            Cómo probar los dos caminos
+            <a href="#probar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Mientras la flag viva, los dos caminos son producción. Gracias a la interfaz, en el test no hace falta ningún servicio: basta un fake que devuelva lo que pidas, como los de <a href="test-doubles.html">dobles de test</a>, y un data provider que ejecute el mismo test con la flag encendida y apagada.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · tests/CheckoutTest.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\TestCase;
+
+final readonly class FixedFeatureFlags implements FeatureFlags
+{
+    public function __construct(private array $enabledFlags) {}
+
+    public function isEnabled(string $flag, FlagContext $context): bool
+    {
+        return in_array($flag, $this-&gt;enabledFlags, true);
+    }
+}
+
+final readonly class Checkout
+{
+    public function __construct(private FeatureFlags $flags) {}
+
+    public function engine(string $userId): string
+    {
+        if ($this-&gt;flags-&gt;isEnabled('checkout-v2', new FlagContext($userId))) {
+            return 'v2';
+        }
+
+        return 'v1';
+    }
+}
+
+final class CheckoutTest extends TestCase
+{
+    #[DataProvider('bothPaths')]
+    public function testUsesTheEngineTheFlagSelects(array $enabledFlags, string $expectedEngine): void
+    {
+        $checkout = new Checkout(new FixedFeatureFlags($enabledFlags));
+
+        self::assertSame($expectedEngine, $checkout-&gt;engine('u-1042'));
+    }
+
+    public static function bothPaths(): iterable
+    {
+        yield 'flag encendida' =&gt; [['checkout-v2'], 'v2'];
+        yield 'flag apagada' =&gt; [[], 'v1'];
+    }
+}</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · los dos caminos, en verde</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">$ vendor/bin/phpunit --testdox tests
+
+Checkout
+ ✔ Uses the engine the flag selects with data set "flag encendida"
+ ✔ Uses the engine the flag selects with data set "flag apagada"
+
+OK (2 tests, 2 assertions)</code></pre>
+          </div>
+          <p>Al retirar la flag, el caso <code>flag apagada</code> se va con ella. Y para la cubeta, un test con dos o tres ids fijos impide cambiar el hash sin darse cuenta, que cambiaría de bando a todos los usuarios a la vez.</p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Pon una flag cuando…</h4>
+              <ul>
+                <li>Una funcionalidad necesita varios merges a <code>main</code> antes de estar lista</li>
+                <li>Quieres lanzar a un porcentaje y mirar las métricas antes de seguir</li>
+                <li>Dependes de un servicio externo que puede caerse y tienes un camino degradado</li>
+                <li>El lanzamiento tiene fecha de negocio y no quieres atarlo a un deploy</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No la pongas cuando…</h4>
+              <ul>
+                <li>El cambio es pequeño y cabe en un solo merge: la flag cuesta más que el riesgo</li>
+                <li>Es un arreglo urgente: un fix tras una flag apagada no arregla nada</li>
+                <li>El cambio es de esquema o de contrato de API: eso se resuelve con compatibilidad hacia atrás</li>
+                <li>Nadie va a apuntar fecha de retirada ni dueño</li>
+              </ul>
+            </div>
+          </div>
+          <p>Entre una flag y una rama larga, gana casi siempre la flag: integras a diario con el riesgo apagado. Entre una flag y un canary, mira qué proteges: el canary cubre la versión nueva entera; la flag, una funcionalidad concreta. Para funciones por plan de pago, mejor un sistema de permisos con sus tests. Y si basta con un valor por entorno, <a href="config-y-entornos.html">Configuración y entornos</a> lo resuelve sin servicio de flags.</p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una feature flag separa desplegar (qué código corre) de lanzar (qué ve cada usuario), y convierte muchas vueltas atrás en un cambio de configuración.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Release, experimento, operación y permiso se distinguen por su vida y por quién las mueve; solo las dos últimas son permanentes.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El código pregunta a una interfaz propia; el origen de las reglas (array, Redis, OpenFeature) cambia sin tocar el negocio, y una flag desconocida devuelve el camino seguro.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El rollout por porcentaje usa un hash estable de flag y usuario: el mismo usuario cae siempre en el mismo lado y subir el porcentaje solo añade gente.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Cada flag de release nace con dueño y fecha de retirada, y mientras vive se prueban los dos caminos.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="despliegue-continuo.html">
+              <small>← Anterior</small>
+              <b>Despliegue continuo</b>
+            </a>
+            <a href="../cursos.html" class="next">
+              <small>Fin del curso →</small>
+              <b>Ver todos los cursos</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

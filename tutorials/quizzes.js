@@ -1002,6 +1002,14 @@ window.MENTORAI_QUIZZES = {
       o: ["Son lo mismo; «continuo» y «continua» nombran el mismo proceso automatizado", "En entrega continua alguien decide el paso a producción; en despliegue continuo es automático", "La entrega continua requiere aprobación del cliente; el despliegue continuo, del equipo", "La entrega continua es para equipos pequeños; el despliegue continuo, para los grandes"], a: 1,
       w: "La diferencia es solo dónde está el botón. En entrega continua todo está listo y alguien decide cuándo; en despliegue continuo, pasar los tests es la decisión. Lo segundo exige mucha confianza en la suite y buena observabilidad.",
       lesson: "despliegue-continuo" },
+    { id: "q7ee09f", q: "Lanzáis un buscador nuevo al 20 % con una feature flag. Soporte recibe quejas: algunos usuarios ven el buscador nuevo, recargan la página y les sale el viejo. ¿Cuál es la causa más probable?",
+      o: ["El porcentaje es tan bajo que el reparto no se estabiliza","El hash incluye el nombre de la flag además del id","La flag se evalúa en el servidor y no en el navegador","La cubeta se sortea en cada petición, sin hash del id"], a: 3,
+      w: "Si la flag tira el dado en cada petición, el mismo usuario cambia de bando al recargar. Un hash del id da siempre la misma cubeta con cualquier porcentaje, e incluir la flag en él solo evita que el mismo grupo pruebe todas las flags.",
+      lesson: "feature-flags" },
+    { id: "q7972a7", q: "En pleno incidente apagas en el panel del servicio de flags el kill switch de un proveedor externo caído, pero la aplicación sigue llamándolo durante diez minutos más. ¿Qué revisas primero?",
+      o: ["El deploy que debe acompañar a cada cambio de flag","El hash que mantiene a cada usuario en su cubeta","El TTL de la caché que guarda las flags en la app","El porcentaje de rollout que tenía la flag de operación"], a: 2,
+      w: "Con un servicio de flags el cambio no necesita deploy, y un kill switch apagado afecta a todos sin importar cubeta ni porcentaje. Diez minutos de retraso apuntan a una caché de flags demasiado larga para un interruptor de emergencia.",
+      lesson: "feature-flags" },
   ]},
 
   /* -------- Terminal y Linux (15) -------- */

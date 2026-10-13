@@ -5112,4 +5112,19 @@ window.ACADEMIA_TUTORIALS = [
     status: "published",
     date: "2026-10-12",
   },
+  {
+    slug: "feature-flags",
+    title: "Feature flags: separar desplegar de lanzar",
+    description:
+      "El código llega a producción apagado y se enciende cuando toca: tipos de flag, evaluarlas en PHP detrás de una interfaz propia, rollout por porcentaje con un hash estable del usuario, kill switch, OpenFeature y la deuda de las flags que nadie retira.",
+    href: "tutorials/feature-flags.html",
+    categories: ["devops"],
+    topic: "CI/CD",
+    tags: ["Feature flags", "Deploy", "Rollout", "OpenFeature"],
+    level: "Intermedio",
+    minutes: 25,
+    icon: "bolt",
+    status: "published",
+    date: "2026-10-12",
+  },
 ];

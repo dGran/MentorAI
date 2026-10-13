@@ -378,6 +378,7 @@ window.MENTORAI_COURSES = [
       "pipeline-anatomia",
       "ci-para-php",
       "despliegue-continuo",
+      "feature-flags",
     ],
   },
   {

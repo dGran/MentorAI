@@ -52,7 +52,7 @@ window.MENTORAI_QUIZ_SUMMARY = {
     "passingScore": null
   },
   "ci-cd": {
-    "total": 10,
+    "total": 12,
     "passingScore": null
   },
   "terminal-linux": {

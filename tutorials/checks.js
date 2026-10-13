@@ -3357,4 +3357,15 @@ window.MENTORAI_CHECKS = {
       o: ["Porque GIN solo se usa con `to_tsquery`, no con `websearch_to_tsquery`","Porque con esas filas el planificador prefiere leer la tabla entera","Porque la expresión consultada no es la misma que la indexada"], a: 2,
       w: "El planificador solo usa un índice si la expresión del WHERE coincide con la indexada. Consulta `busqueda @@ ...`, no un `to_tsvector` distinto." },
   ],
+  "feature-flags": [
+    { id: "c93c836", q: "Quieres encender checkout-v2 para el 10 % de los usuarios. ¿Cómo decides si un usuario entra?",
+      o: ["Con random_int() en cada petición del usuario","Con un hash estable del id de usuario y la flag","Con la réplica que atiende la petición, como el canary"], a: 1,
+      w: "Sortear en cada petición cambia de bando al usuario al recargar, y la réplica reparte peticiones, no usuarios. El hash de flag e id da siempre la misma cubeta, y subir el porcentaje solo añade gente." },
+    { id: "c08e446", q: "Las recomendaciones de un servicio externo tardan ocho segundos y arrastran la ficha de producto. ¿Qué flag te saca del paso sin desplegar?",
+      o: ["Una flag de release que despliega la versión anterior","Una flag de experimento que mide qué variante carga antes","Una flag de operación con camino degradado"], a: 2,
+      w: "Es un kill switch: quien está de guardia la apaga y la página sirve, por ejemplo, los más vendidos. Una flag no despliega nada, y un experimento mide variantes, no corta una dependencia que falla." },
+    { id: "ce0e004", q: "checkout-v2 lleva tres semanas al 100 % sin incidencias. ¿Qué toca ahora?",
+      o: ["Borrar la condición, el camino viejo y la regla","Dejarla encendida para poder volver atrás si algo falla","Borrar solo la regla, que ya no se consulta"], a: 0,
+      w: "Una flag de release que se queda es deuda. Borrar solo la regla es peor: una flag desconocida devuelve false y todos vuelven al checkout viejo. Se retiran la condición, el camino viejo y la regla en un deploy." },
+  ],
 };
