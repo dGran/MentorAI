@@ -159,7 +159,7 @@
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
-            <pre><code data-lang="bash">composer require open-telemetry/sdk open-telemetry/exporter-otlp
+            <pre><code data-lang="bash">composer require open-telemetry/sdk open-telemetry/exporter-otlp guzzlehttp/guzzle
 
 export OTEL_PHP_AUTOLOAD_ENABLED=true
 export OTEL_SERVICE_NAME=checkout
@@ -243,7 +243,7 @@ try {
           <p>Escribir un span por cada consulta y llamada HTTP no escala. La extensión <code>opentelemetry</code> engancha funciones de PHP por fuera, y unos paquetes por librería usan esos ganchos para crear spans sin tocar tu código:</p>
           <div class="code-block">
             <div class="code-block__head">
-              <span class="code-block__lang">bash · extensión y paquete de Guzzle</span>
+              <span class="code-block__lang">bash · extensión (imagen oficial de PHP) y paquete de Guzzle</span>
               <button class="copy-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 <span class="copy-btn__label">Copiar</span>
@@ -302,6 +302,7 @@ composer require open-telemetry/opentelemetry-auto-guzzle</code></pre>
     ports:
       - "4317:4317"
       - "4318:4318"
+      - "8889:8889"
     depends_on:
       - jaeger</code></pre>
           </div>
@@ -450,7 +451,7 @@ export OTEL_TRACES_SAMPLER_ARG=0.1</code></pre>
             <a href="#sli" class="anchor" aria-hidden="true">#</a>
           </h2>
           <p>Qué es un SLO, el error budget y cómo alertar por ritmo de consumo está en <a href="alerting.html#slo">Alerting</a>. Las trazas aportan la materia prima: cada span de servidor es una petición con duración y estado, medida donde la vive el usuario.</p>
-          <p>El conector <code>span_metrics</code> del collector convierte spans en métricas de Prometheus. La trampa está en el orden: si cuentas después del muestreo por cola, guardas el 100 % de los errores y el 5 % del resto, y la tasa de error sale inflada. Por eso va en un pipeline propio que recibe todos los spans:</p>
+          <p>El conector <code>span_metrics</code> del collector convierte spans en métricas de Prometheus. La trampa está en el orden: si cuentas después del muestreo por cola, guardas el 100 % de los errores y el 5 % del resto, y la tasa de error sale inflada. Por eso va en un pipeline propio que recibe todos los spans, y con <code>resource_metrics_key_attributes</code>: cada proceso PHP lleva su <code>process.pid</code> en el recurso y, sin limitar la clave, cada uno abre su propio contador y Prometheus solo ve el último:</p>
           <div class="code-block">
             <div class="code-block__head">
               <span class="code-block__lang">yaml · otel-collector.yaml (pipelines)</span>
@@ -461,6 +462,7 @@ export OTEL_TRACES_SAMPLER_ARG=0.1</code></pre>
             </div>
             <pre><code data-lang="yaml">connectors:
   span_metrics:
+    resource_metrics_key_attributes: [service.name]
     histogram:
       explicit:
         buckets: [100ms, 300ms, 500ms, 1s, 2s]
@@ -511,10 +513,10 @@ sum(rate(traces_span_metrics_duration_milliseconds_count{service_name="checkout"
               <p class="callout__title">Lo que se ve en cuanto lo montas</p>
               <ul>
                 <li><strong>Olvidar <code>OTEL_PHP_AUTOLOAD_ENABLED</code>.</strong> Sin ella, <code>Globals</code> devuelve un <code>NoopTracerProvider</code>: todo compila, nada falla y el id de traza es una ristra de ceros.</li>
-                <li><strong><code>traceidratio</code> sin <code>parentbased_</code>.</strong> Cada servicio tira su propio dado y las trazas llegan a Jaeger con huecos.</li>
+                <li><strong><code>traceidratio</code> sin <code>parentbased_</code>.</strong> Cada servicio vuelve a decidir con su propio porcentaje: si el anterior guardó la traza con otra regla u otro porcentaje, el hijo la descarta y las trazas llegan a Jaeger con huecos.</li>
                 <li><strong>Calcular el SLI con trazas ya muestreadas.</strong> El muestreo por cola guarda todos los errores y unas pocas correctas: la tasa de error sale disparada.</li>
                 <li><strong>Exportar lejos del proceso.</strong> Con el destino caído, un script que tardaba 0,09 s tardó 0,6 s en terminar mientras el exportador reintentaba. Un collector cerca de la aplicación absorbe eso.</li>
-                <li><strong>Instalar los paquetes <code>auto-*</code> sin la extensión.</strong> PHP solo da un aviso y no crea ningún span.</li>
+                <li><strong>Desplegar los paquetes <code>auto-*</code> en una imagen sin la extensión.</strong> Composer se niega a instalarlos sin ella, pero si <code>vendor/</code> se construyó en otra imagen o con <code>--ignore-platform-reqs</code>, PHP solo da un aviso y no crea ningún span.</li>
               </ul>
             </div>
           </div>

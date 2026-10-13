@@ -3297,7 +3297,7 @@ window.MENTORAI_CHECKS = {
       w: "Sin esa variable, Globals devuelve un NoopTracerProvider: nada falla y nada se registra. Una traza no muestreada sí tiene un id real, y un collector caído da un error al exportar, no ceros." },
     { id: "cac7d65", q: "¿Por qué conviene parentbased_traceidratio en vez de traceidratio a secas?",
       o: ["Porque decide al final de la traza, cuando ya sabe si hubo error","Porque cada servicio guarda su propio 10 % de forma independiente","Porque respeta la decisión del servicio anterior y evita huecos"], a: 2,
-      w: "Con traceidratio a secas cada servicio tira su propio dado: en la prueba, un hijo de un traceparent con flag 01 se descartó. Decidir al final es el muestreo por cola, que vive en el collector." },
+      w: "Con traceidratio a secas cada servicio vuelve a decidir con su propio porcentaje e ignora la decisión del anterior: en la prueba, un hijo de un traceparent con flag 01 se descartó. Decidir al final es el muestreo por cola, que vive en el collector." },
     { id: "cd85a3a", q: "Quieres sacar el SLI de disponibilidad con el conector span_metrics del collector. ¿Dónde lo pones?",
       o: ["En el pipeline que recibe los spans después del muestreo por cola","En un pipeline propio que recibe todos los spans sin muestrear","En el SDK de PHP, para que cada proceso calcule su tasa"], a: 1,
       w: "El muestreo por cola guarda todos los errores y unas pocas correctas: contar después infla la tasa de error. Por eso span_metrics va en un pipeline aparte que ve el 100 % de los spans." },
