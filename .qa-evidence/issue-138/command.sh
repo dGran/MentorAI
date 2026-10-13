@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-cd "$(git rev-parse --show-toplevel)"
-node .qa-evidence/issue-138/qa-texto.js "${1:-/tmp/qa-138}" "${2:-http://localhost:8000}" docker-buenas-practicas\|La\ de\ PHP\ no:\ solo\ tiene\ la\ familia\ Debian\|Recortada:\ solo\ lo\ esencial git-comandos-esenciales\|Decídelo\ una\ vez\ con\|los\ integra\ en\ tu\ rama\ \(fetch\ +\ merge\). docker-compose\|image:\ mysql:8.4\|image:\ mysql:8.3 php-en-docker\|image:\ nginx:1.30-alpine\|image:\ nginx:1.27-alpine k8s-kubectl-y-manifiestos\|kind.sigs.k8s.io/dl/v0.33.0/kind-linux-amd64\|kind.sigs.k8s.io/dl/latest/kind-linux-amd64 ci-cd-que-es\|uses:\ actions/checkout@v7\|uses:\ actions/checkout@v4 pipeline-anatomia\|uses:\ actions/cache@v6\|uses:\ actions/cache@v4 ci-para-php\|el\ job\ tiene\ que\ autenticarse\|uses:\ actions/cache@v4 dockerfile-y-capas\|La\ imagen\ oficial\ de\ PHP\ no\ trae\ Composer\|
