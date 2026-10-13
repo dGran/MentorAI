@@ -221,6 +221,8 @@ declare(strict_types=1);
 namespace App\MessageHandler;
 
 use App\Message\EnviarFactura;
+use App\Pedido\Facturas;
+use App\Pedido\Pedidos;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler]
@@ -250,7 +252,7 @@ final readonly class EnviarFacturaHandler
             <code>#[AsMessageHandler]</code> registra la clase sin tocar configuración, y el tipo
             del argumento de <code>__invoke</code> dice qué mensaje atiende. El <code>if</code> es el
             consumidor idempotente de <a href="sd-garantias-de-entrega.html">las garantías de
-            entrega</a>: si el worker muere tras enviar y antes de confirmar, el mensaje vuelve.
+            entrega</a>: si el worker muere tras marcar la factura y antes de confirmar el mensaje, este vuelve y el <code>if</code> lo descarta. Entre enviar y marcar queda una ventana pequeña: un correo no se deshace.
           </p>
 
           <div class="code-block">
@@ -495,7 +497,7 @@ php bin/console messenger:stop-workers</code></pre>
             En los tests no quieres un worker ni una base de datos: quieres saber que confirmar un
             pedido <strong>encola</strong> la factura, no que la envía. El transport
             <code>in-memory://</code> del bloque <code>when@test</code> guarda los mensajes en un
-            array, y Symfony lo vacía entre tests de <code>KernelTestCase</code>.
+            array, y Symfony lo vacía entre tests de <code>KernelTestCase</code>. El test pide <code>ConfirmarPedido</code> al contenedor, así que algún controlador o comando tiene que inyectarlo: si nadie lo usa, Symfony lo elimina al compilar.
           </p>
 
           <div class="code-block">
