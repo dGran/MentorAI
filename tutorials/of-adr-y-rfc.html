@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ADR y RFC: dejar las decisiones por escrito — MentorAI</title>
+    <meta name="description" content="Cómo registrar decisiones técnicas con ADR (Nygard y MADR), pedir opinión antes de decidir con un RFC y sustituir un ADR sin borrarlo." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Oficio</span>
+        </nav>
+        <h1 class="tutorial-hero__title">ADR y RFC: dejar las decisiones por escrito</h1>
+        <p class="tutorial-hero__lead">Alguien pregunta por qué los importes van en céntimos y nadie del equipo actual lo sabe. La decisión se tomó, pero se tomó en una reunión. Un ADR de una página habría contestado en un minuto; un RFC habría dejado claro qué se descartó y por qué.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            26 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">Por qué las decisiones se pierden</a></li>
+            <li><a href="#adr">El ADR: una decisión, una página</a></li>
+            <li><a href="#donde">Dónde viven: en el repo y numerados</a></li>
+            <li><a href="#codigo">El código que no explica su porqué</a></li>
+            <li><a href="#rfc">El RFC: pedir opinión antes de decidir</a></li>
+            <li><a href="#cerrar">Pedir y cerrar la discusión</a></li>
+            <li><a href="#superseder">Cambiar de opinión sin borrar</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            El código dice qué hace el sistema. Los tests dicen qué tiene que seguir haciendo. Ninguno de los dos dice por qué se eligió así y qué se descartó por el camino. Esa tercera pieza es la que más rápido se pierde, y la más cara de reconstruir.
+          </p>
+          <h2 id="problema">
+            Por qué las decisiones se pierden
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En la tienda, los pedidos guardan los importes como enteros en céntimos. Lo decidió hace dos años alguien que ya no está, tras un descuadre de un céntimo que costó una semana encontrar (el porqué técnico, en <a href="numeros-flotantes.html">números en coma flotante</a>). Hoy alguien nuevo ve <code>int $precio</code>, lo encuentra raro y abre un PR para pasarlo a <code>float</code>, «que se lee mejor en las plantillas».
+          </p>
+          <p>
+            El problema no es la persona nueva: hace lo razonable con la información que tiene. El problema es dónde vivía el porqué:
+          </p>
+          <ul>
+            <li><strong>En una reunión</strong>, que no deja rastro buscable.</li>
+            <li><strong>En un hilo de chat</strong>, enterrado entre cientos de mensajes.</li>
+            <li><strong>En un commit</strong>, que explica el cambio pero no las alternativas.</li>
+            <li><strong>En la cabeza de alguien</strong>, que un día se va.</li>
+          </ul>
+          <p>
+            Sin el porqué, a cada decisión antigua le quedan dos destinos malos: se respeta a ciegas aunque ya no tenga sentido, o se revierte a ciegas y se repite el error que la motivó. Escribirla corta los dos.
+          </p>
+          <h2 id="adr">
+            El ADR: una decisión, una página
+            <a href="#adr" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un <strong>ADR</strong> (<em>Architecture Decision Record</em>) es un documento corto que registra <strong>una</strong> decisión con su contexto y sus consecuencias. La forma más extendida la propuso Michael Nygard en 2011, en el artículo «Documenting Architecture Decisions», y cabe en cinco apartados:
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Apartado</th><th>Qué lleva</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Título</td><td>Número y frase corta: «3. Importes en céntimos enteros».</td></tr>
+                <tr><td>Estado</td><td>Propuesto, aceptado, obsoleto o sustituido por otro ADR.</td></tr>
+                <tr><td>Contexto</td><td>Las fuerzas en juego, contadas sin tomar partido: qué pasaba, qué limitaba.</td></tr>
+                <tr><td>Decisión</td><td>Lo que se hará, en voz activa y frases completas.</td></tr>
+                <tr><td>Consecuencias</td><td>Todo lo que cambia después, también lo malo.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            El apartado que más se descuida es el último. Un ADR que solo lista ventajas es un folleto: quien lo lea dentro de dos años necesita saber qué coste se aceptó a sabiendas.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">markdown · docs/adr/0003-importes-en-centimos-enteros.md (proyecto ficticio «tienda»)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code># 3. Importes en céntimos enteros
+
+Fecha: 2024-03-02
+Estado: Aceptado
+
+## Contexto
+
+La tienda calcula totales, descuentos e IVA por línea. Con float, la suma
+de las líneas redondeadas no siempre cuadra con el total del pedido: en
+febrero hubo un descuadre de un céntimo que tardamos una semana en
+encontrar. La pasarela de pagos ya recibe los importes en céntimos.
+
+## Decisión
+
+Guardaremos y operaremos todo importe como un entero en céntimos (int en
+PHP, BIGINT en la base de datos). Solo la capa de presentación lo formatea.
+
+## Consecuencias
+
+- Desaparecen las diferencias de redondeo entre las líneas y el total.
+- Cada nombre lleva su unidad: precioUnitarioEnCentimos, totalEnCentimos.
+- Plantillas y exportaciones dividen entre 100 al mostrar; hay que
+  revisarlas todas en la migración.
+- Si vendemos en una moneda sin céntimos, esta decisión se revisa.</code></pre>
+          </div>
+          <p>
+            <strong>MADR</strong> (<em>Markdown Architectural Decision Records</em>; en la versión 3 se llamó «Any Decision Records») es una plantilla más estructurada que añade lo que Nygard deja implícito: los criterios que pesaron en la decisión, las opciones consideradas con sus pros y contras, y cómo se confirmará que se cumple. Úsala cuando la decisión tuvo rivales serios; para decisiones de un párrafo, la de Nygard basta.
+          </p>
+          <h2 id="donde">
+            Dónde viven: en el repo y numerados
+            <a href="#donde" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Los ADR van <strong>en el repositorio</strong>, en una carpeta como <code>docs/adr/</code>, en Markdown. Se versionan con el código que justifican, se revisan en el mismo PR y se encuentran con <code>grep</code>; una wiki aparte envejece sola.
+          </p>
+          <p>
+            Se <strong>numeran en orden y el número no se reutiliza</strong>, como ya proponía Nygard. El número es un identificador estable para citarlo desde el código o un PR («eso lo cubre el 0003»).
+          </p>
+          <h2 id="codigo">
+            El código que no explica su porqué
+            <a href="#codigo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Esta es la línea de pedido de la tienda antes del ADR. Funciona, pero nada en ella dice que el entero es deliberado ni en qué unidad está:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · src/Pedidos/LineaPedido.php (antes)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace Tienda\Pedidos;
+
+final class LineaPedido
+{
+    public function __construct(
+        private readonly string $sku,
+        private readonly int $unidades,
+        private readonly int $precio,
+    ) {
+    }
+
+    public function total(): int
+    {
+        return $this-&gt;unidades * $this-&gt;precio;
+    }
+}</code></pre>
+          </div>
+          <p>
+            Después, la unidad está en el nombre y la clase apunta a la decisión. La referencia no repite el razonamiento, que vive en un solo sitio: solo dice dónde buscarlo.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · src/Pedidos/LineaPedido.php (después)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace Tienda\Pedidos;
+
+/**
+ * @see docs/adr/0003-importes-en-centimos-enteros.md
+ */
+final class LineaPedido
+{
+    public function __construct(
+        private readonly string $sku,
+        private readonly int $unidades,
+        private readonly int $precioUnitarioEnCentimos,
+    ) {
+    }
+
+    public function totalEnCentimos(): int
+    {
+        return $this-&gt;unidades * $this-&gt;precioUnitarioEnCentimos;
+    }
+}</code></pre>
+          </div>
+          <p>
+            Ahora el PR que pasa a <code>float</code> se responde con un enlace, no con una discusión de memoria. Y si el contexto ha cambiado de verdad, ese PR deja de ser un cambio de tipo y pasa a ser un ADR nuevo.
+          </p>
+          <h2 id="rfc">
+            El RFC: pedir opinión antes de decidir
+            <a href="#rfc" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El ADR registra una decisión tomada. Cuando la decisión <strong>todavía no está tomada</strong> y necesita la opinión de otros, lo que se escribe antes es un <strong>RFC</strong> (<em>Request for Comments</em>) o documento de diseño. El nombre viene de las RFC de Internet, la primera de 1969; en un equipo es más modesto: un documento que pide críticas antes de gastar el esfuerzo.
+          </p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>ADR</h4>
+              <ul>
+                <li>Registra una decisión ya tomada</li>
+                <li>Una página, lectura de un minuto</li>
+                <li>Se queda en el repo para siempre</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>RFC</h4>
+              <ul>
+                <li>Abre una decisión que aún no se ha tomado</li>
+                <li>Más largo: opciones, costes y dudas</li>
+                <li>Se cierra con una resolución, que suele acabar en un ADR</li>
+              </ul>
+            </div>
+          </div>
+          <p>
+            Lo que lo hace útil es que obliga a separar el problema de la solución favorita del autor. Si no puedes escribir dos opciones honestas con sus costes, aún no entiendes el problema.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">markdown · docs/rfc/0004-reintentos-de-cobro.md (proyecto ficticio «tienda»)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code># RFC 4: Reintentos de cobro cuando falla la pasarela
+
+Estado: En discusión
+Decide: responsable de pagos
+Revisan: Lucía (pagos), Marcos (almacén), soporte
+Comentarios hasta: 2026-10-24
+
+## Problema
+
+El 2 % de los cobros falla por un timeout de la pasarela. Hoy el pedido
+queda en «pago pendiente» y el cliente reintenta a mano; algunos pagan dos
+veces porque el primer cobro sí había entrado.
+
+## Opciones
+
+A. Reintentar en el momento, tres veces. Coste: poco código; el cliente
+   espera más y el riesgo de doble cobro sigue si no hay idempotencia.
+B. Cobro asíncrono con clave de idempotencia y cola de reintentos.
+   Coste: una cola nueva y un estado más en el pedido; unas dos semanas.
+C. No hacer nada y conciliar a mano cada lunes. Coste: horas de soporte
+   y devoluciones; cero desarrollo.
+
+## Propuesta
+
+B, empezando por la clave de idempotencia, que ya corta el doble cobro.
+
+## Preguntas abiertas
+
+- ¿Admite la pasarela claves de idempotencia en todos los métodos de pago?
+- ¿Cuánto puede esperar un pedido en «cobrando» antes de liberar el stock?</code></pre>
+          </div>
+          <p>
+            Fíjate en la opción C: «no hacer nada» casi siempre es una opción real, con su coste, y escribirla evita que la propuesta se compare solo contra alternativas peores. Cómo contar esos costes a quien decide es el tema de <a href="of-comunicar-trade-offs.html">comunicar trade-offs</a>.
+          </p>
+          <h2 id="cerrar">
+            Pedir y cerrar la discusión
+            <a href="#cerrar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un RFC sin cierre se convierte en un hilo eterno. Tres datos en la cabecera lo evitan:
+          </p>
+          <ul>
+            <li><strong>A quién se pide opinión</strong>, con nombres. «Comentad lo que queráis» produce silencio o cuarenta comentarios de estilo.</li>
+            <li><strong>Hasta cuándo</strong>. Una fecha concreta, de unos días a una semana según el alcance.</li>
+            <li><strong>Quién decide</strong>. Consenso no significa unanimidad: se escucha a todos y decide una persona o un rol con nombre.</li>
+          </ul>
+          <p>
+            Una forma práctica es abrir el RFC como PR contra <code>docs/rfc/</code>: los comentarios quedan en las líneas que discuten, como en una <a href="of-code-review.html">code review</a>. Al llegar la fecha, quien decide escribe la resolución en el documento, cambia su estado y la decisión se registra como ADR. Un RFC rechazado también se guarda: es la respuesta a «¿por qué no hicimos B?».
+          </p>
+          <h2 id="superseder">
+            Cambiar de opinión sin borrar
+            <a href="#superseder" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un año después, la tienda empieza a vender en yenes, que no tienen céntimos: se cumple la consecuencia que el 0003 dejó anotada. Lo tentador es editar el 0003 y cambiar la decisión. No se hace: un ADR aceptado es un registro histórico, y reescribirlo borra justo lo que se quería conservar.
+          </p>
+          <p>
+            Se escribe el <strong>0011, «Importes en la unidad mínima de cada moneda»</strong>, con estado aceptado y una línea «Sustituye a 0003». En el 0003 solo se toca el estado: «Sustituido por 0011». Quien llegue al viejo sabe que ya no manda y adónde ir; quien lea el nuevo sabe de dónde viene.
+          </p>
+          <p>
+            Aplicar el 0011 ya es otro trabajo. Si toca código sin tests, empieza fijando lo que hace hoy con <a href="tests-de-caracterizacion.html">tests de caracterización</a>; y si se aplaza, el código que aún sigue el 0003 es <a href="of-deuda-tecnica.html">deuda técnica</a> con nombre y número, que es la forma más fácil de negociarla.
+          </p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>RFC en discusión</b><small>Opciones, costes y fecha de cierre</small></span>
+              </div>
+              <div class="flow__arrow" data-label="decide el responsable"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>ADR aceptado</b><small>La decisión y sus consecuencias</small></span>
+              </div>
+              <div class="flow__arrow" data-label="cambia el contexto"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Un ADR nuevo lo sustituye</b><small>El viejo sigue ahí, con su nuevo estado</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">El ciclo de vida de una decisión: nada se borra, solo cambia de estado.</p>
+          </div>
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que convierte los ADR en papel muerto</p>
+              <ul>
+                <li><strong>Escribirlos a posteriori, en bloque.</strong> Reconstruyen el qué, pero el contexto real ya se ha olvidado.</li>
+                <li><strong>Un ADR por cada cosa.</strong> Si hay cien, nadie lee ninguno.</li>
+                <li><strong>Consecuencias solo positivas.</strong> Sin el coste aceptado, el lector no distingue un efecto previsto de un fallo.</li>
+                <li><strong>Editar un ADR aceptado para cambiar la decisión.</strong> Se pierde la historia. Se sustituye con uno nuevo.</li>
+                <li><strong>Un RFC sin fecha ni responsable.</strong> La discusión no se cierra y la decisión la acaba tomando quien implementa primero.</li>
+                <li><strong>Un RFC con una sola opción.</strong> Es un anuncio con formato de pregunta: los demás no tienen con qué comparar.</li>
+              </ul>
+            </div>
+          </div>
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La prueba de fuego es humana: pregunta a alguien recién llegado por qué una decisión rara es así. Si llega al ADR desde el código en cinco minutos, funciona. Lo mecánico se vigila desde la terminal:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · revisar los ADR de la tienda</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">grep -L '^Estado:' docs/adr/*.md
+
+grep -rhoE 'docs/adr/[0-9]{4}-[a-z0-9-]+\.md' src | sort -u | while read -r adr; do
+  [ -f "$adr" ] || echo "Referencia rota: $adr"
+done
+
+git log --diff-filter=D --name-only --oneline -- docs/adr</code></pre>
+          </div>
+          <p>
+            Las órdenes listan los ADR sin estado, las referencias del código a ADR inexistentes y los ADR borrados, que debería salir vacía. En la review, la pregunta es otra: si el cambio contradice un ADR, ¿trae el que lo sustituye?
+          </p>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Escribe un ADR o un RFC cuando…</h4>
+              <ul>
+                <li>La decisión es cara de revertir: esquema de datos, formato de un contrato, una dependencia central</li>
+                <li>Alguien razonable, sin el contexto, la desharía</li>
+                <li>Se descartaron alternativas serias y el porqué no se ve en el código</li>
+                <li>Afecta a varios equipos o a más de un repositorio (aquí, RFC primero)</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No hace falta cuando…</h4>
+              <ul>
+                <li>El cambio se revierte en una tarde sin efectos fuera del módulo</li>
+                <li>Es la convención por defecto del framework y nadie la discute</li>
+                <li>Es una regla de estilo que ya aplica una herramienta</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La alternativa sencilla</p>
+              <p>
+                Para decisiones pequeñas basta un commit que explique el porqué y un nombre que lleve la intención. Si se discute en cada PR, merece su ADR. Y el mismo hábito de escribir sin buscar culpables lo tienes en el <a href="inf-guardias-y-postmortem.html#postmortem">post mortem</a>.
+              </p>
+            </div>
+          </div>
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El código dice qué hace; el ADR, por qué se eligió así y qué coste se aceptó.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un ADR es una página: título numerado, estado, contexto, decisión y consecuencias, también las malas. MADR añade criterios y opciones comparadas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Viven en el repo, numerados sin reutilizar números, y el código los cita.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El RFC va antes de decidir: problema, opciones con sus costes (incluida «no hacer nada»), propuesta y preguntas abiertas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Toda discusión necesita a quién se pregunta, hasta cuándo y quién decide. La resolución acaba en un ADR.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un ADR aceptado no se edita para cambiar la decisión: se escribe otro que lo sustituye y el viejo solo cambia de estado.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="of-code-review.html">
+              <small>← Anterior</small>
+              <b>Code review: darla y recibirla</b>
+            </a>
+            <a href="of-comunicar-trade-offs.html" class="next">
+              <small>Siguiente →</small>
+              <b>Comunicar trade-offs</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

@@ -1422,4 +1422,45 @@ window.MENTORAI_PRACTICE = {
       },
     },
   ],
+  "oficio-de-ingenieria": [
+    {
+      id: "rfbca22",
+      title: "Escribe el ADR de una decisión que ya tomaste",
+      statement:
+        "Elige una decisión técnica de tu proyecto que se tomó hace meses y que hoy nadie sabe explicar del todo: por qué esa base de datos, por qué esa librería, por qué se guarda así un dato. Escribe su ADR en docs/adr/0001-<titulo>.md con las cinco partes de la plantilla de Nygard: título, estado, contexto, decisión y consecuencias. Escribe el contexto con lo que se sabía entonces, no con lo que sabes hoy, y lista las consecuencias malas además de las buenas. Después pásaselo a alguien del equipo y pregúntale qué le falta para entender la decisión sin preguntarte.",
+      solution:
+        "El contexto es la parte que cuesta: tiende a escribirse con lo que sabes hoy («elegimos X porque Y escala mal», cuando entonces nadie lo había medido), y un ADR que justifica a posteriori no ayuda a nadie a decidir si sigue valiendo. Las consecuencias negativas son las que más valen: son las que dirán, dentro de un año, cuándo hay que reabrir la decisión. Si quien lo lee te hace preguntas, esas respuestas faltaban en el texto. Y si al escribirlo descubres que la decisión ya no se sostiene, no lo borres: escribe el ADR 0002 que la sustituye y marca el 0001 como sustituido, porque el historial de por qué se cambió es justo lo que se perdía.",
+      solutionCode: {
+        lang: "markdown",
+        source:
+          "# 1. Claves de idempotencia en los cobros\n\nEstado: aceptado (2026-03-12)\n\n## Contexto\nUn 2 % de los cobros a la pasarela termina en timeout. Al reintentar, algunos\nclientes recibían dos cargos. La pasarela acepta una cabecera Idempotency-Key\ny guarda la respuesta 24 horas.\n\n## Decisión\nCada intento de cobro lleva como clave el id del pedido más el número de\nintento de pago, generado una vez y guardado antes de llamar a la pasarela;\nlos reintentos reutilizan esa misma clave.\n\n## Consecuencias\n- Un reintento tras un timeout ya no puede cobrar dos veces.\n- Hay que guardar la clave antes de llamar: una escritura más por cobro.\n- Pasadas 24 horas la pasarela olvida la clave: un reintento tan tardío\n  vuelve a ser un cobro nuevo y lo decide una persona.",
+      },
+    },
+    {
+      id: "rb5c99e",
+      title: "Dónde duele el código que heredas",
+      statement:
+        "En un repositorio que no escribiste tú (o uno tuyo de hace tiempo), lista los ficheros que más cambian en el último año dentro de src/, cuántas personas los han tocado y si tienen un test con su nombre. Con esas tres columnas, ordena los cinco primeros por riesgo y decide por cuál empezarías a escribir tests de caracterización antes de tocar nada.",
+      solution:
+        "Lo que más cambia es donde más se va a trabajar, así que es donde un error cuesta más; si además no tiene test y solo lo ha tocado una persona, el riesgo se suma: nadie más lo entiende y nada avisa si se rompe. Ese es el primero para caracterizar. Un fichero muy cambiado con muchos autores y tests es lo contrario: incómodo, pero vigilado. Y uno sin tests que nadie toca puede esperar: el riesgo de un código es cambiarlo, no que exista. El recuento por git log no distingue un cambio grande de una errata, así que es una pista para mirar, no una nota; abre los tres primeros antes de decidir.",
+      solutionCode: {
+        lang: "bash",
+        source:
+          "git log --since=\"12 months ago\" --name-only --format= -- src/ \\\n  | sort | uniq -c | sort -rn \\\n  | while read cambios fichero; do\n      [ -f \"$fichero\" ] || continue\n      autores=$(git shortlog -sn --since=\"12 months ago\" HEAD -- \"$fichero\" | wc -l)\n      base=$(basename \"$fichero\" .php)\n      tests=$(find tests -name \"${base}Test.php\" 2>/dev/null | wc -l)\n      echo \"$cambios cambios · $autores autores · tests: $tests · $fichero\"\n    done | head -5",
+      },
+    },
+    {
+      id: "r936177",
+      title: "Mide tus PRs antes de opinar sobre su tamaño",
+      statement:
+        "Con la CLI de GitHub (gh), saca de tu repositorio los últimos 30 PRs mergeados con sus líneas cambiadas (additions + deletions) y las horas desde que se abrieron hasta que se mergearon. Calcula la mediana de líneas y compara cuánto tardan los PRs por debajo y por encima de ella. ¿Se cumple que los grandes tardan más? ¿Qué PRs grandes salieron rápido y por qué?",
+      solution:
+        "Lo habitual es que los PRs grandes tarden más, y no por la revisión en sí: se quedan esperando a que alguien encuentre un hueco largo para leerlos. Pero el dato también enseña excepciones que no son un problema: un PR enorme de contenido generado, de datos o de un renombrado mecánico puede salir en minutos, porque se revisa por muestreo o con una herramienta. Por eso el tamaño se mira junto a lo que contiene, no como regla ciega, y por eso partir en rebanadas verticales ayuda más que un límite de líneas: un PR pequeño que mezcla dos cosas sigue siendo difícil de revisar.",
+      solutionCode: {
+        lang: "bash",
+        source:
+          "gh pr list --state merged --limit 30 \\\n  --json number,additions,deletions,createdAt,mergedAt \\\n  --jq 'map({n: .number, lineas: (.additions + .deletions),\n            horas: (((.mergedAt | fromdate) - (.createdAt | fromdate)) / 3600 | floor)})\n        | sort_by(.lineas)\n        | (.[length/2|floor].lineas) as $mediana\n        | \"mediana de líneas: \\($mediana)\", (.[] | \"#\\(.n)\\t\\(.lineas) líneas\\t\\(.horas) h\")'",
+      },
+    },
+  ],
 };

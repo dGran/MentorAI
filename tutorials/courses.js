@@ -958,4 +958,32 @@ window.MENTORAI_COURSES = [
       },
     ],
   },
+  {
+    slug: "oficio-de-ingenieria",
+    title: "Oficio de ingeniería",
+    summary:
+      "Lo que rodea al código y decide si un equipo avanza: revisar y dejarse revisar, dejar las decisiones por escrito, contar un trade-off a quien decide, partir y estimar sin mentirse, negociar la deuda técnica y aterrizar en un código que no escribiste. Con plantillas que se copian y casos de un proyecto de ejemplo.",
+    level: "Intermedio",
+    icon: "default",
+    modules: [
+      {
+        title: "Trabajar con otros",
+        summary: "La review, las decisiones por escrito y cómo contar un trade-off a quien tiene que decidir.",
+        lessons: [
+          "of-code-review",
+          "of-adr-y-rfc",
+          "of-comunicar-trade-offs",
+        ],
+      },
+      {
+        title: "Planificar y heredar",
+        summary: "Partir y estimar, la deuda técnica como decisión con intereses y los primeros días en un código heredado.",
+        lessons: [
+          "of-partir-y-estimar",
+          "of-deuda-tecnica",
+          "of-aterrizar-en-legacy",
+        ],
+      },
+    ],
+  },
 ];

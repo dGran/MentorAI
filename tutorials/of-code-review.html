@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Code review: darla y recibirla — MentorAI</title>
+    <meta name="description" content="Qué mirar primero en una review, cómo escribir comentarios accionables con su gravedad, recibirlos sin defenderse y resolver desacuerdos sin desgaste." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Oficio</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Code review: darla y recibirla</h1>
+        <p class="tutorial-hero__lead">Un PR con cuarenta comentarios sobre comas y ninguno sobre el reembolso que se cobra dos veces. Otro que lleva cuatro días esperando un «LGTM». Los dos tienen revisión; ninguno, una review que sirva.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            26 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#para-que">Para qué sirve (y para qué no)</a></li>
+            <li><a href="#que-mirar">Qué mirar primero</a></li>
+            <li><a href="#comentarios">Comentarios accionables</a></li>
+            <li><a href="#tamano">Tamaño y tiempo de respuesta</a></li>
+            <li><a href="#recibir">Recibir una review</a></li>
+            <li><a href="#desacuerdos">Desacuerdos</a></li>
+            <li><a href="#autor">Antes de pedir review</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            La review es la única fase en la que alguien que no escribió el código lo lee entero antes de que llegue a producción. Bien hecha, caza el fallo caro y reparte el conocimiento del sistema. Mal hecha, es un peaje lento que todo el mundo aprende a esquivar.
+          </p>
+
+          <h2 id="para-que">
+            Para qué sirve (y para qué no)
+            <a href="#para-que" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Una review persigue tres cosas: que el cambio sea <strong>correcto</strong>, que el diseño no deje al sistema peor de lo que estaba y que al menos otra persona entienda lo que entra. Esa tercera se olvida y es la que más rinde: el día que el autor esté de vacaciones, alguien más sabrá cómo funciona.
+          </p>
+          <p>Igual de importante es lo que no es:</p>
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Lo que no es</h4>
+              <ul>
+                <li><strong>QA:</strong> el revisor no ejecuta cada caso a mano; eso lo hacen los tests y la fase de QA.</li>
+                <li><strong>Un examen:</strong> no se trata de pillar al autor ni de demostrar cuánto sabe el revisor.</li>
+                <li><strong>Un linter humano:</strong> sangrías y comas las corrige una herramienta.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Lo que sí es</h4>
+              <ul>
+                <li>Una segunda lectura con contexto de negocio.</li>
+                <li>El sitio donde salen los casos límite que el autor no vio.</li>
+                <li>Una forma de repartir quién conoce cada parte del código.</li>
+              </ul>
+            </div>
+          </div>
+          <p>
+            La review de código generado por agentes tiene reglas propias en <a href="ag-implementar-y-revisar.html">Implementar y revisar sin autocertificar</a> y en <a href="criterio-y-riesgos.html">Criterio y riesgos</a>. Aquí hablamos de personas revisando a personas.
+          </p>
+
+          <h2 id="que-mirar">
+            Qué mirar primero
+            <a href="#que-mirar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La atención se agota antes que el diff, así que lo que más cuesta arreglar después va primero.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Orden</th><th>Qué miras</th><th>Pregunta guía</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>1. Corrección</td><td>Casos límite, errores, concurrencia, permisos</td><td>¿Qué pasa con un pedido ya cancelado, con dos clics seguidos, con otro usuario?</td></tr>
+                <tr><td>2. Diseño</td><td>Responsabilidades, acoplamiento, dónde vive cada regla</td><td>¿Este cambio encaja en el sistema o abre un camino paralelo?</td></tr>
+                <tr><td>3. Tests</td><td>Que prueben comportamiento y cubran lo que se cambió</td><td>Si rompo la regla nueva, ¿algún test se pone rojo?</td></tr>
+                <tr><td>4. Legibilidad</td><td>Nombres, tamaño de métodos, intención</td><td>¿Lo entenderá quien lo lea dentro de un año?</td></tr>
+                <tr><td>5. Estilo</td><td>Formato, orden de imports, comillas</td><td>¿Por qué no lo detecta ya el linter?</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            El estilo es la última fila a propósito. Si un comentario de formato se repite, la respuesta no es repetirlo en cada PR sino añadir la regla al linter o al formateador del proyecto. Para los tests, el criterio es el de <a href="tests-que-no-estorban.html">Tests que no estorban</a>; para la legibilidad, el vocabulario de <a href="code-smells-refactoring.html">code smells</a> ahorra párrafos: «huele a feature envy» se entiende a la primera.
+          </p>
+
+          <h2 id="comentarios">
+            Comentarios accionables
+            <a href="#comentarios" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un comentario útil tiene tres partes: <strong>qué</strong> ves, <strong>por qué</strong> importa y <strong>cuánto</strong> importa. Sin el porqué, el autor obedece sin entender o discute sin datos. Sin la gravedad, no sabe si puede mergear. Tres etiquetas bastan para la gravedad:
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Etiqueta</th><th>Significa</th><th>Qué hace el autor</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>[bloquea]</code></td><td>Fallo de corrección, seguridad o un diseño que costará caro deshacer</td><td>Lo resuelve antes del merge o argumenta por qué no aplica</td></tr>
+                <tr><td><code>[sugerencia]</code></td><td>Mejora razonable, pero el cambio ya es aceptable sin ella</td><td>Decide; si no la aplica, basta con decirlo</td></tr>
+                <tr><td><code>[pregunta]</code></td><td>El revisor no entiende algo y no presupone que esté mal</td><td>Contesta; si la respuesta no es obvia, quizá falta un nombre mejor o un test</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Hay convenciones públicas más ricas, como <em>Conventional Comments</em>, con etiquetas como <code>suggestion</code>, <code>issue</code>, <code>question</code> o <code>nitpick</code> y la decoración <code>(blocking)</code> o <code>(non-blocking)</code>. Da igual cuál uses mientras el equipo comparta una.
+          </p>
+          <p>Un caso de la tienda. Este PR añade la cancelación de pedidos:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · src/Order/CancelOrder.php (en review)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace Tienda\Order;
+
+final class CancelOrder
+{
+    public function __construct(
+        private readonly OrderRepository $orders,
+        private readonly PaymentGateway $payments,
+    ) {
+    }
+
+    public function __invoke(int $orderId): void
+    {
+        $order = $this-&gt;orders-&gt;find($orderId);
+        $this-&gt;payments-&gt;refund($order-&gt;paymentId(), $order-&gt;total());
+        $order-&gt;cancel();
+        $this-&gt;orders-&gt;save($order);
+    }
+}</code></pre>
+          </div>
+          <div class="compare">
+            <div class="compare__col compare__col--bad">
+              <h4>Comentario que no ayuda</h4>
+              <ul>
+                <li>«Esto está mal.»</li>
+                <li>«¿Por qué no usas un evento?»</li>
+                <li>«Yo lo haría de otra forma.»</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Comentario accionable</h4>
+              <ul>
+                <li>«[bloquea] Si el pedido ya está cancelado o enviado, se reembolsa igual: un doble clic en «Cancelar» devuelve el dinero dos veces. ¿Comprobamos el estado antes de llamar a la pasarela? Un test con un pedido ya cancelado lo cubriría.»</li>
+                <li>«[pregunta] ¿La pasarela admite una clave de idempotencia? Si sí, pasar el id del pedido nos protege también de reintentos de red.»</li>
+              </ul>
+            </div>
+          </div>
+          <p>El autor resuelve el caso secuencial con una guarda y un test; dos peticiones simultáneas pasarían ambas la guarda, y eso lo cierra la clave de idempotencia de la pregunta (o un <a href="bd-bloqueo-optimista.html">bloqueo optimista</a>), que confirma en el hilo:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · src/Order/CancelOrder.php (tras la review)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace Tienda\Order;
+
+final class CancelOrder
+{
+    public function __construct(
+        private readonly OrderRepository $orders,
+        private readonly PaymentGateway $payments,
+    ) {
+    }
+
+    public function __invoke(int $orderId): void
+    {
+        $order = $this-&gt;orders-&gt;find($orderId);
+
+        if (!$order-&gt;isCancellable()) {
+            throw new OrderNotCancellable($orderId);
+        }
+
+        $this-&gt;payments-&gt;refund($order-&gt;paymentId(), $order-&gt;total());
+        $order-&gt;cancel();
+        $this-&gt;orders-&gt;save($order);
+    }
+}</code></pre>
+          </div>
+          <p>
+            Fíjate en lo que no hizo el revisor: no reescribió la clase en el comentario ni impuso su diseño. Señaló el riesgo, propuso una salida y dejó al autor elegir cómo cerrarlo. Y decir lo que está bien resuelto también es un comentario útil.
+          </p>
+
+          <h2 id="tamano">
+            Tamaño y tiempo de respuesta
+            <a href="#tamano" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En cincuenta líneas el revisor encuentra el doble reembolso; en dos mil, aprueba por agotamiento. La guía pública de review de Google lo dice en cifras orientativas: unas cien líneas suelen ser un tamaño razonable y mil, casi siempre demasiadas. Cómo partir el trabajo en PRs pequeños lo verás en <a href="of-partir-y-estimar.html">Partir y estimar</a>.
+          </p>
+          <p>
+            El otro eje es el tiempo. Un PR esperando bloquea al autor, que cambia de tarea y pierde el contexto. Un acuerdo sencillo funciona: <strong>primera respuesta en el mismo día laborable</strong>, aunque sea para decir «lo miro mañana a primera hora».
+          </p>
+
+          <h2 id="recibir">
+            Recibir una review sin defenderse
+            <a href="#recibir" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El comentario es sobre el código, no sobre ti, aunque a las seis de la tarde no lo parezca. Tres hábitos:
+          </p>
+          <ul>
+            <li><strong>Lee antes de contestar.</strong> La pregunta útil es «¿tiene razón en algo?», no «¿cómo le demuestro que se equivoca?».</li>
+            <li><strong>Una pregunta del revisor es un aviso del futuro.</strong> Si quien revisa no entendió algo, el siguiente lector tampoco. Mejor un nombre más claro o un test que una respuesta en el hilo.</li>
+            <li><strong>Cierra cada hilo.</strong> «Hecho en el commit tal», «No lo aplico porque…» o «Lo apunto en el issue #N».</li>
+          </ul>
+          <p>
+            Es la misma lógica que el <a href="inf-guardias-y-postmortem.html#postmortem">postmortem sin culpables</a>: se discute qué falló, no quién, porque señalar personas solo consigue que el problema se esconda.
+          </p>
+
+          <h2 id="desacuerdos">
+            Desacuerdos: se escalan o se apuntan
+            <a href="#desacuerdos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Dos personas razonables pueden no ponerse de acuerdo. Lo que no funciona es resolverlo por desgaste, con réplicas cada vez más largas:
+          </p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Dos rondas en el hilo sin acercarse</b><small>Se deja de escribir</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>¿Bloquea el merge?</b><small>Si no, decide el autor y se apunta en un issue si merece volver</small></span>
+              </div>
+              <div class="flow__arrow" data-label="sí bloquea"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Conversación de diez minutos</b><small>En voz, con el código delante</small></span>
+              </div>
+              <div class="flow__arrow" data-label="sigue el bloqueo"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>Se escala</b><small>A quien responde de ese módulo; si es una decisión de diseño, va a un ADR</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">El resultado se anota en el PR: la próxima persona que pregunte encontrará el porqué.</p>
+          </div>
+          <p>
+            Si el desacuerdo es de fondo, como «¿colas o llamadas síncronas?», el PR ya no es el sitio. Esa decisión merece quedar por escrito con sus alternativas, que es justo lo que cubre <a href="of-adr-y-rfc.html">ADR y RFC</a>, y explicarla con sus costes, que es lo que verás en <a href="of-comunicar-trade-offs.html">Comunicar trade-offs</a>.
+          </p>
+
+          <h2 id="autor">
+            Antes de pedir review
+            <a href="#autor" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Antes de pedir review, relee tu diff como si fuera ajeno y repasa esta lista:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · antes de pedir review</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">git fetch origin
+git diff --stat origin/main...HEAD
+git diff origin/main...HEAD
+vendor/bin/phpunit
+vendor/bin/phpstan analyse</code></pre>
+          </div>
+          <ul>
+            <li><strong>El diff solo trae lo que dice el título</strong>, sin refactors de paso.</li>
+            <li><strong>El tamaño es razonable</strong> o la descripción explica por qué no se pudo partir.</li>
+            <li><strong>La descripción dice qué, por qué y cómo se comprobó</strong>, con enlace al issue.</li>
+            <li><strong>Los checks están en verde</strong>, y lo que no se pudo ejecutar se dice.</li>
+            <li><strong>Señalas dónde mirar:</strong> «la parte delicada es la guarda de <code>CancelOrder</code>».</li>
+            <li><strong>Los commits cuentan una historia legible</strong>; si no, ordénalos antes (<a href="git-ramas-y-flujo.html">merge y rebase</a>, <a href="git-deshacer.html">deshacer en Git</a>).</li>
+          </ul>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que convierte la review en un peaje</p>
+              <ul>
+                <li><strong>Revisar el estilo y saltarse la lógica.</strong> Veinte comentarios de formato y el doble reembolso dentro.</li>
+                <li><strong>Todo bloquea.</strong> Si cada preferencia personal impide el merge, el autor deja de distinguir lo grave de lo opinable.</li>
+                <li><strong>Aprobar sin leer.</strong> Un «LGTM» en dos minutos sobre ochocientas líneas no es una review, es una firma.</li>
+                <li><strong>Rediseñar en el PR.</strong> Pedir otra arquitectura con el código escrito tira el trabajo; eso se habla antes.</li>
+                <li><strong>Ampliar el alcance.</strong> «Ya que estás, arregla también…» agranda el PR. Lo de fuera va a un issue.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Con la CLI de GitHub ves el tamaño de los últimos PRs y cuándo llegó su primera review:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · tamaño y primera review de los últimos PRs</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">gh pr list --state merged --limit 20 \
+  --json number,additions,deletions,createdAt,reviews \
+  --jq '.[] | {number, lineas: (.additions + .deletions), abierto: .createdAt, primera_review: (.reviews[0].submittedAt // "sin review")}'</code></pre>
+          </div>
+          <p>Tres señales a vigilar, sin convertirlas en objetivos que se maquillan:</p>
+          <ul>
+            <li><strong>Horas hasta la primera respuesta.</strong> Si pasa a menudo de un día, falla el reparto.</li>
+            <li><strong>Rondas por PR.</strong> Muchas suelen indicar PRs grandes o desacuerdos sin escalar.</li>
+            <li><strong>Proporción de comentarios por gravedad.</strong> Si casi todo es estilo, falta una regla en el linter; si casi todo bloquea, falta acordar qué bloquea.</li>
+          </ul>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Review completa cuando…</h4>
+              <ul>
+                <li>El cambio toca dinero, permisos, datos personales o migraciones.</li>
+                <li>Alguien más tendrá que mantener ese código.</li>
+                <li>El autor es nuevo en esa parte del sistema.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Basta algo más ligero cuando…</h4>
+              <ul>
+                <li>Es una errata en un texto o un cambio de dependencia ya probado por CI.</li>
+                <li>Es un hotfix con producción caída: se mergea con una lectura rápida y se revisa a fondo después.</li>
+              </ul>
+            </div>
+          </div>
+          <p>
+            La alternativa cuando una review asíncrona no encaja es el <strong>pair programming</strong>: la revisión ocurre mientras se escribe. Cuesta dos personas a la vez, pero ahorra el ida y vuelta en cambios delicados. Si no conoces algún término de esta lección, lo tienes en el <a href="jerga.html#flujo">glosario de jerga</a>.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La review busca corrección, buen diseño y conocimiento compartido; no es QA ni un examen.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Primero corrección y diseño; el estilo repetido se lleva al linter.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Cada comentario dice qué, por qué y su gravedad: bloquea, sugerencia o pregunta.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>PRs pequeños y primera respuesta en el día valen más que una review perfecta tres días tarde.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Tras dos rondas sin acuerdo se habla en voz; lo que no bloquea se apunta y lo de fondo va a un ADR.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
