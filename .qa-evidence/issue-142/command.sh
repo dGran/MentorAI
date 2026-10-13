@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-cd "$(git rev-parse --show-toplevel)"
-node .qa-evidence/issue-142/qa-texto.js "${1:-/tmp/qa-142}" "${2:-http://localhost:8000}" pr-http1-a-http3\|ese\ árbol\ de\ prioridades\ se\ abandonó\ por\ complejo\|El\ cliente\ puede\ pedir\ que\ el\ CSS\ llegue pr-compatibilidad\|Deprecation:\ @1767225599\|Deprecation:\ true rest-metodos-y-estados\|422\ Unprocessable\ Content\|422\ Unprocessable\ Entity rest-errores-y-validacion\|HTTP/1.1\ 422\ Unprocessable\ Content\|HTTP/1.1\ 422\ Unprocessable\ Entity extensiones-php\|pie\ install\ phpredis/phpredis\|pecl\ install\ redis redis-a-fondo\|ZRANGE\ leaderboard\ 0\ 2\ REV\ WITHSCORES\|ZREVRANGE\ leaderboard\ 0\ 2\ WITHSCORES pr-escalar-tiempo-real\|SET\ presencia:usuario:4871\ servidor-3\ EX\ 45\|SETEX\ presencia:usuario:4871\ 45\ servidor-3 rabbitmq\|se\ eliminaron\ en\ RabbitMQ\ 4.0\|están\ obsoletas pr-serializacion\|message\ Linea\ \{\| pr-grpc\|syntax\ =\ \"proto3\"\;\|
