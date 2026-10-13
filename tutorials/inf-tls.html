@@ -152,7 +152,8 @@
             <a href="#lets-encrypt" class="anchor" aria-hidden="true">#</a>
           </h2>
           <p>
-            Let's Encrypt emite certificados de 90 días, gratis y automatizables. La duración
+            Let's Encrypt emite certificados de 90 días, gratis y automatizables, y su perfil por
+            defecto bajará a 64 días en febrero de 2027 y a 45 en febrero de 2028. La duración
             corta es deliberada: obliga a que la renovación esté automatizada, y una renovación
             automatizada no se olvida.
           </p>
@@ -174,8 +175,9 @@ systemctl list-timers | grep certbot</code></pre>
 
           <p>
             El <code>--dry-run</code> es el paso que separa «lo configuré» de «funciona»: ensaya
-            la renovación completa sin gastar cuota. Y el timer es lo que confirma que alguien lo
-            hará dentro de 60 días, cuando ya nadie se acuerde.
+            la renovación completa sin gastar cuota. Y el timer es lo que confirma que alguien
+            renovará cuando toque, con la duración que tenga el certificado entonces y cuando ya
+            nadie se acuerde.
           </p>
 
           <div class="callout callout--danger">
@@ -198,18 +200,22 @@ systemctl list-timers | grep certbot</code></pre>
 
           <div class="code-block">
             <div class="code-block__head">
-              <span class="code-block__lang">ini · lo esencial de TLS en nginx</span>
+              <span class="code-block__lang">nginx · lo esencial de TLS</span>
               <button class="copy-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
-            <pre><code data-lang="ini">ssl_certificate = /etc/letsencrypt/live/ejemplo.com/fullchain.pem
-ssl_certificate_key = /etc/letsencrypt/live/ejemplo.com/privkey.pem
-ssl_protocols = TLSv1.2 TLSv1.3
-ssl_session_cache = shared:SSL:10m
-ssl_stapling = on
-add_header = Strict-Transport-Security "max-age=31536000; includeSubDomains"</code></pre>
+            <pre><code>server {
+    listen 443 ssl;
+    server_name ejemplo.com;
+
+    ssl_certificate /etc/letsencrypt/live/ejemplo.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/ejemplo.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_cache shared:SSL:10m;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains";
+}</code></pre>
           </div>
 
           <div class="table-wrap">
@@ -220,11 +226,16 @@ add_header = Strict-Transport-Security "max-age=31536000; includeSubDomains"</co
               <tbody>
                 <tr><td><code>ssl_protocols</code></td><td>Solo 1.2 y 1.3. Las versiones anteriores están rotas, no obsoletas</td></tr>
                 <tr><td><code>ssl_session_cache</code></td><td>Reanudar sesiones evita repetir el handshake completo: mucha latencia menos</td></tr>
-                <tr><td><code>ssl_stapling</code></td><td>El servidor adjunta la prueba de que el certificado no está revocado, y el cliente se ahorra una consulta</td></tr>
                 <tr><td><code>Strict-Transport-Security</code></td><td>El navegador recuerda que este dominio es solo HTTPS y no vuelve a intentar por HTTP</td></tr>
               </tbody>
             </table>
           </div>
+
+          <p>
+            Verás <code>ssl_stapling on</code> en muchas guías. Con Let's Encrypt ya no aporta
+            nada: sus certificados no traen URL de OCSP desde mayo de 2025 y apagó sus
+            respondedores OCSP en agosto de 2025, así que no hay prueba de revocación que adjuntar.
+          </p>
 
           <div class="callout callout--warning">
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
