@@ -194,7 +194,7 @@ final class LocaleSubscriber implements EventSubscriberInterface
             </div>
           </div>
 
-          <p>En Laravel el equivalente son los Event Listeners registrados en <code>EventServiceProvider</code> (o autodetectados con <code>php artisan event:generate</code>). La diferencia con los kernel events de Symfony es que en Laravel los eventos del framework (requests, autenticación, etc.) viajan por el mismo EventDispatcher que los eventos de dominio.</p>
+          <p>En Laravel el equivalente son los Event Listeners, autodescubiertos en <code>app/Listeners</code> o registrados con <code>Event::listen</code> en el <code>boot()</code> de <code>AppServiceProvider</code>. La diferencia con los kernel events de Symfony es que en Laravel los eventos del framework (requests, autenticación, etc.) viajan por el mismo EventDispatcher que los eventos de dominio.</p>
 
           <h2 id="middleware">
             Middleware personalizado
@@ -280,15 +280,19 @@ final class EnsureApiToken
 // Cualquier clase que implemente VoterInterface recibe el tag 'security.voter'
 // automáticamente por autoconfiguration. Sin configuración extra.
 
+use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
+use Symfony\Component\Security\Core\Authorization\Voter\Vote;
+use Symfony\Component\Security\Core\Authorization\Voter\Voter;
+
 final class OrderVoter extends Voter
 {
-    // El SecurityContext inyecta todos los 'security.voter' taggeados
+    // El AccessDecisionManager recibe todos los 'security.voter' taggeados
     protected function supports(string $attribute, mixed $subject): bool
     {
         return $subject instanceof Order;
     }
 
-    protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token): bool
+    protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token, ?Vote $vote = null): bool
     {
         return match ($attribute) {
             'VIEW'  =&gt; $this-&gt;canView($subject, $token),
@@ -461,7 +465,7 @@ final class PaymentServiceProvider extends ServiceProvider
                 <tr>
                   <td>Event Listener</td>
                   <td>Laravel</td>
-                  <td>Igual que el Subscriber de Symfony; registro en EventServiceProvider o autodescubrimiento</td>
+                  <td>Igual que el Subscriber de Symfony; autodescubiertos en app/Listeners o registrados con Event::listen en AppServiceProvider</td>
                 </tr>
                 <tr>
                   <td>Kernel Middleware</td>
