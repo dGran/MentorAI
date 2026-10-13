@@ -1118,6 +1118,19 @@ window.MENTORAI_PRACTICE = {
           "$aciertos = 0;\n\nforeach ($goldenSet as $caso) {\n    $resultado = $clasificador->clasifica($caso[\"texto\"]);\n\n    if ($resultado->categoria === $caso[\"esperado\"]) {\n        $aciertos++;\n    }\n}\n\necho sprintf(\"%d/%d (%.0f%%)\\n\", $aciertos, count($goldenSet), 100 * $aciertos / count($goldenSet));",
       },
     },
+    {
+      id: "rbd3d8d",
+      title: "Coseno, euclídea y el índice que no se usa",
+      statement:
+        "Arranca Postgres con pgvector (docker run -d --rm --name reto-pg -e POSTGRES_PASSWORD=x pgvector/pgvector:pg17) y crea una tabla fragmentos con texto y un embedding vector(3). Inserta cinco fragmentos: tres sobre devoluciones con vectores [0.9,0.1,0.0], [0.8,0.2,0.1] y [3.0,0.5,0.0] (este último sin normalizar), uno de envíos [0.1,0.9,0.1] y uno de horario [0.0,0.1,0.9]. Crea un índice HNSW con vector_cosine_ops. Busca los 3 más cercanos a [0.85,0.15,0.05] primero con <=> y después con <->, y mira con EXPLAIN qué consulta usa el índice (con SET enable_seqscan = off, porque con cinco filas Postgres prefiere recorrer la tabla).",
+      solution:
+        "Con <=> (coseno) salen los tres de devoluciones, y el de [3.0,0.5,0.0] el primero: el coseno mira la dirección, no la longitud. Con <-> (euclídea) ese fragmento desaparece del top 3 y entra «Gastos de envío a Canarias», que no tiene nada que ver: la distancia euclídea castiga la longitud de un vector sin normalizar. Por eso se usa la misma métrica con la que se entrenó el modelo de embeddings (casi siempre coseno, o producto interno con vectores ya normalizados). Y el EXPLAIN enseña la segunda trampa: el índice creado con vector_cosine_ops solo sirve a <=>; la consulta con <-> hace Seq Scan y Sort, que con millones de filas es una búsqueda exacta y lenta en lugar de aproximada y rápida. El operador de la consulta y la clase del índice tienen que coincidir.",
+      solutionCode: {
+        lang: "sql",
+        source:
+          "CREATE EXTENSION IF NOT EXISTS vector;\nCREATE TABLE fragmentos (id serial PRIMARY KEY, texto text NOT NULL, embedding vector(3) NOT NULL);\nINSERT INTO fragmentos (texto, embedding) VALUES\n  ('Política de devoluciones: 30 días',       '[0.9, 0.1, 0.0]'),\n  ('Cómo devolver un pedido paso a paso',     '[0.8, 0.2, 0.1]'),\n  ('Gastos de envío a Canarias',              '[0.1, 0.9, 0.1]'),\n  ('Horario de atención al cliente',          '[0.0, 0.1, 0.9]'),\n  ('Devolución de productos rebajados',       '[3.0, 0.5, 0.0]');\nCREATE INDEX ON fragmentos USING hnsw (embedding vector_cosine_ops);\n\nSELECT texto, round((embedding <=> '[0.85, 0.15, 0.05]')::numeric, 4) AS distancia_coseno\n  FROM fragmentos ORDER BY embedding <=> '[0.85, 0.15, 0.05]' LIMIT 3;\n\nSELECT texto, round((embedding <-> '[0.85, 0.15, 0.05]')::numeric, 4) AS distancia_euclidea\n  FROM fragmentos ORDER BY embedding <-> '[0.85, 0.15, 0.05]' LIMIT 3;\n\nSET enable_seqscan = off;\nEXPLAIN (COSTS OFF) SELECT id FROM fragmentos ORDER BY embedding <=> '[0.85, 0.15, 0.05]' LIMIT 3;\nEXPLAIN (COSTS OFF) SELECT id FROM fragmentos ORDER BY embedding <-> '[0.85, 0.15, 0.05]' LIMIT 3;\n\n-- <=> : las tres de devoluciones (la de [3.0,0.5,0.0] primera)\n-- <-> : cae la de [3.0,0.5,0.0] y entra «Gastos de envío a Canarias»\n-- EXPLAIN <=> : Index Scan using fragmentos_embedding_idx\n-- EXPLAIN <-> : Seq Scan + Sort",
+      },
+    },
   ],
   "la-maquina": [
     {

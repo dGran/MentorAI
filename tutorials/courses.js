@@ -642,6 +642,9 @@ window.MENTORAI_COURSES = [
       "ia-structured-output",
       "ia-streaming",
       "ia-coste-y-evaluacion",
+      "ia-embeddings-y-rag",
+      "ia-seguridad",
+      "ia-agente-en-producto",
     ],
   },
   {
