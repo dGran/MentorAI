@@ -398,8 +398,6 @@ function validarPractica() {
 const NIVELES = ["Principiante", "Intermedio", "Avanzado"];
 
 function validarHeroContraManifest() {
-  const sinCuandoAplicarlo = [];
-
   for (const tutorial of manifest.filter((entrada) => entrada.status !== "soon")) {
     const fichero = `tutorials/${tutorial.slug}.html`;
     const html = leer(fichero);
@@ -415,14 +413,7 @@ function validarHeroContraManifest() {
       error(`${fichero}: el hero dice nivel «${nivel}» y el manifest «${tutorial.level}»`);
     }
 
-    if (!/<h2[^>]*\sid="cuando"/.test(html)) sinCuandoAplicarlo.push(tutorial.slug);
-  }
-
-  if (sinCuandoAplicarlo.length > 0) {
-    aviso(
-      `${sinCuandoAplicarlo.length} tutoriales sin la sección «Cuándo aplicarlo» (<h2 id="cuando">): ` +
-        sinCuandoAplicarlo.join(", ")
-    );
+    if (!/<h2[^>]*\sid="cuando"/.test(html)) error(`${fichero}: falta la sección «Cuándo aplicarlo» (<h2 id="cuando">)`);
   }
 }
 
