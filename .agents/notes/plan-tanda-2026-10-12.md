@@ -1,6 +1,6 @@
 # Tanda 2026-10-12 — vaciar el backlog: cursos #35-#38, huecos #92-#100 y deuda de estructura
 
-Estado: **preparada, sin lanzar**. Contrato escrito el 2026-10-12; nada tocado todavía.
+Estado: **cerrada** (2026-10-13). Entraron los 15 issues del contrato, cada uno con su PR (#115-#130), review con contexto fresco, QA con evidencias y despliegue. Producción en `v70`. El backlog queda con 2 issues que destapó la tanda (#131, #132, P3).
 
 ## 1. Estado de partida (medido 2026-10-12)
 
@@ -113,4 +113,39 @@ añade red y después el contenido, en el orden que fijó el usuario:
 
 ## Registro
 
-_(vacío: se rellena al ejecutar)_
+| Issue | PR | Merge | Shell | Review (errores corregidos) |
+|---|---|---|---|---|
+| #112 ancla del `h2` «Cuándo aplicarlo» | #115 | `efdfafc` | — | 0 (2 menores) |
+| #35 curso seguridad-backend | #116 | `245ca39` | v58 | 4 |
+| #36 curso php-moderno | #117 | `06ed8b9` | v59 | 1 (+10 imprecisiones) |
+| #37 curso concurrencia-en-bd | #118 | `f7c9bb6` | v60 | 3 (+13) |
+| #38 RAG, seguridad LLM y agente | #119 | `abf0eff` | v61 | 2 (+7) |
+| #113 «Cuándo aplicarlo» ×15 | #120 | `629d0b9` | — | 1 (+2) |
+| #114 «Cuándo aplicarlo» ×18, aviso → ERROR | #121 | `1b2dc85` | — | 3 (+5) |
+| #94 Messenger | #122 | `037e555` | v62 | 1 (+3, faltaban enlaces de entrada) |
+| #93 testing avanzado ×4 | #123 | `60f388c` | v63 | 4 (+9) |
+| #95 OpenTelemetry | #124 | `7062dd5` | v64 | 4 (+2) |
+| #96 git avanzado ×3 | #125 | `d04f6fa` | v65 | 3 (+8) |
+| #97 fechas y zonas horarias | #126 | `12f4a58` | v66 | 0 (+4) |
+| #98 búsqueda full-text | #127 | `28fc7b2` | v67 | 0 (+3) |
+| #99 feature flags | #128 | `24b1ab6` | v68 | 0 (+2) |
+| #100 JSONB | #129 | `eefc873` | v69 | 1 (+3) |
+| #92 curso oficio-de-ingenieria | #130 | `5d85206` | v70 | 6 (+15) |
+
+Catálogo: 300 → 344 tutoriales, 32 → 36 cursos, 482 → 577 preguntas de examen, 682 → 814 checks, 95 → 108 retos. `validar.js` sin errores ni avisos (el de «Cuándo aplicarlo» es ERROR desde #114). Tests 114/114.
+
+## Cierre
+
+**Cómo se trabajó.** Autoría delegada en subagentes (uno por lección, solo escriben en el scratchpad), integración por script desde los borradores (`.agents/tasks/*/herramientas/integrar.js`, ids nuevos, sesgo medido antes de commitear), review con uno o dos subagentes de contexto fresco que **ejecutan** lo que dudan (Docker con MySQL 8.4, Postgres 17, pgvector, PHP 8.5, PHPUnit 13, Infection, Playwright, pact-php, OTel collector, Symfony 8) y QA con `qa-curso.js`/`qa-leccion.js`/`qa-cuando.js` por http y `file://`. Desde #96, las reviews se hicieron en paralelo sobre worktrees de solo lectura y las correcciones se aplicaron a los borradores antes de abrir cada PR.
+
+**Lecciones** (una línea cada una):
+- Cada review destapó errores que el autor no había visto aunque decía haber ejecutado: 37 errores en 16 PRs. La review que ejecuta en Docker es la red real del contenido.
+- Los autores dejan sus datos «de memoria» en `de-memoria.md`; pasárselos al revisor como lista concreta funcionó: casi todos los errores salieron de ahí o de su vecindad.
+- Los «enlaces de entrada desde las vecinas» se olvidaron en dos PRs hasta que se pidió al revisor proponerlos como pares exactos: va a la skill `tutorial`.
+- Un script que calcula la raíz del repo con `__dirname` escribió en el working tree principal en vez de en el worktree, con un revisor y un offline leyéndolo (restaurado en un minuto; offline repetido). Los scripts de integración usan `process.cwd()` → trampa en `estado.md`.
+- `cerrar.sh` se cortó a mitad por un fallo de red de la API de GitHub; se retomó a mano comprobando el estado del PR antes de repetir nada.
+- El sesgo de opciones apareció en casi todas las integraciones (posición, puesto por longitud, forma): medirlo con las funciones del validador sobre los borradores antes de integrar ahorra la vuelta.
+
+**Preguntas que esperan al usuario:** ninguna.
+
+**Backlog:** #131 (id de modelo antiguo en las lecciones originales de `construir-con-ia`) y #132 (salidas de PHPUnit en `phpunit-data-providers`), los dos P3, `fix`.

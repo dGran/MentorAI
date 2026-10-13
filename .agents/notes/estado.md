@@ -1,16 +1,16 @@
 # Estado del proyecto
 
-Última actualización: **2026-10-12**.
+Última actualización: **2026-10-13**.
 
 Este fichero se lee al empezar cada sesión y está pensado para leerse **entero**.
 Lo cerrado vive en `archivo/`; si algo de aquí crece demasiado, se archiva.
 
 ## Dónde está el proyecto
 
-**300 tutoriales · 32 cursos · 7 rutas · 482 preguntas de examen · 682 checks ·
-95 retos de práctica.** `node scripts/validar.js` sale sin errores; sus avisos
-son deuda medida: queda uno, «Cuándo aplicarlo» pendiente en 96 tutoriales
-(#34). El sesgo de las opciones ya es ERROR (#25).
+**344 tutoriales · 36 cursos · 7 rutas · 577 preguntas de examen · 814 checks ·
+108 retos de práctica.** `node scripts/validar.js` sale sin errores **y sin
+avisos**: el sesgo de las opciones (#25), el ancla de cada `h2` (#112) y la
+sección «Cuándo aplicarlo» en todo tutorial (#114) son ERROR.
 
 **Curso `ia-por-dentro` (2026-10-06, épica #23):** «La IA por dentro», 5
 lecciones con prefijo `llm-` (tokens y embeddings, atención y contexto,
@@ -176,23 +176,37 @@ prosa, sin código** (el p25 del catálogo). Salieron y se corrigieron ~90 error
 de contenido (código que no compilaba, Go 1.22, `cmp.Ordered`, `Cargo.lock`,
 Pydantic v2, pytest 8.4, axum…).
 
-## Para retomar (2026-10-12)
+**Tanda del 2026-10-12/13** (contrato, registro y cierre en `plan-tanda-2026-10-12.md`):
+vació el backlog en 16 PRs (#115-#130), producción de `v57` a `v70`.
+- **Cursos nuevos:** `seguridad-backend` (#35, prefijo `sec-`), `php-moderno` (#36, `pm-`),
+  `concurrencia-en-bd` (#37, `bd-`, todo reproducido en MySQL 8.4 y Postgres 17) y
+  `oficio-de-ingenieria` (#92, `of-`, categoría `cultura`, en el grado tras protocolos).
+- **Ampliaciones:** `construir-con-ia` +3 (RAG con pgvector, seguridad de LLM, agente en
+  producto; #38), `testing` +4 (e2e, contrato, mutación, caracterización; #93), `git` +3
+  (bisect, rebase interactivo, worktrees; #96), `sql-aplicado` +2 (full-text, JSONB; #98,
+  #100), y una lección suelta en `sistemas-distribuidos` (Messenger, #94), `observabilidad`
+  (OpenTelemetry, módulo nuevo; #95), `fundamentos` (fechas, #97) y `ci-cd` (flags, #99).
+- **Estructura:** todos los `h2` con su ancla (#112) y «Cuándo aplicarlo» en todo el
+  catálogo (#113, #114); los dos son ERROR del validador.
+- **Método que funcionó:** autores delegados que dejan sus datos «de memoria» en
+  `de-memoria.md`, y revisores frescos que reciben esa lista y **ejecutan** en Docker
+  (37 errores de contenido cazados en 16 PRs). Los revisores proponen también los enlaces
+  de entrada desde las vecinas.
 
-`main` en `ef082b8`, producción en `v57`. Ningún PR abierto. **Pausa pedida por
-el usuario para limpiar contexto.**
+## Para retomar (2026-10-13)
 
-**Siguiente: épica #35** (curso «Seguridad aplicada al backend»). Las 8 lecciones
-ya están redactadas, sin integrar, en `.agents/tasks/35-seguridad-backend/`
-(gitignored): `STATE.md` tiene el siguiente paso concreto, los datos a contrastar
-en la review, y en `herramientas/` están los scripts de medición y aplicación
-(`medir-puesto.js`, `pistas-forma.js`, `aplicar.py`, `qa-34.js`, `cdp.js`…).
-Después vienen #36, #37 y #38 (decisión del usuario: «#35-#38 después, en ese
-orden»), y luego #92-#100 (huecos del catálogo, P3).
+`main` en `5d85206`, producción en `v70`. Ningún PR abierto.
 
-**Tanda preparada, sin lanzar:** `plan-tanda-2026-10-12.md` es el contrato para vaciar el
-backlog: #112 → #35 → #36 → #37 → #38 → #113 → #114 → #93-#100 → #92, con automerge. La deuda
-que estaba sin issue ya lo tiene: #112 (ancla del `h2` «Cuándo aplicarlo» en 43 lecciones) y
-#113/#114 (33 lecciones sin «Cuándo aplicarlo»).
+**Backlog:** #131 (las 4 lecciones originales de `construir-con-ia` usan el id de modelo
+`claude-opus-5`, ya antiguo; las de #38 usan `claude-opus-5-5`) y #132 (salidas de
+PHPUnit de una versión anterior en `phpunit-data-providers`). Los dos P3, `fix`.
+
+**Herramientas reutilizables** (gitignored, en `.agents/tasks/`):
+`lecciones-sueltas/integrar.js` (añade lecciones a un curso existente, tras una lección
+o en un módulo nuevo), `lecciones-sueltas/prompt-base.md` y `prompt-review.md`
+(encargos de autoría y de review), `tanda-2026-10-12/{publicar,cerrar}.sh` (rama → PR →
+QA → merge → Pages → Done), `qa-curso.js`, `qa-leccion.js`, `qa-cuando.js` y `cdp.js`
+(Chrome headless con perfil en `~/.cache` y limpieza en `finally`).
 
 ## Decisiones que no se reabren sin motivo nuevo
 
@@ -289,6 +303,17 @@ Cada una costó una depuración; están aquí para no repetirlas.
 - **El service worker sirve el HTML viejo en la primera visita tras subir
   `VERSION`.** Un perfil de Chrome reutilizado mide la página anterior; la
   medida buena es la segunda visita.
+- **Un script que calcula la raíz del repo con `__dirname` ignora el worktree desde el que
+  se lanza.** El integrador de lecciones escribió en el working tree principal (con un
+  revisor y un offline leyéndolo) en vez de en el worktree de revisión. Los scripts que
+  escriben en el repo usan `process.cwd()`, y los borradores se leen por ruta absoluta.
+- **Un `http.server` que sobrevive de otra sesión ocupa el puerto** y sirve otro
+  directorio: el QA lo midió y falló contra él (pasó en #113 con el 8001). `readlink
+  /proc/<pid>/cwd` antes de medir, y un puerto propio por QA.
+- **Hacer clic en el centro de un enlace partido en dos líneas cae fuera del texto.** El
+  QA de enlaces de entrada usa el primer rectángulo (`getClientRects()[0]`).
+- **Symfony versiona el `.env`; lo ignorado es `.env.local`** (Laravel sí ignora `.env`).
+  Una lección y un check lo trataban al revés (#96).
 
 ## Rutina pendiente: revisión de frescura
 
@@ -315,7 +340,7 @@ el resto del catálogo (SQL, OOP, Linux…) envejece a décadas, no a meses.
 | `node scripts/verificar-offline.js` | Comprueba el offline con el servidor apagado y el scroll horizontal a 320/375 px. Corre en CI |
 | `node --test 'scripts/tests/**/*.test.js'` | Tests de la lógica pura (`node:test` + `vm`, sin dependencias). Corre en CI |
 
-Al tocar `sw.js` o el shell (módulos, CSS, `quizzes.js`, `checks.js`, `manifest.js`), **subir `VERSION`** (va por `v57`). La
+Al tocar `sw.js` o el shell (módulos, CSS, `quizzes.js`, `checks.js`, `manifest.js`), **subir `VERSION`** (va por `v70`). La
 caché de contenido guardado (`academia-content`) ya no lleva versión: un
 despliegue no borra lo que el lector guardó para viajar.
 
