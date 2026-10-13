@@ -302,6 +302,7 @@ window.MENTORAI_COURSES = [
       "sql-agregacion",
       "sql-subqueries-ctes",
       "sql-window-functions",
+      "busqueda-full-text",
     ],
   },
   {

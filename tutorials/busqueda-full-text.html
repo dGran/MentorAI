@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Búsqueda full-text en MySQL y Postgres — MentorAI</title>
+    <meta name="description" content="Por qué LIKE con comodín delante no usa índices, FULLTEXT de MySQL con MATCH AGAINST, tsvector y GIN en Postgres, ranking por relevancia y cuándo compensa OpenSearch." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Bases de datos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Búsqueda full-text en MySQL y Postgres</h1>
+        <p class="tutorial-hero__lead">El buscador de casi todos los proyectos empieza con un <code>LIKE '%texto%'</code>. Funciona con mil filas y se arrastra con un millón, y además no entiende de plurales ni de relevancia. Las dos bases de datos que ya usas traen un buscador de verdad dentro: veamos cómo se activa y hasta dónde llega.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            26 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#like">Por qué LIKE no escala</a></li>
+            <li><a href="#indice-invertido">El índice invertido</a></li>
+            <li><a href="#mysql">FULLTEXT en MySQL</a></li>
+            <li><a href="#postgres">tsvector y GIN en Postgres</a></li>
+            <li><a href="#ranking">Ranking: ordenar por relevancia</a></li>
+            <li><a href="#php">En PHP: antes y después</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#motor-aparte">Cuándo compensa OpenSearch</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Un usuario escribe «zapatilla impermeable» en el buscador de tu tienda. Con <code>LIKE</code> no aparece nada, porque el producto se llama «Zapatillas de running trail» y la descripción dice «impermeables». Con búsqueda full-text sale el primero. La diferencia no es de sintaxis: es otra estructura de datos.</p>
+
+          <h2 id="like">
+            Por qué LIKE no escala
+            <a href="#like" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>En <a href="indices-btree.html">Índices y B-tree</a> viste que un B-tree está ordenado por el principio del valor. <code>LIKE 'Zapa%'</code> sabe por dónde entrar; <code>LIKE '%running%'</code> no, porque la palabra puede estar en cualquier posición. Así que el motor lee la tabla entera. Esto es lo que devuelve MySQL 8.4 sobre una tabla de 50.006 productos con índice en <code>nombre</code>:</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · mysql 8.4</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">EXPLAIN ANALYZE
+SELECT id, nombre FROM productos
+WHERE nombre LIKE '%running%' OR descripcion LIKE '%running%';
+
+-&gt; Filter: ((productos.nombre like '%running%') or (productos.descripcion like '%running%'))
+     (cost=5341 rows=10469) (actual time=64.1..64.1 rows=4 loops=1)
+    -&gt; Table scan on productos  (cost=5341 rows=49885)
+         (actual time=0.0314..25.7 rows=50006 loops=1)</code></pre>
+          </div>
+
+          <p>Lee 50.006 filas para devolver 4. En Postgres 17 pasa lo mismo: <code>Seq Scan</code> con <code>Rows Removed by Filter: 50004</code> (allí <code>LIKE</code> distingue mayúsculas: usa <code>ILIKE</code>). Es la consulta que <a href="cr-consultas-lentas.html">Encontrar la consulta culpable</a> te enseña a cazar, y el coste crece en línea recta con la tabla.</p>
+          <p>Y no es solo rendimiento: <code>LIKE</code> compara caracteres, así que no junta «zapatilla» con «zapatillas» ni ordena por relevancia.</p>
+
+          <h2 id="indice-invertido">
+            El índice invertido
+            <a href="#indice-invertido" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La búsqueda full-text le da la vuelta al problema. En lugar de recorrer los textos buscando la palabra, guarda de antemano, para cada palabra, en qué filas aparece. Buscar pasa a ser consultar un diccionario.</p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Texto</b><small>«Zapatillas impermeables para correr»</small></span>
+              </div>
+              <div class="flow__arrow" data-label="trocear"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Tokens</b><small>zapatillas · impermeables · para · correr</small></span>
+              </div>
+              <div class="flow__arrow" data-label="normalizar"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Términos</b><small>minúsculas, sin palabras vacías y, en Postgres, reducidas a su raíz</small></span>
+              </div>
+              <div class="flow__arrow" data-label="indexar"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>Índice invertido</b><small>término → filas donde aparece</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">El mismo proceso se aplica a lo que escribe el usuario: por eso «zapatilla» encuentra «zapatillas».</p>
+          </div>
+
+          <p>La clave está en el paso 3. Las <strong>palabras vacías</strong> (<em>stopwords</em>) como «de» se descartan porque no distinguen nada. Reducir a la raíz (<em>stemming</em>) junta «impermeable» e «impermeables» en un término. Cada motor hace este paso a su manera, y de ahí salen sus sorpresas.</p>
+
+          <h2 id="mysql">
+            FULLTEXT en MySQL
+            <a href="#mysql" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>En InnoDB se crea un índice <code>FULLTEXT</code> sobre las columnas de texto y se consulta con <code>MATCH ... AGAINST</code>. Las columnas del <code>MATCH</code> tienen que coincidir con las del índice.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · mysql 8.4</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">ALTER TABLE productos ADD FULLTEXT INDEX ft_productos (nombre, descripcion);
+
+EXPLAIN ANALYZE
+SELECT id, nombre FROM productos
+WHERE MATCH(nombre, descripcion) AGAINST ('running');
+
+-&gt; Filter: (match productos.nombre,productos.descripcion against ('running'))
+     (cost=1.1 rows=1) (actual time=0.0309..0.0549 rows=4 loops=1)
+    -&gt; Full-text index search on productos using ft_productos (nombre='running')
+         (cost=1.1 rows=1) (actual time=0.0197..0.0432 rows=4 loops=1)</code></pre>
+          </div>
+
+          <p>De 64 ms a 0,05 ms, y el <code>EXPLAIN</code> clásico muestra <code>type: fulltext</code>. Hay dos modos de consulta:</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Modo</th><th>Cómo se escribe</th><th>Qué hace</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Natural (por defecto)</td><td><code>AGAINST ('running impermeable')</code></td><td>Cualquier palabra suma; devuelve filas con al menos una y calcula la relevancia.</td></tr>
+                <tr><td>Booleano</td><td><code>AGAINST ('+running -mochila' IN BOOLEAN MODE)</code></td><td><code>+</code> obliga, <code>-</code> excluye, <code>*</code> busca por prefijo y las comillas buscan la frase exacta.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Con los datos de ejemplo, <code>'+running -mochila'</code> descarta la mochila aunque diga «running». <code>'"running trail"'</code> solo encuentra las zapatillas. Y aquí sale la primera limitación: <strong>InnoDB no reduce palabras a su raíz</strong>. <code>AGAINST ('auricular')</code> no encuentra «Auriculares»; hace falta <code>'auricular*'</code> en modo booleano. A cambio, con la collation por defecto (<code>utf8mb4_0900_ai_ci</code>) no distingue acentos: «montana» encuentra «montaña».</p>
+
+          <p>La segunda limitación es el tamaño mínimo de palabra. <code>innodb_ft_min_token_size</code> vale 3 por defecto, así que «HD» nunca llega al índice y <code>AGAINST ('hd')</code> no devuelve nada. Además, la lista de stopwords por defecto es inglesa, pero incluye <code>de</code>, <code>la</code> y <code>en</code>. La variable es de solo lectura (<code>SET GLOBAL</code> falla con <code>ERROR 1238</code>): se cambia en la configuración, se reinicia y se reconstruye el índice.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ini · my.cnf</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="ini">[mysqld]
+innodb_ft_min_token_size = 2</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · tras reiniciar</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">ALTER TABLE productos
+  DROP INDEX ft_productos,
+  ADD FULLTEXT INDEX ft_productos (nombre, descripcion);</code></pre>
+          </div>
+
+          <h2 id="postgres">
+            tsvector y GIN en Postgres
+            <a href="#postgres" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Postgres separa las dos piezas. <code>tsvector</code> es el documento ya procesado y <code>tsquery</code> es la consulta procesada. El operador <code>@@</code> dice si casan. La configuración <code>'spanish'</code> aplica stopwords y raíces en castellano:</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · postgres 17</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">SELECT to_tsvector('spanish', 'Zapatillas impermeables para correr por montaña');
+-- 'corr':4 'imperm':2 'montañ':6 'zapatill':1
+
+SELECT websearch_to_tsquery('spanish', 'running -mochila "trail running"');
+-- 'running' &amp; !'mochil' &amp; 'trail' &lt;-&gt; 'running'</code></pre>
+          </div>
+
+          <p>«para» y «por» han desaparecido y el resto se ha quedado en su raíz. <code>websearch_to_tsquery</code> entiende la sintaxis de un buscador web (comillas, <code>-</code>, <code>OR</code>) y nunca da error de sintaxis; <code>to_tsquery('spanish', 'zapatilla impermeable')</code>, en cambio, falla con <code>syntax error in tsquery</code>. Con texto que escribe un usuario, la primera.</p>
+          <p>Para que sea rápido, el <code>tsvector</code> se guarda en una columna generada y se indexa con <strong>GIN</strong>, la implementación del índice invertido en Postgres. <code>setweight</code> marca de qué columna viene cada término: lo usará el ranking.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · postgres 17</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">ALTER TABLE productos ADD COLUMN busqueda tsvector
+  GENERATED ALWAYS AS (
+    setweight(to_tsvector('spanish', nombre), 'A') ||
+    setweight(to_tsvector('spanish', descripcion), 'B')
+  ) STORED;
+
+CREATE INDEX idx_productos_busqueda ON productos USING GIN (busqueda);
+
+EXPLAIN ANALYZE SELECT id, nombre FROM productos
+WHERE busqueda @@ websearch_to_tsquery('spanish', 'zapatilla impermeable');
+
+ Bitmap Heap Scan on productos  (actual time=0.178..0.179 rows=1 loops=1)
+   Recheck Cond: (busqueda @@ '''zapatill'' &amp; ''imperm'''::tsquery)
+   -&gt;  Bitmap Index Scan on idx_productos_busqueda  (actual time=0.167..0.167 rows=1 loops=1)
+ Execution Time: 0.218 ms</code></pre>
+          </div>
+
+          <p>Ahí está la búsqueda del principio: «zapatilla impermeable» encuentra «Zapatillas de running trail», cuya descripción dice «impermeables». Al contrario que InnoDB, Postgres indexa «HD» sin problema, pero la configuración <code>'spanish'</code> sí distingue acentos: «montana» no encuentra «montaña». Se arregla con la extensión <code>unaccent</code> en una configuración propia, que luego sustituye a <code>'spanish'</code> en la columna generada y en la consulta:</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · postgres 17</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">CREATE EXTENSION IF NOT EXISTS unaccent;
+CREATE TEXT SEARCH CONFIGURATION es_sin_acentos (COPY = spanish);
+ALTER TEXT SEARCH CONFIGURATION es_sin_acentos
+  ALTER MAPPING FOR hword, hword_part, word WITH unaccent, spanish_stem;</code></pre>
+          </div>
+
+          <h2 id="ranking">
+            Ranking: ordenar por relevancia
+            <a href="#ranking" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Hay que poner arriba lo que más se parece. En MySQL, el propio <code>MATCH ... AGAINST</code> en el <code>SELECT</code> devuelve la relevancia. En Postgres se calcula con <code>ts_rank</code>. Misma búsqueda, «running impermeable», en los dos motores:</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Producto</th><th>MySQL (modo natural)</th><th>Postgres (<code>running OR impermeable</code>)</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Chaqueta impermeable de montaña</td><td>60.9183</td><td>0.4559</td></tr>
+                <tr><td>Zapatillas de running trail</td><td>16.7765</td><td>0.4255</td></tr>
+                <tr><td>Calcetines de running</td><td>16.7765</td><td>0.3040</td></tr>
+                <tr><td>Mochila de hidratación para correr</td><td>16.7765</td><td>0.1216</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>MySQL premia que «impermeable» sea rara y aparezca dos veces en la chaqueta, pero trata igual las tres filas con «running». Postgres, además, sabe que en los calcetines «running» está en el nombre (peso A) y en la mochila solo en la descripción (peso B). Por defecto, A pesa 1.0 y B 0.4. Los números no se comparan entre motores: solo ordenan dentro de una consulta.</p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Un término frente a todos</p>
+              <p><code>websearch_to_tsquery</code> une las palabras con <code>&amp;</code>: «running impermeable» exige las dos. El modo natural de MySQL las une con un «o». Por eso la tabla usa <code>OR</code> en Postgres: para comparar lo mismo.</p>
+            </div>
+          </div>
+
+          <h2 id="php">
+            En PHP: antes y después
+            <a href="#php" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El cambio es pequeño: la consulta usa el índice y el orden sale de la relevancia.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · antes: LIKE</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class ProductSearch
+{
+    public function __construct(private readonly PDO $pdo)
+    {
+    }
+
+    public function search(string $term): array
+    {
+        $statement = $this-&gt;pdo-&gt;prepare(
+            'SELECT id, nombre FROM productos
+             WHERE nombre LIKE :term OR descripcion LIKE :term
+             LIMIT 20'
+        );
+        $statement-&gt;execute(['term' =&gt; '%' . $term . '%']);
+
+        return $statement-&gt;fetchAll(PDO::FETCH_ASSOC);
+    }
+}</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · después: MySQL</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class MySqlProductSearch
+{
+    public function __construct(private readonly PDO $pdo)
+    {
+    }
+
+    public function search(string $term): array
+    {
+        $statement = $this-&gt;pdo-&gt;prepare(
+            'SELECT id, nombre,
+                    MATCH(nombre, descripcion) AGAINST (:rankedTerm) AS relevancia
+             FROM productos
+             WHERE MATCH(nombre, descripcion) AGAINST (:filteredTerm)
+             ORDER BY relevancia DESC
+             LIMIT 20'
+        );
+        $statement-&gt;execute(['rankedTerm' =&gt; $term, 'filteredTerm' =&gt; $term]);
+
+        return $statement-&gt;fetchAll(PDO::FETCH_ASSOC);
+    }
+}</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · después: Postgres</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class PostgresProductSearch
+{
+    public function __construct(private readonly PDO $pdo)
+    {
+    }
+
+    public function search(string $term): array
+    {
+        $statement = $this-&gt;pdo-&gt;prepare(
+            "SELECT id, nombre, ts_rank(busqueda, consulta) AS relevancia
+             FROM productos, websearch_to_tsquery('spanish', :term) AS consulta
+             WHERE busqueda @@ consulta
+             ORDER BY relevancia DESC
+             LIMIT 20"
+        );
+        $statement-&gt;execute(['term' =&gt; $term]);
+
+        return $statement-&gt;fetchAll(PDO::FETCH_ASSOC);
+    }
+}</code></pre>
+          </div>
+
+          <p>En MySQL el término va en modo natural a propósito: en modo booleano, un <code>-</code> o un <code>*</code> que teclee el usuario cambiaría la búsqueda.</p>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que suele fallar</p>
+              <ul>
+                <li><strong>Omitir la configuración en Postgres.</strong> <code>to_tsvector(texto)</code> sin primer argumento usa <code>default_text_search_config</code>, que en la imagen oficial de Docker es <code>pg_catalog.english</code>: raíces inglesas sobre texto español.</li>
+                <li><strong>Consultar otra expresión distinta de la indexada.</strong> Con el GIN sobre <code>busqueda</code>, un <code>WHERE to_tsvector('spanish', nombre) @@ ...</code> hace <code>Parallel Seq Scan</code>: el planificador solo usa el índice si la expresión coincide.</li>
+                <li><strong>Repetir un parámetro con nombre.</strong> Con <code>PDO::ATTR_EMULATE_PREPARES</code> a <code>false</code>, usar <code>:term</code> dos veces en la misma consulta de MySQL lanza <code>SQLSTATE[HY093]: Invalid parameter number</code>. Por eso el ejemplo usa dos nombres.</li>
+                <li><strong>Esperar que las palabras cortas se encuentren.</strong> En MySQL, «HD», «4K» o «TV» no llegan al índice con el mínimo de 3.</li>
+                <li><strong>Dar por exacto el stemming.</strong> En Postgres, «auriculares» se queda en <code>'auricular'</code>, pero la consulta «auricular» se reduce a <code>'auricul'</code> y no lo encuentra.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Primero, el plan. En MySQL busca <code>type: fulltext</code> o <code>Full-text index search</code>; en Postgres, <code>Bitmap Index Scan</code> sobre el índice GIN. Si aparece un <code>Table scan</code> o un <code>Seq Scan</code>, el índice no se está usando.</p>
+          <p>Después, mira qué términos se guardaron: explica por qué algo no aparece.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · inspeccionar los términos</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">-- MySQL: qué palabras hay en el índice de una tabla
+SET GLOBAL innodb_ft_aux_table = 'tienda/productos';
+SELECT DISTINCT word, doc_count
+FROM INFORMATION_SCHEMA.INNODB_FT_INDEX_TABLE
+WHERE word IN ('running', 'hd', 'de', 'para');
+-- para: 5, running: 4 (ni 'hd' ni 'de')
+
+-- Postgres: cómo queda un texto y una consulta
+SELECT to_tsvector('spanish', 'Auriculares inalámbricos'),
+       to_tsquery('spanish', 'auricular');
+-- 'auricular':1 'inalambr':2 | 'auricul'</code></pre>
+          </div>
+
+          <p>Las filas recién insertadas en MySQL pueden estar aún en <code>INNODB_FT_INDEX_CACHE</code> y no en <code>INNODB_FT_INDEX_TABLE</code>: mira las dos.</p>
+
+          <h2 id="motor-aparte">
+            Cuándo compensa OpenSearch
+            <a href="#motor-aparte" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El full-text de la base de datos cubre el buscador de un panel, un blog o un catálogo mediano. Un motor como OpenSearch compensa cuando la búsqueda es el producto, no un extra:</p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Lo que ganas</h4>
+              <ul>
+                <li><strong>Relevancia ajustable</strong>: BM25 por defecto, con pesos por campo y por consulta que se cambian sin migrar.</li>
+                <li><strong>Facetas</strong>: los contadores «Talla M (120)» salen de agregaciones en la misma petición.</li>
+                <li><strong>Tolerancia a erratas</strong>, sinónimos y analizadores por idioma configurables.</li>
+                <li><strong>Volumen</strong>: millones de documentos repartidos en varios nodos sin cargar la base de datos principal.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Lo que pagas</h4>
+              <ul>
+                <li>Un servicio más que desplegar, vigilar y actualizar.</li>
+                <li>Sincronizar los datos: cada cambio en la base de datos tiene que llegar al índice.</li>
+                <li>Consistencia eventual: un producto recién editado tarda en verse en el buscador.</li>
+                              </ul>
+            </div>
+          </div>
+
+          <p>La sincronización es la parte cara. Si la haces desde el código, apóyate en <a href="sd-outbox.html">el patrón outbox</a> para no perder cambios cuando falla la escritura en el índice.</p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Full-text en la base de datos cuando…</h4>
+              <ul>
+                <li>Buscas palabras dentro de textos largos: nombres, descripciones, artículos.</li>
+                <li>El <code>LIKE '%x%'</code> ya aparece como lento en el log o en el <code>EXPLAIN</code>.</li>
+                <li>Quieres ordenar por relevancia sin añadir infraestructura.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No hace falta cuando…</h4>
+              <ul>
+                <li>Buscas por el principio del valor (un código, un email, un SKU): basta un B-tree y <code>LIKE 'x%'</code>.</li>
+                <li>La tabla tiene unos cientos de filas y nunca crecerá.</li>
+                <li>Necesitas facetas, erratas y relevancia afinada a gran escala: eso es un motor aparte.</li>
+              </ul>
+            </div>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La alternativa sencilla</p>
+              <p>Si los usuarios buscan códigos o nombres exactos que empiezan por lo que escriben, un índice B-tree con <code>LIKE 'texto%'</code> resuelve el caso sin full-text. Y si ya estás en Postgres y lo que necesitas es tolerar erratas en textos cortos, mira la extensión <code>pg_trgm</code>, cuyo índice GIN también acelera <code>LIKE '%x%'</code>, antes de montar un motor aparte.</p>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>LIKE '%x%'</code> recorre la tabla entera: el B-tree no sirve si el comodín va delante.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El full-text usa un índice invertido (término → filas); texto y consulta se normalizan igual.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>MySQL: <code>FULLTEXT</code> + <code>MATCH ... AGAINST</code>, modo natural o booleano, sin raíces y con un mínimo de 3 caracteres por palabra.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Postgres: columna <code>tsvector</code> generada con <code>'spanish'</code>, índice GIN y <code>websearch_to_tsquery</code> para el texto del usuario.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Ordena por relevancia: <code>MATCH</code> en el <code>SELECT</code> en MySQL, <code>ts_rank</code> con pesos por columna en Postgres.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>OpenSearch compensa con facetas, erratas, relevancia afinada o mucho volumen, si aceptas sincronizar otro almacén.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="sql-window-functions.html">
+              <small>← Anterior</small>
+              <b>Window functions</b>
+            </a>
+            <a href="../cursos.html">
+              <small>Fin del curso →</small>
+              <b>Catálogo de cursos</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

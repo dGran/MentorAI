@@ -5097,4 +5097,19 @@ window.ACADEMIA_TUTORIALS = [
     status: "published",
     date: "2026-10-12",
   },
+  {
+    slug: "busqueda-full-text",
+    title: "Búsqueda full-text en MySQL y Postgres",
+    description:
+      "Por qué LIKE '%x%' recorre la tabla entera, FULLTEXT de InnoDB con MATCH ... AGAINST en modo natural y booleano, tsvector y GIN con 'spanish' en Postgres, ranking por relevancia y cuándo compensa OpenSearch.",
+    href: "tutorials/busqueda-full-text.html",
+    categories: ["bbdd"],
+    topic: "Bases de datos",
+    tags: ["SQL", "Full-text", "Índices", "Postgres"],
+    level: "Intermedio",
+    minutes: 26,
+    icon: "database",
+    status: "published",
+    date: "2026-10-12",
+  },
 ];
