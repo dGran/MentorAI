@@ -148,8 +148,8 @@ $redis-&gt;del('bloqueo:facturacion');</code></pre>
 
           <p>
             Se arregla marcando el bloqueo con un valor único y borrando solo si sigue siendo el
-            tuyo, de forma atómica. En Redis eso significa un script Lua, porque comprobar y
-            borrar en dos comandos tiene la misma carrera que intentabas evitar:
+            tuyo, de forma atómica. Comprobar y borrar en dos comandos tiene la misma carrera que
+            intentabas evitar; en Redis anterior a la 8.4, la forma atómica es un script Lua:
           </p>
 
           <div class="code-block">
@@ -190,6 +190,13 @@ final class BloqueoConDueno
     }
 }</code></pre>
           </div>
+
+          <p>
+            Desde Redis 8.4 no hace falta el script: <code>DELEX</code> borra la clave solo si
+            su valor coincide, en un único comando atómico. En PHP,
+            <code>$this-&gt;redis-&gt;rawCommand('DELEX', $clave, 'IFEQ', $testigo)</code>
+            sustituye al <code>eval</code>; devuelve 1 si borró y 0 si el bloqueo ya no era tuyo.
+          </p>
 
           <h2 id="fallo-fundamental">
             Fallo 2: el que no se arregla
@@ -321,7 +328,7 @@ final class BloqueoConDueno
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Comprobar y borrar tiene que ser atómico: en Redis, un script Lua, porque en dos comandos vuelve la carrera.</span>
+                <span>Comprobar y borrar tiene que ser atómico: en Redis 8.4+, <code>DELEX</code> con <code>IFEQ</code>; antes, un script Lua. En dos comandos vuelve la carrera.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>

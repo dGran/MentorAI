@@ -420,7 +420,7 @@ window.MENTORAI_QUIZZES = {
       lesson: "sd-outbox" },
     { id: "qc611cf", q: "¿Cuál es la razón principal para elegir Kafka en lugar de RabbitMQ?",
       o: ["Que reparte mejor el trabajo entre varios workers", "Que trae reintentos con retardo y cola de muertos ya hechos", "Que permite priorizar unos mensajes sobre otros en la cola", "Que leer no borra y puedes rebobinar y reprocesar la historia"], a: 3,
-      w: "Es la capacidad que no se puede emular en una cola. En RabbitMQ el mensaje confirmado desaparece; en Kafka sigue en el registro y cada consumidor lleva su propio offset. Todo lo demás de la lista es justo lo que RabbitMQ hace mejor.",
+      w: "Es la capacidad que no se puede emular en una cola. En una cola clásica o de quórum de RabbitMQ el mensaje confirmado desaparece (sus streams sí se releen, pero son otra estructura); en Kafka sigue en el registro y cada consumidor lleva su propio offset. Todo lo demás de la lista es justo lo que RabbitMQ hace mejor.",
       lesson: "sd-colas-y-topicos" },
     { id: "q2f5d14", q: "Un usuario guarda su nombre y, al redirigir, ve el antiguo. Recarga y ya sale bien. ¿Qué ha pasado?",
       o: ["La lectura fue a una réplica que aún no había aplicado la escritura", "La primera escritura se perdió por la red y la recarga la volvió a enviar", "La caché HTTP del navegador sirvió la versión anterior a la redirección", "El ORM devolvió la entidad que tenía guardada todavía en su caché interna"], a: 0,

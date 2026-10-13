@@ -158,7 +158,9 @@
             </div>
             <p class="diagram__caption">
               Esa capacidad de rebobinar es la razón principal para elegir Kafka, y no se puede
-              emular en RabbitMQ.
+              emular con las colas clásicas o de quórum de RabbitMQ. Sus <em>streams</em> (desde
+              la 3.9) sí son un registro que se relee desde un offset, pero son otra estructura,
+              no la cola de siempre.
             </p>
           </div>
 
@@ -189,11 +191,25 @@
             <div class="callout__body">
               <p class="callout__title">El error caro: Kafka como cola de tareas</p>
               <p>
-                Si un mensaje falla en Kafka, el consumidor no puede «devolverlo a la cola»: el
+                Si un mensaje falla en un <em>consumer group</em> de Kafka, el consumidor no puede «devolverlo a la cola»: el
                 <em>offset</em> avanza en orden. O paras la partición entera reintentando ese
                 mensaje —bloqueando todo lo que viene detrás—, o lo escribes en un topic de
                 reintentos y montas a mano lo que RabbitMQ te da hecho. Mucha gente descubre
                 esto en producción.
+              </p>
+            </div>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Kafka 4.2: las share groups</p>
+              <p>
+                Desde Kafka 4.2 (febrero de 2026) las <em>share groups</em> («Queues for Kafka»)
+                están listas para producción: varios consumidores procesan a la vez mensajes de la
+                misma partición, cada mensaje se confirma por separado y el broker cuenta sus
+                entregas. Es la alternativa de Kafka para colas de tareas; todo lo de esta lección
+                sobre offsets y particiones sigue valiendo para los <em>consumer groups</em> clásicos.
               </p>
             </div>
           </div>
@@ -204,7 +220,7 @@
           </h2>
           <p>
             En RabbitMQ, añadir workers a una cola aumenta el paralelismo sin límite práctico: el
-            broker reparte entre los que haya. En Kafka, el paralelismo de un grupo de consumidores
+            broker reparte entre los que haya. En Kafka, el paralelismo de un <em>consumer group</em>
             está <strong>topado por el número de particiones</strong>: si el topic tiene 6
             particiones, el séptimo consumidor se queda de brazos cruzados.
           </p>
@@ -348,15 +364,15 @@ final class EnviarCorreoConfirmacion
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Rebobinar es la razón principal para elegir Kafka, y no se puede emular en RabbitMQ.</span>
+                <span>Rebobinar es la razón principal para elegir Kafka, y no se puede emular con las colas de RabbitMQ (sus <em>streams</em> sí rebobinan, pero son otra estructura).</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Usar Kafka como cola de tareas duele: no hay «devolver a la cola», y los reintentos con retardo hay que construirlos.</span>
+                <span>Usar un <em>consumer group</em> de Kafka como cola de tareas duele: no hay «devolver a la cola», y los reintentos con retardo hay que construirlos. Desde Kafka 4.2, las <em>share groups</em> son la alternativa.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>En Kafka el paralelismo lo topa el número de particiones, y ampliarlas después rompe el orden por clave. Empieza con margen.</span>
+                <span>En un <em>consumer group</em> de Kafka el paralelismo lo topa el número de particiones, y ampliarlas después rompe el orden por clave. Empieza con margen.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
