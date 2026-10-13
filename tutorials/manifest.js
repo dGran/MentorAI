@@ -159,6 +159,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-08-01",
+    reviewed: "2026-10-13",
   },
   {
     slug: "pr-serializacion",
@@ -174,6 +175,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-08-01",
+    reviewed: "2026-10-13",
   },
   {
     slug: "pr-grpc",
@@ -189,6 +191,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-08-01",
+    reviewed: "2026-10-13",
   },
   {
     slug: "pr-compatibilidad",
@@ -204,6 +207,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-08-01",
+    reviewed: "2026-10-13",
   },
   {
     slug: "pr-http1-a-http3",
@@ -219,6 +223,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-08-01",
+    reviewed: "2026-10-13",
   },
   {
     slug: "pr-tls-handshake",
@@ -2788,6 +2793,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-06-29",
+    reviewed: "2026-10-13",
   },
   {
     slug: "rest-diseno-de-urls",
@@ -2818,6 +2824,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-06-29",
+    reviewed: "2026-10-13",
   },
   {
     slug: "rest-vs-rpc-vs-graphql",
@@ -3559,6 +3566,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "code",
     status: "published",
     date: "2026-06-22",
+    reviewed: "2026-10-13",
   },
   {
     slug: "php-fpm",
@@ -3619,6 +3627,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "database",
     status: "published",
     date: "2026-06-22",
+    reviewed: "2026-10-13",
   },
   {
     slug: "tcp-ip",
@@ -3881,6 +3890,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-06-21",
+    reviewed: "2026-10-13",
   },
   {
     slug: "inyeccion-dependencias",
