@@ -3368,4 +3368,15 @@ window.MENTORAI_CHECKS = {
       o: ["Borrar la condición, el camino viejo y la regla","Dejarla encendida para poder volver atrás si algo falla","Borrar solo la regla, que ya no se consulta"], a: 0,
       w: "Una flag de release que se queda es deuda. Borrar solo la regla es peor: una flag desconocida devuelve false y todos vuelven al checkout viejo. Se retiran la condición, el camino viejo y la regla en un deploy." },
   ],
+  "postgres-jsonb": [
+    { id: "c183d4b", q: "Tienes un índice GIN con jsonb_path_ops sobre la columna atributos. ¿Qué filtro puede resolverse con ese índice?",
+      o: ["WHERE atributos ? 'garantia'","WHERE atributos @> '{\"garantia\": true}'","WHERE (atributos ->> 'garantia')::boolean"], a: 1,
+      w: "jsonb_path_ops solo sirve la contención (@>) y las consultas jsonpath (@? y @@): con ? el plan es un Seq Scan. Una expresión sobre ->> necesita su propio índice B-tree." },
+    { id: "ccd5a4d", q: "En PHP, $pdo->prepare(\"SELECT id FROM productos WHERE atributos ? 'garantia' AND id = ?\") falla con un error de sintaxis cerca de $1. ¿Por qué?",
+      o: ["Porque el operador ? solo existe para el tipo json y no para jsonb","Porque Postgres no acepta parámetros posicionales en PDO, solo con nombre","Porque PDO toma el ? del operador como un marcador de parámetro"], a: 2,
+      w: "PDO convierte cada ? en un parámetro, también el del operador, y Postgres recibe «atributos $1 'garantia'». Se arregla escapándolo como ?? o reescribiendo el filtro con @> y un parámetro con nombre." },
+    { id: "cdcca76", q: "Todas las filas de pedidos guardan en una columna JSONB las mismas cinco claves, y varias consultas hacen JOIN con clientes usando un id sacado del JSON. ¿Qué te dice eso?",
+      o: ["Que es un esquema escondido y esas claves quieren ser columnas","Que falta un índice GIN con jsonb_ops sobre la columna del JSON","Que conviene cambiar el tipo de la columna de jsonb a json"], a: 0,
+      w: "JSONB compensa cuando los atributos cambian por fila. Si todas las filas llevan las mismas claves y haces JOIN sobre ellas, pierdes tipos, NOT NULL y claves foráneas sin ganar nada: son columnas disfrazadas. Un índice no arregla el modelo, y json sería aún peor para consultar." },
+  ],
 };

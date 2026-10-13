@@ -5127,4 +5127,19 @@ window.ACADEMIA_TUTORIALS = [
     status: "published",
     date: "2026-10-12",
   },
+  {
+    slug: "postgres-jsonb",
+    title: "Postgres para quien viene de MySQL: JSONB e índices GIN",
+    description:
+      "JSONB frente a JSON, los operadores ->, ->>, @> y ?, índices GIN con jsonb_ops y jsonb_path_ops, cuándo una columna JSONB es un esquema escondido y las diferencias de Postgres que muerden al venir de MySQL.",
+    href: "tutorials/postgres-jsonb.html",
+    categories: ["bbdd"],
+    topic: "Bases de datos",
+    tags: ["PostgreSQL", "JSONB", "Índices GIN", "MySQL"],
+    level: "Intermedio",
+    minutes: 22,
+    icon: "database",
+    status: "published",
+    date: "2026-10-12",
+  },
 ];
