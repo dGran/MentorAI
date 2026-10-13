@@ -72,7 +72,7 @@ window.MENTORAI_QUIZ_SUMMARY = {
     "passingScore": null
   },
   "observabilidad": {
-    "total": 15,
+    "total": 17,
     "passingScore": null
   },
   "phpunit": {

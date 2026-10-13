@@ -1286,6 +1286,14 @@ window.MENTORAI_QUIZZES = {
       o: ["Un enlace del dashboard que lleva al código que causó el error","La ruta en el filesystem donde se generó el error","El rastro de eventos previos al error, en orden","El identificador de la versión del código que causó el error"], a: 2,
       w: "Es el rastro de lo que pasó justo antes: consultas, navegación, llamadas. Casi siempre es lo que revela la secuencia que llevó al fallo, más útil que la propia línea que petó.",
       lesson: "sentry-a-fondo" },
+    { id: "q6b37c5", q: "Instrumentas checkout e inventario con OpenTelemetry. En Jaeger, el span de servidor de inventario aparece como raíz de una traza aparte, en vez de colgar del span cliente de checkout. ¿Qué revisas primero?",
+      o: ["Que inventario use parentbased_ en su muestreador y no traceidratio","Que el collector reciba los spans de los dos servicios en el mismo lote","Que cada servicio tenga su propio OTEL_SERVICE_NAME configurado","Que checkout inyecte el traceparent y que inventario lo extraiga"], a: 3,
+      w: "Una raíz nueva en el servicio de destino significa que el contexto no viajó: o checkout no llamó a inject() sobre las cabeceras, o inventario no hizo extract() y setParent(). El muestreador decide si se guarda un span, no de quién cuelga, y el lote del collector no cambia las relaciones.",
+      lesson: "opentelemetry-en-php" },
+    { id: "qa44faa", q: "Tu SLI de disponibilidad sale de traces_span_metrics_calls_total. Al añadir tail_sampling (todos los errores y el 5 % del resto) en el mismo pipeline que span_metrics, el SLI se desploma sin que cambie el tráfico real. ¿Qué ha pasado?",
+      o: ["Los spans internos de SQL pasan a contar también como peticiones de servidor","Las métricas solo cuentan lo muestreado, con todos los errores y pocos aciertos","El collector tarda 10 s en decidir y Prometheus pierde esas muestras por el camino","El procesador marca como error las trazas que superan los 500 ms"], a: 1,
+      w: "Si span_metrics recibe los spans después del muestreo por cola, ve el 100 % de los errores y solo el 5 % de las peticiones correctas, así que la tasa de error se multiplica. Va en un pipeline propio, antes de muestrear. El muestreo no reclasifica spans ni cambia su estado.",
+      lesson: "opentelemetry-en-php" },
   ]},
 
   /* -------- PHPUnit (12) -------- */
