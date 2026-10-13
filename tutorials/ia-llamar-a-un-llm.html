@@ -153,8 +153,8 @@ use Anthropic\Client;
 $client = new Client(apiKey: getenv("ANTHROPIC_API_KEY"));
 
 $message = $client-&gt;messages-&gt;create(
-    model: "claude-opus-5",
-    maxTokens: 1024,
+    model: "claude-opus-5-5",
+    maxTokens: 4096,
     system: "Clasificas tickets de soporte de una tienda online. " .
         "Responde SOLO con una de: facturacion, envio, producto, otro.",
     messages: [
@@ -176,13 +176,16 @@ foreach ($message-&gt;content as $block) {
           <p>
             Las piezas: <code>model</code> (el cerebro que eliges — la última
             lección va de elegirlo con criterio), <code>maxTokens</code> (techo
-            de la respuesta: aquí 1024 sobra para una palabra, y un techo bajo
-            en tareas largas <em>trunca</em> la respuesta a media frase),
+            de la salida: con este modelo el razonamiento está siempre activo antes
+            de contestar y ese razonamiento cuenta contra el mismo techo, así que
+            no lo dimensiones por la palabra que esperas; un techo bajo
+            <em>trunca</em> la respuesta a media frase),
             <code>system</code> (las instrucciones del desarrollador) y
             <code>messages</code> (la conversación). Y un detalle del bucle
             final que parece paranoia y no lo es: <code>content</code> es una
             lista de bloques tipados, no un string — asumir que el primero es
-            texto revienta el día que el modelo devuelva otra cosa delante.
+            texto revienta: con el razonamiento activo, la respuesta suele empezar
+            por un bloque <code>thinking</code>.
             Y antes de leer <code>content</code>, mira <code>stopReason</code>: un
             200 no garantiza una respuesta completa. <code>end_turn</code> es el
             final natural; <code>max_tokens</code>, que se cortó en tu techo;
@@ -197,7 +200,8 @@ foreach ($message-&gt;content as $block) {
               <p>
                 Los tutoriales clásicos enseñaban <code>temperature</code> para
                 controlar la aleatoriedad. En los modelos actuales de Anthropic
-                ese mando <strong>ya no existe</strong> (la API lo rechaza): el
+                ese mando <strong>ya no se puede mover</strong> (la API rechaza
+                cualquier valor distinto del de por defecto): el
                 control se ejerce con instrucciones claras, salida estructurada
                 <a href="ia-structured-output.html">(siguiente lección)</a> y el nivel de esfuerzo de razonamiento. Si
                 lees código con temperatura, estás leyendo código de otra época
@@ -249,7 +253,7 @@ foreach ($message-&gt;content as $block) {
             <pre><code data-lang="php">$historial[] = ["role" =&gt; "user", "content" =&gt; $preguntaNueva];
 
 $message = $client-&gt;messages-&gt;create(
-    model: "claude-opus-5",
+    model: "claude-opus-5-5",
     maxTokens: 16000,
     system: $instrucciones,
     messages: $historial,
