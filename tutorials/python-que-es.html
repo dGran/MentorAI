@@ -109,7 +109,7 @@ There should be one-- and preferably only one --obvious way to do it.</code></pr
           <div class="callout callout--info">
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
             <div class="callout__body">
-              <p><strong>GIL (Global Interpreter Lock)</strong>: CPython tiene un lock global que impide que más de un hilo ejecute bytecode Python simultáneamente. Simplifica el modelo de memoria pero limita el paralelismo CPU. Para I/O-bound (la mayoría de backends web), <a href="python-async-await.html">async/await lo rodea completamente</a> sin necesidad de threads.</p>
+              <p><strong>GIL (Global Interpreter Lock)</strong>: CPython, en su build por defecto, tiene un lock global que impide que más de un hilo ejecute bytecode Python simultáneamente. Simplifica el modelo de memoria pero limita el paralelismo CPU. Para I/O-bound (la mayoría de backends web), <a href="python-async-await.html">async/await lo rodea completamente</a> sin necesidad de threads.</p>
             </div>
           </div>
 
@@ -132,8 +132,8 @@ There should be one-- and preferably only one --obvious way to do it.</code></pr
           <ul>
             <li><strong>Código de sistema y kernel</strong>: sin punteros, sin gestión manual de memoria. Para drivers o partes del kernel, C o Rust son las opciones.</li>
             <li><strong>Latencia extrema</strong>: el GC de CPython (reference counting) añade trabajo no determinista. Para servicios donde el P99 es un requisito duro, Go o Rust son mejores elecciones. Rust elimina el GC completamente.</li>
-            <li><strong>Mobile nativo</strong>: no hay soporte nativo para iOS ni Android.</li>
-            <li><strong>CPU-bound con threads</strong>: el GIL significa que aunque lances 8 threads, solo uno ejecuta Python a la vez. Para workloads CPU-bound paralelos necesitas <code>multiprocessing</code> o <code>ProcessPoolExecutor</code>, que tienen overhead de serialización entre procesos.</li>
+            <li><strong>Apps móviles</strong>: CPython corre en iOS y Android (plataformas oficiales desde 3.13), pero no hay un ecosistema maduro de UI nativa: para una app móvil, Swift, Kotlin o Flutter siguen siendo la elección.</li>
+            <li><strong>CPU-bound con threads</strong>: en la build por defecto, el GIL significa que aunque lances 8 threads, solo uno ejecuta Python a la vez. Para workloads CPU-bound paralelos necesitas <code>multiprocessing</code> o <code>ProcessPoolExecutor</code>, que tienen overhead de serialización entre procesos. Desde 3.14 hay además una build <em>free-threaded</em> sin GIL con soporte oficial (<code>python3.14t</code>), pero es opcional y no todas las librerías con extensiones C la soportan aún.</li>
           </ul>
           <div class="callout callout--tip">
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
@@ -177,7 +177,7 @@ There should be one-- and preferably only one --obvious way to do it.</code></pr
                 <tr><td>Data science / ML</td><td>No</td><td>No</td><td>No</td><td>Primera clase</td></tr>
                 <tr><td>Backend web</td><td>Primera clase</td><td>Maduro</td><td>Joven</td><td>Maduro (FastAPI)</td></tr>
                 <tr><td>Scripting</td><td>Limitado</td><td>Posible</td><td>No</td><td>Primera clase</td></tr>
-                <tr><td>Paralelismo CPU</td><td>Procesos</td><td>Goroutines reales</td><td>Threads sin data races</td><td>Multiprocessing (GIL)</td></tr>
+                <tr><td>Paralelismo CPU</td><td>Procesos</td><td>Goroutines reales</td><td>Threads sin data races</td><td>Multiprocessing (GIL en la build por defecto)</td></tr>
               </tbody>
             </table>
           </div>
@@ -187,7 +187,7 @@ There should be one-- and preferably only one --obvious way to do it.</code></pr
             Por qué Python ahora
             <a href="#por-que-ahora" class="anchor" aria-hidden="true">#</a>
           </h2>
-          <p>Python lleva décadas existiendo, pero el backend Python de 2024 no se parece al de 2015. Tres cambios lo renovaron:</p>
+          <p>Python lleva décadas existiendo, pero el backend Python actual no se parece al de 2015. Tres cambios lo renovaron:</p>
           <p><strong>FastAPI + Pydantic</strong>: declarar una API con type hints y obtener validación automática, serialización y documentación OpenAPI sin configuración es algo que ningún framework PHP logra con tanta limpieza. La ergonomía es comparable a lo mejor de TypeScript.</p>
           <p><strong>async/await maduro</strong>: desde Python 3.7 el modelo async es estable. En 3.12 el rendimiento del event loop mejoró significativamente. Las bibliotecas core (httpx, <a href="python-sqlalchemy-async.html">SQLAlchemy 2.0</a>, asyncpg) son async-first.</p>
           <p><strong>uv como gestor moderno</strong>: escrito en Rust por Astral (los mismos de Ruff). Es 10-100× más rápido que pip, maneja virtual environments, y reemplaza pip + venv + pip-tools en un solo binario.</p>
@@ -199,10 +199,11 @@ There should be one-- and preferably only one --obvious way to do it.</code></pr
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
-            <pre><code data-lang="bash">uv init my-api
+            <pre><code data-lang="bash">uv init --no-package my-api &amp;&amp; cd my-api
 uv add fastapi uvicorn
-uv run uvicorn src.main:app --reload</code></pre>
+uv run uvicorn main:app --reload</code></pre>
           </div>
+          <p><code>uv init</code> deja un <code>main.py</code> de ejemplo: crea en él tu <code>app = FastAPI()</code> antes del último comando. Sin <code>--no-package</code>, uv genera un paquete en <code>src/my_api/</code> y el módulo pasa a ser otro.</p>
 
           <h2 id="cuando">
             Cuándo aplicarlo
@@ -223,7 +224,7 @@ uv run uvicorn src.main:app --reload</code></pre>
               <h4>Busca otra opción cuando…</h4>
               <ul>
                 <li>La funcionalidad cabe en el monolito PHP que ya tienes y funciona: un servicio aparte solo añade despliegue y red</li>
-                <li>El cuello de botella es CPU en paralelo: Go o Rust lo aprovechan sin el GIL</li>
+                <li>El cuello de botella es CPU en paralelo: Go o Rust lo aprovechan sin depender de una build sin GIL</li>
                 <li>El P99 de latencia es un requisito duro: Go o Rust dan tiempos más predecibles</li>
                 <li>Necesitas repartir un binario único sin runtime: Go lo resuelve de serie</li>
               </ul>
@@ -254,7 +255,7 @@ uv run uvicorn src.main:app --reload</code></pre>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>El GIL limita el paralelismo de CPU en threads; para I/O-bound, async/await lo elimina como problema real.</span>
+                <span>En la build por defecto, el GIL limita el paralelismo de CPU en threads (la build free-threaded lo quita, de forma opcional); para I/O-bound, async/await lo elimina como problema real.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
