@@ -303,6 +303,7 @@ window.MENTORAI_COURSES = [
       "sql-subqueries-ctes",
       "sql-window-functions",
       "busqueda-full-text",
+      "postgres-jsonb",
     ],
   },
   {

@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Postgres para quien viene de MySQL: JSONB e índices GIN — MentorAI</title>
+    <meta name="description" content="JSONB frente a JSON, los operadores -&gt;, -&gt;&gt;, @&gt; y ?, índices GIN con jsonb_ops y jsonb_path_ops, y las diferencias de Postgres que muerden al venir de MySQL." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Bases de datos</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Postgres para quien viene de MySQL: JSONB e índices GIN</h1>
+        <p class="tutorial-hero__lead">Postgres guarda JSON como un tipo de primera clase y sabe indexarlo entero, no solo una ruta. Esa potencia tiene letra pequeña: operadores que chocan con PDO, índices que sirven unas consultas y otras no, y un puñado de costumbres de MySQL que aquí dan error.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            22 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#el-problema">El problema</a></li>
+            <li><a href="#json-jsonb">JSON frente a JSONB</a></li>
+            <li><a href="#operadores">Operadores: -&gt;, -&gt;&gt;, @&gt; y ?</a></li>
+            <li><a href="#gin">Índices GIN</a></li>
+            <li><a href="#php">En PHP: antes y después</a></li>
+            <li><a href="#muerden">Lo que muerde al venir de MySQL</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Un catálogo con camisetas, portátiles y libros no comparte columnas: la talla no le importa al libro y el ISBN no le importa a la camiseta. En MySQL acabas con una columna <code>JSON</code> y una columna generada por cada campo que quieres filtrar. En Postgres hay otro camino: una columna <code>JSONB</code> y un solo índice que responde a preguntas sobre cualquier clave.</p>
+
+          <h2 id="el-problema">
+            El problema
+            <a href="#el-problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>En <a href="modelado-relacional.html">Modelado relacional</a> viste que cada atributo merece su columna. Funciona mientras los atributos son los mismos para todas las filas. Cuando cada fila trae los suyos (atributos de producto, el payload de un webhook, la configuración de un cliente), tienes tres salidas y dos son malas: cien columnas casi siempre a <code>NULL</code>, o una tabla clave-valor (EAV) que obliga a un <a href="sql-joins.html">JOIN</a> por cada atributo que filtras.</p>
+          <p>La tercera es guardar el documento tal cual y pedirle a la base de datos que lo entienda. MySQL lo hace a medias: el tipo <code>JSON</code> no se indexa directamente, solo a través de una ruta concreta. Lo comprobamos en MySQL 8.4:</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · mysql 8.4</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">CREATE INDEX p_atr ON p (atributos);
+-- ERROR 3152: JSON column 'atributos' supports indexing only
+-- via generated columns on a specified JSON path.
+
+CREATE INDEX p_color ON p ((CAST(atributos -&gt;&gt; '$.color' AS CHAR(20))));
+CREATE INDEX p_tags  ON p ((CAST(atributos -&gt; '$.tags' AS CHAR(20) ARRAY)));</code></pre>
+          </div>
+          <p>Un índice por ruta: si mañana filtras por <code>material</code>, toca migración. Postgres resuelve ese caso con un índice que cubre el documento entero.</p>
+
+          <h2 id="json-jsonb">
+            JSON frente a JSONB
+            <a href="#json-jsonb" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Postgres tiene dos tipos. <code>json</code> guarda el texto tal cual llega y lo vuelve a analizar en cada consulta. <code>jsonb</code> lo descompone al escribir en un formato binario: escribir cuesta un poco más, leer y buscar mucho menos, y solo <code>jsonb</code> admite índices GIN. Salida real de Postgres 17:</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · postgres 17</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">SELECT '{"b":1, "a":2, "a":3}'::json  AS j,
+       '{"b":1, "a":2, "a":3}'::jsonb AS jb;
+--            j           |        jb
+-- {"b":1, "a":2, "a":3}  | {"a": 3, "b": 1}</code></pre>
+          </div>
+          <p>Fíjate en lo que hace <code>jsonb</code>: no conserva el orden de las claves (las reordena por longitud y luego alfabéticamente), quita espacios y, ante claves duplicadas, se queda con la última. Si necesitas el texto exacto (firmar un payload, auditar lo que llegó), <code>json</code> o un <code>text</code>; para todo lo demás, <code>jsonb</code>. El <code>JSON</code> de MySQL se parece más a <code>jsonb</code> que a <code>json</code>: también es binario y también normaliza (la misma consulta en MySQL 8.4 devuelve <code>{"a": 3, "b": 1}</code>). La diferencia real no está en el almacenamiento, está en los índices.</p>
+
+          <h2 id="operadores">
+            Operadores: -&gt;, -&gt;&gt;, @&gt; y ?
+            <a href="#operadores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Las flechas existen en los dos motores, pero en Postgres no llevan ruta <code>$.</code>: reciben la clave.</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Operador</th><th>Qué hace</th><th>Devuelve</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>atributos -&gt; 'color'</code></td><td>Extrae el valor de la clave</td><td><code>jsonb</code> (<code>"azul"</code>, con comillas)</td></tr>
+                <tr><td><code>atributos -&gt;&gt; 'color'</code></td><td>Extrae el valor como texto</td><td><code>text</code> (<code>azul</code>)</td></tr>
+                <tr><td><code>atributos @&gt; '{"color":"rojo"}'</code></td><td>¿Contiene este fragmento?</td><td><code>boolean</code></td></tr>
+                <tr><td><code>atributos ? 'garantia'</code></td><td>¿Existe esta clave en el primer nivel?</td><td><code>boolean</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Dos matices que cuestan horas. <code>-&gt;&gt;</code> siempre da texto, así que <code>atributos -&gt;&gt; 'talla' &gt; '100'</code> compara cadenas: con talla 42 devuelve <code>true</code>, porque <code>'4'</code> va después de <code>'1'</code>. Hay que convertir: <code>(atributos -&gt;&gt; 'talla')::int &gt; 100</code>. Y <code>?</code> solo mira el primer nivel: <code>'{"a":{"b":1}}'::jsonb ? 'b'</code> es <code>false</code>.</p>
+          <p><code>@&gt;</code> es el operador que más rinde: compara estructura, también dentro de arrays. <code>atributos @&gt; '{"tags":["t7"]}'</code> encuentra las filas cuyo array <code>tags</code> contiene <code>"t7"</code>, y es la forma de escribirlo que un índice GIN puede aprovechar.</p>
+
+          <h2 id="gin">
+            Índices GIN: jsonb_ops y jsonb_path_ops
+            <a href="#gin" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Qué es un índice invertido ya lo viste en <a href="busqueda-full-text.html">Búsqueda full-text</a>: GIN apunta de cada elemento a las filas que lo contienen. Con <code>jsonb</code> los elementos son claves y valores del documento. Un <a href="indices-btree.html">B-tree</a> ordena valores completos y no sabe preguntar «¿contiene?»; GIN sí. Hay dos clases de operadores, y cada una sirve a operadores distintos:</p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>jsonb_ops (por defecto)</h4>
+              <ul><li>Sirve <code>@&gt;</code>, <code>?</code>, <code>?|</code>, <code>?&amp;</code>, <code>@?</code> y <code>@@</code>.</li><li>Indexa cada clave y cada valor por separado.</li><li>Más grande: 2128 kB en la prueba.</li></ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>jsonb_path_ops</h4>
+              <ul><li>Sirve <code>@&gt;</code>, <code>@?</code> y <code>@@</code>; <strong>no</strong> sirve <code>?</code>.</li><li>Indexa un hash de cada ruta hasta un valor.</li><li>Más pequeño: 1456 kB con los mismos datos.</li></ul>
+            </div>
+          </div>
+          <p>Probado con 200.000 productos y <code>EXPLAIN</code> en Postgres 17. Con <code>jsonb_path_ops</code>, la contención usa el índice y la existencia de clave no:</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · postgres 17</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">CREATE INDEX productos_atributos_path
+    ON productos USING GIN (atributos jsonb_path_ops);
+
+EXPLAIN SELECT id FROM productos WHERE atributos @&gt; '{"garantia": true}';
+-- Bitmap Heap Scan on productos
+--   -&gt;  Bitmap Index Scan on productos_atributos_path
+
+EXPLAIN SELECT id FROM productos WHERE atributos ? 'garantia';
+-- Seq Scan on productos
+--   Filter: (atributos ? 'garantia'::text)</code></pre>
+          </div>
+          <p>Con el índice por defecto (<code>CREATE INDEX productos_atributos_gin ON productos USING GIN (atributos)</code>) las dos consultas salen por <code>Bitmap Index Scan</code>. Lo que ninguno de los dos sirve es <code>atributos -&gt;&gt; 'color' = 'rojo'</code>: eso es una igualdad sobre una expresión, y la resuelve un B-tree de expresión, <code>CREATE INDEX ON productos ((atributos -&gt;&gt; 'color'))</code>. Es lo mismo que la columna generada de MySQL, solo que sin columna.</p>
+
+          <h2 id="php">
+            En PHP: antes y después
+            <a href="#php" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El primer choque al portar un repositorio es con PDO: <code>?</code> es también el marcador de parámetro posicional. Esta consulta parece correcta y no lo es:</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · antes</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final readonly class ProductRepository
+{
+    public function __construct(private PDO $pdo)
+    {
+    }
+
+    public function findIdsWithWarrantyByColor(string $color): array
+    {
+        $statement = $this-&gt;pdo-&gt;prepare(
+            "SELECT id FROM productos WHERE atributos ? 'garantia' AND atributos -&gt;&gt; 'color' = ?"
+        );
+        $statement-&gt;execute([$color]);
+
+        return $statement-&gt;fetchAll(PDO::FETCH_COLUMN);
+    }
+}</code></pre>
+          </div>
+          <p>PDO convierte los dos <code>?</code> en parámetros y Postgres recibe <code>atributos $1 'garantia'</code>: <code>SQLSTATE[42601]: Syntax error ... syntax error at or near "$1"</code>. PDO permite escaparlo como <code>??</code> (desde PHP 7.4), pero hay una salida mejor: expresar el filtro entero como contención y pasar el fragmento como parámetro con nombre.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · después</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final readonly class ProductRepository
+{
+    public function __construct(private PDO $pdo)
+    {
+    }
+
+    public function findIdsWithWarrantyByColor(string $color): array
+    {
+        $statement = $this-&gt;pdo-&gt;prepare('SELECT id FROM productos WHERE atributos @&gt; :filter');
+        $statement-&gt;execute([
+            'filter' =&gt; json_encode(['garantia' =&gt; true, 'color' =&gt; $color], JSON_THROW_ON_ERROR),
+        ]);
+
+        return $statement-&gt;fetchAll(PDO::FETCH_COLUMN);
+    }
+}</code></pre>
+          </div>
+          <p>Ganas tres cosas: no hay <code>?</code> ambiguo, el valor viaja como parámetro y no concatenado, y <code>@&gt;</code> lo sirven las dos clases de GIN. El plan real de esta consulta es <code>Bitmap Index Scan on productos_atributos_gin</code>, y devuelve las mismas 66 filas que la versión con <code>??</code>.</p>
+
+          <h2 id="muerden">
+            Lo que muerde al venir de MySQL
+            <a href="#muerden" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Todo esto se ejecutó en <code>postgres:17</code> y <code>mysql:8.4</code>. Lo de la izquierda funciona en MySQL; lo de la derecha es lo que dice Postgres.</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>En MySQL</th><th>En Postgres</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>SELECT "hola"</code> devuelve una cadena</td><td>Las comillas dobles son identificadores: <code>column "hola" does not exist</code>. Las cadenas, con comilla simple.</td></tr>
+                <tr><td><code>`Clientes`</code> con backticks</td><td>Los backticks son un <code>syntax error</code>. Los identificadores sin comillas pasan a minúsculas (<code>Clientes</code> es <code>clientes</code>), y <code>"Clientes"</code> entre comillas dobles es otro nombre, que no existe. Si creas la tabla con comillas, tendrás que citarla siempre.</td></tr>
+                <tr><td><code>AUTO_INCREMENT</code></td><td><code>GENERATED ALWAYS AS IDENTITY</code> (estándar) o el veterano <code>SERIAL</code>. Con <code>ALWAYS</code>, insertar un <code>id</code> explícito falla salvo con <code>OVERRIDING SYSTEM VALUE</code>.</td></tr>
+                <tr><td><code>ON DUPLICATE KEY UPDATE</code></td><td><code>ON CONFLICT (email) DO UPDATE SET ...</code>, con la columna o restricción del conflicto explícita, o <code>ON CONFLICT DO NOTHING</code>. <code>RETURNING id</code> te ahorra el <code>lastInsertId()</code>.</td></tr>
+                <tr><td><code>BOOLEAN</code> es <code>tinyint(1)</code>; <code>WHERE activo = 1</code> vale</td><td><code>boolean</code> de verdad: <code>operator does not exist: boolean = integer</code>. Escribe <code>WHERE activo</code>.</td></tr>
+                <tr><td><code>'A' = 'a'</code> es cierto (collation <code>utf8mb4_0900_ai_ci</code>)</td><td>Es falso: la comparación distingue mayúsculas. Para buscar sin distinguir, <code>ILIKE</code> o <code>lower()</code>.</td></tr>
+                <tr><td><code>LIMIT 0, 10</code> y <code>UPDATE ... LIMIT 1</code></td><td><code>LIMIT 10 OFFSET 0</code> es igual, pero <code>LIMIT #,#</code> no existe y <code>UPDATE</code> no admite <code>LIMIT</code>: <code>syntax error at or near "LIMIT"</code>.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Índice creado, índice ignorado</p>
+              <p><strong>Cambiar <code>?</code> por <code>jsonb_exists()</code></strong> para esquivar a PDO: da el mismo resultado, pero es una función y no un operador, y el plan pasa a <code>Seq Scan</code> aunque haya GIN.</p>
+              <p><strong>Filtrar con <code>-&gt;</code> antes de <code>?</code></strong>: <code>atributos -&gt; 'tags' ? 't7'</code> no usa el índice de <code>atributos</code>, porque el índice es de la columna y no de esa expresión. <code>atributos @&gt; '{"tags":["t7"]}'</code> sí.</p>
+              <p><strong>Elegir <code>jsonb_path_ops</code> por pequeño</strong> y descubrir después que las consultas con <code>?</code> recorren la tabla.</p>
+              <p><strong>Comparar números como texto</strong> con <code>-&gt;&gt;</code> sin convertir.</p>
+            </div>
+          </div>
+
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Con un Postgres desechable y <code>EXPLAIN</code>, que ya sabes leer desde <a href="indices-btree.html#explain">Leer un EXPLAIN</a>. Busca <code>Bitmap Index Scan on &lt;tu índice&gt;</code>; si ves <code>Seq Scan</code> con <code>Filter</code> en una tabla grande, el índice no sirve a ese operador.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · terminal</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">docker run -d --name pg-jsonb -e POSTGRES_PASSWORD=secret postgres:17
+docker exec -it pg-jsonb psql -U postgres
+
+# dentro de psql
+CREATE TABLE productos (id int GENERATED ALWAYS AS IDENTITY PRIMARY KEY, atributos jsonb NOT NULL);
+INSERT INTO productos (atributos)
+SELECT jsonb_build_object('color', (ARRAY['rojo','azul','verde','negro'])[1 + i % 4], 'garantia', i % 100 = 0)
+FROM generate_series(1, 200000) AS i;
+CREATE INDEX productos_atributos_gin ON productos USING GIN (atributos);
+ANALYZE productos;
+\d productos
+EXPLAIN SELECT id FROM productos WHERE atributos @&gt; '{"color": "rojo"}';
+SELECT pg_size_pretty(pg_relation_size('productos_atributos_gin'));</code></pre>
+          </div>
+          <p>Mide con un volumen parecido al real: con pocas filas el planificador elige <code>Seq Scan</code> aunque el índice valga, y sacarías la conclusión contraria. Lo mismo aplica a los <a href="cr-indices-en-practica.html">índices que sobran</a>: un GIN que no sale en ningún plan solo encarece cada escritura.</p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>JSONB es buena idea</h4>
+              <ul><li>Atributos que cambian por fila: fichas de producto, preferencias, metadatos.</li><li>Payloads externos que guardas para reprocesar o auditar.</li><li>Datos que se leen enteros y se filtran por contención.</li></ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>JSONB es un esquema escondido</h4>
+              <ul><li>Todas las filas llevan las mismas claves.</li><li>Haces JOIN o pones claves foráneas sobre valores del JSON.</li><li>Necesitas <code>NOT NULL</code>, tipos o unicidad en un campo interno.</li></ul>
+            </div>
+          </div>
+          <p>La prueba rápida: si cada consulta extrae la misma clave, esa clave quiere ser columna. La alternativa no es todo o nada; lo habitual es un híbrido: columnas para lo que todas las filas comparten y consultas a diario, y un <code>jsonb</code> para la cola larga de atributos. Si aun así una clave del JSON se filtra por igualdad o rango, un índice de expresión sobre <code>-&gt;&gt;</code> la cubre sin mover datos.</p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>jsonb</code> normaliza y se indexa; <code>json</code> conserva el texto exacto y no admite GIN.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>-&gt;</code> devuelve <code>jsonb</code> y <code>-&gt;&gt;</code> texto; <code>@&gt;</code> es el filtro que mejor aprovecha el índice.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>jsonb_ops</code> sirve también <code>?</code>; <code>jsonb_path_ops</code> es más pequeño pero solo sirve contención y jsonpath.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En PDO, <code>?</code> es un marcador: escápalo con <code>??</code> o reescribe con <code>@&gt;</code> y un parámetro con nombre.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Comillas dobles, minúsculas, <code>boolean</code>, <code>ON CONFLICT</code> y <code>UPDATE</code> sin <code>LIMIT</code>: lo que falla primero al portar SQL de MySQL.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="busqueda-full-text.html">
+              <small>← Anterior</small>
+              <b>Búsqueda full-text</b>
+            </a>
+            <a href="../cursos.html">
+              <small>Fin del curso →</small>
+              <b>Catálogo de cursos</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
