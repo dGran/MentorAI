@@ -2395,6 +2395,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "code",
     status: "published",
     date: "2026-07-04",
+    reviewed: "2026-10-13",
   },
   {
     slug: "phpunit-data-providers",
@@ -2410,6 +2411,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "code",
     status: "published",
     date: "2026-07-04",
+    reviewed: "2026-10-13",
   },
   {
     slug: "phpunit-fixtures",
