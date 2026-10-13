@@ -16,7 +16,7 @@ window.MENTORAI_QUIZ_SUMMARY = {
     "passingScore": null
   },
   "git": {
-    "total": 10,
+    "total": 13,
     "passingScore": null
   },
   "oop": {

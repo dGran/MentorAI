@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rebase interactivo: dejar el historial legible — MentorAI</title>
+    <meta name="description" content="git rebase -i paso a paso con salidas reales: pick, reword, edit, squash, fixup y drop, --fixup con --autosquash, conflictos a mitad, --abort y cómo deshacerlo con el reflog." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Git</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Rebase interactivo: dejar el historial legible</h1>
+        <p class="tutorial-hero__lead">
+          Tu rama funciona, pero su historial cuenta cómo trabajaste, no qué cambiaste.
+          Con git rebase -i juntas, renombras, reordenas y tiras commits antes de que
+          nadie los herede, y aquí ves también cómo salir de un conflicto a mitad y
+          cómo deshacer un rebase que salió mal.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            24 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Git
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">El historial que nadie lee</a></li>
+            <li><a href="#lista">La lista de tareas</a></li>
+            <li><a href="#limpiar">Limpiar una rama</a></li>
+            <li><a href="#autosquash">fixup y --autosquash</a></li>
+            <li><a href="#conflictos">Un conflicto a mitad</a></li>
+            <li><a href="#deshacer">Deshacer un rebase</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Commitear a menudo te protege mientras trabajas, pero deja un rastro de
+            «wip», «quita var_dump» y «ahora sí». El rebase interactivo convierte ese
+            diario de trabajo en una historia que se lee: cada commit, un cambio con
+            sentido. Todas las salidas de esta lección son reales, de git 2.53.
+          </p>
+
+          <h2 id="problema">
+            El historial que nadie lee
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            El historial no es para ti hoy: es para quien revise tu PR, para quien haga
+            <code>git blame</code> dentro de un año y para quien busque un fallo con
+            <a href="git-bisect.html">git bisect</a>. A los tres les estorban los pasos
+            intermedios: un commit que mete un <code>var_dump</code> y otro que lo quita
+            obligan a leer dos diffs para entender cero cambios, y un «wip» que no pasa
+            los tests hace que <code>bisect</code> señale al culpable equivocado.
+          </p>
+          <p>
+            Un buen commit es una <strong>unidad</strong>: un cambio con su motivo, que
+            deja el proyecto funcionando. El rebase interactivo es la herramienta para
+            pasar de uno a otro, y como reescribe commits (hashes nuevos), la
+            <a href="git-ramas-y-flujo.html#merge-rebase">regla de oro del rebase</a>
+            aplica tal cual: solo sobre commits que únicamente tienes tú.
+          </p>
+
+          <h2 id="lista">
+            La lista de tareas
+            <a href="#lista" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <code>git rebase -i main</code> no toca nada al principio: abre tu editor con
+            los commits que tu rama tiene y <code>main</code> no, uno por línea y con una
+            acción delante. Al guardar y cerrar, Git lleva la rama a la base y vuelve a
+            aplicar la lista de arriba abajo, obedeciendo cada acción. Reescribir el
+            historial es editar ese fichero de texto.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Acción</th><th>Qué hace con el commit</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>pick</code> (<code>p</code>)</td><td>Lo aplica tal cual.</td></tr>
+                <tr><td><code>reword</code> (<code>r</code>)</td><td>Lo aplica y te abre el editor para cambiar solo el mensaje.</td></tr>
+                <tr><td><code>edit</code> (<code>e</code>)</td><td>Lo aplica y se detiene: corriges con <code>git commit --amend</code> y sigues con <code>git rebase --continue</code>.</td></tr>
+                <tr><td><code>squash</code> (<code>s</code>)</td><td>Lo funde con el de la línea de encima y te deja combinar los dos mensajes.</td></tr>
+                <tr><td><code>fixup</code> (<code>f</code>)</td><td>Lo funde con el de encima y descarta su mensaje.</td></tr>
+                <tr><td><code>drop</code> (<code>d</code>)</td><td>Lo descarta. Borrar la línea hace lo mismo.</td></tr>
+                <tr><td>Mover la línea</td><td>Cambia el orden en que se aplican los commits.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La lista va al revés que git log</p>
+              <p>
+                <code>git log</code> pone arriba el commit más reciente; la lista de tareas,
+                el más antiguo, porque es el orden en que se van a aplicar. Por eso
+                <code>squash</code> y <code>fixup</code> funden con la línea de
+                <em>encima</em>: el commit anterior en el tiempo.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="limpiar">
+            Limpiar una rama
+            <a href="#limpiar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una rama <code>feature/descuento</code> tras una tarde normal:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · el historial de trabajo</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">$ git log --oneline main..
+16de30a quita var_dump
+271b95a script para probar
+c2c3be4 test: cover Descuento
+ad112ad wip
+1668dd9 feat: add Descuento</code></pre>
+          </div>
+          <p>
+            El primer commit entró con una traza de depuración que el último retira.
+            Quien lea <code>1668dd9</code> verá código que nunca debió existir:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · src/Descuento.php en 1668dd9 (antes)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class Descuento
+{
+    public function aplicar(Precio $precio, int $porcentaje): Precio
+    {
+        var_dump($porcentaje);
+
+        return new Precio(intdiv($precio-&gt;centimos * (100 - $porcentaje), 100));
+    }
+}</code></pre>
+          </div>
+          <p>
+            El plan: fundir la retirada del <code>var_dump</code> con su origen
+            (<code>fixup</code>), tirar el script de pruebas (<code>drop</code>) y juntar
+            «wip» con el test que lo completa (<code>squash</code>). Aquí la lista se
+            edita con <code>GIT_SEQUENCE_EDITOR</code>, la variable que decide qué
+            programa abre la lista de tareas, para que la salida sea reproducible; en tu
+            día a día se abre tu editor.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · la lista, antes y después de editarla</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash"># Lo que abre git rebase -i main
+pick 1668dd9 # feat: add Descuento
+pick ad112ad # wip
+pick c2c3be4 # test: cover Descuento
+pick 271b95a # script para probar
+pick 16de30a # quita var_dump
+
+# Lo que guardas
+pick 1668dd9 feat: add Descuento
+fixup 16de30a quita var_dump
+drop 271b95a script para probar
+pick ad112ad wip
+squash c2c3be4 test: cover Descuento</code></pre>
+          </div>
+          <p>
+            Al llegar al <code>squash</code>, Git abre el editor con los dos mensajes
+            («This is a combination of 2 commits») y te quedas con uno. El resultado:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · salida real del rebase</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">$ git rebase -i main
+[detached HEAD 93091c7] test: cover Descuento
+ Date: Mon Oct 12 10:00:00 2026 +0200
+ 1 file changed, 15 insertions(+)
+ create mode 100644 tests/DescuentoTest.php
+Successfully rebased and updated refs/heads/feature/descuento.
+
+$ git log --oneline main..
+93091c7 test: cover Descuento
+9848aee feat: add Descuento</code></pre>
+          </div>
+          <p>
+            Dos commits que se revisan de un vistazo. Fíjate en que
+            <code>1668dd9</code> ahora es <code>9848aee</code>: el contenido cambió, así
+            que es otro commit, y el viejo solo sigue alcanzable por el reflog.
+          </p>
+
+          <h2 id="autosquash">
+            fixup y --autosquash
+            <a href="#autosquash" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            La revisión pide validar el porcentaje. Ese cambio pertenece a «feat: add
+            Descuento», no a un commit nuevo, y la forma cómoda es marcarlo al
+            commitear en vez de recordarlo después:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · el fixup se coloca solo</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">$ git commit -a --fixup=9848aee
+[feature/descuento 4bdd306] fixup! feat: add Descuento
+ 1 file changed, 4 insertions(+)
+
+$ git rebase -i --autosquash main
+# La lista llega ya ordenada; solo guardas
+pick 9848aee # feat: add Descuento
+fixup 4bdd306 # fixup! feat: add Descuento
+pick 93091c7 # test: cover Descuento
+Successfully rebased and updated refs/heads/feature/descuento.</code></pre>
+          </div>
+          <p>
+            <code>--fixup=&lt;sha&gt;</code> crea un commit titulado
+            <code>fixup! &lt;título del original&gt;</code>, y <code>--autosquash</code>
+            lo coloca bajo su destino con la acción <code>fixup</code>: solo te queda
+            guardar. Para cambiar el mensaje existen <code>--fixup=reword:&lt;sha&gt;</code>
+            (solo el mensaje) y <code>--fixup=amend:&lt;sha&gt;</code> (contenido y
+            mensaje), que la lista convierte en <code>fixup -C</code>. El commit queda
+            así, ya con la validación y sin rastro de depuración:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · src/Descuento.php en el commit limpio (después)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class Descuento
+{
+    public function aplicar(Precio $precio, int $porcentaje): Precio
+    {
+        if ($porcentaje &lt; 0 || $porcentaje &gt; 100) {
+            throw new InvalidArgumentException("Porcentaje fuera de rango: {$porcentaje}");
+        }
+
+        return new Precio(intdiv($precio-&gt;centimos * (100 - $porcentaje), 100));
+    }
+}</code></pre>
+          </div>
+          <p>Para no escribir <code>--autosquash</code> cada vez, actívalo en la configuración:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ini · ~/.gitconfig</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="ini">[rebase]
+    autoSquash = true</code></pre>
+          </div>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">rebase.autoSquash solo actúa con -i</p>
+              <p>
+                Con la opción activada, un <code>git rebase main</code> sin <code>-i</code>
+                deja los <code>fixup!</code> tal cual; pasar <code>--autosquash</code> a
+                mano sí los funde también sin <code>-i</code>. Lo comprobamos con los dos
+                comandos: si un día ves un <code>fixup!</code> en la PR, es esto.
+              </p>
+            </div>
+          </div>
+
+          <h2 id="conflictos">
+            Un conflicto a mitad
+            <a href="#conflictos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Reordenar commits que tocan las mismas líneas obliga a Git a aplicar cada
+            uno sobre un código que no conocía. La rama tiene «fix: round instead of
+            truncating» y, encima, «refactor: name the percentage total», que cambia la
+            misma línea. Al invertir su orden:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · el rebase se detiene (salida recortada)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">CONFLICT (content): Merge conflict in src/Descuento.php
+error: could not apply 5feffa7... refactor: name the percentage total
+
+$ git status
+interactive rebase in progress; onto cef59f6
+Next command to do (1 remaining command):
+   pick 136ab09 # fix: round instead of truncating
+
+$ grep -A4 '&lt;&lt;&lt;&lt;' src/Descuento.php
+&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+        return new Precio(intdiv($precio-&gt;centimos * (100 - $porcentaje), 100));
+=======
+        return new Precio((int) round($precio-&gt;centimos * (self::PORCENTAJE_TOTAL - $porcentaje) / self::PORCENTAJE_TOTAL));
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; 5feffa7 (refactor: name the percentage total)</code></pre>
+          </div>
+          <p>
+            Ojo al sentido: en un rebase, <code>HEAD</code> es la rama que se está
+            reconstruyendo y el otro lado es <em>tu</em> commit. Aquí lo correcto es la
+            constante con <code>intdiv</code>, porque el redondeo llega en el siguiente
+            commit. Editas, <code>git add src/Descuento.php</code> y
+            <code>git rebase --continue</code>; y como el otro commit toca la misma
+            línea, el siguiente paso vuelve a parar. Mover dos commits que se pisan
+            cuesta un conflicto por cada uno.
+          </p>
+          <p>
+            Si te ves perdido, <code>git rebase --abort</code> devuelve la rama al estado
+            de antes de empezar, incluido lo que ya hubieras resuelto:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · volver atrás a mitad</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">$ git rebase --abort
+$ git log --oneline main..
+5feffa7 refactor: name the percentage total
+136ab09 fix: round instead of truncating
+54eeabb test: cover Descuento
+7cd19b4 feat: add Descuento</code></pre>
+          </div>
+
+          <h2 id="deshacer">
+            Deshacer un rebase
+            <a href="#deshacer" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            <code>--abort</code> solo sirve mientras el rebase está en curso. Repetimos el
+            reordenado y resolvimos el segundo conflicto con
+            <code>git checkout --theirs</code>, a toda prisa: el rebase terminó con
+            «Successfully rebased», pero <code>git diff feature/descuento@{1}</code>
+            enseñó que la constante había desaparecido. Ese lado era el commit del
+            redondeo, anterior al refactor.
+          </p>
+          <p>
+            La salida es el <a href="git-deshacer.html#rescatar">reflog</a>. El de la rama
+            apunta una sola entrada por rebase, así que <code>@{1}</code> es justo el
+            estado de antes:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · volver al estado previo al rebase</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">$ git reflog -2 feature/descuento
+b69ada3 feature/descuento@{0}: rebase (finish): refs/heads/feature/descuento onto cef59f68307332afa6375e05056e9695f4f0f842
+5feffa7 feature/descuento@{1}: commit: refactor: name the percentage total
+
+$ git reset --hard feature/descuento@{1}
+HEAD is now at 5feffa7 refactor: name the percentage total</code></pre>
+          </div>
+          <p>
+            El reflog de <code>HEAD</code> (<code>git reflog</code> a secas) también
+            sirve, pero apunta una entrada por cada paso del rebase: busca la línea
+            justo debajo de <code>rebase (start)</code>. Justo al terminar,
+            <code>ORIG_HEAD</code> también señala el estado previo, aunque el siguiente
+            <code>reset</code> lo sobrescribe.
+          </p>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Los que más historial han roto</p>
+              <ul>
+                <li><strong>Reescribir una rama que otros ya tienen.</strong> Si es solo tuya y ya está subida, publícala con <code>git push --force-with-lease</code>, que se niega si el remoto cambió desde la última vez que lo trajiste.</li>
+                <li><strong>Leer la lista como <code>git log</code>.</strong> El <code>squash</code> acaba fundido con el commit equivocado.</li>
+                <li><strong>Resolver con <code>--ours</code> o <code>--theirs</code> a ciegas.</strong> En un rebase el sentido es el contrario al de un merge, y quedarse un lado entero se come los cambios del otro sin un solo aviso.</li>
+                <li><strong>Borrar una línea «para luego».</strong> Equivale a <code>drop</code>; la propia lista lo advierte: «If you remove a line here THAT COMMIT WILL BE LOST».</li>
+                <li><strong>Empezar con cambios sin commitear.</strong> Git se niega («cannot rebase: You have unstaged changes»): commitea o haz <code>stash</code> antes.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Limpiar no debería cambiar el resultado. Si solo has reordenado, fundido o
+            renombrado, <code>git diff feature/descuento@{1}</code> sale vacío; si tiraste
+            algo a propósito, solo aparece eso. Para revisar commit a commit,
+            <code>git range-diff</code> empareja la versión vieja y la nueva:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · tras un reword</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">$ git range-diff main feature/descuento@{1} feature/descuento
+1:  7cd19b4 = 1:  7cd19b4 feat: add Descuento
+2:  54eeabb = 2:  54eeabb test: cover Descuento
+3:  136ab09 ! 3:  22925e8 fix: round instead of truncating
+    @@ Metadata
+     Author: Ana &lt;ana@example.com&gt;
+     
+      ## Commit message ##
+    -    fix: round instead of truncating
+    +    fix: round discounts to the nearest cent
+     
+      ## src/Descuento.php ##
+     @@ src/Descuento.php: final class Descuento
+4:  5feffa7 = 4:  d4eedbb refactor: name the percentage total</code></pre>
+          </div>
+          <p>
+            <code>=</code> significa mismo cambio y <code>!</code>, que algo difiere. Y
+            para asegurar que cada commit deja el proyecto en pie, que es lo que necesita
+            <code>bisect</code>, <code>--exec</code> mete un comando tras cada
+            <code>pick</code> y para el rebase si falla:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · los tests en cada commit</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">git rebase -i --exec "vendor/bin/phpunit" main</code></pre>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Limpia con rebase -i cuando…</h4>
+              <ul>
+                <li>La rama es solo tuya y vas a abrir la PR: que el revisor lea cambios, no tu proceso</li>
+                <li>El repositorio integra con merge commit o rebase merge: cada commit llega a <code>main</code> y lo leerán <code>blame</code> y <code>bisect</code></li>
+                <li>La revisión pide cambios a un commit concreto: <code>--fixup</code> y <code>--autosquash</code> los dejan donde tocan</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No te compensa cuando…</h4>
+              <ul>
+                <li>La rama la comparten varias personas: reescribirla rompe su copia</li>
+                <li>El repositorio integra con squash merge: <code>main</code> recibe un solo commit (por defecto, con el título de la PR) y tus commits intermedios se pierden igualmente</li>
+                <li>Solo hay que corregir el último commit: <a href="git-deshacer.html#amend"><code>git commit --amend</code></a> es más corto</li>
+              </ul>
+            </div>
+          </div>
+          <p>
+            La pregunta es quién va a leer tus commits. Si llegan a <code>main</code> uno a
+            uno, límpialos antes de la PR. Si el equipo hace squash merge, el squash ya
+            hace la limpieza final; pulir el historial solo compensa si la PR es grande y
+            se revisa commit a commit.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>git rebase -i</code> abre una <strong>lista de tareas</strong>, del commit más antiguo al más reciente: <code>pick</code>, <code>reword</code>, <code>edit</code>, <code>squash</code>, <code>fixup</code>, <code>drop</code> y el orden de las líneas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>git commit --fixup=&lt;sha&gt;</code> más <code>--autosquash</code> coloca cada corrección bajo su commit; <code>rebase.autoSquash</code> lo activa solo en rebases interactivos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Ante un conflicto: resuelve, <code>git add</code> y <code>--continue</code>, o <code>--abort</code> para volver al principio. En un rebase, <code>HEAD</code> es lo ya reconstruido.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un rebase terminado se deshace con <code>git reset --hard rama@{1}</code>, y <code>git diff rama@{1}</code> te dice si la limpieza cambió algo que no debía.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Limpia antes de la PR si los commits llegan a <code>main</code> uno a uno; con squash merge, el squash ya lo hace por ti.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="git-bisect.html">
+              <small>← Anterior</small>
+              <b>git bisect: encontrar el commit que lo rompió</b>
+            </a>
+            <a href="git-worktrees.html" class="next">
+              <small>Siguiente →</small>
+              <b>Worktrees: varias ramas a la vez</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

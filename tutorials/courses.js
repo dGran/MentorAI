@@ -315,6 +315,9 @@ window.MENTORAI_COURSES = [
       "git-comandos-esenciales",
       "git-ramas-y-flujo",
       "git-deshacer",
+      "git-bisect",
+      "git-rebase-interactivo",
+      "git-worktrees",
     ],
   },
   {
