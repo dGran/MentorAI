@@ -2538,6 +2538,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-07-04",
+    reviewed: "2026-10-13",
   },
   {
     slug: "pipeline-anatomia",
@@ -2553,6 +2554,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-07-04",
+    reviewed: "2026-10-13",
   },
   {
     slug: "ci-para-php",
@@ -2568,6 +2570,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "bolt",
     status: "published",
     date: "2026-07-04",
+    reviewed: "2026-10-13",
   },
   {
     slug: "despliegue-continuo",
@@ -2643,6 +2646,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "code",
     status: "published",
     date: "2026-06-29",
+    reviewed: "2026-10-13",
   },
   {
     slug: "docker-compose",
@@ -2658,6 +2662,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "code",
     status: "published",
     date: "2026-06-29",
+    reviewed: "2026-10-13",
   },
   {
     slug: "docker-buenas-practicas",
@@ -2673,6 +2678,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "code",
     status: "published",
     date: "2026-06-29",
+    reviewed: "2026-10-13",
   },
   {
     slug: "php-en-docker",
@@ -2688,6 +2694,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "code",
     status: "published",
     date: "2026-06-29",
+    reviewed: "2026-10-13",
   },
   {
     slug: "orm-vs-sql",
@@ -2855,6 +2862,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "code",
     status: "published",
     date: "2026-06-27",
+    reviewed: "2026-10-13",
   },
   {
     slug: "git-ramas-y-flujo",
@@ -4299,6 +4307,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "shield",
     status: "published",
     date: "2026-08-23",
+    reviewed: "2026-10-13",
   },
   {
     slug: "k8s-config-y-salud",
@@ -5040,6 +5049,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "code",
     status: "published",
     date: "2026-10-12",
+    reviewed: "2026-10-13",
   },
   {
     slug: "tests-de-contrato",
