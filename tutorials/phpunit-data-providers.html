@@ -88,6 +88,7 @@
             <li><a href="#nombres">Datasets con nombre</a></li>
             <li><a href="#casos-limite">Los casos límite, en tabla</a></li>
             <li><a href="#cuando-no">Cuándo no usarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
@@ -223,6 +224,30 @@ final class VolumeDiscountTest extends TestCase
           </h2>
           <p>Dos abusos convierten la herramienta en un problema. El primero: <strong>lógica en el provider</strong>. Si el provider calcula los valores esperados con condicionales o, peor, reproduce la fórmula que estás probando, ya no pruebas nada — comparas la implementación consigo misma. Los datos del provider se escriben <em>literales</em>, calculados a mano o con una fuente independiente.</p>
           <p>El segundo: <strong>el provider cajón de sastre</strong>. Si los casos no comparten la misma aserción —unos devuelven valor, otros lanzan excepción, otros tocan un colaborador— es que son comportamientos distintos, y cada comportamiento merece su propio test con su propio nombre. La señal: parámetros que solo usan algunos datasets, o un test lleno de <code>if</code> según el caso. Un test parametrizado prueba <em>una</em> regla con N entradas, no N reglas con una tabla.</p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Usa un data provider cuando…</h4>
+              <ul>
+                <li>La regla es una tabla de decisión: tipos de IVA por país, tramos de envío, transiciones de estado permitidas</li>
+                <li>Un validador debe rechazar muchas entradas igual: NIF mal formados, códigos postales imposibles</li>
+                <li>Un bug apareció en una frontera: se añade como un <code>yield</code> más con nombre</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Escribe tests separados cuando…</h4>
+              <ul>
+                <li>Hay uno o dos casos y el nombre del método ya cuenta la regla</li>
+                <li>Los datos dependen del escenario de <code>setUp()</code>: el provider es estático y PHPUnit lo llama antes de cualquier <code>setUp()</code>, así que no ve la conexión ni los objetos del fixture</li>
+                <li>Cada caso necesita un doble configurado de forma distinta</li>
+              </ul>
+            </div>
+          </div>
+          <p>La prueba rápida: lee las filas en voz alta. Si todas son la misma frase cambiando solo los números, es un provider. Si cada una pide su propia frase, son tests distintos. Con datasets nombrados, además, puedes depurar solo el que falla: <code>vendor/bin/phpunit --filter 'aplica_el_descuento_por_tramo@frontera exacta del 5%'</code>.</p>
 
           <h2 id="resumen">
             Resumen

@@ -89,6 +89,7 @@
             <li><a href="#tests">PHPUnit con base de datos real</a></li>
             <li><a href="#imagen">Construir la imagen al final</a></li>
             <li><a href="#workflow">El workflow completo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
@@ -288,6 +289,31 @@ jobs:
               <p>El último clic para cerrar el círculo no está en el YAML sino en la configuración del repo: marca los jobs como <em>required status checks</em> de <code>main</code> (branch protection). A partir de ahí, ninguna pull request se puede mezclar en rojo — el pipeline deja de ser un aviso y pasa a ser la puerta.</p>
             </div>
           </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Añade cada control cuando…</h4>
+              <ul>
+                <li><code>composer validate --strict</code> y la instalación: desde el primer commit con <code>composer.lock</code></li>
+                <li>El estilo: cuando sale en las reviews más de una vez por semana</li>
+                <li>PHPStan: ya en código con tipos; en uno heredado, con un baseline (<code>--generate-baseline</code>) que congela los errores de hoy, como cuenta <a href="pm-phpstan.html">PHPStan: niveles y baseline</a></li>
+                <li>MySQL como service: en cuanto haya tests de repositorios o migraciones, como los de <a href="phpunit-integracion-bbdd.html">tests de integración con BD</a></li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Sáltatelo cuando…</h4>
+              <ul>
+                <li>Es una librería que se publica en Packagist: no hay imagen que construir ni base de datos que levantar</li>
+                <li>La suite aún no tiene tests de integración: sin consultas que probar, el service de MySQL solo añade arranque</li>
+                <li>El proyecto aún no tiene tests: PHPUnit en verde sobre cero tests da una falsa tranquilidad</li>
+              </ul>
+            </div>
+          </div>
+          <p>La decisión de fondo es dónde corre PHP en el pipeline. <code>setup-php</code> es rápido y basta mientras su lista de extensiones coincida con tu Dockerfile. Si CI pasa y producción falla por una extensión o una versión distinta, ejecuta los controles dentro de tu propia imagen (<code>docker compose run --rm app vendor/bin/phpunit</code>): pagas construirla primero, pero lo que validas es lo que despliegas.</p>
 
           <h2 id="resumen">
             Resumen

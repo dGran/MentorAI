@@ -89,6 +89,7 @@
             <li><a href="#migraciones">La base de datos en el deploy</a></li>
             <li><a href="#rollback">Cuando sale mal: rollback</a></li>
             <li><a href="#secretos">Config y secretos por entorno</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
@@ -232,6 +233,31 @@
         DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}</code></pre>
           </div>
           <p>El <code>environment: production</code> añade la pieza de la entrega continua: puedes exigir aprobación manual antes de que este job corra — el famoso botón. Cómo organizar toda la configuración por entornos (y qué hacer y no hacer con los <code>.env</code>) tiene artículo propio: <a href="config-y-entornos.html">Configuración y entornos</a>.</p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Despliega solo tras el verde cuando…</h4>
+              <ul>
+                <li>Volver a la imagen anterior es un comando y el equipo ya lo ha ensayado</li>
+                <li>Las migraciones siguen expandir y contraer, sin pasos destructivos en el mismo deploy</li>
+                <li>Un healthcheck o las métricas de errores avisan en minutos si la versión nueva falla</li>
+                <li>Lo arriesgado llega apagado tras un feature flag</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Deja el botón de aprobación cuando…</h4>
+              <ul>
+                <li>El deploy lleva una migración que no admite vuelta atrás, como borrar una columna con datos</li>
+                <li>Cambias un contrato de API que consumen apps móviles que no puedes obligar a actualizar</li>
+                <li>Hay un solo servidor con <code>docker compose</code>: recrear el contenedor corta el servicio unos segundos y no hay a dónde desviar el tráfico</li>
+              </ul>
+            </div>
+          </div>
+          <p>Para elegir estrategia, empieza por rolling si ya tienes varias réplicas tras un balanceador. Blue-green compensa cuando necesitas volver atrás al instante y puedes pagar el doble de infraestructura durante el deploy. Canary solo tiene sentido con métricas separadas por versión: sin ellas no sabes cuándo ampliar, y se queda en un rolling lento. Si el esquema te frena, <a href="bd-migraciones-sin-caida.html">Migraciones sin caída</a> cuenta cómo hacer el DDL sin bloquear tablas.</p>
 
           <h2 id="resumen">
             Resumen

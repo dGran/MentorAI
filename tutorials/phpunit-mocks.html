@@ -88,6 +88,7 @@
             <li><a href="#mocks">Mocks: verificar la conversación</a></li>
             <li><a href="#comportamientos">Respuestas avanzadas</a></li>
             <li><a href="#sobre-mockear">Sobre-mockear</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
@@ -213,6 +214,30 @@ $repository-&gt;method('find')-&gt;willReturnCallback(
           <p>La API es tan cómoda que el peligro es el exceso. Dos reglas de contención:</p>
           <p><strong>Primera: no verifiques conversaciones que no son el comportamiento.</strong> Si usas <code>expects()</code> para cada llamada interna —que consultó el repositorio, que llamó al validador, que pidió el tipo de cambio— tu test es una fotografía de la implementación: cualquier refactor que cambie el <em>cómo</em> sin tocar el <em>qué</em> lo rompe. Es el test frágil de manual (<a href="tests-que-no-estorban.html">comportamiento, no implementación</a>). La pregunta que ordena: ¿esta llamada es un <em>efecto prometido</em> del servicio (email enviado, evento publicado) o un <em>detalle de fontanería</em>? Mock para lo primero; stub indiferente para lo segundo.</p>
           <p><strong>Segunda: no mockees lo que no es tuyo.</strong> Doblar la interfaz de un cliente HTTP de terceros acopla tus tests a una API ajena que cambiará. El patrón sano: define <em>tu</em> puerto (una interfaz tuya, pequeña, con el lenguaje de tu dominio), envuelve la librería en un adaptador, y mockea tu puerto — exactamente la jugada de <a href="hexagonal.html">la arquitectura hexagonal</a>. Y para colaboradores con lógica de consulta rica (un repositorio), a menudo un <strong>fake</strong> escrito a mano (como el <code>InMemoryOrderRepository</code> de estos ejemplos) da tests más legibles que una pila de stubs.</p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Dobla el colaborador cuando…</h4>
+              <ul>
+                <li>Cruza una frontera lenta o con efectos: la pasarela de pago, el envío de emails, la cola de mensajes</li>
+                <li>Necesitas provocar su fallo: el timeout de una API o el cobro rechazado</li>
+                <li>Es una interfaz pequeña y tuya, el puerto que envuelve la librería ajena</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Usa el objeto real cuando…</h4>
+              <ul>
+                <li>Es un value object o un cálculo puro: <code>Money</code> o <code>DateTimeImmutable</code> no se doblan</li>
+                <li>Es una clase <code>final</code> de vendor: PHPUnit lanza <code>ClassIsFinalException</code> y no puede doblarla</li>
+                <li>Lo que quieres saber es si la consulta del repositorio es correcta: un stub lo finge, y eso lo dice un <a href="phpunit-integracion-bbdd.html">test de integración</a></li>
+              </ul>
+            </div>
+          </div>
+          <p>Si dudas entre <code>createStub</code> y <code>createMock</code>, pregúntate si vas a escribir un <code>expects()</code>. Si no, es un stub. Desde PHPUnit 12.5, crear un mock sin configurarle ninguna expectativa emite un aviso que propone justo ese cambio. Y si el colaborador no hace E/S ni es caro de construir, el real da un test más fiel que cualquier doble.</p>
 
           <h2 id="resumen">
             Resumen

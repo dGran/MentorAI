@@ -89,6 +89,7 @@
             <li><a href="#transaccion">Transacción por test</a></li>
             <li><a href="#piramide">La pirámide y las suites</a></li>
             <li><a href="#que-cubren">Lo que solo el test de integración cubre</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
@@ -364,6 +365,30 @@ vendor/bin/phpunit --testsuite Integration</code></pre>
               <p>Un test que inserta un pedido con líneas, lo recupera y verifica el total es una especificación ejecutable de cómo funciona la persistencia. Cuando alguien refactoriza el repositorio seis meses después, ese test dice exactamente qué debe seguir funcionando — y lo comprueba contra la BD real en lugar de contra un stub que quizás nunca fue fiel a la implementación.</p>
             </div>
           </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Escribe un test de integración cuando…</h4>
+              <ul>
+                <li>El repositorio tiene SQL o DQL propio: filtros, <code>ORDER BY</code>, paginación</li>
+                <li>Una <a href="migraciones-de-esquema.html">migración</a> renombra columnas o cambia tipos que usan tus consultas</li>
+                <li>Una restricción <code>UNIQUE</code> o una clave foránea debe acabar en una excepción de tu dominio</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No lo necesitas cuando…</h4>
+              <ul>
+                <li>Pruebas la lógica del servicio: un fake en memoria da el mismo resultado sin arrancar MySQL</li>
+                <li>El método es un <code>find($id)</code> heredado del ORM: probarías la librería, no tu código</li>
+                <li>Quieres cambiar MySQL por SQLite en memoria para ir más rápido: el dialecto difiere y <code>ON DUPLICATE KEY UPDATE</code> ni compila en SQLite</li>
+              </ul>
+            </div>
+          </div>
+          <p>La regla es probar contra el mismo motor y la misma versión que producción, en el contenedor de <code>docker compose</code> o como servicio del job de CI. Escribe un test por consulta que no puedas dar por buena leyéndola. Lo demás lo cubren los unitarios, que siguen siendo la mayoría de la suite.</p>
 
           <h2 id="resumen">
             Resumen
