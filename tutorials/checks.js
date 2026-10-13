@@ -3260,14 +3260,14 @@ window.MENTORAI_CHECKS = {
   ],
   "tests-de-contrato": [
     { id: "c9622ef", q: "El checkout y el catálogo tienen sus suites en verde, pero fallan al integrarse. ¿Por qué no lo detectó el test del consumidor con mock?",
-      o: ["Porque el mock es una copia del proveedor que nadie actualiza","Porque los mocks de Guzzle no comprueban la ruta ni las cabeceras pedidas","Porque el test no llegaba a cubrir la línea del cliente que lee el precio"], a: 0,
+      o: ["Porque el mock es una copia del proveedor que nadie actualiza","Porque el MockHandler de Guzzle valida contra la documentación antigua","Porque el test no llegaba a cubrir la línea del cliente que lee el precio"], a: 0,
       w: "El doble escrito a mano refleja lo que el consumidor creía hace meses. Un contrato compartido hace que el doble y la verificación del proveedor salgan del mismo fichero." },
     { id: "c4d5bae", q: "¿Qué te da un contrato dirigido por el consumidor que no te da validar las respuestas contra el OpenAPI del proveedor?",
       o: ["Que la especificación se genera sola a partir del código del proveedor","Que el proveedor sabe qué campos lee cada consumidor y cuáles puede retirar","Que se verifica el contrato sin tener que levantar el servicio proveedor"], a: 1,
       w: "El esquema protege la promesa del proveedor; los contratos de consumidor dicen además quién usa cada campo. Ambos necesitan el proveedor levantado para verificar." },
     { id: "c6e019b", q: "En el test de Pact del consumidor declaras `'price_cents' => 1999` sin matcher. ¿Qué ocurre al verificar el proveedor?",
       o: ["Que pasa con cualquier entero, porque Pact solo compara los tipos","Que el campo se ignora, porque sin matcher Pact no lo comprueba","Que el proveedor debe devolver 1999 o falla la verificación"], a: 2,
-      w: "Sin matcher la comparación es por igualdad, y el proveedor acaba sembrando datos para pasar. Con `integer(1999)` el contrato fija el tipo, no el valor de ejemplo." },
+      w: "Sin matcher la comparación es por igualdad, y el proveedor acaba sembrando datos para pasar. Con `integerV3(1999)` el contrato exige un entero, no el valor de ejemplo." },
   ],
   "tests-de-mutacion": [
     { id: "cfef56e", q: "Tu suite tiene un 100 % de cobertura de líneas en la regla de envío gratis. ¿Qué te garantiza ese número?",
