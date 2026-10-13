@@ -489,9 +489,9 @@ window.MENTORAI_CHECKS = {
     { id: "c2afb91", q: "¿Qué pasa con un mensaje después de leerlo?",
       o: ["En una cola desaparece al confirmarlo y en un registro sigue ahí", "En los dos desaparece en cuanto el consumidor lo confirma", "En los dos sigue ahí hasta que vence el tiempo de retención"], a: 0,
       w: "Esa es la diferencia de fondo entre RabbitMQ y Kafka, y de ella salen todas las demás: quién lleva la cuenta, si puedes rebobinar y cómo se decide el paralelismo." },
-    { id: "c346a6a", q: "En Kafka, ¿qué topa el paralelismo de un grupo de consumidores?",
+    { id: "c346a6a", q: "En un consumer group clásico de Kafka, ¿qué topa el paralelismo?",
       o: ["El número de brokers del clúster de Kafka", "El número de particiones del topic", "La memoria del consumidor"], a: 1,
-      w: "Con 6 particiones, el séptimo consumidor se queda parado. Y ampliar particiones después rompe el orden por clave, así que conviene empezar con margen." },
+      w: "Con 6 particiones, el séptimo consumidor se queda parado. Y ampliar particiones después rompe el orden por clave, así que conviene empezar con margen. Las share groups de Kafka 4.2 no tienen ese tope: reparten mensajes de una misma partición." },
   ],
 
   "sd-replicacion": [

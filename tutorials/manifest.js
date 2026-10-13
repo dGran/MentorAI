@@ -763,6 +763,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "shield",
     status: "published",
     date: "2026-08-01",
+    reviewed: "2026-10-13",
   },
   {
     slug: "sd-dlq-y-reproceso",
@@ -898,6 +899,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-08-01",
+    reviewed: "2026-10-13",
   },
   {
     slug: "sd-sincrono-vs-asincrono",
@@ -2119,6 +2121,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "code",
     status: "published",
     date: "2026-07-05",
+    reviewed: "2026-10-13",
   },
   {
     slug: "patrones-comportamiento-2",
@@ -2164,6 +2167,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "code",
     status: "published",
     date: "2026-07-05",
+    reviewed: "2026-10-13",
   },
   {
     slug: "patrones-creacionales",
@@ -3121,6 +3125,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "code",
     status: "published",
     date: "2026-06-27",
+    reviewed: "2026-10-13",
   },
   {
     slug: "clases-abstractas",
