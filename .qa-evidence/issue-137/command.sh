@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+node .qa-evidence/issue-137/qa-texto.js "${1:-/tmp/qa-137}" "${2:-http://localhost:8000}" inf-tls\|Con\ Let\'s\ Encrypt\ ya\ no\ aporta\|ssl_stapling\ =\ on inf-systemd\|en\ \[Service\]\,\ StartLimitIntervalSec\ se\ ignora\| inf-nginx\|fastcgi_pass\ unix:/run/php/php8.3-fpm.sock\;\|server_name\ =\ ejemplo.com inf-backups\|triggers\ sí\ entran\ sin\ pedirlo\|--routines\ y\ --triggers\ incluyen linux-sistema\|cat\ /etc/apt/sources.list.d/\*.sources\|apt\ install\ php8.2\ php8.2-fpm linux-usuarios\|historial\ de\ inicios\ de\ sesión\ \(Debian\ 13:\ wtmpdb\ last\)\|david:\$6\$salt\$hash linux-filesystem\|ya\ no\ son\ directorios\ propios\|tail\ -f\ /var/log/syslog linux-navegacion\|/usr/bin/php\ -\>\ /etc/alternatives/php\|/usr/bin/php\ -\>\ php8.2 linux-busquedas\|atributos\ #\[Route\]\ de\ Symfony\|@Route
