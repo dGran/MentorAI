@@ -135,10 +135,12 @@
     environment:
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_DATABASE: app
-      MYSQL_DATABASE_TEST: app_test   # creas la BD de test aquí
+    volumes:
+      - ./docker/create-test-db.sql:/docker-entrypoint-initdb.d/create-test-db.sql:ro   # crea app_test
     ports:
       - "3306:3306"</code></pre>
           </div>
+          <p>La imagen oficial solo crea la base que nombra <code>MYSQL_DATABASE</code>; no hay variable para una segunda. La de test la crea un script en <code>/docker-entrypoint-initdb.d/</code>, que MySQL ejecuta la primera vez que arranca con el volumen de datos vacío: <code>docker/create-test-db.sql</code> lleva una sola línea, <code>CREATE DATABASE IF NOT EXISTS app_test;</code>.</p>
           <p>La convención más habitual es sufijo <code>_test</code>: si la de desarrollo se llama <code>app</code>, la de test se llama <code>app_test</code>. Mismas migraciones, ejecutadas una vez al arrancar o en CI, y listo.</p>
           <p>PHPUnit necesita saber la URL de conexión. La forma limpia es un parámetro de entorno en <code>phpunit.xml</code> que sobreescribe el valor del entorno real durante la suite:</p>
           <div class="code-block">
@@ -205,6 +207,7 @@ namespace Tests\Integration\Infrastructure\Persistence;
 use App\Infrastructure\Persistence\DoctrineProductRepository;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Tools\DsnParser;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -217,9 +220,10 @@ final class DoctrineProductRepositoryTest extends TestCase
     {
         parent::setUp();
 
-        $this->connection = DriverManager::getConnection([
-            'url' =&gt; getenv('DATABASE_URL'),
-        ]);
+        $dsnParser = new DsnParser(['mysql' =&gt; 'pdo_mysql']);
+        $this-&gt;connection = DriverManager::getConnection(
+            $dsnParser-&gt;parse(getenv('DATABASE_URL'))
+        );
 
         $this->connection->beginTransaction();
 
@@ -251,6 +255,7 @@ final class DoctrineProductRepositoryTest extends TestCase
     }
 }</code></pre>
           </div>
+          <p>DBAL 4 ya no acepta la opción <code>url</code>: el <code>DsnParser</code> convierte la URL en el array de parámetros, y el mapa <code>'mysql' =&gt; 'pdo_mysql'</code> le dice qué driver corresponde al esquema <code>mysql://</code>. Sin él, DBAL rechaza <code>mysql</code> como driver desconocido.</p>
           <p>Observa que <code>beginTransaction()</code> va en <code>setUp()</code>, <strong>antes</strong> de insertar los fixtures. Así la inserción también queda dentro de la transacción y se deshará junto con cualquier escritura que haga el test.</p>
 
           <h2 id="transaccion">

@@ -2067,6 +2067,7 @@ window.ACADEMIA_TUTORIALS = [
     slug: "framework-extension-points",
     featured: false,
     date: "2026-07-05",
+    reviewed: "2026-10-13",
     title: "Cómo extender un framework sin tocar su núcleo",
     description: "Tagged services, compiler passes, service providers, middleware y event subscribers: los mecanismos formales de Symfony y Laravel para añadir comportamiento sin modificar vendor/.",
     href: "tutorials/framework-extension-points.html",
@@ -2082,6 +2083,7 @@ window.ACADEMIA_TUTORIALS = [
     slug: "framework-ciclo-http",
     featured: false,
     date: "2026-07-05",
+    reviewed: "2026-10-13",
     title: "El ciclo HTTP de un framework: de nginx al controlador y vuelta",
     description: "El recorrido completo de una petición HTTP en Symfony y Laravel: nginx, FPM, front controller, Kernel, router, eventos del ciclo y resolución del controlador. Sin magia.",
     href: "tutorials/framework-ciclo-http.html",
@@ -2479,6 +2481,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "code",
     status: "published",
     date: "2026-07-04",
+    reviewed: "2026-10-13",
   },
   {
     slug: "ci-cd-que-es",
