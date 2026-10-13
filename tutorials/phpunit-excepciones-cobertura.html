@@ -88,6 +88,7 @@
             <li><a href="#medir">Medir cobertura: pcov o Xdebug</a></li>
             <li><a href="#leer">Leer el informe</a></li>
             <li><a href="#cien">Por qué el 100% no es el objetivo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
@@ -202,6 +203,30 @@ XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-text</code></pre>
             </div>
           </div>
           <p>¿Un número razonable? El que salga de testear lo que importa: en dominio y servicios suele acabar alto (85-95%) sin perseguirlo; en código pegamento (controladores finos, adaptadores) es naturalmente más bajo y no pasa nada. Si en CI quieres una red, ponla como <strong>suelo que evite retrocesos</strong> (el PR no baja la cobertura existente), no como listón que obligue a inflarla.</p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Haz un test de excepción o mira la cobertura cuando…</h4>
+              <ul>
+                <li>El dominio se niega a algo a propósito: un importe negativo, un pedido confirmado dos veces</li>
+                <li>Un adaptador traduce errores ajenos, por ejemplo el timeout del cliente HTTP a tu <code>PaymentGatewayUnavailable</code></li>
+                <li>Vas a tocar un módulo heredado y quieres ver en rojo lo que ningún test protege</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No lo hagas cuando…</h4>
+              <ul>
+                <li>La excepción la lanza PHP por tipos, como el <code>TypeError</code> de <code>strict_types</code>: el tipo ya es el contrato</li>
+                <li>Quieres fijar el texto entero que ve el usuario: cualquier cambio de redacción rompe el test</li>
+                <li>Ejecutas la suite a cada rato en local: la cobertura la ralentiza, mejor en CI o al ir a leerla</li>
+              </ul>
+            </div>
+          </div>
+          <p>Instala pcov o Xdebug solo en la etapa de desarrollo del Dockerfile, nunca en la imagen de producción. Sin ninguno de los dos, <code>--coverage-text</code> no mide nada: PHPUnit avisa con «No code coverage driver available» y sale con error. El criterio para decidir es usar el informe para elegir qué probar, no para sumar puntos.</p>
 
           <h2 id="resumen">
             Resumen

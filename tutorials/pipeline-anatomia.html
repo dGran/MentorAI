@@ -89,6 +89,7 @@
             <li><a href="#artefactos">Artefactos: lo que el pipeline produce</a></li>
             <li><a href="#cache">La caché de dependencias</a></li>
             <li><a href="#orden">Barato primero: fallar rápido</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
@@ -252,6 +253,30 @@ jobs:
             <p class="diagram__caption">La pirámide de tests que ya conoces, convertida en orden de ejecución.</p>
           </div>
           <p>Hay dos formas de materializarlo: steps en secuencia dentro de un job (lo barato arriba), o jobs separados con dependencias explícitas (<code>needs: [tests]</code>) que además te dan paralelismo entre iguales. En la práctica se combinan: los checks rápidos en paralelo, y el build caro esperando con <code>needs</code> a que todos pasen. La proporción de cada tipo de test ya la tienes de <a href="tipos-de-test.html">la pirámide de tests</a>; el pipeline solo la pone en fila.</p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Parte en varios jobs cuando…</h4>
+              <ul>
+                <li>Hay comprobaciones independientes de más de un minuto: en paralelo, el pipeline dura lo que la más lenta</li>
+                <li>Una etapa necesita algo que las demás no, como MySQL para la integración o Docker para la imagen</li>
+                <li>Quieres que el build espere con <code>needs</code> y no gaste tiempo si algo falló</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Mantén un solo job cuando…</h4>
+              <ul>
+                <li>Todo el pipeline tarda un par de minutos: cada job repite checkout, PHP y <code>composer install</code>, y eso puede costar más de lo que ahorra</li>
+                <li>Cada paso usa el <code>vendor/</code> que dejó el anterior y moverlo con artefactos sería más lento que reinstalar</li>
+                <li>Es una librería pequeña con una sola pregunta que responder: ¿pasan los tests?</li>
+              </ul>
+            </div>
+          </div>
+          <p>Antes de partir, mide: el log de cada ejecución muestra cuánto tarda cada step, y ahí se ve si el cuello de botella es instalar o probar. Lo mismo vale para el resto de piezas: la caché merece la pena cuando instalar pesa en el total, y un artefacto solo cuando alguien lo descarga o un job posterior lo consume. Un <code>schedule</code> semanal tiene sentido en un proyecto que se toca poco, donde las dependencias pueden romperse sin que nadie haga push.</p>
 
           <h2 id="resumen">
             Resumen

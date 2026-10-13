@@ -88,6 +88,7 @@
             <li><a href="#before-class">Los métodos de clase</a></li>
             <li><a href="#independencia">Tests independientes</a></li>
             <li><a href="#estado">El estado compartido, el enemigo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
@@ -211,6 +212,30 @@ vendor/bin/phpunit --order-by=random --random-order-seed=1234</code></pre>
             </table>
           </div>
           <p>El patrón de los cinco es el mismo: <strong>estado global mutable</strong>. El mismo enemigo que ya señalaban <a href="funciones-limpias.html">las funciones limpias</a> (efectos secundarios) y la inyección de dependencias, visto ahora desde los tests: lo que hace difícil testear algo suele ser exactamente lo que lo hace frágil en producción. Los tests que se contaminan no son un problema de PHPUnit — son un síntoma de diseño que PHPUnit te está regalando.</p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Usa los ganchos cuando…</h4>
+              <ul>
+                <li>Todos los tests de la clase construyen el mismo servicio con los mismos dobles: <code>setUp()</code></li>
+                <li>Un test toca algo global que hay que dejar como estaba (<code>putenv()</code>, la zona horaria, un directorio bajo <code>sys_get_temp_dir()</code>): eso va en <code>tearDown()</code></li>
+                <li>Abrir el recurso cuesta y nadie lo modifica, como la conexión a la BD de test: <code>setUpBeforeClass()</code></li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Prefiere otra cosa cuando…</h4>
+              <ul>
+                <li>Lo que montas solo lo usan dos tests: un método privado con nombre, llamado desde ellos</li>
+                <li>Te tienta pasar el resultado de un test al siguiente con <code>#[Depends]</code>: ejecutado solo con <code>--filter</code>, el segundo se salta con «This test depends on…»</li>
+                <li>Quieres guardar en una propiedad estática datos que los tests van a cambiar</li>
+              </ul>
+            </div>
+          </div>
+          <p>La pregunta que decide es quién necesita el escenario. Si lo necesita toda la clase, va al <code>setUp()</code>. Si lo necesita un test, se queda dentro del test o en un método con nombre de dominio. Cuando muchos tests montan variantes del mismo objeto, un método factoría con parámetros por defecto suele aclarar más que un <code>setUp()</code> cada vez más largo.</p>
 
           <h2 id="resumen">
             Resumen

@@ -79,6 +79,7 @@
             <li><a href="#inodos">Inodos</a></li>
             <li><a href="#discos">Discos y filesystems</a></li>
             <li><a href="#espacio">Gestionar el espacio</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
         </aside>
@@ -275,6 +276,31 @@ find /tmp -mtime +7 -type f            # ficheros no tocados en 7 días</code></
               <p>Los candidatos habituales son <code>/var/log</code> (logs de nginx/PHP sin rotar), <code>/tmp</code> (sesiones PHP acumuladas) y el directorio de uploads sin política de retención. <code>du -sh /var/log/* | sort -rh | head</code> suele señalar al culpable en segundos.</p>
             </div>
           </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Tira de este mapa cuando…</h4>
+              <ul>
+                <li>Un servidor o una VM se queda sin espacio: <code>df -h</code> para ver qué partición, <code>du -sh</code> para ver qué directorio</li>
+                <li>Las escrituras fallan con «No space left on device» y <code>df -h</code> aún muestra espacio: mira <code>df -i</code></li>
+                <li>nginx no conecta con PHP-FPM y quieres confirmar que el <code>.sock</code> existe y es de tipo <code>s</code></li>
+                <li>Investigas un proceso concreto por su <code>/proc/&lt;pid&gt;/</code></li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Dentro de un contenedor, desconfía cuando…</h4>
+              <ul>
+                <li><code>/proc/meminfo</code> te da la RAM del host, no el límite del contenedor: ese está en <code>/sys/fs/cgroup/memory.max</code> (cgroup v2)</li>
+                <li><code>df -h /</code> muestra un <code>overlay</code> con el tamaño del disco del host: lo que ocupa Docker lo dice <code>docker system df</code></li>
+                <li>Buscas logs en <code>/var/log</code>: en contenedores lo habitual es escribirlos a stdout y leerlos con <code>docker compose logs</code></li>
+              </ul>
+            </div>
+          </div>
+          <p>La pregunta es de quién es el filesystem que miras. En un host o una VM, las herramientas de la lección dicen la verdad. Dentro de un contenedor ves una capa encima de otra y unos límites que <code>/proc</code> no refleja, así que el diagnóstico de espacio y memoria se hace desde fuera, con los comandos de Docker y los cgroups. Repasa la diferencia en <a href="docker-imagen-vs-contenedor.html">imagen vs contenedor</a>.</p>
 
           <h2 id="resumen">Resumen<a href="#resumen" class="anchor" aria-hidden="true">#</a></h2>
           <div class="keypoints">
