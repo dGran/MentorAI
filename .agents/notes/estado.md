@@ -176,7 +176,7 @@ prosa, sin código** (el p25 del catálogo). Salieron y se corrigieron ~90 error
 de contenido (código que no compilaba, Go 1.22, `cmp.Ordered`, `Cargo.lock`,
 Pydantic v2, pytest 8.4, axum…).
 
-**Tanda del 2026-10-12/13** (contrato, registro y cierre en `plan-tanda-2026-10-12.md`):
+**Tanda del 2026-10-12/13** (contrato, registro y cierre en `archivo/plan-tanda-2026-10-12.md`):
 vació el backlog en 16 PRs (#115-#130), producción de `v57` a `v70`.
 - **Cursos nuevos:** `seguridad-backend` (#35, prefijo `sec-`), `php-moderno` (#36, `pm-`),
   `concurrencia-en-bd` (#37, `bd-`, todo reproducido en MySQL 8.4 y Postgres 17) y
@@ -193,20 +193,41 @@ vació el backlog en 16 PRs (#115-#130), producción de `v57` a `v70`.
   (37 errores de contenido cazados en 16 PRs). Los revisores proponen también los enlaces
   de entrada desde las vecinas.
 
+**Tanda de vigencia del 2026-10-13** (contrato, enmienda y cierre en
+`archivo/plan-tanda-2026-10-13.md`): 11 PRs (#133, #134, #144-#152), producción de `v70` a
+`v81`, **80 lecciones corregidas** contra fuente oficial o Docker.
+- **#131 y #132:** id de modelo `claude-opus-5-5` en las lecciones originales de
+  `construir-con-ia` (con el razonamiento siempre activo: `maxTokens`, bloque `thinking`, pausa
+  antes del primer token) y salidas reales de PHPUnit 13.4.2.
+- **Auditoría de vigencia de todo el catálogo** (296 lecciones, fuera las revisadas el 2026-10-12):
+  101 hallazgos confirmados (31 falsos, 70 desfasados), volcados en #135-#143 por área. Lo
+  gordo: toolchains `golang:1.23`/`rust:1.80` que ya no compilan (pasan a 1.27 y 1.99), APIs
+  eliminadas de Symfony 7/8 y DBAL 4, nginx escrito como INI que no pasaba `nginx -t`, tags de
+  imagen inexistentes, `checkout@v4`/`cache@v4` en Node 20 (retirado de los runners),
+  `--allowedTools` presentado como restricción, SDK de MCP v2, Promtail retirado, uv que crea
+  paquete. Los ejemplos ejecutables tocados se ejecutaron en Docker.
+- **Método:** auditores de solo lectura → issues con cita, fuente y arreglo propuesto →
+  implementadores que **reconfirman cada arreglo antes de escribirlo** (6 propuestos también
+  estaban mal) → revisores frescos (12 errores más, casi todos frases vecinas que quedaban
+  contradictorias) → publicación en serie recomponiendo cada rama sobre `main`.
+
 ## Para retomar (2026-10-13)
 
-`main` en `5d85206`, producción en `v70`. Ningún PR abierto.
+`main` en `f26d8a9`, producción en `v81`. Ningún PR abierto.
 
-**Backlog:** #131 (las 4 lecciones originales de `construir-con-ia` usan el id de modelo
-`claude-opus-5`, ya antiguo; las de #38 usan `claude-opus-5-5`) y #132 (salidas de
-PHPUnit de una versión anterior en `phpunit-data-providers`). Los dos P3, `fix`.
+**Backlog:** #153 (P3, `fix`): restos que la tanda de vigencia dejó fuera de alcance
+(`pecl install` en tres lecciones, tamaños de imagen de Go y Python, `lib/pq`, `syslog`,
+ratio de php-fpm, nombre «docker-compose»), con dos dudas sin confirmar.
 
 **Herramientas reutilizables** (gitignored, en `.agents/tasks/`):
 `lecciones-sueltas/integrar.js` (añade lecciones a un curso existente, tras una lección
 o en un módulo nuevo), `lecciones-sueltas/prompt-base.md` y `prompt-review.md`
 (encargos de autoría y de review), `tanda-2026-10-12/{publicar,cerrar}.sh` (rama → PR →
 QA → merge → Pages → Done), `qa-curso.js`, `qa-leccion.js`, `qa-cuando.js` y `cdp.js`
-(Chrome headless con perfil en `~/.cache` y limpieza en `finally`).
+(Chrome headless con perfil en `~/.cache` y limpieza en `finally`). Para correcciones en
+paralelo: `tanda-2026-10-13/` (`preparar.sh` recompone una rama sobre `main` con parche 3-way,
+`reviewed`, índice y `VERSION`; `abrir-pr.sh`, `cerrar-serie.sh`, `qa-texto.js` para «texto
+nuevo | texto viejo» por lección, y `revisado.js`).
 
 ## Decisiones que no se reabren sin motivo nuevo
 
@@ -228,6 +249,13 @@ discutirlas por olvido:
 ## Trampas que ya nos han mordido
 
 Cada una costó una depuración; están aquí para no repetirlas.
+
+- **`verificar-offline.js` no admite dos a la vez, tampoco desde un subagente.** Usa puertos
+  fijos (8899/9336): un revisor que lo lanzó mientras el coordinador publicaba dejó los dos
+  en rojo y el suyo colgado (2026-10-13). Los revisores no lo ejecutan; lo cubren CI y la
+  publicación.
+- **Docker Hub corta con 429** cuando varios agentes bajan imágenes a la vez: reutilizar las
+  locales (`docker images`) antes de bajar.
 
 - **Emular «offline» en el navegador no prueba el offline.** No afecta a las
   peticiones del service worker. Hay que **apagar el servidor**: lo hace
@@ -318,7 +346,9 @@ Cada una costó una depuración; están aquí para no repetirlas.
 ## Rutina pendiente: revisión de frescura
 
 El validador vigila la estructura, no la verdad: el contenido caduca sin que
-nada avise. **Hacia febrero-marzo de 2027, primera revisión de frescura** de
+nada avise. **La primera pasada completa se hizo el 2026-10-13** (tanda de vigencia: 101
+hallazgos en 296 lecciones; el método, en `archivo/plan-tanda-2026-10-13.md`). **Hacia
+abril de 2027, la siguiente revisión de frescura** de
 las categorías volátiles — los cursos `claude-code`, `construir-con-ia` y
 `metodo-con-agentes` (hooks, subagentes y formato de skills cambian con la
 herramienta) sobre todo (la lección de la API ya nació corrigiendo `temperature`, que desapareció
