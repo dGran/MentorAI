@@ -240,7 +240,7 @@ final class AgenteDeSoporte
 
         for ($vuelta = 1; $vuelta &lt;= self::MAX_VUELTAS; $vuelta++) {
             $message = $this-&gt;modelo-&gt;siguiente($historial);
-            $tokensGastados += $message-&gt;usage-&gt;inputTokens + $message-&gt;usage-&gt;outputTokens;
+            $tokensGastados += $message-&gt;usage-&gt;inputTokens + ($message-&gt;usage-&gt;cacheReadInputTokens ?? 0) + ($message-&gt;usage-&gt;cacheCreationInputTokens ?? 0) + $message-&gt;usage-&gt;outputTokens;
             $this-&gt;traza-&gt;registrarRespuesta($idDeEjecucion, $vuelta, $message);
             $historial[] = ["role" =&gt; "assistant", "content" =&gt; $message-&gt;content];
 
@@ -361,14 +361,14 @@ final class PasoConClaude implements PasoDelModelo
               </thead>
               <tbody>
                 <tr><td><strong>Vueltas</strong></td><td>El modelo que se atasca repitiendo la misma consulta</td><td>Desde la traza real: si casi todo acaba en 3-4 vueltas, un techo de 8 da margen</td></tr>
-                <tr><td><strong>Tokens</strong></td><td>La factura</td><td>Suma <code>inputTokens</code> y <code>outputTokens</code> del <code>usage</code> de cada respuesta</td></tr>
+                <tr><td><strong>Tokens</strong></td><td>La factura</td><td>Suma <code>inputTokens</code>, los dos campos de caché (<code>cacheReadInputTokens</code>, <code>cacheCreationInputTokens</code>) y <code>outputTokens</code> del <code>usage</code> de cada respuesta</td></tr>
                 <tr><td><strong>Tiempo</strong></td><td>El worker bloqueado</td><td>Una fecha límite por ejecución, más el timeout de cada llamada al modelo</td></tr>
                 <tr><td><strong>Herramientas</strong></td><td>El efecto duplicado y la dependencia lenta</td><td>Timeout propio y clave de idempotencia en las que escriben</td></tr>
               </tbody>
             </table>
           </div>
           <p>El límite de tokens tiene trampa: cada vuelta reenvía el historial entero, así que la vuelta 8 paga otra vez las siete anteriores y el coste crece más deprisa que las vueltas. Es <a href="ia-coste-y-evaluacion.html">la aritmética de la lección de coste</a>, multiplicada. Por eso las herramientas devuelven solo lo que el modelo necesita para decidir: un estado y un importe, no el pedido entero en JSON.</p>
-          <p>Las herramientas que escriben son las delicadas. Si el worker muere tras emitir el reembolso, la cola reintenta el trabajo y el modelo vuelve a pedirlo. Si la herramienta no es idempotente, el cliente recibe el reembolso dos veces. La clave se deriva de la ejecución y de la acción, nunca del <code>id</code> del <code>tool_use</code>, porque un reintento genera ids nuevos:</p>
+          <p>Las herramientas que escriben son las delicadas. Si el worker muere tras emitir el reembolso, la cola reintenta el trabajo y el modelo vuelve a pedirlo. Si la herramienta no es idempotente, el cliente recibe el reembolso dos veces. La clave se deriva de la ejecución (un id que se conserva entre reintentos de la cola) y de la acción, nunca del <code>id</code> del <code>tool_use</code>, porque un reintento genera ids nuevos:</p>
 
           <div class="code-block">
             <div class="code-block__head">

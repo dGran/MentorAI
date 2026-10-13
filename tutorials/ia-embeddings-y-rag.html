@@ -458,10 +458,9 @@ final class FragmentosPgvector
 
           <p>
             El vector viaja como texto (<code>[0.12,-0.03,…]</code>) y
-            <code>CAST</code> lo convierte. <code>json_encode</code> no es un
-            capricho: conserva la precisión de los floats, mientras que
-            <code>implode</code> los redondea según la directiva
-            <code>precision</code>. Y la consulta usa <code>&lt;=&gt;</code>
+            <code>CAST</code> lo convierte. <code>json_encode</code> da el formato
+            exacto que espera <code>vector</code> y no depende de la directiva
+            <code>precision</code>, como <code>implode</code>. Y la consulta usa <code>&lt;=&gt;</code>
             porque el índice es <code>vector_cosine_ops</code>: con otro operador,
             PostgreSQL no puede usarlo y recorre la tabla entera.
           </p>
@@ -499,8 +498,8 @@ $message = $client-&gt;messages-&gt;create(
             usuario y nada separa lo recuperado de lo que el modelo «sabe». La
             API de Claude tiene un bloque pensado para RAG,
             <code>search_result</code>, con fuente, título y contenido. Con las
-            citas activadas, cada bloque de texto de la respuesta indica qué
-            resultado lo respalda:
+            citas activadas, los bloques de texto que se apoyan en un resultado
+            indican cuál lo respalda:
           </p>
 
           <div class="code-block">
@@ -573,8 +572,9 @@ foreach ($message-&gt;content as $block) {
               <ul>
                 <li>
                   <strong>Mezclar modelos de embeddings.</strong> Los vectores
-                  de modelos distintos no son comparables: cambiar de modelo
-                  obliga a re-embeber todo el corpus. Para eso está la columna
+                  de modelos distintos no son comparables salvo que el proveedor
+                  lo garantice (la familia <code>voyage-4</code> comparte espacio):
+                  cambiar a otro modelo obliga a re-embeber todo el corpus. Para eso está la columna
                   <code>modelo</code>.
                 </li>
                 <li>
@@ -582,8 +582,9 @@ foreach ($message-&gt;content as $block) {
                   <code>WHERE</code> se aplica a los candidatos que devuelve el
                   índice: con <code>ef_search</code> en 40 y un filtro que cumple
                   el 10 % de las filas, llegan unos 4 resultados aunque pidas 40.
-                  Desde pgvector 0.8, <code>hnsw.iterative_scan</code> sigue
-                  buscando hasta llenar el <code>LIMIT</code>.
+                  Desde pgvector 0.8, activar <code>hnsw.iterative_scan</code> hace
+                  que siga buscando hasta llenar el <code>LIMIT</code> o llegar a
+                  <code>hnsw.max_scan_tuples</code>.
                 </li>
                 <li>
                   <strong>Recuperar sin permisos.</strong> Si el corpus mezcla

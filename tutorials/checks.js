@@ -3204,7 +3204,7 @@ window.MENTORAI_CHECKS = {
       w: "Cada índice secundario de InnoDB lleva la clave primaria en sus hojas, así que el id sale gratis. En Postgres el índice no la lleva: hace falta INCLUDE (id). El mapa de visibilidad importa después, cuando ya hay un Index Only Scan." },
   ],
   "ia-embeddings-y-rag": [
-    { id: "cd42e28", q: "Cambias `voyage-4` por otro modelo de embeddings. ¿Qué pasa con los vectores ya guardados?",
+    { id: "cd42e28", q: "Cambias `voyage-4` por el modelo de embeddings de otro proveedor. ¿Qué pasa con los vectores ya guardados?",
       o: ["Valen igual si el modelo nuevo genera las mismas dimensiones","Siguen sirviendo tras reconstruir el índice HNSW sobre ellos","Hay que re-embeber todo el corpus con el modelo nuevo"], a: 2,
       w: "Cada modelo coloca los textos en su propio espacio: coincidir en dimensiones no hace comparables los vectores. Por eso la tabla guarda el modelo de cada fila." },
     { id: "c887c90", q: "¿Para qué sirve el solape entre trozos consecutivos?",
