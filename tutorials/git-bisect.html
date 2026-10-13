@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>git bisect: encontrar el commit que lo rompió — MentorAI</title>
+    <meta name="description" content="Encuentra el commit que introdujo un bug con búsqueda binaria: git bisect start, good, bad y reset, bisect run con PHPUnit, el código 125 y skip, y log y replay." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Git</span>
+        </nav>
+        <h1 class="tutorial-hero__title">git bisect: encontrar el commit que lo rompió</h1>
+        <p class="tutorial-hero__lead">
+          «En la 1.4 funcionaba» y desde entonces hay cientos de commits. Leer diffs no
+          escala; partir el historial por la mitad, sí. git bisect hace esa búsqueda
+          por ti y, con un test de PHPUnit, la hace sola mientras te tomas el café.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            23 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Git
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">El problema: «antes funcionaba»</a></li>
+            <li><a href="#busqueda">Búsqueda binaria en el historial</a></li>
+            <li><a href="#manual">Bisect a mano</a></li>
+            <li><a href="#run">Automatizarlo con bisect run</a></li>
+            <li><a href="#skip">Commits que no se pueden probar</a></li>
+            <li><a href="#log">Equivocarse y rehacer: log y replay</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            En <a href="git-deshacer.html">Deshacer y rescatar</a> aprendiste a
+            revertir un commit. Esta lección resuelve el paso anterior: averiguar
+            <em>cuál</em> revertir cuando sabes que algo se rompió, pero no cuándo.
+          </p>
+
+          <h2 id="problema">
+            El problema: «antes funcionaba»
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un cliente avisa de que el total del carrito sale un céntimo más caro con
+            el descuento del 15 %. La versión <code>v1.4</code> calculaba bien; la
+            rama <code>main</code> de hoy, no. Entre medias hay semanas de trabajo
+            de todo el equipo.
+          </p>
+          <p>
+            Las salidas intuitivas no funcionan. Repasar
+            <code>git log -p</code> (lo viste en
+            <a href="git-comandos-esenciales.html">los comandos del día a día</a>)
+            es leer cientos de diffs buscando uno que, casi siempre, parece inocente:
+            un «refactor» sin cambio de comportamiento aparente. Depurar el código
+            actual tampoco basta: te dice <em>qué</em> está mal, no qué cambio lo
+            introdujo ni por qué alguien lo hizo así. Y ese porqué, que está en el
+            mensaje y en la PR del commit culpable, es lo que te deja arreglarlo sin
+            romper lo que aquel cambio buscaba.
+          </p>
+
+          <h2 id="busqueda">
+            Búsqueda binaria en el historial
+            <a href="#busqueda" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Si un commit conocido es <strong>bueno</strong> y otro posterior es
+            <strong>malo</strong>, el fallo entró en algún punto entre los dos. Pruebas
+            el commit de en medio: si está bien, el culpable está en la mitad más
+            reciente; si está mal, en la más antigua. Cada prueba descarta la mitad
+            de los candidatos, así que el número de pasos crece con el logaritmo en
+            base 2 del tamaño del rango, no con el tamaño.
+          </p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Marcas un commit bueno y uno malo</b><small>v1.4 bien, main mal</small></span>
+              </div>
+              <div class="flow__arrow" data-label="git elige el del medio"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Lo pruebas y lo marcas</b><small>good o bad: descartas la mitad</small></span>
+              </div>
+              <div class="flow__arrow" data-label="repite con la mitad que queda"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Queda un solo candidato</b><small>«is the first bad commit»</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Cada vuelta divide el rango entre dos.</p>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Commits en el rango</th><th>Pruebas, más o menos</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>16</td><td>4</td></tr>
+                <tr><td>1.000</td><td>10</td></tr>
+                <tr><td>100.000</td><td>17</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            La condición es que el fallo aparezca una vez y se quede: bueno antes,
+            malo después. Si el bug va y viene a lo largo del historial, bisect
+            encontrará <em>un</em> punto de cambio, no necesariamente el que buscas.
+          </p>
+
+          <h2 id="manual">
+            Bisect a mano
+            <a href="#manual" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Cuatro órdenes bastan. <code>start</code> abre la sesión,
+            <code>bad</code> y <code>good</code> marcan los extremos y, desde ahí,
+            git deja en tu árbol de trabajo el commit que toca probar (en
+            <em>detached HEAD</em>). Pruebas, marcas y repites.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · una sesión manual</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">git bisect start
+git bisect bad            # el commit actual (main) está mal
+git bisect good v1.4      # esta etiqueta estaba bien
+# Bisecting: 8 revisions left to test after this (roughly 3 steps)
+
+# pruebas el commit que git ha sacado y lo marcas
+git bisect good           # o git bisect bad
+
+# al final: "6218b1b... is the first bad commit"
+git bisect reset          # vuelve a la rama donde empezaste</code></pre>
+          </div>
+          <p>
+            <code>git bisect start HEAD v1.4</code> hace lo mismo en una línea: primero
+            el malo, luego uno o varios buenos. Y no olvides el <code>reset</code>:
+            hasta que lo ejecutas sigues en mitad de la búsqueda, en un commit suelto.
+          </p>
+
+          <h2 id="run">
+            Automatizarlo con bisect run
+            <a href="#run" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Probar a mano es lento y propenso a errores. Si puedes expresar «está
+            roto» como un comando, <code>git bisect run</code> lo ejecuta en cada
+            paso y decide por su <strong>código de salida</strong>:
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Código de salida</th><th>Qué entiende bisect</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>0</code></td><td>Commit bueno.</td></tr>
+                <tr><td><code>125</code></td><td>No se puede probar: lo salta (<code>skip</code>).</td></tr>
+                <tr><td><code>1</code>–<code>127</code>, salvo 125</td><td>Commit malo.</td></tr>
+                <tr><td>128 o más</td><td>Aborta la búsqueda.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>
+            Encaja con PHPUnit sin adaptar nada: sale con 0 si todo pasa, con 1 si
+            un test falla y con 2 si hay un error. Volvamos al carrito. Así era el
+            cálculo en <code>v1.4</code>:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · src/Carrito.php (antes: v1.4)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace Tienda;
+
+final class Carrito
+{
+    /** @var list&lt;int&gt; */
+    private array $lineasEnCentimos = [];
+
+    public function anadir(int $precioEnCentimos, int $unidades = 1): void
+    {
+        $this-&gt;lineasEnCentimos[] = $precioEnCentimos * $unidades;
+    }
+
+    public function total(int $porcentajeDescuento = 0): int
+    {
+        $subtotal = array_sum($this-&gt;lineasEnCentimos);
+        $descuento = (int) round($subtotal * $porcentajeDescuento / 100);
+
+        return $subtotal - $descuento;
+    }
+}</code></pre>
+          </div>
+          <p>
+            Y así quedó tras un commit titulado «refactor: descuento con aritmética
+            entera». Una sola línea, con aspecto de mejora:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · src/Carrito.php (después: main)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace Tienda;
+
+final class Carrito
+{
+    /** @var list&lt;int&gt; */
+    private array $lineasEnCentimos = [];
+
+    public function anadir(int $precioEnCentimos, int $unidades = 1): void
+    {
+        $this-&gt;lineasEnCentimos[] = $precioEnCentimos * $unidades;
+    }
+
+    public function total(int $porcentajeDescuento = 0): int
+    {
+        $subtotal = array_sum($this-&gt;lineasEnCentimos);
+        $descuento = intdiv($subtotal * $porcentajeDescuento, 100);
+
+        return $subtotal - $descuento;
+    }
+}</code></pre>
+          </div>
+          <p>
+            <code>intdiv</code> trunca: el 15 % de 1999 son 299,85 céntimos, que
+            <code>round</code> dejaba en 300 y <code>intdiv</code> deja en 299. Los
+            tests que ya había usaban importes redondos y siguieron en verde. El
+            primer paso es escribir el test que reproduce el bug:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · tests/DescuentoRegresionTest.php (sin commitear)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+namespace Tienda\Tests;
+
+use PHPUnit\Framework\TestCase;
+use Tienda\Carrito;
+
+final class DescuentoRegresionTest extends TestCase
+{
+    public function testRedondeaElDescuentoAlCentimo(): void
+    {
+        $carrito = new Carrito();
+        $carrito-&gt;anadir(1999);
+
+        self::assertSame(1699, $carrito-&gt;total(15));
+    }
+}</code></pre>
+          </div>
+          <p>
+            Ese fichero <strong>no se commitea todavía</strong>. Los ficheros sin
+            seguimiento sobreviven a cada checkout de bisect, así que el mismo test
+            se ejecuta contra el código de cada commit, también contra los antiguos
+            donde no existía. Si lo commitearas en <code>main</code>, desaparecería
+            al saltar al pasado. Con eso, la búsqueda entera es una línea:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · bisect run con PHPUnit</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">git bisect start HEAD v1.4
+git bisect run vendor/bin/phpunit tests/DescuentoRegresionTest.php
+
+# running 'vendor/bin/phpunit' 'tests/DescuentoRegresionTest.php'
+# ...
+# 6218b1bb4a1ee11906dd585635b2b28743717f1a is the first bad commit
+#     refactor: descuento con aritmética entera
+#  src/Carrito.php | 2 +-
+# bisect found first bad commit
+
+git bisect reset</code></pre>
+          </div>
+          <p>
+            En el repo de prueba de esta lección, 17 commits candidatos se
+            resolvieron en 4 ejecuciones del test. Lo que te llevas no es solo el
+            hash: es el mensaje del commit, su autor y su PR, que explican qué
+            pretendía el cambio.
+          </p>
+
+          <h2 id="skip">
+            Commits que no se pueden probar
+            <a href="#skip" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En la vida real hay commits rotos por otra causa: un «wip» con un error
+            de sintaxis, una migración a medias. Si los marcas como malos, engañas a
+            la búsqueda; si los marcas como buenos, también. Para eso está
+            <code>git bisect skip</code>: «este no lo sé, prueba otro cercano». En
+            modo automático, el equivalente es salir con <strong>125</strong>. Como
+            PHPUnit no lo hace por sí solo, se envuelve en un script:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · bisect.sh (sin commitear)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">#!/usr/bin/env bash
+
+for fichero in src/*.php; do
+    php -l "$fichero" &gt; /dev/null || exit 125
+done
+
+vendor/bin/phpunit tests/DescuentoRegresionTest.php</code></pre>
+          </div>
+          <p>
+            Se lanza con <code>chmod +x bisect.sh</code> y
+            <code>git bisect run ./bisect.sh</code>. Saltar tiene un precio: si el
+            commit saltado está pegado al culpable, bisect no puede separarlos y te
+            entrega la lista de sospechosos en vez de uno:
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · cuando lo saltado roza al culpable</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">There are only 'skip'ped commits left to test.
+The first bad commit could be any of:
+a29d861e45484b9d67519677ab296d72f9fb076c
+170352d28ef6cfbc212a637cd0663f44c8aea183
+We cannot bisect more!</code></pre>
+          </div>
+          <p>
+            Dos o tres sospechosos se revisan a mano en un minuto. Si sabes de
+            antemano que un tramo entero no compila, sáltalo de golpe con rango:
+            <code>git bisect skip v2.5..v2.6</code>.
+          </p>
+
+          <h2 id="log">
+            Equivocarse y rehacer: log y replay
+            <a href="#log" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            En una sesión manual basta un <code>good</code> donde tocaba
+            <code>bad</code> para que bisect acabe señalando un commit inocente, y no
+            hay deshacer paso a paso. Lo que sí hay es un diario:
+            <code>git bisect log</code> imprime la sesión como órdenes que se pueden
+            volver a ejecutar.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · corregir una marca equivocada</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">git bisect log &gt; bisect.log
+# edita bisect.log y borra la línea de la marca equivocada
+#   git bisect start 'HEAD' 'v1.4'
+#   git bisect good f74cb38027b09be2b15fc7fbf63b38d3a413aee3
+#   git bisect bad 32188682de0ab10d7b72b57420d43d35ed8ed763
+git bisect reset
+git bisect replay bisect.log   # rehace la sesión sin la marca equivocada</code></pre>
+          </div>
+          <p>
+            El mismo fichero sirve para pasarle la búsqueda a un compañero o
+            adjuntarla a la incidencia: con <code>replay</code>, quien lo reciba
+            llega al mismo punto sin repetir las pruebas, si está en el mismo <code>HEAD</code>: el log guarda <code>'HEAD'</code>, no el hash.
+          </p>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que hace que bisect señale al commit equivocado</p>
+              <ul>
+                <li><strong>Un test que falla por otro motivo.</strong> Si usa una clase que en los commits antiguos no existe, PHPUnit sale con 2, bisect lo cuenta como malo y la búsqueda se tuerce. Prueba solo lo que ya existía en el commit bueno.</li>
+                <li><strong>Commitear el test o el script.</strong> Desaparecen al saltar a commits antiguos. Déjalos sin seguimiento hasta terminar.</li>
+                <li><strong>Marcar como malo lo que no compila.</strong> Eso es <code>skip</code> o un 125, no un <code>bad</code>.</li>
+                <li><strong>Un script que no arranca.</strong> Sin permiso de ejecución o con un comando que no existe, el shell sale con 126 o 127. Si pasa en la primera prueba, git la repite en el commit bueno y, si allí también falla, aborta («bogus exit code 127 for good revision»); si aparece más tarde (un <code>vendor/bin/phpunit</code> que no existe en un commit antiguo), lo cuenta como malo.</li>
+                <li><strong>Olvidar el <code>reset</code>.</strong> Te quedas en <em>detached HEAD</em> y lo siguiente que commitees no cuelga de ninguna rama.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Bisect es tan fiable como tu criterio de «malo», así que valida el
+            criterio antes y el resultado después. Antes de lanzar
+            <code>run</code>, ejecuta el script en los dos extremos: debe salir con 0
+            en el bueno y con algo distinto de 0 en el malo. Después, confirma que el
+            commit señalado es la frontera exacta: falla en él y pasa en su padre.
+          </p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · validar el criterio y el veredicto</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">git switch --detach v1.4 &amp;&amp; ./bisect.sh; echo "salida: $?"      # 0
+git switch --detach 6218b1b~1 &amp;&amp; ./bisect.sh; echo "salida: $?"  # 0
+git switch --detach 6218b1b &amp;&amp; ./bisect.sh; echo "salida: $?"    # 1
+git switch main
+git show 6218b1b                 # el porqué del cambio</code></pre>
+          </div>
+          <p>
+            Con la frontera confirmada, arreglas en <code>main</code> y commiteas el
+            test de regresión junto al arreglo. Si el commit ya está compartido y lo
+            quieres deshacer entero, <code>git revert 6218b1b</code>.
+          </p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Tira de bisect cuando…</h4>
+              <ul>
+                <li>Tienes un commit que funcionaba y otro que no, y muchos commits entre ellos</li>
+                <li>El fallo se reproduce con un comando: un test, un <code>curl</code>, un script</li>
+                <li>Necesitas el porqué del cambio, no solo el parche</li>
+                <li>Una prueba de rendimiento empeoró entre dos versiones</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No te ayuda cuando…</h4>
+              <ul>
+                <li>El fallo es intermitente: un test inestable da veredictos al azar</li>
+                <li>Depende de datos o de configuración de producción, no del código</li>
+                <li>Nunca funcionó: no hay commit bueno del que partir</li>
+                <li>El rango son tres commits: léelos</li>
+              </ul>
+            </div>
+          </div>
+          <p>
+            La alternativa, con pocos commits o un fallo que no sabes reproducir, es
+            <code>git log -p -S intdiv</code> o <code>git blame</code> sobre la línea
+            sospechosa: más rápido si intuyes dónde mirar. Para algo que no es un bug
+            (cuándo se volvió lento un endpoint),
+            <code>git bisect start --term-old=rapido --term-new=lento</code> cambia
+            <code>good</code>/<code>bad</code> por palabras que no confunden.
+          </p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Bisect es una <strong>búsqueda binaria</strong> entre un commit bueno y uno malo: mil commits se resuelven en unas diez pruebas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>start</code>, <code>bad</code>, <code>good</code> y <code>reset</code> para la sesión manual; <code>run</code> la automatiza con el código de salida de un comando.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>0 es bueno, 1-127 malo, <strong>125 salta</strong> el commit; lo que no se puede probar va a <code>skip</code>, nunca a <code>bad</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El test de regresión y el script se quedan <strong>sin commitear</strong> durante la búsqueda, y se validan antes en los dos extremos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>git bisect log</code> guarda la sesión y <code>replay</code> la rehace, también para corregir una marca equivocada.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="git-deshacer.html">
+              <small>← Anterior</small>
+              <b>Deshacer y rescatar</b>
+            </a>
+            <a href="git-rebase-interactivo.html" class="next">
+              <small>Siguiente →</small>
+              <b>Rebase interactivo</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

@@ -514,6 +514,18 @@ window.MENTORAI_QUIZZES = {
       o: ["Un comando de git para traer cambios del remoto","Una forma de hacer fetch y merge en un único paso","Una petición para que revisen y fusionen tu rama","Un tipo especial de merge que no crea commit de merge"], a: 2,
       w: "No es de git, es de la plataforma (GitHub, GitLab…). Aporta lo que git no da por sí solo: un sitio donde revisar, comentar y pasar CI antes de que el código entre en la rama principal.",
       lesson: "git-ramas-y-flujo" },
+    { id: "q01d3cf", q: "Lanzas git bisect run vendor/bin/phpunit tests/CuponTest.php entre v2.0 (bueno) y main. CuponTest usa la clase Cupon, añadida tres semanas después de v2.0, y bisect señala el primer commit tras v2.0, que solo toca el README. ¿Qué ha pasado?",
+      o: ["El README cambió algo que rompe el autoload de Composer","PHPUnit sale con 125 donde Cupon no existe y bisect lo salta","Bisect da por malo el commit siguiente al bueno sin probarlo","PHPUnit sale con 2 donde Cupon no existe y bisect lo da por malo"], a: 3,
+      w: "Un error de PHPUnit sale con 2, y bisect cuenta cualquier código entre 1 y 127, salvo 125, como malo. Todos los commits sin Cupon parecen rotos. Prueba solo lo que ya existía en el commit bueno y ejecuta antes el script en los dos extremos.",
+      lesson: "git-bisect" },
+    { id: "q77a02e", q: "Terminas un rebase -i de tu rama local feature/pago, aún sin push. Resolviste un conflicto deprisa y ahora git diff feature/pago@{1} enseña que se perdió un cambio que querías conservar. ¿Qué haces?",
+      o: ["git rebase --abort, que deja la rama como estaba antes del rebase","git revert HEAD, que anula el rebase sin reescribir el historial","git rebase --continue, que reaplica el commit que se ha perdido","git reset --hard feature/pago@{1}, que vuelve al estado previo"], a: 3,
+      w: "--abort solo sirve con el rebase en curso; terminado, la rama tiene una entrada en su reflog por rebase y @{1} es el estado justo anterior. revert solo deshace el último commit, y --continue no hace nada sin rebase en marcha.",
+      lesson: "git-rebase-interactivo" },
+    { id: "q85e802", q: "Terminas de revisar una PR en el worktree `../tienda-pr`, ejecutas `git worktree remove ../tienda-pr` y termina sin quejas. Al día siguiente buscas el `.env` con las claves de sandbox que habías creado allí y que no guardaste en otro sitio. ¿Dónde está?",
+      o: ["En la carpeta original, porque `.env` se comparte entre worktrees","En `git stash list`, porque `remove` aparca lo que no está versionado","En el reflog, porque Git registra los ficheros de cada worktree","En ningún sitio, porque `remove` borra sin avisar los ignorados"], a: 3,
+      w: "`remove` se niega si hay cambios o ficheros sin rastrear, pero un `.env` en `.gitignore` es ignorado, no sin rastrear, y se borra con la carpeta. Git nunca lo conoció: ni stash ni reflog pueden devolverlo.",
+      lesson: "git-worktrees" },
   ]},
 
   /* -------- OOP (12) -------- */
