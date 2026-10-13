@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Embeddings y RAG desde PHP — MentorAI</title>
+    <meta name="description" content="RAG desde PHP con criterio: cuándo no hace falta, embeddings con Voyage AI, troceado con solape, pgvector con HNSW, citas con search_result y cómo evaluar la recuperación." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>IA</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Embeddings y RAG desde PHP</h1>
+        <p class="tutorial-hero__lead">
+          El modelo no ha leído tus condiciones de devolución ni tu manual
+          interno. RAG se los pone delante en cada pregunta: buscas los trozos
+          que importan, los metes en el prompt y exiges que cite de dónde salen.
+          Esta lección lo monta con pgvector, empezando por decidir si de verdad
+          lo necesitas.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            26 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">¿Hace falta RAG?</a></li>
+            <li><a href="#embeddings">Embeddings: cerca es parecido</a></li>
+            <li><a href="#trocear">Trocear los documentos</a></li>
+            <li><a href="#pgvector">Guardar y buscar con pgvector</a></li>
+            <li><a href="#prompt">Al prompt, con su fuente</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#evaluar">¿Trae lo correcto?</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            El asistente de soporte de la tienda tiene que responder con
+            <em>tus</em> políticas de devoluciones y envíos, que nunca ha visto.
+            Qué es RAG ya lo viste <a href="conceptos-ia.html#rag">en conceptos de IA</a>;
+            aquí va cómo se construye desde PHP y, sobre todo, cómo se comprueba
+            que trae lo que debe.
+          </p>
+
+          <h2 id="idea">
+            ¿Hace falta RAG?
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            RAG añade piezas que mantener: un proveedor más, una tabla de
+            vectores, una ingesta que reindexa cuando cambian los documentos y
+            una evaluación propia. Antes de montarlo, descarta las dos
+            alternativas baratas:
+          </p>
+          <ul>
+            <li>
+              <strong>Meterlo todo en el contexto.</strong> Los modelos actuales
+              de Claude admiten un millón de tokens. Si tu documentación cabe con
+              holgura, mándala entera con
+              <a href="ia-coste-y-evaluacion.html#palancas">caché de prompts</a> y
+              te ahorras la tubería: Anthropic ya lo recomendaba para bases de
+              conocimiento de menos de unos 200.000 tokens. El límite real es el
+              coste por llamada, la latencia y que
+              <a href="llm-atencion-y-contexto.html#medio">un contexto enorme diluye lo relevante</a>.
+            </li>
+            <li>
+              <strong>Búsqueda clásica.</strong> Si buscan referencias exactas
+              (un código de error, un SKU, el nombre de una función), el
+              full-text de PostgreSQL o un motor con BM25 las encuentra mejor que
+              un embedding, que compara significados y no cadenas.
+            </li>
+          </ul>
+          <p>
+            RAG compensa cuando el corpus es grande o cambia a menudo, cuando las
+            preguntas usan palabras distintas a las del documento («¿me devolvéis
+            el dinero si llega roto?» frente a «reembolso por producto
+            defectuoso») y cuando necesitas decir de dónde sale cada respuesta.
+          </p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Ingesta</b><small>Trocear y embeber, una vez y al cambiar</small></span>
+              </div>
+              <div class="flow__arrow" data-label="en cada pregunta"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Embeber la pregunta</b><small>Con el mismo modelo que los documentos</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Recuperar</b><small>Los k fragmentos más cercanos en pgvector</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>Generar</b><small>Claude responde con los fragmentos delante y los cita</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">La ingesta va en un worker; solo los pasos 2 a 4 ocurren en cada pregunta.</p>
+          </div>
+
+          <h2 id="embeddings">
+            Embeddings: cerca es parecido
+            <a href="#embeddings" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un modelo de embeddings convierte un texto en un vector (1.024
+            números en los modelos de abajo) de forma que dos textos que hablan
+            de lo mismo quedan cerca aunque no compartan palabras. Es
+            <a href="llm-de-texto-a-tokens.html#embeddings">la misma idea que viste con los tokens</a>,
+            aplicada a fragmentos enteros. «Cerca» se mide con una distancia; la
+            del coseno, que compara la dirección de los vectores, es la habitual.
+          </p>
+          <p>
+            Primera sorpresa al montarlo con Claude: <strong>Anthropic no ofrece
+            modelo de embeddings propio</strong>. Su documentación remite a Voyage
+            AI, hoy de MongoDB: <code>voyage-4</code> como opción equilibrada,
+            <code>voyage-4-lite</code> si mandan el coste y la latencia y
+            <code>voyage-4-large</code> para la máxima calidad. También aconseja
+            evaluar varios proveedores para tu caso. Con cualquiera, el patrón es
+            una llamada HTTP que devuelve vectores:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · embeddings con Voyage</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class EmbeddingsVoyage
+{
+    private const string URL = "https://ai.mongodb.com/v1/embeddings";
+    private const string MODELO = "voyage-4";
+
+    public function __construct(private readonly string $apiKey)
+    {
+    }
+
+    public function deDocumentos(array $textos): array
+    {
+        return $this-&gt;embeber($textos, "document");
+    }
+
+    public function deConsulta(string $pregunta): array
+    {
+        return $this-&gt;embeber([$pregunta], "query")[0];
+    }
+
+    private function embeber(array $textos, string $tipoDeEntrada): array
+    {
+        $peticion = curl_init(self::URL);
+        curl_setopt_array($peticion, [
+            CURLOPT_POST =&gt; true,
+            CURLOPT_RETURNTRANSFER =&gt; true,
+            CURLOPT_TIMEOUT =&gt; 30,
+            CURLOPT_HTTPHEADER =&gt; [
+                "Content-Type: application/json",
+                "Authorization: Bearer {$this-&gt;apiKey}",
+            ],
+            CURLOPT_POSTFIELDS =&gt; json_encode([
+                "input" =&gt; $textos,
+                "model" =&gt; self::MODELO,
+                "input_type" =&gt; $tipoDeEntrada,
+            ], JSON_THROW_ON_ERROR),
+        ]);
+
+        $cuerpo = curl_exec($peticion);
+        $estado = curl_getinfo($peticion, CURLINFO_RESPONSE_CODE);
+
+        if ($cuerpo === false || $estado !== 200) {
+            throw new RuntimeException("Embeddings fallidos: HTTP {$estado}");
+        }
+
+        $respuesta = json_decode($cuerpo, true, flags: JSON_THROW_ON_ERROR);
+
+        return array_column($respuesta["data"], "embedding", "index");
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            <code>input_type</code> distingue el
+            documento que indexas de la pregunta que buscas: el proveedor
+            antepone una instrucción distinta a cada uno y eso mejora la
+            recuperación, así que no lo omitas. Y los vectores de Voyage llegan
+            normalizados a longitud 1, así que coseno, producto escalar y
+            distancia euclídea dan el mismo orden: elige una y úsala igual en el
+            índice y en la consulta.
+          </p>
+
+          <h2 id="trocear">
+            Trocear los documentos
+            <a href="#trocear" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            No se embebe un documento entero: se trocea. Un vector resume todo su
+            texto, así que el de un manual de cuarenta páginas «habla de todo» y
+            no se parece especialmente a ninguna pregunta. El trozo es además lo
+            que acabará en el prompt: si es enorme, pagas tokens de relleno; si
+            es diminuto, llega sin el contexto que lo hace entendible.
+          </p>
+          <p>
+            Un punto de partida razonable: cortar primero por la estructura
+            (títulos, secciones) y, dentro de cada sección, en trozos de unos
+            cientos de tokens con <strong>solape</strong> entre trozos
+            consecutivos. El solape existe para que una idea partida justo en la
+            frontera aparezca entera en al menos uno de los dos.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · trocear una sección con solape</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class Troceador
+{
+    public function __construct(
+        private readonly int $palabrasPorTrozo = 250,
+        private readonly int $palabrasDeSolape = 40,
+    ) {
+    }
+
+    public function trocear(string $textoDeLaSeccion): array
+    {
+        $palabras = preg_split('/\s+/u', trim($textoDeLaSeccion), flags: PREG_SPLIT_NO_EMPTY);
+        $avance = $this-&gt;palabrasPorTrozo - $this-&gt;palabrasDeSolape;
+        $trozos = [];
+
+        for ($inicio = 0; $inicio &lt; count($palabras); $inicio += $avance) {
+            $trozos[] = implode(" ", array_slice($palabras, $inicio, $this-&gt;palabrasPorTrozo));
+
+            if ($inicio + $this-&gt;palabrasPorTrozo &gt;= count($palabras)) {
+                break;
+            }
+        }
+
+        return $trozos;
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            Contar palabras es una aproximación: el límite real del modelo de
+            embeddings va en tokens. Tamaño y solape no se adivinan: son parámetros
+            que se ajustan con la evaluación del final de la lección.
+          </p>
+
+          <h2 id="pgvector">
+            Guardar y buscar con pgvector
+            <a href="#pgvector" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Si ya usas PostgreSQL, pgvector te ahorra otra base de datos: añade
+            el tipo <code>vector(n)</code>, operadores de distancia e índices de
+            vecinos aproximados. Los fragmentos viven en una tabla corriente,
+            junto a sus metadatos:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · la tabla de fragmentos</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE fragmentos (
+    id bigserial PRIMARY KEY,
+    documento text NOT NULL,
+    seccion text NOT NULL,
+    contenido text NOT NULL,
+    modelo text NOT NULL,
+    embedding vector(1024) NOT NULL
+);
+
+CREATE INDEX ON fragmentos USING hnsw (embedding vector_cosine_ops);</code></pre>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Operador</th><th>Distancia</th><th>Clase del índice</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>&lt;-&gt;</code></td><td>Euclídea (L2)</td><td><code>vector_l2_ops</code></td></tr>
+                <tr><td><code>&lt;#&gt;</code></td><td>Producto escalar en negativo (ordena como una distancia)</td><td><code>vector_ip_ops</code></td></tr>
+                <tr><td><code>&lt;=&gt;</code></td><td>Coseno (1 − similitud)</td><td><code>vector_cosine_ops</code></td></tr>
+                <tr><td><code>&lt;+&gt;</code></td><td>L1 (Manhattan)</td><td><code>vector_l1_ops</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>
+            Sin índice, cada búsqueda compara la pregunta con todas las filas:
+            exacto, pero lineal. Los índices de pgvector son aproximados: cambian
+            algo de exhaustividad (<em>recall</em>) por velocidad, y hay dos.
+          </p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>HNSW: el punto de partida</h4>
+              <ul>
+                <li>Mejor equilibrio entre velocidad y recall</li>
+                <li>Se puede crear con la tabla vacía: no tiene fase de entrenamiento</li>
+                <li>Más lento de construir y ocupa más memoria</li>
+                <li>Se ajusta al consultar con <code>hnsw.ef_search</code> (40 por defecto)</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>IVFFlat: si la memoria aprieta</h4>
+              <ul>
+                <li>Se construye antes y ocupa menos</li>
+                <li>Peor equilibrio entre velocidad y recall</li>
+                <li>Se crea con los datos ya cargados: reparte las filas en <code>lists</code></li>
+                <li>Se ajusta al consultar con <code>ivfflat.probes</code> (1 por defecto)</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · guardar y buscar con PDO</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class FragmentosPgvector
+{
+    public function __construct(private readonly PDO $pdo)
+    {
+    }
+
+    public function guardar(string $documento, string $seccion, string $contenido, array $embedding): void
+    {
+        $this-&gt;pdo-&gt;prepare(
+            "INSERT INTO fragmentos (documento, seccion, contenido, modelo, embedding)
+             VALUES (:documento, :seccion, :contenido, 'voyage-4', CAST(:embedding AS vector))"
+        )-&gt;execute([
+            "documento" =&gt; $documento,
+            "seccion" =&gt; $seccion,
+            "contenido" =&gt; $contenido,
+            "embedding" =&gt; $this-&gt;literal($embedding),
+        ]);
+    }
+
+    public function masCercanos(array $embeddingDeLaPregunta, int $cuantos): array
+    {
+        $consulta = $this-&gt;pdo-&gt;prepare(
+            "SELECT documento, seccion, contenido
+             FROM fragmentos
+             ORDER BY embedding &lt;=&gt; CAST(:pregunta AS vector)
+             LIMIT :cuantos"
+        );
+        $consulta-&gt;bindValue("pregunta", $this-&gt;literal($embeddingDeLaPregunta));
+        $consulta-&gt;bindValue("cuantos", $cuantos, PDO::PARAM_INT);
+        $consulta-&gt;execute();
+
+        return $consulta-&gt;fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    private function literal(array $embedding): string
+    {
+        return json_encode($embedding, JSON_THROW_ON_ERROR);
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            El vector viaja como texto (<code>[0.12,-0.03,…]</code>) y
+            <code>CAST</code> lo convierte. <code>json_encode</code> no es un
+            capricho: conserva la precisión de los floats, mientras que
+            <code>implode</code> los redondea según la directiva
+            <code>precision</code>. Y la consulta usa <code>&lt;=&gt;</code>
+            porque el índice es <code>vector_cosine_ops</code>: con otro operador,
+            PostgreSQL no puede usarlo y recorre la tabla entera.
+          </p>
+
+          <h2 id="prompt">
+            Al prompt, con su fuente
+            <a href="#prompt" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Con los fragmentos recuperados, falta ponérselos delante al modelo.
+            La versión ingenua los pega en el system como un bloque de texto:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · antes, contexto sin fuentes</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">$contexto = implode("\n\n", array_column($fragmentos, "contenido"));
+
+$message = $client-&gt;messages-&gt;create(
+    model: "claude-opus-5-5",
+    maxTokens: 2048,
+    system: "Responde usando esta documentación:\n\n{$contexto}",
+    messages: [["role" =&gt; "user", "content" =&gt; $pregunta]],
+);</code></pre>
+          </div>
+
+          <p>
+            Funciona en la demo y falla en tres cosas: el modelo no sabe de qué
+            documento sale cada párrafo, tú no puedes enseñar la fuente al
+            usuario y nada separa lo recuperado de lo que el modelo «sabe». La
+            API de Claude tiene un bloque pensado para RAG,
+            <code>search_result</code>, con fuente, título y contenido. Con las
+            citas activadas, cada bloque de texto de la respuesta indica qué
+            resultado lo respalda:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · después, resultados de búsqueda con citas</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">$resultados = array_map(
+    fn (array $fragmento): array =&gt; [
+        "type" =&gt; "search_result",
+        "source" =&gt; "{$fragmento["documento"]}#{$fragmento["seccion"]}",
+        "title" =&gt; $fragmento["seccion"],
+        "content" =&gt; [["type" =&gt; "text", "text" =&gt; $fragmento["contenido"]]],
+        "citations" =&gt; ["enabled" =&gt; true],
+    ],
+    $fragmentos,
+);
+
+$message = $client-&gt;messages-&gt;create(
+    model: "claude-opus-5-5",
+    maxTokens: 2048,
+    system: "Respondes dudas de clientes usando SOLO los resultados de búsqueda adjuntos. " .
+        "Si no contienen la respuesta, dilo: no la completes con lo que sepas.",
+    messages: [
+        ["role" =&gt; "user", "content" =&gt; [...$resultados, ["type" =&gt; "text", "text" =&gt; $pregunta]]],
+    ],
+);
+
+if ($message-&gt;stopReason !== "end_turn") {
+    throw new UnexpectedValueException("Respuesta incompleta: {$message-&gt;stopReason}");
+}
+
+$respuesta = "";
+$fuentes = [];
+
+foreach ($message-&gt;content as $block) {
+    if ($block-&gt;type !== "text") {
+        continue;
+    }
+
+    $respuesta .= $block-&gt;text;
+
+    foreach ($block-&gt;citations ?? [] as $cita) {
+        $fuentes[$cita-&gt;source] = $cita-&gt;title;
+    }
+}</code></pre>
+          </div>
+
+          <p>
+            Cada cita devuelve la <code>source</code> y el <code>title</code> que
+            pusiste tú y el texto citado, así que puedes enlazar la sección exacta
+            de tu documentación. Las citas son todo o nada: se activan en todos
+            los resultados de la petición o en ninguno, y mezclarlas da error. Lo
+            que el bloque no hace es volver fiable lo recuperado: un documento con
+            instrucciones escondidas es inyección indirecta, y se trata en
+            <a href="ia-seguridad.html">la lección de seguridad</a>.
+          </p>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que rompe un RAG en silencio</p>
+              <ul>
+                <li>
+                  <strong>Mezclar modelos de embeddings.</strong> Los vectores
+                  de modelos distintos no son comparables: cambiar de modelo
+                  obliga a re-embeber todo el corpus. Para eso está la columna
+                  <code>modelo</code>.
+                </li>
+                <li>
+                  <strong>Filtrar después del índice.</strong> Con HNSW, el
+                  <code>WHERE</code> se aplica a los candidatos que devuelve el
+                  índice: con <code>ef_search</code> en 40 y un filtro que cumple
+                  el 10 % de las filas, llegan unos 4 resultados aunque pidas 40.
+                  Desde pgvector 0.8, <code>hnsw.iterative_scan</code> sigue
+                  buscando hasta llenar el <code>LIMIT</code>.
+                </li>
+                <li>
+                  <strong>Recuperar sin permisos.</strong> Si el corpus mezcla
+                  clientes o niveles de acceso, el filtro por propietario va en la
+                  consulta, no en el prompt: es
+                  <a href="sec-autorizacion.html#propiedad">la comprobación de propiedad de siempre</a>,
+                  y OWASP lo recoge como LLM08:2025 (debilidades de vectores y
+                  embeddings).
+                </li>
+                <li>
+                  <strong>Pasarse de dimensiones.</strong> <code>vector</code>
+                  indexa hasta 2.000; por encima, <code>halfvec</code> (hasta
+                  4.000) o pedir menos dimensiones al proveedor.
+                </li>
+                <li>
+                  <strong>IVFFlat sobre la tabla vacía.</strong> Sus listas salen
+                  de los datos que hay al crearlo: créalo después de la carga.
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="evaluar">
+            ¿Trae lo correcto?
+            <a href="#evaluar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>
+            Un RAG falla de dos formas que desde fuera se parecen: la recuperación
+            no trajo el fragmento correcto, o lo trajo y el modelo respondió mal.
+            Si las mezclas, no sabrás qué tocar. La recuperación se evalúa sola,
+            sin llamar a Claude, con el método del
+            <a href="ia-coste-y-evaluacion.html#evals">eval mínimo</a>: preguntas
+            reales y, para cada una, la sección que debería salir.
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · acierto en los k primeros</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">function aciertoEnK(array $casos, Closure $buscar, int $k): float
+{
+    $aciertos = 0;
+
+    foreach ($casos as $caso) {
+        $recuperadas = array_map(
+            fn (array $fragmento): string =&gt; "{$fragmento["documento"]}#{$fragmento["seccion"]}",
+            $buscar($caso["pregunta"], $k),
+        );
+
+        if (array_intersect($caso["fuentesEsperadas"], $recuperadas) !== []) {
+            $aciertos++;
+        }
+    }
+
+    return $aciertos / count($casos);
+}
+
+$casos = [
+    ["pregunta" =&gt; "¿Cuántos días tengo para devolver un pedido?", "fuentesEsperadas" =&gt; ["devoluciones.md#Plazos"]],
+    ["pregunta" =&gt; "¿Me devolvéis el envío si el producto llegó roto?", "fuentesEsperadas" =&gt; ["devoluciones.md#Defectuosos", "envios.md#Incidencias"]],
+];
+
+$buscar = fn (string $pregunta, int $k): array =&gt; $fragmentos-&gt;masCercanos($embeddings-&gt;deConsulta($pregunta), $k);
+
+printf("acierto@5: %.0f %%\n", aciertoEnK($casos, $buscar, 5) * 100);</code></pre>
+          </div>
+
+          <p>
+            El acierto@k cuenta en cuántas preguntas aparece al menos una fuente
+            esperada entre los k primeros; si una respuesta necesita varias, mide
+            también qué fracción llega (recall@k). Etiqueta por documento y
+            sección, no por id de fragmento: los ids cambian cada vez que retocas
+            el troceado, y el golden set tiene que sobrevivir a eso. Con ese
+            número ya puedes comparar trozos de 250 y de 400 palabras, con y sin
+            solape, o subir <code>ef_search</code>.
+          </p>
+          <p>
+            Y antes de fiarte de los tiempos, comprueba que el índice trabaja.
+            En el plan tiene que salir <code>Index Scan using
+            fragmentos_embedding_idx</code> con su <code>Order By</code>; si sale
+            <code>Seq Scan</code> seguido de <code>Sort</code>, el operador no
+            casa con la clase del índice:
+          </p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · el índice, en el plan</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">EXPLAIN SELECT documento, seccion
+FROM fragmentos
+ORDER BY embedding &lt;=&gt; (SELECT embedding FROM fragmentos WHERE id = 1)
+LIMIT 5;</code></pre>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>RAG encaja cuando…</h4>
+              <ul>
+                <li>El corpus es grande o cambia a menudo y no compensa mandarlo entero</li>
+                <li>Las preguntas llegan en lenguaje natural, con palabras distintas a las del documento</li>
+                <li>Necesitas citar la fuente o limitar qué documentos ve cada usuario</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No lo montes si…</h4>
+              <ul>
+                <li>La documentación cabe en el contexto: mándala entera con caché de prompts</li>
+                <li>Se buscan identificadores exactos: full-text o BM25, o una búsqueda híbrida que combine ambos</li>
+                <li>Aún no tienes golden set: sin él no sabrás si el RAG ayuda o estorba</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Antes de RAG, descarta lo barato: todo el corpus en contexto con caché de prompts, o búsqueda por palabras si buscan identificadores exactos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Anthropic no tiene modelo de embeddings: su documentación remite a Voyage AI. Mismo modelo para documentos y preguntas, y <code>input_type</code> siempre.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Trocea por estructura, en trozos de unos cientos de tokens con solape, y ajusta ambos midiendo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>pgvector: <code>vector(n)</code>, el operador que casa con la clase del índice y HNSW por defecto; ojo con los filtros que se aplican después del índice.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los fragmentos entran como <code>search_result</code> con citas, y la recuperación se evalúa aparte con un acierto@k sobre preguntas etiquetadas por fuente.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

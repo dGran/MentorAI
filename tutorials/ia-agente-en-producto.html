@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Un agente dentro de tu producto — MentorAI</title>
+    <meta name="description" content="El bucle de tool use en tu servidor con la API de Claude: stop_reason, bloques tool_use y tool_result, límites de vueltas, tokens y tiempo, herramientas idempotentes con timeout, traza auditable y cuándo un flujo fijo es mejor idea." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>IA</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Un agente dentro de tu producto</h1>
+        <p class="tutorial-hero__lead">Un agente es un bucle: el modelo pide una herramienta, tu código la ejecuta y le devuelve el resultado, hasta que el modelo termina. Escribirlo cuesta diez líneas. Que no se coma tu presupuesto, no repita un reembolso y deje rastro de lo que hizo cuesta más, y de eso va esta lección.</p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            26 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#idea">De una vuelta a un bucle</a></li>
+            <li><a href="#bucle">El bucle en la API</a></li>
+            <li><a href="#codigo">Del while (true) al bucle con límites</a></li>
+            <li><a href="#limites">Los límites, uno a uno</a></li>
+            <li><a href="#agotado">Cuando se agota el presupuesto</a></li>
+            <li><a href="#traza">Registrar cada paso</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#comprobar">Cómo comprobarlo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">En <a href="ia-structured-output.html#tools">salida estructurada</a> viste el tool use de una vuelta: el modelo devuelve una llamada tipada y tu código la consume. Aquí el resultado vuelve al modelo y el modelo decide el siguiente paso. Es el mismo bucle que mueve a Claude Code (<a href="cc-agente-por-dentro.html#bucle">el agente por dentro</a>), pero ahora el harness lo escribes tú, en tu backend, con el dinero y los datos de tu empresa.</p>
+
+          <h2 id="idea">
+            De una vuelta a un bucle
+            <a href="#idea" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El caso del curso: un ticket dice «me cobrasteis dos veces el pedido 8841». Resolverlo exige consultar el pedido, ver los cargos, decidir si procede un reembolso, emitirlo y redactar la respuesta. Con un flujo fijo, tú escribes ese orden en código. Con un agente, das al modelo las herramientas (<code>consultar_pedido</code>, <code>emitir_reembolso</code>) y él decide cuáles usar y cuándo parar.</p>
+          <p>Esa flexibilidad es la gracia y el riesgo. Las vueltas ya no las decide tu código, y cada una cuesta una llamada al modelo, segundos de un worker y, si la herramienta escribe, un efecto real. Un modelo atascado repitiendo la misma consulta convierte un ticket en una factura. Por eso el bucle de producción no es un <code>while (true)</code>: es un bucle con presupuesto.</p>
+
+          <h2 id="bucle">
+            El bucle en la API
+            <a href="#bucle" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La API de Claude no ejecuta tus herramientas ni guarda la conversación: cada vuelta es una llamada normal a <code>messages</code> con el historial completo, como en <a href="ia-llamar-a-un-llm.html#stateless">la primera lección</a>. Lo que cambia son tres piezas:</p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Pides con <code>tools</code></b><small>El historial más las definiciones de cada herramienta: nombre, descripción, input_schema</small></span>
+              </div>
+              <div class="flow__arrow" data-label="stop_reason: tool_use"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>El modelo pide herramientas</b><small>Uno o varios bloques tool_use con id, name e input</small></span>
+              </div>
+              <div class="flow__arrow" data-label="tu código ejecuta"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Devuelves tool_result</b><small>Un mensaje user con un tool_result por cada tool_use, enlazado por tool_use_id</small></span>
+              </div>
+              <div class="flow__arrow" data-label="vuelta a 1 hasta end_turn"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>stop_reason: end_turn</b><small>El modelo responde sin pedir nada más: fin del bucle</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">El bucle de tool use: el modelo decide, tu servidor ejecuta.</p>
+          </div>
+
+          <p>Las reglas del formato que más muerden:</p>
+          <ul>
+            <li><strong>Un <code>tool_result</code> por cada <code>tool_use</code>.</strong> Si el modelo pide varias herramientas a la vez, todas las respuestas van juntas en el siguiente mensaje <code>user</code>.</li>
+            <li><strong>Los <code>tool_result</code> van primero.</strong> Cualquier texto tuyo va detrás de ellos en ese mensaje, nunca delante.</li>
+            <li><strong>Los fallos de la herramienta se devuelven, no se lanzan.</strong> Con <code>is_error: true</code> y un mensaje claro («el pedido 8841 no existe»), el modelo corrige o se lo explica al cliente.</li>
+            <li><strong>Hay más <code>stop_reason</code> que <code>tool_use</code> y <code>end_turn</code>.</strong> <code>max_tokens</code> puede cortar un <code>tool_use</code> a medias y <code>refusal</code> llega como un 200.</li>
+          </ul>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">¿Y el tool runner del SDK?</p>
+              <p>El SDK de PHP trae un tool runner, en beta, que hace este bucle por ti y acepta <code>maxIterations</code>. La propia documentación recomienda el bucle manual cuando necesitas registro propio, aprobación humana o ejecución condicional, que es lo que pide producción.</p>
+            </div>
+          </div>
+
+          <h2 id="codigo">
+            Del while (true) al bucle con límites
+            <a href="#codigo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La primera versión que sale, y que funciona en la demo:</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · antes: el bucle de la demo</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+function resolverTicket(Anthropic\Client $client, Herramientas $herramientas, string $peticion): string
+{
+    $historial = [["role" =&gt; "user", "content" =&gt; $peticion]];
+
+    while (true) {
+        $message = $client-&gt;messages-&gt;create(
+            model: "claude-opus-5-5",
+            maxTokens: 4096,
+            tools: $herramientas-&gt;definiciones(),
+            messages: $historial,
+        );
+
+        $historial[] = ["role" =&gt; "assistant", "content" =&gt; $message-&gt;content];
+
+        if ($message-&gt;stopReason !== "tool_use") {
+            return $message-&gt;content[0]-&gt;text;
+        }
+
+        $resultados = [];
+
+        foreach ($message-&gt;content as $block) {
+            if ($block-&gt;type === "tool_use") {
+                $resultados[] = [
+                    "type" =&gt; "tool_result",
+                    "tool_use_id" =&gt; $block-&gt;id,
+                    "content" =&gt; $herramientas-&gt;ejecutar($block-&gt;name, $block-&gt;input),
+                ];
+            }
+        }
+
+        $historial[] = ["role" =&gt; "user", "content" =&gt; $resultados];
+    }
+}</code></pre>
+          </div>
+
+          <p>Cuatro problemas: no hay techo, así que si el modelo nunca deja de pedir herramientas el bucle no acaba; cualquier <code>stopReason</code> distinto de <code>tool_use</code> pasa por respuesta final, incluidos un corte y un rechazo; una excepción de la herramienta tumba la ejecución en vez de llegar al modelo; y no queda rastro. La versión de producción aísla la llamada al modelo tras un <code>PasoDelModelo</code> (un doble en los tests) y el bucle lleva la cuenta:</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · después: el bucle con presupuesto</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+use Anthropic\Messages\ToolUseBlock;
+
+final class AgenteDeSoporte
+{
+    private const MAX_VUELTAS = 8;
+    private const MAX_TOKENS_POR_EJECUCION = 150_000;
+    private const SEGUNDOS_POR_EJECUCION = 90;
+
+    public function __construct(
+        private readonly PasoDelModelo $modelo,
+        private readonly CatalogoDeHerramientas $herramientas,
+        private readonly TrazaDelAgente $traza,
+    ) {}
+
+    public function resolver(string $idDeEjecucion, string $peticion): ResultadoDelAgente
+    {
+        $historial = [["role" =&gt; "user", "content" =&gt; $peticion]];
+        $tokensGastados = 0;
+        $fechaLimite = microtime(true) + self::SEGUNDOS_POR_EJECUCION;
+
+        for ($vuelta = 1; $vuelta &lt;= self::MAX_VUELTAS; $vuelta++) {
+            $message = $this-&gt;modelo-&gt;siguiente($historial);
+            $tokensGastados += $message-&gt;usage-&gt;inputTokens + $message-&gt;usage-&gt;outputTokens;
+            $this-&gt;traza-&gt;registrarRespuesta($idDeEjecucion, $vuelta, $message);
+            $historial[] = ["role" =&gt; "assistant", "content" =&gt; $message-&gt;content];
+
+            if ($message-&gt;stopReason === "end_turn") {
+                return ResultadoDelAgente::terminado($message);
+            }
+
+            if ($message-&gt;stopReason !== "tool_use") {
+                return ResultadoDelAgente::interrumpido($message-&gt;stopReason);
+            }
+
+            if ($this-&gt;seAgotoElPresupuesto($vuelta, $tokensGastados, $fechaLimite)) {
+                return ResultadoDelAgente::presupuestoAgotado($vuelta, $tokensGastados);
+            }
+
+            $historial[] = [
+                "role" =&gt; "user",
+                "content" =&gt; $this-&gt;ejecutarHerramientas($idDeEjecucion, $vuelta, $message-&gt;content),
+            ];
+        }
+
+        return ResultadoDelAgente::presupuestoAgotado(self::MAX_VUELTAS, $tokensGastados);
+    }
+
+    private function seAgotoElPresupuesto(int $vuelta, int $tokensGastados, float $fechaLimite): bool
+    {
+        return $vuelta &gt;= self::MAX_VUELTAS
+            || $tokensGastados &gt; self::MAX_TOKENS_POR_EJECUCION
+            || microtime(true) &gt; $fechaLimite;
+    }
+
+    private function ejecutarHerramientas(string $idDeEjecucion, int $vuelta, array $bloques): array
+    {
+        $resultados = [];
+
+        foreach ($bloques as $block) {
+            if (!$block instanceof ToolUseBlock) {
+                continue;
+            }
+
+            $resultados[] = $this-&gt;ejecutarUna($idDeEjecucion, $vuelta, $block);
+        }
+
+        return $resultados;
+    }
+
+    private function ejecutarUna(string $idDeEjecucion, int $vuelta, ToolUseBlock $block): array
+    {
+        try {
+            $salida = $this-&gt;herramientas-&gt;ejecutar($block-&gt;name, $block-&gt;input, $idDeEjecucion);
+            $this-&gt;traza-&gt;registrarHerramienta($idDeEjecucion, $vuelta, $block, $salida, esError: false);
+
+            return ["type" =&gt; "tool_result", "tool_use_id" =&gt; $block-&gt;id, "content" =&gt; $salida];
+        } catch (HerramientaFallida $exception) {
+            $this-&gt;traza-&gt;registrarHerramienta($idDeEjecucion, $vuelta, $block, $exception-&gt;getMessage(), esError: true);
+
+            return [
+                "type" =&gt; "tool_result",
+                "tool_use_id" =&gt; $block-&gt;id,
+                "content" =&gt; $exception-&gt;getMessage(),
+                "is_error" =&gt; true,
+            ];
+        }
+    }
+}</code></pre>
+          </div>
+
+          <p>La llamada real queda en una clase pequeña, con su propio timeout por petición:</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · la llamada al modelo, aislada</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+use Anthropic\Client;
+use Anthropic\Messages\Message;
+
+final class PasoConClaude implements PasoDelModelo
+{
+    private const MODELO = "claude-opus-5-5";
+    private const SEGUNDOS_DE_TIMEOUT_POR_LLAMADA = 60.0;
+
+    public function __construct(
+        private readonly Client $client,
+        private readonly CatalogoDeHerramientas $herramientas,
+        private readonly string $instrucciones,
+    ) {}
+
+    public function siguiente(array $historial): Message
+    {
+        return $this-&gt;client-&gt;messages-&gt;create(
+            model: self::MODELO,
+            maxTokens: 4096,
+            system: $this-&gt;instrucciones,
+            tools: $this-&gt;herramientas-&gt;definiciones(),
+            messages: $historial,
+            requestOptions: ["timeout" =&gt; self::SEGUNDOS_DE_TIMEOUT_POR_LLAMADA],
+        );
+    }
+}</code></pre>
+          </div>
+
+          <h2 id="limites">
+            Los límites, uno a uno
+            <a href="#limites" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Límite</th><th>Contra qué protege</th><th>Cómo se fija</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Vueltas</strong></td><td>El modelo que se atasca repitiendo la misma consulta</td><td>Desde la traza real: si casi todo acaba en 3-4 vueltas, un techo de 8 da margen</td></tr>
+                <tr><td><strong>Tokens</strong></td><td>La factura</td><td>Suma <code>inputTokens</code> y <code>outputTokens</code> del <code>usage</code> de cada respuesta</td></tr>
+                <tr><td><strong>Tiempo</strong></td><td>El worker bloqueado</td><td>Una fecha límite por ejecución, más el timeout de cada llamada al modelo</td></tr>
+                <tr><td><strong>Herramientas</strong></td><td>El efecto duplicado y la dependencia lenta</td><td>Timeout propio y clave de idempotencia en las que escriben</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>El límite de tokens tiene trampa: cada vuelta reenvía el historial entero, así que la vuelta 8 paga otra vez las siete anteriores y el coste crece más deprisa que las vueltas. Es <a href="ia-coste-y-evaluacion.html">la aritmética de la lección de coste</a>, multiplicada. Por eso las herramientas devuelven solo lo que el modelo necesita para decidir: un estado y un importe, no el pedido entero en JSON.</p>
+          <p>Las herramientas que escriben son las delicadas. Si el worker muere tras emitir el reembolso, la cola reintenta el trabajo y el modelo vuelve a pedirlo. Si la herramienta no es idempotente, el cliente recibe el reembolso dos veces. La clave se deriva de la ejecución y de la acción, nunca del <code>id</code> del <code>tool_use</code>, porque un reintento genera ids nuevos:</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · una herramienta que escribe, idempotente y con timeout</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+final class EmitirReembolso
+{
+    public const DEFINICION = [
+        "name" =&gt; "emitir_reembolso",
+        "description" =&gt; "Reembolsa total o parcialmente un pedido del cliente de esta conversación. " .
+            "Úsala solo tras consultar el pedido con consultar_pedido. El importe va en céntimos " .
+            "y no puede superar el importe pagado. Devuelve el id y el estado del reembolso.",
+        "strict" =&gt; true,
+        "input_schema" =&gt; [
+            "type" =&gt; "object",
+            "properties" =&gt; [
+                "pedido_id" =&gt; ["type" =&gt; "string"],
+                "importe_en_centimos" =&gt; ["type" =&gt; "integer"],
+            ],
+            "required" =&gt; ["pedido_id", "importe_en_centimos"],
+            "additionalProperties" =&gt; false,
+        ],
+    ];
+
+    private const SEGUNDOS_DE_TIMEOUT = 5.0;
+
+    public function __construct(private readonly PasarelaDePago $pasarela) {}
+
+    public function __invoke(array $input, string $idDeEjecucion): string
+    {
+        $claveDeIdempotencia = hash("sha256", "{$idDeEjecucion}:reembolso:{$input["pedido_id"]}");
+
+        $reembolso = $this-&gt;pasarela-&gt;reembolsar(
+            pedidoId: $input["pedido_id"],
+            importeEnCentimos: $input["importe_en_centimos"],
+            claveDeIdempotencia: $claveDeIdempotencia,
+            segundosDeTimeout: self::SEGUNDOS_DE_TIMEOUT,
+        );
+
+        return "Reembolso {$reembolso-&gt;id}: {$reembolso-&gt;estado}";
+    }
+}</code></pre>
+          </div>
+
+          <p>Dos detalles más. <code>strict: true</code> hace que el <code>input</code> cumpla siempre el esquema, así que no te llega un importe como texto; lo que no garantiza es que el importe sea correcto, y esa validación de negocio sigue siendo tuya. Y qué herramientas das, con qué permisos y sobre los datos de quién, es la otra mitad del diseño: está en <a href="ia-seguridad.html">la lección de seguridad</a>.</p>
+
+          <h2 id="agotado">
+            Cuando se agota el presupuesto
+            <a href="#agotado" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Agotar un límite es un resultado previsto, con estado propio (<code>presupuestoAgotado</code>), no una excepción genérica. Lo que haces con él:</p>
+          <ul>
+            <li><strong>No reintentar en automático.</strong> El mismo ticket con el mismo modelo suele atascarse en el mismo sitio: pagarías dos veces el mismo bucle.</li>
+            <li><strong>Pasárselo a una persona con la traza.</strong> El agente ya consultó el pedido y vio los cargos: quien lo retome no empieza de cero.</li>
+            <li><strong>Avisar al cliente con honestidad.</strong> «Lo revisa una persona» antes que una respuesta improvisada sobre una ejecución a medias.</li>
+          </ul>
+          <p>La tasa de ejecuciones que agotan el presupuesto es una métrica: si sube tras cambiar prompt o modelo, algo se ha roto aunque nada haya fallado.</p>
+
+          <h2 id="traza">
+            Registrar cada paso
+            <a href="#traza" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Si un cliente pregunta por qué se le reembolsaron 40 €, «lo decidió el modelo» no es respuesta. Cada ejecución lleva un id y cada vuelta deja una línea:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Campo</th><th>Para qué</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Id de ejecución y número de vuelta</td><td>Reconstruir la secuencia completa de un ticket</td></tr>
+                <tr><td>Herramienta, entrada y si fue error</td><td>Saber qué se pidió y qué devolvió tu código</td></tr>
+                <tr><td><code>stopReason</code> y <code>usage</code></td><td>Por qué paró y cuánto costó cada vuelta</td></tr>
+                <tr><td>Duración de cada herramienta</td><td>Encontrar la dependencia lenta antes de que llegue al timeout</td></tr>
+                <tr><td>Modelo y versión del prompt</td><td>Comparar antes y después de un cambio</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>La entrada de las herramientas lleva datos de clientes, así que se redacta como cualquier log (<a href="sec-logging-seguro.html#redactar">logging seguro</a>). Y sus casos reales alimentan el golden set con el que evalúas el agente.</p>
+
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo que rompe un agente en producción</p>
+              <ul>
+                <li><strong>Ejecutar herramientas en la última vuelta.</strong> Un reembolso cuyo resultado el modelo ya no verá.</li>
+                <li><strong>Responder solo al primer <code>tool_use</code>.</strong> Con llamadas en paralelo, el resto queda sin <code>tool_result</code> y la API devuelve 400.</li>
+                <li><strong>Un único timeout.</strong> El de la llamada al modelo no protege de una herramienta colgada.</li>
+                <li><strong>Herramientas con más permisos que la tarea.</strong> Un agente de soporte con una conexión de escritura a toda la base de datos es el exceso de agencia que OWASP lista como <code>LLM06:2025</code>.</li>
+                <li><strong>Correrlo dentro de la petición web.</strong> Va a un worker de cola, como <a href="ia-llamar-a-un-llm.html#arquitectura">cualquier llamada al modelo</a>.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="comprobar">
+            Cómo comprobarlo
+            <a href="#comprobar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Los límites se prueban sin llamar a la API: un doble de <code>PasoDelModelo</code> que siempre pide una herramienta debe hacer que el bucle pare en la vuelta 8, y uno que devuelve <code>max_tokens</code> debe acabar en un estado de interrupción, no de éxito.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · el límite de vueltas, probado sin API</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+use PHPUnit\Framework\TestCase;
+
+final class AgenteDeSoporteTest extends TestCase
+{
+    public function testSeDetieneEnLaVueltaMaximaSiElModeloNuncaTermina(): void
+    {
+        $traza = new TrazaEnMemoria();
+        $agente = new AgenteDeSoporte(
+            new ModeloQueSiemprePideHerramienta(),
+            new CatalogoDeHerramientasFalso(),
+            $traza,
+        );
+
+        $resultado = $agente-&gt;resolver("ejecucion-1", "Reembólsame el pedido 8841");
+
+        self::assertTrue($resultado-&gt;agotoElPresupuesto());
+        self::assertCount(8, $traza-&gt;respuestas());
+    }
+}</code></pre>
+          </div>
+
+          <p>Igual se prueba que una herramienta que lanza su excepción llega al modelo como <code>is_error</code>. En producción, vigila por caso de uso las vueltas y los tokens por ejecución y el porcentaje que agota el presupuesto.</p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La pregunta previa es si los pasos se pueden escribir de antemano. Si se pueden, un flujo fijo de llamadas (clasificar con salida estructurada, consultar el pedido en tu código, redactar con otra llamada) es más barato, más rápido y se prueba como cualquier código. Anthropic lo plantea igual: la solución más simple primero, y autonomía solo cuando la tarea la pida.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Un agente encaja cuando…</h4>
+              <ul>
+                <li>Los pasos dependen de lo que se va descubriendo y no caben en un diagrama fijo</li>
+                <li>El número de pasos varía mucho de un caso a otro</li>
+                <li>Un error es detectable y reversible, o hay una persona antes del efecto</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Mejor un flujo fijo cuando…</h4>
+              <ul>
+                <li>Siempre son los mismos pasos en el mismo orden</li>
+                <li>Necesitas latencia y coste predecibles por petición</li>
+                <li>Una acción irreversible quedaría sin revisión humana</li>
+              </ul>
+            </div>
+          </div>
+          <p>Y hay término medio: un flujo fijo donde solo el paso que de verdad decide es un agente pequeño con herramientas de lectura.</p>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un agente es un bucle: <code>stop_reason: tool_use</code>, tu código ejecuta, devuelves un <code>tool_result</code> por cada <code>tool_use</code>, hasta <code>end_turn</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El bucle de producción tiene presupuesto: vueltas, tokens y tiempo, y cualquier otro <code>stopReason</code> es una interrupción, no un éxito.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Las herramientas tienen timeout propio, devuelven sus fallos con <code>is_error</code> y, si escriben, son idempotentes con una clave de la ejecución.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Agotar el presupuesto es un estado previsto: sin reintento automático, a una persona y con la traza de cada paso.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Si los pasos se pueden escribir de antemano, un flujo fijo de llamadas gana al agente en coste, latencia y pruebas.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="../index.html">
+              <small>← Volver</small>
+              <b>Catálogo de tutoriales</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

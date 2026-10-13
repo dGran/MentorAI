@@ -108,7 +108,7 @@ window.MENTORAI_QUIZ_SUMMARY = {
     "passingScore": null
   },
   "construir-con-ia": {
-    "total": 10,
+    "total": 16,
     "passingScore": null
   },
   "la-maquina": {
