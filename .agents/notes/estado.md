@@ -218,7 +218,7 @@ vació el backlog en 16 PRs (#115-#130), producción de `v57` a `v70`.
 ## Para retomar (2026-10-14)
 
 `main` en `6b679ef`, producción en `v83`. Ningún PR abierto; tablero limpio (73 en Done).
-**Tanda preparada, sin lanzar:** enlaces de entrada a las 75 lecciones huérfanas (#157-#163, por
+**Tanda lanzada (2026-10-14):** enlaces de entrada a las 75 lecciones huérfanas (#157-#163, por
 área) y aviso en `validar.js` (#164, va el último). Contrato en `plan-tanda-2026-10-14-b.md`;
 herramientas en `.agents/tasks/tanda-2026-10-14/` y `enlaces-entrada/medir.js`.
 Los restos de #153 se cerraron en #155 (PR #156): cifra de Go en `practica.js`, `gin`/`sqlx`/Laravel

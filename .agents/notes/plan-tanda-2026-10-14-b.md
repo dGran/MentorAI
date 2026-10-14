@@ -1,6 +1,6 @@
 # Tanda 2026-10-14 (b): enlaces de entrada a las lecciones huérfanas (#157-#164)
 
-Estado: **preparada**, sin lanzar.
+Estado: **lanzada** el 2026-10-14 («lanza la tanda»).
 
 ## 1. Estado de partida (medido 2026-10-14)
 
