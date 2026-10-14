@@ -217,11 +217,10 @@ vació el backlog en 16 PRs (#115-#130), producción de `v57` a `v70`.
 
 ## Para retomar (2026-10-14)
 
-`main` en `d554798`, producción en `v82`. Ningún PR abierto; backlog vacío.
-
-**Restos sin issue** (propuestos al usuario, P3): `practica.js` (reto `r5f01c9`) dice «~800 MB»
-para la imagen de Go (mide ~890 MB); `gin v1.10.0` en el `go.mod` de `go-paquetes-y-modulos`
-(vigente v1.12.0); `gcr.io/distroless/python3` trae Python 3.13.5, no 3.14, en `python-docker`.
+`main` en `6b679ef`, producción en `v83`. Ningún PR abierto; tablero limpio (73 en Done).
+Los restos de #153 se cerraron en #155 (PR #156): cifra de Go en `practica.js`, `gin`/`sqlx`/Laravel
+al día y el matiz de distroless en `python-docker` (Python 3.13 de Debian; un venv de
+`python:*-slim` no arranca ahí, se construye en `debian:13-slim`, comprobado en Docker).
 
 **Herramientas reutilizables** (gitignored, en `.agents/tasks/`):
 `lecciones-sueltas/integrar.js` (añade lecciones a un curso existente, tras una lección
