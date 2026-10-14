@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-cd "$(git rev-parse --show-toplevel)"
-node .qa-evidence/issue-158/qa-enlaces.js "${1:-/tmp/qa-158}" "${2:-http://localhost:8000}" rust-entorno-docker\|rust-testing-y-produccion#docker-produccion rust-primer-programa\|rust-testing-y-produccion#compilacion-produccion rust-structs-y-enums\|rust-errores#operador-q rust-borrowing\|rust-smart-pointers rust-ownership\|rust-smart-pointers#rc rust-tipos-y-variables\|rust-lifetimes#static rust-concurrencia\|rust-lifetimes#static rust-editores\|rust-control-de-flujo#for rust-editores\|rust-tipos-y-variables#inferencia maq-de-codigo-a-programa\|rust-tipos-y-variables rust-cargo-y-crates\|rust-primer-programa#cargo-doc rust-ownership\|rust-primer-programa#primer-error rust-cargo-y-crates\|rust-editores#clippy rust-tipos-y-variables\|rust-editores#clippy rust-ownership\|rust-control-de-flujo#for rust-axum\|rust-errores#errores-propios
