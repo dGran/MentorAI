@@ -1,6 +1,6 @@
 # Tanda 2026-10-14: restos de la auditoría de vigencia (#153)
 
-Estado: **preparada**, sin lanzar.
+Estado: **lanzada** el 2026-10-14 («lanza la tanda»).
 
 ## 1. Estado de partida (medido 2026-10-14)
 
