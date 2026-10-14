@@ -210,14 +210,18 @@ vació el backlog en 16 PRs (#115-#130), producción de `v57` a `v70`.
   implementadores que **reconfirman cada arreglo antes de escribirlo** (6 propuestos también
   estaban mal) → revisores frescos (12 errores más, casi todos frases vecinas que quedaban
   contradictorias) → publicación en serie recomponiendo cada rama sobre `main`.
+- **Remates del 2026-10-14** (#153 → PR #154, `v82`, `archivo/plan-tanda-2026-10-14.md`): PIE en
+  las tres lecciones que seguían con `pecl install`, tamaños de Go y Python medidos, `lib/pq`
+  v1.12.3, matices de rsyslog y de `pm = dynamic`, `package = false` de uv y la lección pasa a
+  llamarse «Docker Compose» (**el slug `docker-compose` no cambia**).
 
-## Para retomar (2026-10-13)
+## Para retomar (2026-10-14)
 
-`main` en `f26d8a9`, producción en `v81`. Ningún PR abierto.
+`main` en `d554798`, producción en `v82`. Ningún PR abierto; backlog vacío.
 
-**Backlog:** #153 (P3, `fix`): restos que la tanda de vigencia dejó fuera de alcance
-(`pecl install` en tres lecciones, tamaños de imagen de Go y Python, `lib/pq`, `syslog`,
-ratio de php-fpm, nombre «docker-compose»), con dos dudas sin confirmar.
+**Restos sin issue** (propuestos al usuario, P3): `practica.js` (reto `r5f01c9`) dice «~800 MB»
+para la imagen de Go (mide ~890 MB); `gin v1.10.0` en el `go.mod` de `go-paquetes-y-modulos`
+(vigente v1.12.0); `gcr.io/distroless/python3` trae Python 3.13.5, no 3.14, en `python-docker`.
 
 **Herramientas reutilizables** (gitignored, en `.agents/tasks/`):
 `lecciones-sueltas/integrar.js` (añade lecciones a un curso existente, tras una lección

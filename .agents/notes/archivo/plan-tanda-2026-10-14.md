@@ -1,6 +1,7 @@
 # Tanda 2026-10-14: restos de la auditoría de vigencia (#153)
 
-Estado: **lanzada** el 2026-10-14 («lanza la tanda»).
+Estado: **cerrada** el 2026-10-14. Veredicto: #153 entró en `main` completo (9/9 criterios y las 2
+dudas «Sin confirmar», que resultaron ciertas) por el PR #154, producción `v82`.
 
 ## 1. Estado de partida (medido 2026-10-14)
 
@@ -55,3 +56,19 @@ reinterpreta); cualquier otra decisión de producto o de norma; borrar contenido
 - Nombre de la lección: «“Docker Compose” (Recomendado)». Slug y URL intactos.
 - Automerge: «Sí, igual que antes (Recomendado)». Lo que pase review fresca, QA y CI se mergea sin
   pausa.
+
+## 7. Cierre (2026-10-14)
+
+| Issue | PR | Merge | Shell | Review |
+|---|---|---|---|---|
+| #153 | #154 | `d554798` | `v82` | fresca: 2 frases vecinas contradictorias (`promql` «workers al 100%», keypoint de `python-editores`), aplicadas; de paso la errata «rototo» de esa misma frase |
+
+- El implementador confirmó en Docker las dos dudas: uv 0.13.1 mete `[build-system]` también con
+  `--app` y `uv run` falla con el layout `src/` (arreglo: `[tool.uv] package = false`), y el cliente
+  HTTP de PyCharm está en la edición gratis.
+- QA por http y `file://` sobre las 12 lecciones: texto nuevo presente, viejo ausente, 320 px sin
+  desborde, sin errores de consola. Offline 762 vistas.
+- Lección: ninguna nueva; el mecanismo `manifest-N.json` y `courses.js` en el parche funcionaron a la
+  primera.
+- Restos fuera de alcance, sin issue (propuestos al usuario): Go «~800 MB» en `practica.js`
+  (`r5f01c9`), `gin v1.10.0`, Python 3.13.5 de distroless en `python-docker`.
