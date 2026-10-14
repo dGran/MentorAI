@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+node .qa-evidence/issue-157/qa-enlaces.js "${1:-/tmp/qa-157}" "${2:-http://localhost:8000}" python-fastapi-intro\|python-a-produccion#uvicorn-gunicorn python-pydantic\|python-configuracion python-entorno-docker\|python-docker#dockerfile-fastapi python-context-managers\|python-testing-pytest#mocking python-que-es\|python-fastapi-intro python-tipos-y-variables\|python-fastapi-intro#parametros python-decoradores\|python-funciones#primera-clase python-comprehensions-y-generadores\|python-funciones#definir python-comprehensions-y-generadores\|python-control-de-flujo#for python-que-es\|python-tipos-y-variables#dinamico python-clases-y-oop\|python-tipos-y-variables#mutabilidad linux-scripting\|python-primer-programa#scripts python-modulos-y-paquetes\|python-editores#ruff rust-que-es\|python-que-es#para-que go-que-es\|python-que-es#para-que
