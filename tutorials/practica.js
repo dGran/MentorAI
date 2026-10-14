@@ -536,7 +536,7 @@ window.MENTORAI_PRACTICE = {
       statement:
         "Parte de una imagen que compila algo (vale el binario de Go del curso, o composer install con dev incluido) y mide su tamaño con docker images. Reescríbela en dos stages —uno que construye, otro que solo copia el resultado— y compara tamaños. ¿Qué se queda fuera exactamente?",
       solution:
-        "El stage final parte de una base mínima y solo recibe, vía COPY --from, el artefacto construido: compiladores, caché de paquetes, dependencias de desarrollo y código fuente intermedio se quedan en el stage builder, que no viaja. En Go la diferencia es brutal (de ~800 MB a ~15 MB); en PHP, sacar las dev-dependencies y las herramientas de build ya recorta cientos de MB. Menos imagen es menos superficie de ataque y despliegues más rápidos: no es estética.",
+        "El stage final parte de una base mínima y solo recibe, vía COPY --from, el artefacto construido: compiladores, caché de paquetes, dependencias de desarrollo y código fuente intermedio se quedan en el stage builder, que no viaja. En Go la diferencia es brutal (de ~890 MB a ~15 MB); en PHP, sacar las dev-dependencies y las herramientas de build ya recorta cientos de MB. Menos imagen es menos superficie de ataque y despliegues más rápidos: no es estética.",
       solutionCode: {
         lang: "bash",
         source:
