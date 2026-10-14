@@ -143,4 +143,29 @@ function problemasDeCargaDeDatos(fichero, html, paginasConDatosCompletos) {
   return [...problemas, ...cargadosDeMas.map((nombre) => `${fichero}: carga ${nombre}.js, que se inyecta bajo demanda`)];
 }
 
-module.exports = { esFechaReal, diaLocal, problemasDeRevision, tieneDrawerEscrito, tablasSinEnvolver, tieneUnSoloMain, problemasDeCargaDeDatos, nivelDeCurso, puestoPorLongitud, puestoDominanteTrasLaMasLarga, pistasDeForma, problemasDeEstructura };
+const NAVEGACION_DEL_PIE = /<nav class="tutorial-nav">[\s\S]*?<\/nav>/g;
+const ENLACE_A_LECCION = /href="(?:\.\/)?([a-z0-9-]+)\.html(?:#[^"]*)?"/g;
+
+function destinosEnlazados(slugDeOrigen, html) {
+  const cuerpo = html.replace(NAVEGACION_DEL_PIE, "");
+  const destinos = [...cuerpo.matchAll(ENLACE_A_LECCION)].map(([, slug]) => slug);
+
+  return new Set(destinos.filter((slug) => slug !== slugDeOrigen));
+}
+
+function leccionesSinEnlacesDeEntrada(htmlPorSlug, excepciones) {
+  const conEntrada = new Set();
+
+  for (const [slug, html] of Object.entries(htmlPorSlug)) {
+    for (const destino of destinosEnlazados(slug, html)) conEntrada.add(destino);
+  }
+
+  const sinEntrada = Object.keys(htmlPorSlug).filter((slug) => !conEntrada.has(slug));
+
+  return {
+    huerfanas: sinEntrada.filter((slug) => !excepciones.has(slug)),
+    excepcionesSobrantes: [...excepciones].filter((slug) => conEntrada.has(slug) || !(slug in htmlPorSlug)),
+  };
+}
+
+module.exports = { esFechaReal, diaLocal, problemasDeRevision, tieneDrawerEscrito, tablasSinEnvolver, tieneUnSoloMain, problemasDeCargaDeDatos, nivelDeCurso, puestoPorLongitud, puestoDominanteTrasLaMasLarga, pistasDeForma, problemasDeEstructura, leccionesSinEnlacesDeEntrada };

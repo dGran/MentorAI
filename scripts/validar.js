@@ -417,6 +417,18 @@ function validarHeroContraManifest() {
   }
 }
 
+const LECCIONES_SIN_ENTRADA_JUSTIFICADA = new Set();
+
+function validarEnlacesDeEntrada() {
+  const publicadas = manifest.filter((entrada) => entrada.status !== "soon");
+  const htmlPorSlug = Object.fromEntries(publicadas.map((tutorial) => [tutorial.slug, leer(`tutorials/${tutorial.slug}.html`)]));
+  const { huerfanas, excepcionesSobrantes } = reglas.leccionesSinEnlacesDeEntrada(htmlPorSlug, LECCIONES_SIN_ENTRADA_JUSTIFICADA);
+
+  for (const slug of huerfanas) aviso(`tutorials/${slug}.html: ninguna otra lección la enlaza desde el cuerpo (el pie no cuenta); añade 1-2 enlaces de entrada`);
+
+  for (const slug of excepcionesSobrantes) aviso(`validar.js: «${slug}» sobra en LECCIONES_SIN_ENTRADA_JUSTIFICADA (ya recibe enlaces, no está publicada o no existe)`);
+}
+
 function validarTutoriales() {
   for (const fichero of htmlDelCatalogo().filter((f) => f.startsWith("tutorials/"))) {
     const html = leer(fichero);
@@ -691,6 +703,7 @@ validarPreguntas("checks", checks, {
 validarPractica();
 validarTutoriales();
 validarHeroContraManifest();
+validarEnlacesDeEntrada();
 validarIdsDuplicados();
 validarCabecerasDeTutoriales();
 validarDrawerSoloDinamico();

@@ -89,7 +89,8 @@ Una lección **nueva** lleva enlaces de entrada desde 1-2 lecciones existentes q
 tocan el tema: sin ellos solo se llega por el curso o el buscador. Quien revisa la
 lección los propone como pares exactos (frase actual → frase con el enlace) y se
 comprueba que el clic llega. En la tanda del 2026-10-12 se olvidaron en dos PRs
-hasta que se pidieron en la review.
+hasta que se pidieron en la review. Desde #164, `validar.js` avisa de cualquier lección sin enlaces de
+entrada desde el cuerpo de otra (el pie no cuenta).
 
 El hero copia los minutos y el nivel del manifest, con el nivel escrito igual
 («Principiante», «Intermedio», «Avanzado»): `validar.js` falla si difieren.
