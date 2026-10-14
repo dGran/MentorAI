@@ -171,11 +171,14 @@
             </div>
             <pre><code>FROM php:8.3-fpm
 
+COPY --from=ghcr.io/php/pie:bin /pie /usr/bin/pie
+
 RUN docker-php-ext-install pdo_mysql opcache
 
-RUN pecl install redis &amp;&amp; docker-php-ext-enable redis</code></pre>
+RUN apt-get update &amp;&amp; apt-get install -y unzip \
+    &amp;&amp; pie install phpredis/phpredis</code></pre>
           </div>
-          <p>Dos vías: <code>docker-php-ext-install</code> para las extensiones que vienen con el código fuente de PHP (como <code>pdo_mysql</code> u <code>opcache</code>), y <code>pecl install</code> + <code>docker-php-ext-enable</code> para las de terceros (como <code>redis</code>). La idea de fondo conecta con <a href="extensiones-php.html">cómo funcionan las extensiones de PHP</a>: aquí las congelas en la imagen, declaradas, en lugar de instalarlas a mano en cada servidor.</p>
+          <p>Dos vías: <code>docker-php-ext-install</code> para las extensiones que vienen con el código fuente de PHP (como <code>pdo_mysql</code> u <code>opcache</code>), y <strong>PIE</strong> (<code>pie install</code>), el sustituto oficial del deprecado <code>pecl</code>, para las de terceros (como <code>redis</code>): las descarga, compila y habilita en un paso. PIE no viene en la imagen, así que se copia de la suya con <code>COPY --from</code>, y necesita <code>unzip</code>. La idea de fondo conecta con <a href="extensiones-php.html">cómo funcionan las extensiones de PHP</a>: aquí las congelas en la imagen, declaradas, en lugar de instalarlas a mano en cada servidor.</p>
           <div class="callout callout--tip">
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
             <div class="callout__body">
@@ -280,7 +283,7 @@ volumes:
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Las extensiones se declaran en el Dockerfile: <code>docker-php-ext-install</code> para las del core, <code>pecl</code> para las de terceros.</span>
+                <span>Las extensiones se declaran en el Dockerfile: <code>docker-php-ext-install</code> para las del core, <code>pie install</code> para las de terceros.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>

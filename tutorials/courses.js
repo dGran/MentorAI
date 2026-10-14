@@ -356,7 +356,7 @@ window.MENTORAI_COURSES = [
     slug: "docker",
     title: "Docker para desarrollo",
     summary:
-      "Containerizar tu servicio de principio a fin: imagen vs contenedor y por qué no es una VM, el Dockerfile y la caché de capas, docker-compose para levantar el entorno entero, imágenes pequeñas y seguras con multi-stage, y el montaje real de PHP con nginx y php-fpm.",
+      "Containerizar tu servicio de principio a fin: imagen vs contenedor y por qué no es una VM, el Dockerfile y la caché de capas, Docker Compose para levantar el entorno entero, imágenes pequeñas y seguras con multi-stage, y el montaje real de PHP con nginx y php-fpm.",
     level: "Principiante",
     icon: "code",
     lessons: [

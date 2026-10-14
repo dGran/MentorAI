@@ -148,6 +148,7 @@ CMD ["uv", "run", "uvicorn", "src.main:app", \
             <li><strong><code>PYTHONUNBUFFERED=1</code></strong>: fuerza que stdout y stderr se escriban inmediatamente sin buffer. Sin esto, los logs de la aplicación no aparecen en <code>docker compose logs</code> hasta que el buffer se llena.</li>
           </ul>
           <p>Copiar <code>pyproject.toml</code> y <code>uv.lock</code> <em>antes</em> del código fuente aprovecha la caché de capas de Docker: si solo cambia el código, la capa de instalación de dependencias no se reconstruye. Por eso esa capa lleva <code>--no-install-project</code>: instala solo las dependencias, porque el código del propio proyecto aún no está en la imagen y, sin el flag, <code>uv sync</code> falla intentando construirlo.</p>
+          <p>Ese intento de construir el proyecto vuelve al arrancar: <code>uv run</code> sincroniza antes de ejecutar, y si el <code>pyproject.toml</code> declara un <code>[build-system]</code> (el que añade <code>uv init</code>), instala el proyecto como paquete. Con <code>src/</code> como raíz del código falla con <code>Expected a Python module at: src/my_api/__init__.py</code>. Una API que no se publica como paquete no lo necesita: añade <code>package = false</code> en <code>[tool.uv]</code> y uv sincroniza solo las dependencias.</p>
 
           <h2 id="compose">
             Compose con hot-reload
