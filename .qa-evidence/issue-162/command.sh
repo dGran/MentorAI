@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+node .qa-evidence/issue-162/qa-enlaces.js "${1:-/tmp/qa-162}" "${2:-http://localhost:8000}" composer\|preload#problema rust-tipos-y-variables\|texto-unicode#utf8 extensiones-php\|texto-unicode#practica tdd-ciclo\|phpunit-primeros-pasos#anatomia git-bisect\|phpunit-primeros-pasos#ejecutar framework-ciclo-http\|contenedor-di#autowiring patrones-creacionales\|contenedor-di#ciclo-de-vida dip-inversion-dependencias\|hexagonal-en-php#capas test-doubles\|hexagonal-en-php#adaptadores patrones-en-el-framework\|framework-extension-points#cuando-cada-uno patrones-comportamiento-2\|framework-extension-points#middleware framework-ciclo-http\|patrones-en-el-framework#http-kernel patrones-comportamiento-1\|patrones-en-el-framework#event-dispatcher patrones-en-el-framework\|patrones-introduccion#que-es solid-introduccion\|solid-en-conjunto
