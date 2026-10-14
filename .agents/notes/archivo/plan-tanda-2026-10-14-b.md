@@ -1,6 +1,8 @@
 # Tanda 2026-10-14 (b): enlaces de entrada a las lecciones huérfanas (#157-#164)
 
-Estado: **lanzada** el 2026-10-14 («lanza la tanda»).
+Estado: **cerrada** el 2026-10-15. Veredicto: entraron los 8 issues. Las 75 lecciones huérfanas
+reciben 122 enlaces de entrada sin ninguna excepción (`medir.js` → 0), y `validar.js` avisa desde
+#164 de cualquier huérfana nueva; sale sin errores y sin avisos. Producción de `v83` a `v90`.
 
 ## 1. Estado de partida (medido 2026-10-14)
 
@@ -69,3 +71,34 @@ decisión de producto o de norma (p. ej. convertir el aviso en ERROR); borrar co
 - Validador: «Sí, como aviso (Recomendado)».
 - Automerge: «Sí, igual que antes (Recomendado)». Lo que pase review fresca, QA y CI se mergea sin
   pausa.
+
+## 7. Cierre (2026-10-15)
+
+| Issue | PR | Merge | Shell | Enlaces | Review fresca |
+|---|---|---|---|---|---|
+| #159 Go | #167 | `a9a7be9` | `v84` | 13 | aprobado |
+| #160 plataforma | #168 | `e3b2855` | `v85` | 21 | aprobado |
+| #157 Python | #165 | `9578ca0` | `v86` | 15 | 1: enlace tangencial en una tabla de comandos, retirado |
+| #158 Rust | #166 | `98c8d80` | `v87` | 16 | 2: un enlace tangencial movido a `rust-ownership#for`, un ancla añadida |
+| #161 backend | #169 | `ebbc712` | `v88` | 28 | 2: `sd-transacciones-distribuidas` solo tenía el de la lección anterior (+`sd-outbox`); un texto de enlace que prometía otra lección |
+| #162 diseño | #170 | `965dc39` | `v89` | 15 | 1: enlace desde la lección anterior, que duplicaba el pie (movido a `framework-ciclo-http`) |
+| #163 IA | #171 | `92d21d8` | `v90` | 14 | 2 anclas más precisas |
+| #164 aviso | #172 | `805b929` | — | — | aprobado con 3 menores (texto del aviso, regla más exacta, `new Set()`) |
+
+- **Método:** 7 implementadores en paralelo con `prompt-enlaces.md`, 7 revisores frescos con
+  `prompt-review-enlaces.md`, publicación en serie con `tanda-2026-10-14/`. QA nueva
+  (`qa-enlaces.js`): hace **clic** en cada enlace nuevo y comprueba que llega al destino y al ancla, por
+  http y por `file://`. `reviewed` no se tocó.
+- **Lecciones:**
+  - Siete subagentes con `gh` en paralelo agotaron el límite de **GraphQL** (5000/h compartido): fallaron
+    `gh pr list` y `gh project`. Las ramas ya estaban subidas; los PRs se crearon por REST, y
+    `abrir-pr.sh` busca ya el PR por REST. A los revisores se les pidió solo REST.
+  - El 3-way chocó una vez: `rust-tipos-y-variables` recibía enlaces de Rust y de diseño en dos
+    párrafos contiguos. Se resolvió a mano conservando los dos y la serie siguió.
+  - Un implementador escribió las entradas `qa` con `.html`; se normalizaron antes de la QA. El
+    formato va fijado en el encargo para la próxima.
+  - Lo que más cazó la review: enlaces desde la **lección anterior del mismo curso** (duplican el pie)
+    y enlaces tangenciales; anclas genéricas donde había una sección exacta.
+- **Norma:** la regla nueva va en `rules/global.md` (§ Convenciones de contenido) y en la skill
+  `tutorial`, con #164.
+- Ningún issue nuevo. Backlog vacío.

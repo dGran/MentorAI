@@ -215,15 +215,15 @@ vació el backlog en 16 PRs (#115-#130), producción de `v57` a `v70`.
   v1.12.3, matices de rsyslog y de `pm = dynamic`, `package = false` de uv y la lección pasa a
   llamarse «Docker Compose» (**el slug `docker-compose` no cambia**).
 
-## Para retomar (2026-10-14)
+- **Enlaces de entrada (2026-10-14/15)** (#157-#164, PRs #165-#172, `archivo/plan-tanda-2026-10-14-b.md`):
+  las 75 lecciones a las que no llegaba ningún enlace desde el cuerpo de otra reciben 122, sin
+  excepciones, y `validar.js` avisa de cualquier huérfana nueva (`LECCIONES_SIN_ENTRADA_JUSTIFICADA`,
+  hoy vacía). Producción `v90`.
 
-`main` en `6b679ef`, producción en `v83`. Ningún PR abierto; tablero limpio (73 en Done).
-**Tanda lanzada (2026-10-14):** enlaces de entrada a las 75 lecciones huérfanas (#157-#163, por
-área) y aviso en `validar.js` (#164, va el último). Contrato en `plan-tanda-2026-10-14-b.md`;
-herramientas en `.agents/tasks/tanda-2026-10-14/` y `enlaces-entrada/medir.js`.
-Los restos de #153 se cerraron en #155 (PR #156): cifra de Go en `practica.js`, `gin`/`sqlx`/Laravel
-al día y el matiz de distroless en `python-docker` (Python 3.13 de Debian; un venv de
-`python:*-slim` no arranca ahí, se construye en `debian:13-slim`, comprobado en Docker).
+## Para retomar (2026-10-15)
+
+`main` en `805b929`, producción en `v90`. Ningún PR abierto; tablero limpio (81 en Done), backlog
+vacío. `validar.js` sin errores y sin avisos; `node --test` 120/120.
 
 **Herramientas reutilizables** (gitignored, en `.agents/tasks/`):
 `lecciones-sueltas/integrar.js` (añade lecciones a un curso existente, tras una lección
@@ -231,7 +231,7 @@ o en un módulo nuevo), `lecciones-sueltas/prompt-base.md` y `prompt-review.md`
 (encargos de autoría y de review), `tanda-2026-10-12/{publicar,cerrar}.sh` (rama → PR →
 QA → merge → Pages → Done), `qa-curso.js`, `qa-leccion.js`, `qa-cuando.js` y `cdp.js`
 (Chrome headless con perfil en `~/.cache` y limpieza en `finally`). Para correcciones en
-paralelo: `tanda-2026-10-13/` (`preparar.sh` recompone una rama sobre `main` con parche 3-way,
+paralelo: `tanda-2026-10-13/` y `tanda-2026-10-14/` (esta con `qa-enlaces.js`, que hace clic en cada enlace nuevo, y `abrir-pr.sh` por REST; `enlaces-entrada/medir.js` cuenta huérfanas) (`preparar.sh` recompone una rama sobre `main` con parche 3-way,
 `reviewed`, índice y `VERSION`; `abrir-pr.sh`, `cerrar-serie.sh`, `qa-texto.js` para «texto
 nuevo | texto viejo» por lección, y `revisado.js`).
 
@@ -262,6 +262,9 @@ Cada una costó una depuración; están aquí para no repetirlas.
   publicación.
 - **Docker Hub corta con 429** cuando varios agentes bajan imágenes a la vez: reutilizar las
   locales (`docker images`) antes de bajar.
+- **GraphQL de GitHub se agota con varios agentes a la vez** (5000/h por usuario, compartido): `gh pr
+  list`, `gh pr view` y `gh project` fallan con «API rate limit already exceeded». Con más de cuatro
+  subagentes en paralelo, que usen REST (`gh api repos/...`) y dejar GraphQL para mover el tablero.
 
 - **Emular «offline» en el navegador no prueba el offline.** No afecta a las
   peticiones del service worker. Hay que **apagar el servidor**: lo hace
