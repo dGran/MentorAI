@@ -954,7 +954,7 @@ window.MENTORAI_QUIZZES = {
       o: ["Indica a Docker qué capas de la imagen se pueden ignorar al descargar","Excluye ficheros del contexto de build para acelerar la imagen y no exponer ficheros sensibles","Define qué ficheros se montan como volúmenes automáticamente","Especifica qué puertos del contenedor no se exponen al exterior"], a: 1,
       w: "Todo lo que no excluyas se envía al daemon en cada build: `vendor/`, `node_modules/`, `.git` y, si te descuidas, tu `.env`. Además de lentitud, es una vía de acabar con secretos dentro de la imagen.",
       lesson: "docker-buenas-practicas" },
-    { id: "qcc05df", q: "¿Cómo se comunican entre sí los servicios definidos en docker-compose?",
+    { id: "qcc05df", q: "¿Cómo se comunican entre sí los servicios definidos en Docker Compose?",
       o: ["Por la IP de la máquina anfitriona, 127.0.0.1, con los puertos publicados","Con variables de entorno que compose rellena con la IP de cada servicio","Solo pueden hablarse si comparten el mismo volumen o la misma carpeta","Por una red privada, usando el nombre del servicio como hostname"], a: 3,
       w: "Compose crea una red y registra cada servicio con su nombre, así que la app conecta a `mysql:3306` sin saber ninguna IP. Por eso no hace falta publicar puertos para que los servicios se hablen entre sí.",
       lesson: "docker-compose" },
