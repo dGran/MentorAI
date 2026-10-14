@@ -113,6 +113,10 @@ el diff crece). No se limpian en bloque fuera de un issue propio.
   relleno ni algo también cierto. Al reescribir una pregunta existente no
   cambian `id`, `a` ni el orden de las opciones (el repaso guarda el historial
   por id), y se lee la lección: así salieron errores del propio contenido.
+- **Ninguna lección queda huérfana**: cada una recibe al menos un enlace desde el cuerpo de otra
+  lección que ya trata el tema (el `tutorial-nav` del pie no cuenta: es llegar por el curso).
+  `validar.js` avisa de las que no lo tienen. Si no hay ninguna frase natural, la lección va a
+  `LECCIONES_SIN_ENTRADA_JUSTIFICADA` (`validar.js`) con el motivo en el PR, no se fuerza el enlace.
 - **El nivel de un curso es el de su primera lección**: desde dónde se puede
   empezar, que es lo que filtra `cursos.html`. El validador avisa si no coincide.
 
