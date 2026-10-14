@@ -95,7 +95,7 @@ Desde #29 (2026-10-07):
 - **Cuota llena:** `Perfil.importar` lanza `SinEspacio` si no cabe lo fusionado.
 
 **Tanda de red de seguridad (2026-10-07):** #58, #31, #29, #13, #30 y #15, con
-el contrato y el registro en `plan-tanda-2026-10-07.md`. Lo que cambió en la
+el contrato y el registro en `archivo/plan-tanda-2026-10-07.md`. Lo que cambió en la
 forma de trabajar:
 - **`verificar-offline.js`** mide el scroll horizontal a 320 y 375 px en
   `articulos.html` y en cada curso, y una limpieza fallida ya no da rojo.
@@ -110,7 +110,7 @@ A partir de aquí, todo lo que venga es **contenido nuevo o funcionalidad
 nueva**, sin plan previo que consultar.
 
 **Tanda del 2026-10-11:** #69, #70, #14, #18, #33 (parcial) y #28, con el
-contrato y el registro en `plan-tanda-2026-10-11.md`. Lo que cambió:
+contrato y el registro en `archivo/plan-tanda-2026-10-11.md`. Lo que cambió:
 - **Móvil:** ningún tutorial desborda a 320 ni a 375 px, y `verificar-offline.js`
   lo comprueba en los 300 (666 vistas, ~2,5 min en CI). Espera a que cada vista
   esté pintada en vez de dormir 600 ms.
@@ -126,7 +126,7 @@ contrato y el registro en `plan-tanda-2026-10-11.md`. Lo que cambió:
 
 **Segunda tanda del 2026-10-11:** #78, #77, #16, #17, #32 (partido en #83 y #84),
 #27, #22, #25 (piloto) y #26, con el contrato y el registro en
-`plan-tanda-2026-10-11-b.md`. Lo que cambió:
+`archivo/plan-tanda-2026-10-11-b.md`. Lo que cambió:
 - **Contraste y foco:** marca oscurecida hasta 4,5:1, anillo `:focus-visible` en
   todo lo enfocable y tokens de estado (`--success`, `--danger`…).
   `scripts/contraste.js` mide la matriz de pares en los dos temas, con su test.
@@ -148,7 +148,7 @@ contrato y el registro en `plan-tanda-2026-10-11.md`. Lo que cambió:
   plausible (en el refinado de #25). Quedan los demás cursos.
 
 **Tercera tanda del 2026-10-11:** #39, #33 y #25, con el contrato, sus dos
-enmiendas y el registro en `plan-tanda-2026-10-11-c.md`. Lo que cambió:
+enmiendas y el registro en `archivo/plan-tanda-2026-10-11-c.md`. Lo que cambió:
 - **#25 cerrado en 6 bloques (#102-#107):** se reescribieron las opciones de
   ~1.000 preguntas. La correcta como la más larga pasa del 79 % al 17 % en
   exámenes y del 80 % al 21 % en checks. `validar.js` da ERROR por curso por
@@ -218,6 +218,9 @@ vació el backlog en 16 PRs (#115-#130), producción de `v57` a `v70`.
 ## Para retomar (2026-10-14)
 
 `main` en `6b679ef`, producción en `v83`. Ningún PR abierto; tablero limpio (73 en Done).
+**Tanda preparada, sin lanzar:** enlaces de entrada a las 75 lecciones huérfanas (#157-#163, por
+área) y aviso en `validar.js` (#164, va el último). Contrato en `plan-tanda-2026-10-14-b.md`;
+herramientas en `.agents/tasks/tanda-2026-10-14/` y `enlaces-entrada/medir.js`.
 Los restos de #153 se cerraron en #155 (PR #156): cifra de Go en `practica.js`, `gin`/`sqlx`/Laravel
 al día y el matiz de distroless en `python-docker` (Python 3.13 de Debian; un venv de
 `python:*-slim` no arranca ahí, se construye en `debian:13-slim`, comprobado en Docker).
