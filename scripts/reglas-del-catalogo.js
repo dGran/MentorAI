@@ -174,11 +174,10 @@ function leccionesSinPreguntaDeExamen(leccionesPorCurso, preguntasPorCurso, exce
 
     return lecciones.filter((leccion) => !cubiertas.has(leccion));
   });
-  const deAlgunCurso = new Set(Object.values(leccionesPorCurso).flat());
 
   return {
     sinPregunta: sinPregunta.filter((leccion) => !excepciones.has(leccion)),
-    excepcionesSobrantes: [...excepciones].filter((leccion) => !deAlgunCurso.has(leccion) || !sinPregunta.includes(leccion)),
+    excepcionesSobrantes: [...excepciones].filter((leccion) => !sinPregunta.includes(leccion)),
   };
 }
 

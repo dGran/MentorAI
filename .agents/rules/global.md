@@ -118,8 +118,8 @@ el diff crece). No se limpian en bloque fuera de un issue propio.
   ni los enlaces a sí misma; las lecciones `status: "soon"` no se comprueban).
   `validar.js` avisa de las que no lo tienen. Si no hay ninguna frase natural, la lección va a
   `LECCIONES_SIN_ENTRADA_JUSTIFICADA` (`validar.js`) con el motivo en el PR, no se fuerza el enlace.
-- **Toda lección de un curso tiene al menos una pregunta en el examen de ese curso** (`lesson`
-  apuntando a ella), para que aprobarlo diga algo de cada lección y el «Repasar…» pueda llevar a
+- **Toda lección publicada de un curso tiene al menos una pregunta en el examen de ese curso**
+  (`lesson` apuntando a ella; las lecciones `status: "soon"` no se comprueban), para que aprobarlo diga algo de cada lección y el «Repasar…» pueda llevar a
   todas. `validar.js` avisa de las que no la tienen; una excepción justificada va en
   `LECCIONES_SIN_PREGUNTA_DE_EXAMEN_JUSTIFICADA` con el motivo en el PR.
 - **El nivel de un curso es el de su primera lección**: desde dónde se puede
