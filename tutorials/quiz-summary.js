@@ -12,7 +12,7 @@ window.MENTORAI_QUIZ_SUMMARY = {
     "passingScore": null
   },
   "sistemas-distribuidos": {
-    "total": 20,
+    "total": 23,
     "passingScore": null
   },
   "git": {
@@ -36,7 +36,7 @@ window.MENTORAI_QUIZ_SUMMARY = {
     "passingScore": null
   },
   "sql-aplicado": {
-    "total": 12,
+    "total": 16,
     "passingScore": null
   },
   "apis-rest": {
