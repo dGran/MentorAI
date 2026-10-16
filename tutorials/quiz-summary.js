@@ -92,7 +92,7 @@ window.MENTORAI_QUIZ_SUMMARY = {
     "passingScore": null
   },
   "go": {
-    "total": 18,
+    "total": 26,
     "passingScore": null
   },
   "rust": {

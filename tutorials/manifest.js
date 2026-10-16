@@ -1648,7 +1648,7 @@ window.ACADEMIA_TUTORIALS = [
     slug: "go-a-produccion",
     featured: false,
     date: "2026-07-06",
-    reviewed: "2026-10-13",
+    reviewed: "2026-10-16",
     title: "Go a producción: binario, imagen y pipeline",
     description: "Compila un binario estático, empaquétalo en una imagen FROM scratch con multi-stage build y añade Go a tu pipeline de CI con lint y tests.",
     href: "tutorials/go-a-produccion.html",

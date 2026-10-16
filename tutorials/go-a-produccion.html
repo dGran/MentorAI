@@ -424,7 +424,7 @@ func main() {
               <ul>
                 <li><strong>Un binario con CGo en una imagen <code>scratch</code>.</strong> Sin <code>CGO_ENABLED=0</code>, el binario puede enlazarse dinámicamente con la libc y fallar al arrancar con un críptico «no such file or directory». Fija la variable en el build.</li>
                 <li><strong>Un healthcheck que tumba todo el servicio.</strong> Si la sonda de liveness hace ping a la base de datos y esta cae, el orquestador reinicia todas las réplicas a la vez y no arregla nada. El ping va en la de readiness, que solo saca la réplica del tráfico; la de liveness comprueba que el proceso responde.</li>
-                <li><strong><code>ENTRYPOINT</code> en forma shell.</strong> <code>ENTRYPOINT /servidor</code> necesita <code>/bin/sh</code>, que en <code>scratch</code> no existe; en otras imágenes la shell se queda con el SIGTERM y tu apagado graceful nunca se ejecuta. Usa la forma JSON: <code>["/servidor"]</code>.</li>
+                <li><strong><code>ENTRYPOINT</code> en forma shell.</strong> <code>ENTRYPOINT /servidor</code> necesita <code>/bin/sh</code>, que en <code>scratch</code> no existe; en imágenes cuyo <code>sh</code> es dash, como Debian, la shell se queda con el SIGTERM y tu apagado graceful nunca se ejecuta (el <code>sh</code> de Alpine hace exec y te salva por casualidad). Usa la forma JSON: <code>["/servidor"]</code>.</li>
                 <li><strong><code>log.Fatal</code> u <code>os.Exit</code> fuera de <code>main</code>.</strong> Terminan el proceso sin ejecutar los <code>defer</code>: ni se cierran conexiones ni se vacían buffers. Devuelve el error hacia arriba y decide en <code>main</code>.</li>
               </ul>
             </div>
