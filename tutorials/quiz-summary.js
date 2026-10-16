@@ -96,11 +96,11 @@ window.MENTORAI_QUIZ_SUMMARY = {
     "passingScore": null
   },
   "rust": {
-    "total": 18,
+    "total": 22,
     "passingScore": null
   },
   "python": {
-    "total": 18,
+    "total": 22,
     "passingScore": null
   },
   "claude-code": {
