@@ -168,4 +168,18 @@ function leccionesSinEnlacesDeEntrada(htmlPorSlug, excepciones) {
   };
 }
 
-module.exports = { esFechaReal, diaLocal, problemasDeRevision, tieneDrawerEscrito, tablasSinEnvolver, tieneUnSoloMain, problemasDeCargaDeDatos, nivelDeCurso, puestoPorLongitud, puestoDominanteTrasLaMasLarga, pistasDeForma, problemasDeEstructura, leccionesSinEnlacesDeEntrada };
+function leccionesSinPreguntaDeExamen(leccionesPorCurso, preguntasPorCurso, excepciones) {
+  const sinPregunta = Object.entries(leccionesPorCurso).flatMap(([curso, lecciones]) => {
+    const cubiertas = new Set((preguntasPorCurso[curso] ?? []).map((pregunta) => pregunta.lesson));
+
+    return lecciones.filter((leccion) => !cubiertas.has(leccion));
+  });
+  const deAlgunCurso = new Set(Object.values(leccionesPorCurso).flat());
+
+  return {
+    sinPregunta: sinPregunta.filter((leccion) => !excepciones.has(leccion)),
+    excepcionesSobrantes: [...excepciones].filter((leccion) => !deAlgunCurso.has(leccion) || !sinPregunta.includes(leccion)),
+  };
+}
+
+module.exports = { esFechaReal, diaLocal, problemasDeRevision, tieneDrawerEscrito, tablasSinEnvolver, tieneUnSoloMain, problemasDeCargaDeDatos, nivelDeCurso, puestoPorLongitud, puestoDominanteTrasLaMasLarga, pistasDeForma, problemasDeEstructura, leccionesSinEnlacesDeEntrada, leccionesSinPreguntaDeExamen };

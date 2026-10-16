@@ -92,6 +92,9 @@ comprueba que el clic llega. En la tanda del 2026-10-12 se olvidaron en dos PRs
 hasta que se pidieron en la review. Desde #164, `validar.js` avisa de cualquier lección sin enlaces de
 entrada desde el cuerpo de otra (el pie no cuenta).
 
+Una lección que entra en un curso lleva además 1-2 preguntas en el examen de ese curso, con
+`lesson` apuntando a ella; desde #177, `validar.js` avisa si falta.
+
 El hero copia los minutos y el nivel del manifest, con el nivel escrito igual
 («Principiante», «Intermedio», «Avanzado»): `validar.js` falla si difieren.
 
