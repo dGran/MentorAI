@@ -429,6 +429,18 @@ function validarEnlacesDeEntrada() {
   for (const slug of excepcionesSobrantes) aviso(`validar.js: «${slug}» sobra en LECCIONES_SIN_ENTRADA_JUSTIFICADA (ya recibe enlaces, no está publicada o no existe)`);
 }
 
+const LECCIONES_SIN_PREGUNTA_DE_EXAMEN_JUSTIFICADA = new Set();
+
+function validarCoberturaDeExamenes() {
+  const publicadas = new Set(manifest.filter((entrada) => entrada.status !== "soon").map((entrada) => entrada.slug));
+  const leccionesPorCurso = Object.fromEntries(cursos.map((curso) => [curso.slug, leccionesDe(curso).filter((slug) => publicadas.has(slug))]));
+  const { sinPregunta, excepcionesSobrantes } = reglas.leccionesSinPreguntaDeExamen(leccionesPorCurso, examenesPlanos, LECCIONES_SIN_PREGUNTA_DE_EXAMEN_JUSTIFICADA);
+
+  for (const slug of sinPregunta) aviso(`quizzes: ninguna pregunta del examen de su curso tiene lesson «${slug}»; añade 1-2`);
+
+  for (const slug of excepcionesSobrantes) aviso(`validar.js: «${slug}» sobra en LECCIONES_SIN_PREGUNTA_DE_EXAMEN_JUSTIFICADA (ya tiene pregunta, no está publicada o no es lección de un curso)`);
+}
+
 function validarTutoriales() {
   for (const fichero of htmlDelCatalogo().filter((f) => f.startsWith("tutorials/"))) {
     const html = leer(fichero);
@@ -704,6 +716,7 @@ validarPractica();
 validarTutoriales();
 validarHeroContraManifest();
 validarEnlacesDeEntrada();
+validarCoberturaDeExamenes();
 validarIdsDuplicados();
 validarCabecerasDeTutoriales();
 validarDrawerSoloDinamico();
