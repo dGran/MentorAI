@@ -1,6 +1,10 @@
 # Tanda 2026-10-16: lecciones de curso sin pregunta de examen (#173-#177)
 
-Estado: **lanzada** el 2026-10-16 («continúa», tras el informe de preparación).
+Estado: **cerrada** el 2026-10-16. Veredicto: entraron los 5 issues. Las 19 lecciones de curso sin
+pregunta de examen tienen ahora 29 preguntas nuevas, sin excepciones (`medir.js` → 0), y `validar.js`
+avisa desde #177 de cualquier lección de curso sin pregunta; sale sin errores y sin avisos.
+Producción de `v90` a `v94`. Al escribir y revisar las preguntas salieron **4 errores de lección**,
+corregidos en el mismo PR.
 
 ## 1. Estado de partida (medido 2026-10-16)
 
@@ -67,3 +71,34 @@ corte); borrar contenido.
 - Validador: «Sí, como aviso (Recomendado)».
 - Automerge: «Sí, igual que antes (Recomendado)». Lo que pase review fresca, QA y CI se mergea sin
   pausa.
+
+## 7. Cierre (2026-10-16)
+
+| Issue | PR | Merge | Shell | Preguntas | Lecciones corregidas | Review fresca |
+|---|---|---|---|---|---|---|
+| #176 sueltos | #178 | `1f87b12` | `v91` | 6 | — | 2 retoques de `w` |
+| #175 SQL y distribuidos | #181 | `548adae` | `v92` | 7 | — | aprobado |
+| #173 Go | #179 | `deaeeb2` | `v93` | 8 | `go-a-produccion` | 1 pregunta **falsa** (`q0242fb`: en Alpine el `ENTRYPOINT` en forma shell sí recibe el SIGTERM, porque busybox hace exec; pasa en Debian/dash), su lección generalizaba de más, y un enunciado que fija `ENTRYPOINT [...]` |
+| #174 Python y Rust | #180 | `cff50ad` | `v94` | 8 | `python-primer-programa`, `rust-editores`, `python-que-es` | 1 pregunta **falsa** (`qd2a397`: Pillow suelta el GIL al redimensionar; medido en Docker) y su lección |
+| #177 aviso | #182 | `54a23c2` | — | — | — | aprobado con 4 menores (3 aplicados; el de una lección en dos cursos queda fuera, sin casos en los datos) |
+
+- **Errores de lección destapados** (todos corregidos y con `reviewed` al día): el `AttributeError` por
+  sombrear un módulo sí propone renombrar desde Python 3.13 (`python-primer-programa`); RustRover no
+  usa rust-analyzer sino su propio motor (`rust-editores`); el GIL no frena a extensiones en C que lo
+  sueltan (`python-que-es`); el SIGTERM con `ENTRYPOINT` en forma shell depende del `sh` de la imagen
+  (`go-a-produccion`).
+- **Lecciones:**
+  - Escribir preguntas es una auditoría de la lección: 4 errores en 19 lecciones, más que la
+    auditoría de vigencia por lección. Dos preguntas falsas pasaron al implementador y las cazó la
+    review **ejecutando** en Docker: el revisor que mide vale más que el que lee.
+  - Cuatro perfiles de Chrome de `qa-examen.js` no se borraron al cerrar (33 MB, sin procesos vivos);
+    se borraron a mano. Al enviar el examen Chrome escribe en `localStorage` justo antes del `kill()`:
+    sospecha, sin confirmar, de que el `rmSync` llegó antes de que soltara los ficheros.
+  - Con 4 subagentes y REST en los encargos, GraphQL no se agotó.
+- **Restos fuera de alcance, sin issue** (para proponer al usuario):
+  - `go-a-produccion`: el ejemplo hace ping a la base de datos en `/health` y el resumen dice
+    «/health (comprueba dependencias) y /ready (el proceso está vivo)», al revés de lo que el bloque de
+    errores típicos de la misma lección recomienda; y un comentario de código llama «formato
+    Prometheus» a `expvar`, que da JSON.
+  - `sd-falacias`: `TIMEOUT_LECTURA` va a la opción `timeout` de Guzzle, que es el tiempo total de la
+    petición, no «la respuesta ya conectado».

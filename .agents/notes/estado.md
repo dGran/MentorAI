@@ -220,14 +220,20 @@ vació el backlog en 16 PRs (#115-#130), producción de `v57` a `v70`.
   excepciones, y `validar.js` avisa de cualquier huérfana nueva (`LECCIONES_SIN_ENTRADA_JUSTIFICADA`,
   hoy vacía). Producción `v90`.
 
-## Para retomar (2026-10-15)
+- **Cobertura de exámenes (2026-10-16)** (#173-#177, PRs #178-#182, `archivo/plan-tanda-2026-10-16.md`):
+  las 19 lecciones de curso que ninguna pregunta de su examen nombraba en `lesson` tienen ahora 29
+  preguntas; `validar.js` avisa de cualquier lección de curso sin pregunta
+  (`LECCIONES_SIN_PREGUNTA_DE_EXAMEN_JUSTIFICADA`, hoy vacía). Destapó 4 errores de lección,
+  corregidos. Producción `v94`.
 
-`main` en `805b929`, producción en `v90`. Ningún PR abierto; tablero limpio (81 en Done), backlog
-vacío. `validar.js` sin errores y sin avisos; `node --test` 120/120.
+## Para retomar (2026-10-16)
 
-**Tanda lanzada (2026-10-16):** preguntas de examen para las 19 lecciones de curso que el examen no
-cubre (#173-#176) y aviso en `validar.js` (#177, va el último). Contrato en `plan-tanda-2026-10-16.md`;
-herramientas en `.agents/tasks/tanda-2026-10-16/` y `examenes/medir.js`.
+`main` en `54a23c2`, producción en `v94`. Ningún PR abierto; tablero limpio (86 en Done), backlog
+vacío. `validar.js` sin errores y sin avisos; `node --test` 126/126.
+
+**Restos sin issue** (propuestos al usuario): en `go-a-produccion`, `/health` y `/ready` al revés de lo
+que recomienda la propia lección y `expvar` llamado «formato Prometheus»; en `sd-falacias`, el
+`timeout` de Guzzle es el total de la petición, no el de lectura.
 
 **Herramientas reutilizables** (gitignored, en `.agents/tasks/`):
 `lecciones-sueltas/integrar.js` (añade lecciones a un curso existente, tras una lección
@@ -235,7 +241,7 @@ o en un módulo nuevo), `lecciones-sueltas/prompt-base.md` y `prompt-review.md`
 (encargos de autoría y de review), `tanda-2026-10-12/{publicar,cerrar}.sh` (rama → PR →
 QA → merge → Pages → Done), `qa-curso.js`, `qa-leccion.js`, `qa-cuando.js` y `cdp.js`
 (Chrome headless con perfil en `~/.cache` y limpieza en `finally`). Para correcciones en
-paralelo: `tanda-2026-10-13/` y `tanda-2026-10-14/` (esta con `qa-enlaces.js`, que hace clic en cada enlace nuevo, y `abrir-pr.sh` por REST; `enlaces-entrada/medir.js` cuenta huérfanas) (`preparar.sh` recompone una rama sobre `main` con parche 3-way,
+paralelo: `tanda-2026-10-13/`, `tanda-2026-10-14/` y `tanda-2026-10-16/` (`qa-examen.js` pinta el examen, responde bien todo y comprueba el máximo; `examenes/medir.js` cuenta lecciones sin pregunta; la de 10-14 con `qa-enlaces.js`, que hace clic en cada enlace nuevo, y `abrir-pr.sh` por REST; `enlaces-entrada/medir.js` cuenta huérfanas) (`preparar.sh` recompone una rama sobre `main` con parche 3-way,
 `reviewed`, índice y `VERSION`; `abrir-pr.sh`, `cerrar-serie.sh`, `qa-texto.js` para «texto
 nuevo | texto viejo» por lección, y `revisado.js`).
 
