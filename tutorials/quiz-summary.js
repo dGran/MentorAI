@@ -56,7 +56,7 @@ window.MENTORAI_QUIZ_SUMMARY = {
     "passingScore": null
   },
   "terminal-linux": {
-    "total": 15,
+    "total": 17,
     "passingScore": null
   },
   "patrones-diseno": {
@@ -80,11 +80,11 @@ window.MENTORAI_QUIZ_SUMMARY = {
     "passingScore": null
   },
   "programar-con-ia": {
-    "total": 10,
+    "total": 12,
     "passingScore": null
   },
   "fundamentos": {
-    "total": 29,
+    "total": 31,
     "passingScore": null
   },
   "diseno-y-arquitectura": {
