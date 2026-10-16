@@ -225,7 +225,7 @@ vació el backlog en 16 PRs (#115-#130), producción de `v57` a `v70`.
 `main` en `805b929`, producción en `v90`. Ningún PR abierto; tablero limpio (81 en Done), backlog
 vacío. `validar.js` sin errores y sin avisos; `node --test` 120/120.
 
-**Tanda preparada, sin lanzar:** preguntas de examen para las 19 lecciones de curso que el examen no
+**Tanda lanzada (2026-10-16):** preguntas de examen para las 19 lecciones de curso que el examen no
 cubre (#173-#176) y aviso en `validar.js` (#177, va el último). Contrato en `plan-tanda-2026-10-16.md`;
 herramientas en `.agents/tasks/tanda-2026-10-16/` y `examenes/medir.js`.
 

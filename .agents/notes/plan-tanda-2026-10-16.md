@@ -1,6 +1,6 @@
 # Tanda 2026-10-16: lecciones de curso sin pregunta de examen (#173-#177)
 
-Estado: **preparada**, sin lanzar.
+Estado: **lanzada** el 2026-10-16 («continúa», tras el informe de preparación).
 
 ## 1. Estado de partida (medido 2026-10-16)
 
