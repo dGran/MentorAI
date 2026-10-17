@@ -228,12 +228,15 @@ vació el backlog en 16 PRs (#115-#130), producción de `v57` a `v70`.
 
 ## Para retomar (2026-10-16)
 
-`main` en `54a23c2`, producción en `v94`. Ningún PR abierto; tablero limpio (86 en Done), backlog
-vacío. `validar.js` sin errores y sin avisos; `node --test` 126/126.
+`main` en `54a23c2`, producción en `v94`. Ningún PR abierto. `validar.js` sin errores y sin avisos;
+`node --test` 126/126.
 
-**Restos sin issue** (propuestos al usuario): en `go-a-produccion`, `/health` y `/ready` al revés de lo
-que recomienda la propia lección y `expvar` llamado «formato Prometheus»; en `sd-falacias`, el
-`timeout` de Guzzle es el total de la petición, no el de lectura.
+**Backlog** (P3, `fix`, sin empezar; los restos de la tanda de exámenes):
+- #183: `go-a-produccion` pone el ping a la BD en `/health` y su keypoint invierte `/health` y
+  `/ready`, al revés de lo que recomienda la propia lección; `expvar` llamado «formato Prometheus».
+- #184: `sd-falacias` presenta la opción `timeout` de Guzzle como timeout de lectura (es el total).
+
+Son independientes y pequeños: caben en una tanda corta como la de #155, con el mismo método.
 
 **Herramientas reutilizables** (gitignored, en `.agents/tasks/`):
 `lecciones-sueltas/integrar.js` (añade lecciones a un curso existente, tras una lección
