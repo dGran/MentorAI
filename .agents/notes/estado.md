@@ -239,6 +239,10 @@ vació el backlog en 16 PRs (#115-#130), producción de `v57` a `v70`.
 Son independientes y pequeños: caben en una tanda corta como la de #155, con el mismo método.
 
 **Herramientas reutilizables** (gitignored, en `.agents/tasks/`):
+`encargos/` guarda los prompts de implementador y revisor (vigencia, enlaces, exámenes), `mover.sh`
+(mueve un issue en el tablero) y los publicadores en serie. **Los scripts de `tanda-2026-10-1x/` y
+`encargos/` llevan escrita la ruta del scratchpad de la sesión del 2026-10-13/16**
+(`scratch=`/`SP=`): al reutilizarlos, cámbiala por la de la sesión nueva.
 `lecciones-sueltas/integrar.js` (añade lecciones a un curso existente, tras una lección
 o en un módulo nuevo), `lecciones-sueltas/prompt-base.md` y `prompt-review.md`
 (encargos de autoría y de review), `tanda-2026-10-12/{publicar,cerrar}.sh` (rama → PR →
