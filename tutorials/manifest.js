@@ -995,6 +995,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-08-01",
+    reviewed: "2026-10-19",
   },
   {
     slug: "python-a-produccion",
@@ -1029,7 +1030,7 @@ window.ACADEMIA_TUTORIALS = [
     slug: "python-docker",
     featured: false,
     date: "2026-07-06",
-    reviewed: "2026-10-19",
+    reviewed: "2026-10-14",
     title: "Entorno Python con Docker",
     description: "Dockerfile y Compose para desarrollo Python: imagen oficial, volumen de código, recarga automática con uvicorn --reload y gestión de dependencias con pip/uv.",
     href: "tutorials/python-docker.html",
