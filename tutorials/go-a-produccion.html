@@ -326,7 +326,7 @@ func main() {
             Healthcheck y métricas
             <a href="#healthcheck" class="anchor" aria-hidden="true">#</a>
           </h2>
-        <p>Dos endpoints que todo servicio en producción debe tener:</p>
+        <p>Las dos sondas que todo servicio en producción debe tener, y una ruta de métricas para empezar:</p>
 
         <div class="code-block">
             <div class="code-block__head">
@@ -345,11 +345,12 @@ func main() {
 
     // Readiness: puede atender tráfico. Si falla, deja de recibirlo sin reiniciarse
     mux.HandleFunc("GET /ready", func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "application/json")
         if err := db.PingContext(r.Context()); err != nil {
-            http.Error(w, `{"status":"not ready"}`, http.StatusServiceUnavailable)
+            w.WriteHeader(http.StatusServiceUnavailable)
+            w.Write([]byte(`{"status":"not ready"}`))
             return
         }
-        w.Header().Set("Content-Type", "application/json")
         w.Write([]byte(`{"status":"ready"}`))
     })
 
