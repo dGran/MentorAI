@@ -390,9 +390,9 @@ window.MENTORAI_QUIZZES = {
 
   /* -------- Sistemas distribuidos (20) -------- */
   "sistemas-distribuidos": { questions: [
-    { id: "q912412", q: "¿Por qué el cliente HTTP lleva un timeout de conexión y otro de respuesta, en vez de uno solo?",
+    { id: "q912412", q: "¿Por qué el cliente HTTP lleva un timeout de conexión y otro total de la petición, en vez de uno solo?",
       o: ["Porque conectar dice si el otro está vivo y responder depende de la operación", "Porque conectar suele tardar más que responder y necesita bastante más margen", "Porque un único timeout no se puede combinar con la clave de idempotencia", "Porque el de respuesta solo hace falta cuando la petición viaja por https://"], a: 0,
-      w: "El de conexión responde a «¿está vivo?», y un segundo sobra para saberlo. El de respuesta depende de lo que haga la operación. Con un solo número eliges entre detectar caídas tarde o cortar las operaciones lentas.",
+      w: "El de conexión responde a «¿está vivo?», y un segundo sobra para saberlo. El total depende de lo que haga la operación. Con un solo número eliges entre detectar caídas tarde o cortar las operaciones lentas.",
       lesson: "sd-falacias" },
     { id: "q3a1e1d", q: "Desde el cliente, ¿qué distingue un timeout de lectura de un rechazo explícito del servidor?",
       o: ["Nada: los dos significan que falló y se puede reintentar", "Que el timeout indica que el servidor está caído, y el rechazo que está vivo", "Que el rechazo confirma que no se hizo y el timeout no dice si se hizo", "Que tras un timeout siempre se puede reintentar sin riesgo de duplicar"], a: 2,
