@@ -337,23 +337,24 @@ func main() {
               </button>
             </div>
             <pre><code data-lang="go">func registrarEndpointsSistema(mux *http.ServeMux, db *sql.DB) {
-    // Healthcheck: para el orquestador (Kubernetes, Fly.io, etc.)
+    // Liveness: el proceso responde. Si falla, el orquestador lo reinicia
     mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
-        if err := db.PingContext(r.Context()); err != nil {
-            http.Error(w, `{"status":"unhealthy"}`, http.StatusServiceUnavailable)
-            return
-        }
         w.Header().Set("Content-Type", "application/json")
         w.Write([]byte(`{"status":"ok"}`))
     })
 
-    // Readiness: el servicio está listo para recibir tráfico
+    // Readiness: puede atender tráfico. Si falla, deja de recibirlo sin reiniciarse
     mux.HandleFunc("GET /ready", func(w http.ResponseWriter, r *http.Request) {
-        w.Write([]byte("ok"))
+        if err := db.PingContext(r.Context()); err != nil {
+            http.Error(w, `{"status":"not ready"}`, http.StatusServiceUnavailable)
+            return
+        }
+        w.Header().Set("Content-Type", "application/json")
+        w.Write([]byte(`{"status":"ready"}`))
     })
 
-    // Métricas en formato Prometheus (con la lib expvar o pprof)
-    mux.Handle("GET /metrics", expvar.Handler())
+    // Variables de expvar en JSON (no es el formato de Prometheus)
+    mux.Handle("GET /debug/vars", expvar.Handler())
 }
 </code></pre>
           </div>
@@ -482,7 +483,7 @@ func main() {
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Expón siempre <code>/health</code> (comprueba dependencias) y <code>/ready</code> (el proceso está vivo). Configura <code>ReadTimeout</code>, <code>WriteTimeout</code> e <code>IdleTimeout</code>.</span>
+                <span>Expón siempre <code>/health</code> (liveness: el proceso responde) y <code>/ready</code> (readiness: comprueba dependencias como la base de datos). Configura <code>ReadTimeout</code>, <code>WriteTimeout</code> e <code>IdleTimeout</code>.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>

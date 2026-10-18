@@ -12,7 +12,7 @@
    navegadores que ya lo tienen cacheado se traigan lo nuevo.
    ============================================================ */
 
-var VERSION = "v94";
+var VERSION = "v95";
 var SHELL = "academia-shell-" + VERSION;
 var CACHE_PREFIX = "academia-";
 var CONTENT = "academia-content";
