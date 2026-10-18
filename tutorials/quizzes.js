@@ -391,7 +391,7 @@ window.MENTORAI_QUIZZES = {
   /* -------- Sistemas distribuidos (20) -------- */
   "sistemas-distribuidos": { questions: [
     { id: "q912412", q: "¿Por qué el cliente HTTP lleva un timeout de conexión y otro total de la petición, en vez de uno solo?",
-      o: ["Porque conectar dice si el otro está vivo y responder depende de la operación", "Porque conectar suele tardar más que responder y necesita bastante más margen", "Porque un único timeout no se puede combinar con la clave de idempotencia", "Porque el de respuesta solo hace falta cuando la petición viaja por https://"], a: 0,
+      o: ["Porque conectar dice si el otro está vivo y el total depende de la operación", "Porque conectar suele tardar más que responder y necesita bastante más margen", "Porque un único timeout no se puede combinar con la clave de idempotencia", "Porque el total solo hace falta cuando la petición viaja por https://"], a: 0,
       w: "El de conexión responde a «¿está vivo?», y un segundo sobra para saberlo. El total depende de lo que haga la operación. Con un solo número eliges entre detectar caídas tarde o cortar las operaciones lentas.",
       lesson: "sd-falacias" },
     { id: "q3a1e1d", q: "Desde el cliente, ¿qué distingue un timeout de lectura de un rechazo explícito del servidor?",
