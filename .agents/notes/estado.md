@@ -229,11 +229,13 @@ vació el backlog en 16 PRs (#115-#130), producción de `v57` a `v70`.
 **Tanda del 2026-10-19** (contrato y cierre en `archivo/plan-tanda-2026-10-19.md`): #183 y #184,
 las dos correcciones que quedaban, en #185 y #186. `go-a-produccion` pone el ping a la BD en `/ready`
 y sirve `expvar` en `/debug/vars` como JSON; `sd-falacias` llama `timeout` de Guzzle por lo que es, el
-total de la petición. Producción `v96`.
+total de la petición. Producción `v96`. Una segunda tanda el mismo día (`archivo/plan-tanda-2026-10-19-b.md`)
+cerró los restos de su review: #187 (el 503 de `/ready` con JSON) y #188 (opciones de `q912412`).
+Producción `v98`.
 
 ## Para retomar (2026-10-19)
 
-`main` en `a8241f2`, producción en `v96`. Ningún PR abierto. **Backlog vacío.** `validar.js` sin errores
+`main` en `3d90fd4`, producción en `v98`. Ningún PR abierto. **Backlog vacío.** `validar.js` sin errores
 y sin avisos; `node --test` 126/126.
 
 **Herramientas reutilizables** (gitignored, en `.agents/tasks/`). **Ojo: el 2026-10-19 este clon solo
@@ -273,6 +275,8 @@ discutirlas por olvido:
 
 Cada una costó una depuración; están aquí para no repetirlas.
 
+- **El examen de un curso se monta en su última lección**, no en `curso.html`: el QA de una pregunta
+  va a `tutorials/<última lección>.html#quiz` (#190).
 - **`validar.js` compara `reviewed` con la fecha UTC.** Entre medianoche local y medianoche UTC, la
   fecha local da ERROR «en el futuro» en CI aunque en local pase (#185, 2026-10-19). Se pone
   `reviewed` a `date -u +%F`.
@@ -402,7 +406,7 @@ el resto del catálogo (SQL, OOP, Linux…) envejece a décadas, no a meses.
 | `node scripts/verificar-offline.js` | Comprueba el offline con el servidor apagado y el scroll horizontal a 320/375 px. Corre en CI |
 | `node --test 'scripts/tests/**/*.test.js'` | Tests de la lógica pura (`node:test` + `vm`, sin dependencias). Corre en CI |
 
-Al tocar `sw.js` o el shell (módulos, CSS, `quizzes.js`, `checks.js`, `manifest.js`), **subir `VERSION`** (va por `v96`). La
+Al tocar `sw.js` o el shell (módulos, CSS, `quizzes.js`, `checks.js`, `manifest.js`), **subir `VERSION`** (va por `v98`). La
 caché de contenido guardado (`academia-content`) ya no lleva versión: un
 despliegue no borra lo que el lector guardó para viajar.
 
