@@ -324,7 +324,7 @@ final class ClientePagosIngenuo
               <h4>Lo que hace la versión de al lado</h4>
               <ul>
                 <li>Host por configuración, resuelto por DNS en cada llamada</li>
-                <li>Timeout de conexión y de lectura, distintos y explícitos</li>
+                <li>Timeout de conexión y total de la petición, distintos y explícitos</li>
                 <li>Clave de idempotencia para que reintentar sea seguro</li>
                 <li><code>https://</code> y credencial de servicio</li>
                 <li>Importe en céntimos como <code>int</code></li>
@@ -347,7 +347,7 @@ declare(strict_types=1);
 final class ClientePagos
 {
     private const TIMEOUT_CONEXION = 1.0;
-    private const TIMEOUT_LECTURA = 3.0;
+    private const TIMEOUT_TOTAL = 3.0;
 
     public function __construct(
         private readonly ClientInterface $http,
@@ -360,7 +360,7 @@ final class ClientePagos
     {
         $respuesta = $this-&gt;http-&gt;request('POST', $this-&gt;urlBase . '/cobros', [
             'connect_timeout' =&gt; self::TIMEOUT_CONEXION,
-            'timeout' =&gt; self::TIMEOUT_LECTURA,
+            'timeout' =&gt; self::TIMEOUT_TOTAL,
             'headers' =&gt; [
                 'Authorization' =&gt; 'Bearer ' . $this-&gt;tokenServicio,
                 'Idempotency-Key' =&gt; $idPedido,
@@ -382,10 +382,12 @@ final class ClientePagos
               <p class="callout__title">Dos timeouts, no uno</p>
               <p>
                 El de <em>conexión</em> dice cuánto esperas a que la otra máquina descuelgue:
-                si tarda, está caída o saturada, y un segundo sobra. El de <em>lectura</em>
-                dice cuánto esperas la respuesta ya conectado, y depende de lo que haga esa
-                operación. Ponerlos juntos en un solo número te obliga a elegir entre detectar
-                caídas rápido o dejar trabajar a las operaciones lentas.
+                si tarda, está caída o saturada, y un segundo sobra. El <em>total</em>
+                (<code>timeout</code> en Guzzle) es lo máximo que puede durar la petición
+                entera, conexión incluida, y depende de lo que haga esa operación. Con un solo
+                número eliges entre detectar caídas rápido o dejar trabajar a las operaciones
+                lentas. Guzzle tiene además <code>read_timeout</code>, pero solo limita la
+                espera entre datos al leer un cuerpo con <code>stream</code>.
               </p>
             </div>
           </div>
@@ -442,7 +444,7 @@ final class ClientePagos
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Timeout de conexión y de lectura son dos decisiones distintas: juntarlas te obliga a elegir entre detectar caídas rápido y dejar trabajar a las operaciones lentas.</span>
+                <span>Timeout de conexión y timeout total son dos decisiones distintas: juntarlas te obliga a elegir entre detectar caídas rápido y dejar trabajar a las operaciones lentas.</span>
               </li>
             </ul>
           </div>
