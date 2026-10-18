@@ -995,7 +995,7 @@ window.ACADEMIA_TUTORIALS = [
     icon: "signal",
     status: "published",
     date: "2026-08-01",
-    reviewed: "2026-10-19",
+    reviewed: "2026-10-18",
   },
   {
     slug: "python-a-produccion",
