@@ -235,8 +235,17 @@ Producción `v98`.
 
 ## Para retomar (2026-10-19)
 
-`main` en `3d90fd4`, producción en `v98`. Ningún PR abierto. **Backlog vacío.** `validar.js` sin errores
-y sin avisos; `node --test` 126/126.
+`main` en `f70afcf`, producción en `v98`. Ningún PR abierto. **Backlog vacío en el tablero**, pero
+**hay trabajo propuesto sin crear: `plan-a11y-2026-10-19.md`**. Es el primer barrido axe de toda la app
+(388 rutas × 2 temas, 4.747 hallazgos serios de solo tres reglas) y deja tres issues P2 redactados:
+contraste de los comentarios de código, scroll por teclado en `pre` y tablas, y enlaces distinguibles
+sin color. Falta que el usuario confirme la propuesta (y la decisión de diseño de los enlaces); después,
+`/spec` y una tanda. `validar.js` sin errores y sin avisos; `node --test` 126/126.
+
+Herramientas de esta sesión (gitignored, en `.agents/tasks/`): `tanda-2026-10-19/qa-leccion.js` (QA de
+una página por http y `file://` a 320/1280 px; acepta `tutorials/<slug>.html#quiz` para un examen),
+`sesgo.js` (las tres métricas de sesgo de un examen), `board.sh <issue> "<Status>"`, y `a11y/` (rutas,
+línea base e informe del barrido).
 
 **Herramientas reutilizables** (gitignored, en `.agents/tasks/`). **Ojo: el 2026-10-19 este clon solo
 tenía `tanda-2026-10-19/`** (`qa-leccion.js`, la lección por http y `file://` a 320/1280 px, y `board.sh`);
