@@ -44,4 +44,24 @@
       .toLowerCase()
       .normalize("NFD")
       .replace(/[̀-ͯ]/g, "");
+
+  const EMPTY_WORDS = new Set([
+    "a", "al", "con", "de", "del", "el", "en", "la", "las", "lo", "los", "o", "para", "por", "que", "se", "su", "sus", "un", "una", "y",
+  ]);
+
+  const escapeForPattern = (term) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  MentorAI.searchTerms = (text) =>
+    MentorAI.normalize(text)
+      .split(/[^a-z0-9ñ#+.]+/)
+      .filter((word) => word !== "" && !EMPTY_WORDS.has(word));
+
+  MentorAI.termPosition = (normalizedText, term) => {
+    const match = new RegExp(`(^|[^a-z0-9ñ])${escapeForPattern(term)}`).exec(normalizedText);
+
+    return match ? match.index + match[1].length : -1;
+  };
+
+  MentorAI.containsAllTerms = (normalizedText, terms) =>
+    terms.length > 0 && terms.every((term) => MentorAI.termPosition(normalizedText, term) !== -1);
 })();

@@ -46,7 +46,7 @@
     python: "Python",
   };
 
-  const state = { category: ALL, level: ALL, duration: ALL, tag: ALL, query: "" };
+  const state = { category: ALL, level: ALL, duration: ALL, tag: ALL, terms: [] };
 
   let cards = [];
   let emptyEl = null;
@@ -61,15 +61,15 @@
      el contenido solo si el índice ya se cargó. */
 
   function coincideConLaBusqueda(dataset) {
-    if (dataset.search.includes(state.query)) return true;
+    if (MentorAI.containsAllTerms(dataset.search, state.terms)) return true;
 
-    return MentorAI.Search.coincide(dataset.slug, state.query);
+    return MentorAI.Search.coincide(dataset.slug, state.terms);
   }
 
   function matches(card) {
     const { dataset } = card;
 
-    if (state.query && !coincideConLaBusqueda(dataset)) return false;
+    if (state.terms.length > 0 && !coincideConLaBusqueda(dataset)) return false;
 
     if (state.category === SAVED && !MentorAI.Bookmarks.has(dataset.slug)) return false;
 
@@ -204,7 +204,7 @@
     if (!input) return;
 
     input.addEventListener("input", () => {
-      state.query = MentorAI.normalize(input.value.trim());
+      state.terms = MentorAI.searchTerms(input.value);
       apply();
     });
 

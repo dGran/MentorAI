@@ -31,9 +31,9 @@ const TUTORIALS = [
 ];
 
 test("matches in the title come before matches elsewhere", () => {
-  const { Home, normalize } = loadHome();
+  const { Home, searchTerms } = loadHome();
 
-  assert.deepEqual(slugsOf(Home.byRelevance(TUTORIALS, normalize("indice"))), [
+  assert.deepEqual(slugsOf(Home.byRelevance(TUTORIALS, searchTerms("indice"))), [
     "indices-btree",
     "indices-compuestos",
     "webhooks",
@@ -42,15 +42,41 @@ test("matches in the title come before matches elsewhere", () => {
 });
 
 test("the title match ignores accents and case", () => {
-  const { Home, normalize } = loadHome();
+  const { Home, searchTerms } = loadHome();
 
-  const ranked = slugsOf(Home.byRelevance(TUTORIALS, normalize("ÍNDICES")));
+  const ranked = slugsOf(Home.byRelevance(TUTORIALS, searchTerms("ÍNDICES")));
 
   assert.deepEqual(ranked.slice(0, 2), ["indices-btree", "indices-compuestos"]);
 });
 
 test("without any title match the original order is kept", () => {
-  const { Home, normalize } = loadHome();
+  const { Home, searchTerms } = loadHome();
 
-  assert.deepEqual(slugsOf(Home.byRelevance(TUTORIALS, normalize("explain"))), slugsOf(TUTORIALS));
+  assert.deepEqual(slugsOf(Home.byRelevance(TUTORIALS, searchTerms("explain"))), slugsOf(TUTORIALS));
+});
+
+test("the query is split into words, ignoring empty words, order, accents and case", () => {
+  const { searchTerms } = loadHome();
+
+  assert.deepEqual(Array.from(searchTerms("Programar con la IA")), ["programar", "ia"]);
+  assert.deepEqual(Array.from(searchTerms("ia programar")), ["ia", "programar"]);
+  assert.deepEqual(Array.from(searchTerms("de la y con")), []);
+});
+
+test("every word must start a word of the text, in any order", () => {
+  const { containsAllTerms, normalize, searchTerms } = loadHome();
+  const text = normalize("Programar con IA: el mapa del ecosistema");
+
+  assert.equal(containsAllTerms(text, searchTerms("programar con la ia")), true);
+  assert.equal(containsAllTerms(text, searchTerms("ia programar")), true);
+  assert.equal(containsAllTerms(text, searchTerms("program")), true);
+  assert.equal(containsAllTerms(normalize("Una historia de bases de datos"), searchTerms("ia")), false);
+  assert.equal(containsAllTerms(text, searchTerms("programar rust")), false);
+  assert.equal(containsAllTerms(text, []), false);
+});
+
+test("symbols that are part of a term still match", () => {
+  const { containsAllTerms, normalize, searchTerms } = loadHome();
+
+  assert.equal(containsAllTerms(normalize("Plantillas en C++ modernas"), searchTerms("c++")), true);
 });
