@@ -385,7 +385,7 @@ exit 0</code></pre>
                 <tr><td>PreToolUse</td><td>Antes de que el agente use una herramienta</td><td>Bloquear comandos peligrosos o edición de archivos sensibles (<code>.env</code>)</td></tr>
                 <tr><td>PostToolUse</td><td>Después de usar una herramienta</td><td>Formatear, pasar PHPStan, Deptrac o tests tras editar un archivo</td></tr>
                 <tr><td>UserPromptSubmit</td><td>Al enviar tú un mensaje</td><td>Añadir contexto automáticamente (rama actual, ticket)</td></tr>
-                <tr><td>Stop</td><td>Cuando el agente da la tarea por terminada</td><td>Comprobar que los tests pasan antes de dejarle acabar</td></tr>
+                <tr><td>Stop</td><td>Cuando el agente termina el turno</td><td>Comprobar que los tests pasan antes de dejarle acabar</td></tr>
                 <tr><td>SessionStart</td><td>Al iniciar la sesión</td><td>Cargar contexto inicial, comprobar que Docker está arriba</td></tr>
                 <tr><td>Notification</td><td>Cuando el agente necesita tu atención</td><td>Aviso en el escritorio</td></tr>
               </tbody>
@@ -397,8 +397,7 @@ exit 0</code></pre>
           <h3>Precauciones</h3>
 
           <ul>
-            <li><strong>Se ejecutan con tus permisos:</strong> un hook es código que corre en tu máquina; revisa los de proyecto antes de aceptarlos.</li>
-            <li><strong>Rápidos:</strong> un hook lento en cada edición ralentiza toda la sesión. Mejor analizar solo el archivo tocado que el proyecto entero.</li>
+                        <li><strong>Rápidos:</strong> un hook lento en cada edición ralentiza toda la sesión. Mejor analizar solo el archivo tocado que el proyecto entero.</li>
             <li><strong>Hooks de proyecto en Git:</strong> así todo el equipo tiene las mismas comprobaciones.</li>
           </ul>
 
@@ -412,7 +411,7 @@ exit 0</code></pre>
                 <tr><th></th><th>Pre-commit (Git)</th><th>Hooks de Claude Code</th></tr>
               </thead>
               <tbody>
-                <tr><td>Cuándo actúa</td><td>Al hacer commit</td><td>Tras cada edición, o al terminar la tarea</td></tr>
+                <tr><td>Cuándo actúa</td><td>Al hacer commit</td><td>Tras cada edición, o al terminar el turno</td></tr>
                 <tr><td>A quién protege</td><td>A todos: humanos y agentes</td><td>Solo a las sesiones de Claude</td></tr>
                 <tr><td>Qué consigue</td><td>Que nada roto entre en el repo</td><td>Que el agente arregle errores al momento, sin acumularlos</td></tr>
                 <tr><td>Coste</td><td>Una vez por commit</td><td>En cada evento; debe ser rápido</td></tr>
@@ -433,7 +432,7 @@ exit 0</code></pre>
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <div class="callout__body">
               <p class="callout__title">El agente puede saltarse el pre-commit</p>
-              <p>Con <code>git commit --no-verify</code>. Conviene prohibirlo en una rule y, para asegurarlo, bloquearlo con un hook PreToolUse o una regla <code>deny</code> (ver el ejemplo de <code>settings.json</code> más abajo).</p>
+              <p>Con <code>git commit --no-verify</code>. Conviene prohibirlo en una rule y, para asegurarlo, bloquearlo con un hook PreToolUse que inspeccione el comando entero. Una regla <code>deny</code> por prefijo, como la del ejemplo de <code>settings.json</code> de más abajo, ayuda pero no basta: no ve <code>git commit -m x --no-verify</code> ni <code>-n</code>.</p>
             </div>
           </div>
 
@@ -476,7 +475,7 @@ exit 0</code></pre>
                 <tr><td><code>model</code></td><td>Modelo por defecto</td></tr>
                 <tr><td><code>statusLine</code></td><td>Línea de estado personalizada</td></tr>
                 <tr><td><code>enableAllProjectMcpServers</code> / <code>enabledMcpjsonServers</code></td><td>Qué servidores MCP del <code>.mcp.json</code> del proyecto se activan sin preguntar</td></tr>
-                <tr><td><code>includeCoAuthoredBy</code></td><td>Si los commits llevan la firma de coautoría de Claude</td></tr>
+                <tr><td><code>includeCoAuthoredBy</code></td><td>Si los commits llevan la firma de coautoría de Claude. Hoy está obsoleto: lo sustituye <code>attribution</code>, cuyo formato está en la referencia de settings</td></tr>
                 <tr><td><code>cleanupPeriodDays</code></td><td>Cuántos días se guardan las sesiones antiguas</td></tr>
               </tbody>
             </table>
@@ -534,8 +533,7 @@ exit 0</code></pre>
       "Bash(git commit --no-verify:*)",
       "Bash(rm -rf:*)"
     ]
-  },
-  "includeCoAuthoredBy": false
+  }
 }</code></pre>
           </div>
 
@@ -551,13 +549,13 @@ exit 0</code></pre>
               <tbody>
                 <tr><td><code>default</code></td><td>Pregunta antes de editar o ejecutar lo que no está en <code>allow</code></td><td>Uso normal</td></tr>
                 <tr><td><code>acceptEdits</code></td><td>Edita archivos sin preguntar; los comandos siguen las reglas</td><td>Tareas de confianza en las que revisas el diff al final</td></tr>
-                <tr><td><code>plan</code></td><td>Solo lee y planifica; no edita ni ejecuta</td><td>Antes de tareas grandes</td></tr>
+                <tr><td><code>plan</code></td><td>Lee y planifica; no edita y solo ejecuta comandos de solo lectura</td><td>Antes de tareas grandes</td></tr>
                 <tr><td><code>bypassPermissions</code></td><td>No pregunta nada (equivale a <code>--dangerously-skip-permissions</code>)</td><td>Solo en entornos aislados (contenedor, CI)</td></tr>
               </tbody>
             </table>
           </div>
 
-          <p>Las reglas <code>deny</code> y los hooks PreToolUse siguen protegiendo incluso en los modos más permisivos. Campos y sintaxis según la documentación conocida; pueden variar entre versiones.</p>
+          <p>Las versiones recientes añaden más modos, como <code>auto</code> y <code>dontAsk</code>: consulta su comportamiento en la documentación de permisos de tu versión. Las reglas <code>deny</code> y los hooks PreToolUse siguen protegiendo incluso en los modos más permisivos. Campos y sintaxis según la documentación conocida; pueden variar entre versiones.</p>
 
           <h2 id="criterio">
             Qué automatizar con cada pieza
