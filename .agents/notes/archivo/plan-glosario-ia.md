@@ -78,6 +78,13 @@ Retos (`practica.js`): uno es la **checklist de auditoría de la configuración 
 ## Cierre de #195 (2026-11-08)
 
 - Siete secciones nuevas, cada una con su entrada en el índice: `cc-rules#en-claude-code`, `cc-skills#en-disco`, `cc-subagentes#definir`, `cc-mcp#herramienta-interna`, `cc-hooks-y-permisos#eventos` y `#settings`, e `ia-embeddings-y-rag#recuperacion`.
+- **Correcciones contra la documentación actual de Claude Code** (review de #198). El glosario se ha quedado atrás en cinco puntos:
+  - Los subagentes ya pueden anidarse, hasta 3 niveles por defecto.
+  - `allowed-tools` concede permiso, no limita; para quitar herramientas está `disallowed-tools`.
+  - Un `deny` por prefijo no bloquea del todo `--no-verify`.
+  - `includeCoAuthoredBy` está obsoleto y lo sustituye `attribution`.
+  - Hay modos de permisos nuevos (`auto`, `dontAsk`), y `plan` ejecuta comandos de solo lectura.
+  La lección conserva el contenido del glosario y lo corrige donde ya no vale.
 - El script encontró 13 diferencias en las 43 filas «enriquecer», todas explicadas. Siete son encabezados renombrados en la lección. Cuatro son ejemplos reescritos en la tienda: las reglas PHP (E007), la skill `nueva-migracion` en lugar de `crear-migracion-doctrine` (E014, E015) y el `settings.json` con el servicio `app` (E039). Las dos restantes (E017, E037) son falsos positivos por los backticks.
 
 ## Inventario fila a fila
