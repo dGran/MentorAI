@@ -8,7 +8,11 @@ Fuente: «Glosario de IA: Harness», un Claude Doc del usuario (5 bloques, 156 a
 
 ## Recuento
 
-225 filas = 156 apartados (6 `h1`, 41 `h2`, 109 `h3`) + 69 ejemplos. Los `#` que aparecen dentro de los ejemplos de Markdown (rules y skills de muestra) no son apartados, sino parte de su ejemplo. Destinos: **renovado** 120 apartados, **enriquecer** 29, **estructura** 7 (título, índice, cabeceras de bloque y la lista de pendientes del autor). **Cubierto**: ninguno. Ninguna lección actual trae el contenido concreto del glosario, así que todo tiene un sitio donde escribirse (comprobado con `grep` sobre las 41 lecciones de IA).
+225 filas = 156 apartados (6 `h1`, 41 `h2`, 109 `h3`) + 69 ejemplos (25 bloques de código y 44 tablas). El HTML del glosario tiene 164 encabezados (11/44/109, como dice el comentario de refinado de #193): los 8 de más (5 `h1` y 3 `h2`) están dentro de ejemplos de Markdown renderizado (rules y skills de muestra), así que forman parte de su ejemplo y no son apartados.
+
+Destinos: **renovado** 117 apartados, **enriquecer** 27, **cubierto** 5 y **estructura** 7. «Estructura» es una cuarta categoría que #193 no preveía, para lo que no es contenido: el título y el índice del glosario (pasan a la ficha del curso), las cuatro cabeceras de bloque (pasan a ser módulos) y la cabecera de pendientes del autor. El único contenido de los pendientes, su «punto final», va como reto (S156, renovado).
+
+**Cubierto** (comprobado en la review de #196): la configuración y la comunicación de los hooks (S056, S057) en `cc-hooks-y-permisos`, los worktrees (S090) en `git-worktrees`, y las piezas y formas de puntuar una eval (S124, S125) en `ia-coste-y-evaluacion`. Otros apartados solapan en parte con una lección a fondo, pero se quedan como renovado porque traen algo que esa lección no tiene. Por ejemplo, la temperatura (S018) frente a `llm-muestreo`: el caso del front, la tabla de rangos y «no arregla alucinaciones».
 
 ## Criterio del reparto
 
@@ -45,7 +49,7 @@ Retos (`practica.js`): uno es la **checklist de auditoría de la configuración 
 | `cc-skills` | Estructura de carpetas, SKILL.md con frontmatter, las tres capas de carga, cómo se localiza, dónde viven, buenas prácticas de activación, una skill que usa otra (S035-S042) |
 | `cc-subagentes` | Definición en `.claude/agents/` con ejemplo, limitaciones, patrones (abanico, cadena, implementar y revisar, explorador), cómo escribir el encargo, sin anidar y `/agents` (S046, S048-S051) |
 | `cc-mcp` | Caso práctico: ¿MCP para la herramienta interna?, con la tabla de credenciales (S053) |
-| `cc-hooks-y-permisos` | Tabla de eventos completa, configuración con `matcher`, códigos de salida, precauciones, pre-commit vs hooks con `--no-verify`; settings.json: niveles, campos, sintaxis de permisos, ejemplo Symfony en Docker y modos (S055-S059, S073-S077) |
+| `cc-hooks-y-permisos` | Tabla de eventos completa, precauciones, pre-commit vs hooks con `--no-verify`; settings.json: niveles, campos, sintaxis de permisos, ejemplo Symfony en Docker y modos (S055, S058, S059, S073-S077) |
 | `ia-embeddings-y-rag` | Problemas habituales: troceado, reranking, búsqueda híbrida, reindexado (S149) |
 
 ## Contenido actual de las cinco lecciones
@@ -61,7 +65,7 @@ Retos (`practica.js`): uno es la **checklist de auditoría de la configuración 
 ## Decidido con el usuario (2026-11-08)
 
 1. **Las convenciones de los ejemplos son de su trabajo** (respuesta: «si»). Se reescriben en el proyecto ficticio «tienda» (PHP, como en `metodo-con-agentes`), conservando la estructura y la lección de cada ejemplo, con convenciones y nombres propios de la tienda: las reglas por capa (arquitectura, controllers, services, managers: E010-E012), la skill `crear-migracion-doctrine` y sus reglas (E014, E015, E008, E017 y S034) y el `settings.json` del proyecto Symfony en Docker (E039). Jira, GitLab, Sentry, Symfony, Doctrine, Deptrac y PhpStorm son tecnologías públicas y se quedan.
-2. **El mod `agent-flow`** (S087) no aparece en ninguna fuente pública. Los mods sí existen: Claude Code 2.1.287 y los tres de ejemplo del repo `claude-code-playground` (token-weather, blast-radius, replay-theater). Como no se puede verificar y además se llama igual que el método privado del autor, que `metodo-con-agentes` decidió no nombrar, sale su nombre. Lo que hace, un panel con los subagentes en marcha, se queda como fila sin nombre de mod, y la recomendación «agent-flow si usas subagentes» pasa a «un panel de subagentes». El usuario lo dejó a criterio del agente («no lo sé, revísalo»).
+2. **El mod `agent-flow`** (tabla E044 y recomendación en S088) no aparece en ninguna fuente pública. Los mods sí existen: Claude Code 2.1.287 y los tres de ejemplo del repo `claude-code-playground` (token-weather, blast-radius, replay-theater). Como no se puede verificar y además se llama igual que el método privado del autor, que `metodo-con-agentes` decidió no nombrar, sale su nombre. Lo que hace, un panel con los subagentes en marcha, se queda como fila sin nombre de mod, y la recomendación «agent-flow si usas subagentes» pasa a «un panel de subagentes». El usuario lo dejó a criterio del agente («no lo sé, revísalo»).
 3. **Datos con fecha**: se contrastan con fuentes al escribir. Lo que no se pueda comprobar se marca como orientativo y no se omite sin preguntar.
 4. **Prefijo `pci-` y los doce títulos**: aprobados a criterio del agente («como lo veas mejor»).
 
@@ -88,7 +92,7 @@ Retos (`practica.js`): uno es la **checklist de auditoría de la configuración 
 | S016 | Cómo ahorrar | h3 | **renovado** | `pci-modelos-y-coste` | enlaza a ia-coste-y-evaluacion, llm-atencion-y-contexto y cc-memoria-y-continuidad |
 | S017 | Nota de traspaso (handoff) entre sesiones | h3 | **renovado** | `pci-modelos-y-coste` | enlaza a ia-coste-y-evaluacion, llm-atencion-y-contexto y cc-memoria-y-continuidad |
 | E002 | tabla: \| Opción \| Qué hace \| Cuándo \| | 1. Fundamentos › Prompt caching › Nota de traspaso (handoff) | **renovado** | `pci-modelos-y-coste` | ejemplo completo, con el destino de su apartado (S017) |
-| S018 | Temperatura | h2 | **renovado** | `como-piensa-un-llm` | enlaza a llm-muestreo, que ya trata top-p y temperatura cero |
+| S018 | Temperatura | h2 | **renovado** | `como-piensa-un-llm` | solapa con llm-muestreo (top-p/top-k, temperatura cero, el proveedor la fija), que se enlaza; se queda como renovado por la tabla de rangos, «no arregla alucinaciones» y el caso del front, que llm-muestreo no trae |
 | E003 | tabla: \| Temperatura \| Comportamiento \| Uso típico \| | 1. Fundamentos › Temperatura | **renovado** | `como-piensa-un-llm` | ejemplo completo, con el destino de su apartado (S018) |
 | S019 | Alucinaciones | h2 | **renovado** | `como-piensa-un-llm` | enlaza a llm-alucinacion-y-razonamiento |
 | S020 | Por qué ocurren | h3 | **renovado** | `como-piensa-un-llm` | enlaza a llm-alucinacion-y-razonamiento |
@@ -145,13 +149,13 @@ Retos (`practica.js`): uno es la **checklist de auditoría de la configuración 
 | S053 | Caso práctico: ¿MCP para la herramienta interna? | h2 | **enriquecer** | `cc-mcp` | caso de la herramienta interna y tabla de credenciales |
 | E022 | tabla: \| Integración \| Credencial \| Por qué \| | 2. Configurar el agente › Caso práctico: ¿MCP para la herram | **enriquecer** | `cc-mcp` | ejemplo completo, con el destino de su apartado (S053) |
 | S054 | Hooks | h2 | **renovado** | `pci-piezas-del-agente` | qué es un hook y rule vs hook; enlaza a cc-hooks-y-permisos |
-| S055 | Eventos principales en Claude Code | h3 | **enriquecer** | `cc-hooks-y-permisos` | eventos completos (falta Notification), config con matcher, códigos de salida, precauciones y pre-commit vs hooks |
+| S055 | Eventos principales en Claude Code | h3 | **enriquecer** | `cc-hooks-y-permisos` | tabla de eventos completa (falta Notification), precauciones y pre-commit vs hooks con --no-verify |
 | E023 | tabla: \| Evento \| Cuándo se dispara \| Uso típico \| | 2. Configurar el agente › Hooks › Eventos principales en Cla | **enriquecer** | `cc-hooks-y-permisos` | ejemplo completo, con el destino de su apartado (S055) |
-| S056 | Cómo se configura | h3 | **enriquecer** | `cc-hooks-y-permisos` | eventos completos (falta Notification), config con matcher, códigos de salida, precauciones y pre-commit vs hooks |
-| E024 | código texto: { | 2. Configurar el agente › Hooks › Cómo se configura | **enriquecer** | `cc-hooks-y-permisos` | ejemplo completo, con el destino de su apartado (S056) |
-| S057 | Cómo se comunica con el agente | h3 | **enriquecer** | `cc-hooks-y-permisos` | eventos completos (falta Notification), config con matcher, códigos de salida, precauciones y pre-commit vs hooks |
-| S058 | Precauciones | h3 | **enriquecer** | `cc-hooks-y-permisos` | eventos completos (falta Notification), config con matcher, códigos de salida, precauciones y pre-commit vs hooks |
-| S059 | Pre-commit de Git vs. hooks de Claude Code | h3 | **enriquecer** | `cc-hooks-y-permisos` | eventos completos (falta Notification), config con matcher, códigos de salida, precauciones y pre-commit vs hooks |
+| S056 | Cómo se configura | h3 | **cubierto** | `cc-hooks-y-permisos#hooks` | ya trae `"matcher": "Edit|Write"`, la entrada del evento por stdin, `exit 2` y la trampa de `exit 1` |
+| E024 | código texto: { | 2. Configurar el agente › Hooks › Cómo se configura | **cubierto** | `cc-hooks-y-permisos#hooks` | ejemplo completo, con el destino de su apartado (S056) |
+| S057 | Cómo se comunica con el agente | h3 | **cubierto** | `cc-hooks-y-permisos#hooks` | ya trae `"matcher": "Edit|Write"`, la entrada del evento por stdin, `exit 2` y la trampa de `exit 1` |
+| S058 | Precauciones | h3 | **enriquecer** | `cc-hooks-y-permisos` | tabla de eventos completa (falta Notification), precauciones y pre-commit vs hooks con --no-verify |
+| S059 | Pre-commit de Git vs. hooks de Claude Code | h3 | **enriquecer** | `cc-hooks-y-permisos` | tabla de eventos completa (falta Notification), precauciones y pre-commit vs hooks con --no-verify |
 | E025 | tabla: \|  \| Pre-commit (Git) \| Hooks de Claude Code \| | 2. Configurar el agente › Hooks › Pre-commit de Git vs. hook | **enriquecer** | `cc-hooks-y-permisos` | ejemplo completo, con el destino de su apartado (S059) |
 | S060 | Estructura de carpetas de Claude Code (y AGENTS.md) | h2 | **renovado** | `pci-entorno-claude-code` | referencia de carpetas, AGENTS.md, comandos, atajos y comandos propios |
 | S061 | Nivel proyecto | h3 | **renovado** | `pci-entorno-claude-code` | referencia de carpetas, AGENTS.md, comandos, atajos y comandos propios |
@@ -188,21 +192,21 @@ Retos (`practica.js`): uno es la **checklist de auditoría de la configuración 
 | E040 | tabla: \| Modo \| Comportamiento \| Cuándo \| | 2. Configurar el agente › Comandos de Claude Code › Modos de | **enriquecer** | `cc-hooks-y-permisos` | ejemplo completo, con el destino de su apartado (S077) |
 | S078 | Comandos personalizados | h3 | **renovado** | `pci-entorno-claude-code` | referencia de carpetas, AGENTS.md, comandos, atajos y comandos propios |
 | E041 | código texto: --- | 2. Configurar el agente › Comandos de Claude Code › Comandos | **renovado** | `pci-entorno-claude-code` | ejemplo completo, con el destino de su apartado (S078) |
-| S079 | Plugins de Claude Code | h2 | **renovado** | `pci-plugins-mods-worktrees` | worktrees enlaza a git-worktrees |
-| S080 | Estructura | h3 | **renovado** | `pci-plugins-mods-worktrees` | worktrees enlaza a git-worktrees |
+| S079 | Plugins de Claude Code | h2 | **renovado** | `pci-plugins-mods-worktrees` |  |
+| S080 | Estructura | h3 | **renovado** | `pci-plugins-mods-worktrees` |  |
 | E042 | código texto: mi-plugin/ | 2. Configurar el agente › Plugins de Claude Code › Estructur | **renovado** | `pci-plugins-mods-worktrees` | ejemplo completo, con el destino de su apartado (S080) |
-| S081 | Marketplaces | h3 | **renovado** | `pci-plugins-mods-worktrees` | worktrees enlaza a git-worktrees |
-| S082 | Para qué te sirve | h3 | **renovado** | `pci-plugins-mods-worktrees` | worktrees enlaza a git-worktrees |
-| S083 | Precauciones | h3 | **renovado** | `pci-plugins-mods-worktrees` | worktrees enlaza a git-worktrees |
-| S084 | Mods de Claude Code | h2 | **renovado** | `pci-plugins-mods-worktrees` | worktrees enlaza a git-worktrees |
-| S085 | Mod vs. hook vs. plugin | h3 | **renovado** | `pci-plugins-mods-worktrees` | worktrees enlaza a git-worktrees |
+| S081 | Marketplaces | h3 | **renovado** | `pci-plugins-mods-worktrees` |  |
+| S082 | Para qué te sirve | h3 | **renovado** | `pci-plugins-mods-worktrees` |  |
+| S083 | Precauciones | h3 | **renovado** | `pci-plugins-mods-worktrees` |  |
+| S084 | Mods de Claude Code | h2 | **renovado** | `pci-plugins-mods-worktrees` |  |
+| S085 | Mod vs. hook vs. plugin | h3 | **renovado** | `pci-plugins-mods-worktrees` |  |
 | E043 | tabla: \|  \| Hook de settings \| Mod \| | 2. Configurar el agente › Mods de Claude Code › Mod vs. hook | **renovado** | `pci-plugins-mods-worktrees` | ejemplo completo, con el destino de su apartado (S085) |
-| S086 | Ejemplos | h3 | **renovado** | `pci-plugins-mods-worktrees` | worktrees enlaza a git-worktrees |
-| S087 | Más ejemplos, por categoría | h3 | **renovado** | `pci-plugins-mods-worktrees` | worktrees enlaza a git-worktrees |
+| S086 | Ejemplos | h3 | **renovado** | `pci-plugins-mods-worktrees` |  |
+| S087 | Más ejemplos, por categoría | h3 | **renovado** | `pci-plugins-mods-worktrees` |  |
 | E044 | tabla: \| Categoría \| Mod \| Qué hace \| | 2. Configurar el agente › Mods de Claude Code › Más ejemplos | **renovado** | `pci-plugins-mods-worktrees` | ejemplo completo, con el destino de su apartado (S087) |
-| S088 | Para qué te puede servir | h3 | **renovado** | `pci-plugins-mods-worktrees` | worktrees enlaza a git-worktrees |
-| S089 | Precauciones | h3 | **renovado** | `pci-plugins-mods-worktrees` | worktrees enlaza a git-worktrees |
-| S090 | Worktrees | h2 | **renovado** | `pci-plugins-mods-worktrees` | worktrees enlaza a git-worktrees |
+| S088 | Para qué te puede servir | h3 | **renovado** | `pci-plugins-mods-worktrees` |  |
+| S089 | Precauciones | h3 | **renovado** | `pci-plugins-mods-worktrees` |  |
+| S090 | Worktrees | h2 | **cubierto** | `git-worktrees` | `git worktree add`, `remove` y worktrees con Docker Compose ya están; `pci-plugins-mods-worktrees` añade solo `--worktree` de Claude Code y subagentes aislados, y enlaza |
 | S091 | 3. Trabajar con agentes | h1 | **estructura** | `módulo «Trabajar con agentes»` |  |
 | S092 | Prompts: cómo escribir una buena petición | h2 | **renovado** | `prompting-para-codigo` | context engineering enlaza a ag-como-lee-el-agente |
 | S093 | Qué debe tener un prompt | h3 | **renovado** | `prompting-para-codigo` | context engineering enlaza a ag-como-lee-el-agente |
@@ -253,9 +257,9 @@ Retos (`practica.js`): uno es la **checklist de auditoría de la configuración 
 | S122 | Caso práctico: agente de QA con Playwright | h3 | **renovado** | `pci-multiagente-y-evals` | enlaza a cc-subagentes, ag-roles-de-subagente, ag-qa-con-evidencias e ia-coste-y-evaluacion |
 | E061 | tabla: \| Debe recibir \| No debe recibir \| | 3. Trabajar con agentes › Multiagente (sistemas multiagente) | **renovado** | `pci-multiagente-y-evals` | ejemplo completo, con el destino de su apartado (S122) |
 | S123 | Evals (evaluaciones) | h2 | **renovado** | `pci-multiagente-y-evals` | enlaza a cc-subagentes, ag-roles-de-subagente, ag-qa-con-evidencias e ia-coste-y-evaluacion |
-| S124 | Piezas de una eval | h3 | **renovado** | `pci-multiagente-y-evals` | enlaza a cc-subagentes, ag-roles-de-subagente, ag-qa-con-evidencias e ia-coste-y-evaluacion |
-| S125 | Formas de puntuar | h3 | **renovado** | `pci-multiagente-y-evals` | enlaza a cc-subagentes, ag-roles-de-subagente, ag-qa-con-evidencias e ia-coste-y-evaluacion |
-| E062 | tabla: \| Tipo \| Cómo funciona \| Ejemplo \| Fiabilidad \| | 3. Trabajar con agentes › Evals (evaluaciones) › Formas de p | **renovado** | `pci-multiagente-y-evals` | ejemplo completo, con el destino de su apartado (S125) |
+| S124 | Piezas de una eval | h3 | **cubierto** | `ia-coste-y-evaluacion#evals` | golden set, coincidencia exacta y modelo como juez ya están; su tabla de ejemplo (E062) sí va al curso renovado |
+| S125 | Formas de puntuar | h3 | **cubierto** | `ia-coste-y-evaluacion#evals` | golden set, coincidencia exacta y modelo como juez ya están; su tabla de ejemplo (E062) sí va al curso renovado |
+| E062 | tabla: \| Tipo \| Cómo funciona \| Ejemplo \| Fiabilidad \| | 3. Trabajar con agentes › Evals (evaluaciones) › Formas de p | **renovado** | `pci-multiagente-y-evals` | tabla de formas de puntuar con su fiabilidad: no está en ia-coste-y-evaluacion |
 | S126 | Evals en el día a día con agentes | h3 | **renovado** | `pci-multiagente-y-evals` | enlaza a cc-subagentes, ag-roles-de-subagente, ag-qa-con-evidencias e ia-coste-y-evaluacion |
 | S127 | Caso práctico: skill de retro tras la review | h3 | **renovado** | `pci-multiagente-y-evals` | enlaza a cc-subagentes, ag-roles-de-subagente, ag-qa-con-evidencias e ia-coste-y-evaluacion |
 | E063 | tabla: \|  \| Skill de retro \| Eval \| | 3. Trabajar con agentes › Evals (evaluaciones) › Caso prácti | **renovado** | `pci-multiagente-y-evals` | ejemplo completo, con el destino de su apartado (S127) |
@@ -295,4 +299,4 @@ Retos (`practica.js`): uno es la **checklist de auditoría de la configuración 
 | S155 | 5. Pendientes | h1 | **estructura** | `fuera del curso` | bloque de trabajo del autor, no contenido |
 | S156 | Temas pendientes | h2 | **renovado** | `reto de práctica del curso renovado` | los temas listados ya están desarrollados en el propio glosario; el «punto final» (checklist de auditoría convertida en skill) es un reto de practica.js |
 
-<!-- filas=225 apartados=156 ejemplos=69 {'estructura': 7, 'renovado': 120, 'enriquecer': 29} -->
+<!-- filas=225 apartados=156 ejemplos=69 {'estructura': 7, 'renovado': 117, 'enriquecer': 27, 'cubierto': 5} -->
