@@ -1,6 +1,6 @@
 # Plan: el glosario de IA en la Academia (#193 → #194, #195)
 
-**Estado (2026-11-08): inventario hecho, pendiente de que el usuario valide el reparto (§ Para revisar).** Al cerrar #194 y #195, esta nota pasa a `archivo/` con el veredicto aquí arriba.
+**Estado (2026-11-08): inventario hecho y reparto validado por el usuario (§ Decidido con el usuario).** Al cerrar #194 y #195, esta nota pasa a `archivo/` con el veredicto aquí arriba.
 
 Fuente: «Glosario de IA: Harness», un Claude Doc del usuario (5 bloques, 156 apartados, 69 ejemplos en tablas o bloques de código, ~108 KB de texto). La copia fiel en Markdown y los scripts que generan este inventario viven en `.agents/tasks/glosario-ia/` (gitignored: el documento es del usuario y no se versiona). Para regenerar las filas: `python3 -I .agents/tasks/glosario-ia/estructura.py <glosario.md> <estructura.json>` y `python3 -I .agents/tasks/glosario-ia/inventario.py`.
 
@@ -58,12 +58,12 @@ Retos (`practica.js`): uno es la **checklist de auditoría de la configuración 
 | `flujo-con-agentes` | Qué es un agente de código, herramientas, plan-implementar-revisar, contexto del repo, no delegues el criterio, dónde encaja | Plan-implementar-revisar, criterio y dónde encaja siguen aquí; qué es un agente y sus herramientas pasan a `conceptos-ia`; el contexto del repositorio a `pci-piezas-del-agente` |
 | `criterio-y-riesgos` | El criterio no se delega, revisar lo generado, seguridad y secretos, licencias, deuda técnica silenciosa, tests como red, cuándo no usar IA | Siguen todos aquí, con prompt injection y stacks ajenos |
 
-## Para revisar (el usuario, antes de #194 y #195)
+## Decidido con el usuario (2026-11-08)
 
-1. **Nada identifica a tu empresa**, que yo vea. Jira, GitLab, Sentry, Symfony, Doctrine, Deptrac y PhpStorm son tecnologías públicas y se quedan. «La herramienta interna», «validarlo con la empresa» y «cualquier repo de la empresa» son genéricos. Si alguna convención de los ejemplos (thin controllers, managers, `crear-migracion-doctrine`) es literal de tu trabajo, dímelo y la paso al proyecto ficticio «tienda».
-2. **El mod llamado `agent-flow`** de la tabla de mods (S087) se llama igual que tu método privado, y el curso `metodo-con-agentes` decidió no nombrarlo. ¿Es un mod público de la comunidad o el tuyo? Si es el tuyo, sale de la tabla.
-3. **Datos con fecha que se contrastan al escribir**: versiones de Claude Code (AGENTS.md desde la 2.1.277, mods desde la 2.1.287 y su presentación el 2026-10-01), la lista de comandos, y los modelos locales (Qwen 3.5/3.6, Devstral 2). Las lecciones de IA llevan `reviewed` y se corrigen contra fuentes. Lo que no se pueda comprobar se marca como orientativo, igual que hace el propio glosario, y no se omite sin preguntarte.
-4. **El prefijo `pci-`** de las lecciones nuevas y los doce títulos.
+1. **Las convenciones de los ejemplos son de su trabajo** (respuesta: «si»). Se reescriben en el proyecto ficticio «tienda» (PHP, como en `metodo-con-agentes`), conservando la estructura y la lección de cada ejemplo, con convenciones y nombres propios de la tienda: las reglas por capa (arquitectura, controllers, services, managers: E010-E012), la skill `crear-migracion-doctrine` y sus reglas (E014, E015, E008, E017 y S034) y el `settings.json` del proyecto Symfony en Docker (E039). Jira, GitLab, Sentry, Symfony, Doctrine, Deptrac y PhpStorm son tecnologías públicas y se quedan.
+2. **El mod `agent-flow`** (S087) no aparece en ninguna fuente pública. Los mods sí existen: Claude Code 2.1.287 y los tres de ejemplo del repo `claude-code-playground` (token-weather, blast-radius, replay-theater). Como no se puede verificar y además se llama igual que el método privado del autor, que `metodo-con-agentes` decidió no nombrar, sale su nombre. Lo que hace, un panel con los subagentes en marcha, se queda como fila sin nombre de mod, y la recomendación «agent-flow si usas subagentes» pasa a «un panel de subagentes». El usuario lo dejó a criterio del agente («no lo sé, revísalo»).
+3. **Datos con fecha**: se contrastan con fuentes al escribir. Lo que no se pueda comprobar se marca como orientativo y no se omite sin preguntar.
+4. **Prefijo `pci-` y los doce títulos**: aprobados a criterio del agente («como lo veas mejor»).
 
 ## Inventario fila a fila
 
