@@ -1480,12 +1480,15 @@ window.MENTORAI_CHECKS = {
     { id: "c61d3cc", q: "¿Qué es la ventana de contexto?",
       o: ["El número máximo de tokens que el modelo puede generar en una respuesta","El texto máximo que ve a la vez, prompt y respuesta incluidos","El historial de mensajes que el proveedor guarda de la conversación"], a: 1,
       w: "Cuando se llena, lo que sobra se cae: por eso en conversaciones largas parece olvidar lo del principio." },
-
     { id: "cb712c3", q: "Dos herramientas usan el mismo modelo y una rinde mucho mejor. ¿De dónde sale la diferencia?",
       o: ["Del harness que lo envuelve, con su prompt, herramientas y permisos","De la temperatura, que cada herramienta fija a un valor distinto","Del reentrenamiento que una de ellas hace con tus repositorios"], a: 0,
-      w: "El modelo es el motor y el harness el coche: lo que le pone delante y lo que le deja hacer cambia mucho el resultado con el mismo modelo." },  ],
+      w: "El modelo es el motor y el harness el coche: lo que le pone delante y lo que le deja hacer cambia mucho el resultado con el mismo modelo." },
+  ],
 
   "como-piensa-un-llm": [
+    { id: "cae2995", q: "¿Qué hace peligrosas a las alucinaciones?",
+      o: ["Que llegan con el mismo tono de seguridad que los aciertos","Que son tan frecuentes que casi ninguna respuesta es fiable","Que solo ocurren en temas oscuros, donde nadie las detecta"], a: 0,
+      w: "No hay indicador de confianza en el texto, así que la verificación tiene que venir de fuera: tests, documentación, ejecutarlo." },
     { id: "cd07714", q: "Bajas la temperatura a 0 en tu clasificador por API. ¿Qué consigues?",
       o: ["Que el modelo deje de alucinar porque siempre elige lo más probable","Que el modelo razone más antes de responder a cada ticket","Que las respuestas sean más repetibles, aunque no idénticas ni más ciertas"], a: 2,
       w: "Temperatura 0 reduce mucho la variación pero no la elimina, y no arregla alucinaciones: el modelo se equivoca de forma más consistente." },
@@ -1501,10 +1504,10 @@ window.MENTORAI_CHECKS = {
     { id: "c16efbc", q: "¿Qué suele mejorar más una respuesta de código?",
       o: ["Pedirle que sea breve y vaya al grano para que no se desvíe del problema","Exigirle siempre varias alternativas y quedarte tú con la que mejor encaje","Darle tus restricciones reales (versiones, convenciones, qué no tocar)"], a: 2,
       w: "El modelo no conoce tu proyecto salvo que se lo cuentes, y por defecto escribirá código idiomático… de otro proyecto." },
-
     { id: "c30a5be", q: "¿Qué es context engineering?",
       o: ["Redactar mejor cada prompt concreto con trucos de formato","Diseñar qué información recibe el modelo, cuándo y en qué forma","Reentrenar el modelo con el contexto de tu propio proyecto"], a: 1,
-      w: "Rules, skills, MCP, subagentes y compactación son sus piezas. No sustituye al prompt: lo estable vive en el entorno y el prompt aporta lo de cada tarea." },  ],
+      w: "Rules, skills, MCP, subagentes y compactación son sus piezas. No sustituye al prompt: lo estable vive en el entorno y el prompt aporta lo de cada tarea." },
+  ],
 
   "flujo-con-agentes": [
     { id: "c8f01a0", q: "¿Qué distingue a un agente de una sola llamada al modelo?",
@@ -1513,22 +1516,19 @@ window.MENTORAI_CHECKS = {
     { id: "c47de45", q: "¿Qué papel tienen las herramientas en un agente?",
       o: ["El modelo las ejecuta directamente en tu máquina cada vez que las necesita","El modelo pide ejecutarlas y el harness decide: ahí viven los permisos","Sustituyen al prompt: le dan al modelo las instrucciones concretas de la tarea"], a: 1,
       w: "El modelo nunca ejecuta nada por sí mismo. Todo lo que un agente puede hacer es lo que tú le dejas hacer." },
-
     { id: "cacadb5", q: "¿Cuándo no compensa spec-driven development?",
       o: ["En una funcionalidad grande con requisitos ambiguos","En un bug pequeño o un cambio de pocas líneas","En una tarea larga que un agente hará en varias sesiones"], a: 1,
-      w: "El papeleo de spec, plan y tareas cuesta más que el cambio. En lo grande y ambiguo, corregir la spec es mucho más barato que corregir código." },  ],
+      w: "El papeleo de spec, plan y tareas cuesta más que el cambio. En lo grande y ambiguo, corregir la spec es mucho más barato que corregir código." },
+  ],
 
   "criterio-y-riesgos": [
     { id: "c819a4e", q: "Un agente lee un issue de GitHub que contiene instrucciones ocultas y las obedece.",
       o: ["Es una alucinación: el modelo se inventa instrucciones que no existen","Solo pasa con modelos pequeños, que siguen peor el prompt de sistema","Es prompt injection: no distingue tus instrucciones del contenido que lee"], a: 2,
       w: "Por eso importa acotar sus permisos y desconfiar de todo lo que entre desde fuera, igual que con cualquier entrada de usuario." },
-    { id: "cae2995", q: "¿Qué hace peligrosas a las alucinaciones?",
-      o: ["Que llegan con el mismo tono de seguridad que los aciertos","Que son tan frecuentes que casi ninguna respuesta es fiable","Que solo ocurren en temas oscuros, donde nadie las detecta"], a: 0,
-      w: "No hay indicador de confianza en el texto, así que la verificación tiene que venir de fuera: tests, documentación, ejecutarlo." },
-
     { id: "c727c12", q: "¿Cuál es la «tríada letal» de la prompt injection?",
       o: ["Modelo grande, esfuerzo alto y una temperatura muy alta","Muchos MCP, muchas skills y una ventana llena","Datos privados, contenido ajeno y salida al exterior"], a: 2,
-      w: "Con las tres a la vez, un texto escondido en un ticket puede llevar tus secretos fuera. Quitando cualquiera, el ataque pierde casi toda su fuerza." },  ],
+      w: "Con las tres a la vez, un texto escondido en un ticket puede llevar tus secretos fuera. Quitando cualquiera, el ataque pierde casi toda su fuerza." },
+  ],
 
 
   "bits-y-bytes": [
