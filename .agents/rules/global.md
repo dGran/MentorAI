@@ -7,6 +7,9 @@ viven en § Convenciones base y no se duplican aquí.
 
 Antes de escribir código, lee `~/.agent-flow/rules/engineering-discipline.md`.
 
+Stack: HTML5, CSS y JavaScript vanilla sin build ni dependencias de npm; los tests y las
+validaciones corren con Node 22 (`node --test`, la versión del CI).
+
 ## Convenciones base
 
 Base: `~/.agent-flow/stacks/general/rules.md`, `~/.agent-flow/stacks/ux/rules.md` y
@@ -165,9 +168,10 @@ el diff crece). No se limpian en bloque fuera de un issue propio.
 - **El trabajo se gestiona con el flujo de agent-flow** (§ Flujo de trabajo)
   desde el 2026-10-06. `estado.md` sigue siendo el retrato del proyecto; el
   detalle de cada tarea vive en su issue.
-- Ante tandas continuadas, iteración hasta verificación o workflow dinámico, lee
-  `~/.agent-flow/skills/_shared/workflow-routing.md` y carga las skills indicadas
-  aunque el usuario no use comandos slash.
+- Ante cualquier petición de ejecución, lee `~/.agent-flow/skills/_shared/workflow-routing.md`
+  (enlace estable que crea el `install.sh` de agent-flow): elige el carril (directo, ligero o
+  completo) y carga las skills indicadas aunque el usuario no use comandos slash. Commits y
+  descripciones de PR, con la skill `git-commits`. Una petición de explicación no inicia el flujo.
 
 ## Flujo de trabajo (GitHub)
 
