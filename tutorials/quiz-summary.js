@@ -80,7 +80,7 @@ window.MENTORAI_QUIZ_SUMMARY = {
     "passingScore": null
   },
   "programar-con-ia": {
-    "total": 12,
+    "total": 23,
     "passingScore": null
   },
   "fundamentos": {
