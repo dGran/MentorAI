@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modelos, esfuerzo y coste — MentorAI</title>
+    <meta
+      name="description"
+      content="Haiku, Sonnet y Opus y cuándo usar cada uno, qué controla el esfuerzo de razonamiento, qué consume tokens en una sesión de agente, suscripción frente a API, cómo funciona el prompt caching, cómo ahorrar y la nota de traspaso entre sesiones."
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Programar con IA</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Modelos, esfuerzo y coste</h1>
+        <p class="tutorial-hero__lead">
+          Elegir modelo y esfuerzo es elegir cuánta capacidad pagas por respuesta. Y en un agente, el coste no es lo último que dijiste: es todo el contexto, reenviado en cada vuelta del bucle. Esta lección explica de dónde sale cada token y cómo gastar menos sin trabajar peor.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            16 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Principiante
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Programar con IA
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#familias">Haiku, Sonnet y Opus</a></li>
+            <li><a href="#esfuerzo">Esfuerzo y razonamiento (thinking)</a></li>
+            <li><a href="#tokens">Tokens y costes</a></li>
+            <li><a href="#caching">Prompt caching</a></li>
+            <li><a href="#ahorrar">Cómo ahorrar</a></li>
+            <li><a href="#traspaso">La nota de traspaso entre sesiones</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Tres decisiones explican casi toda la factura de trabajar con un agente: qué tamaño de modelo usas, cuánto le dejas pensar y cuánto contexto arrastra la sesión. Las tres se pueden ajustar a la tarea.
+          </p>
+
+          <h2 id="familias">
+            Haiku, Sonnet y Opus
+            <a href="#familias" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Son tres tamaños de la misma familia, Claude. A más grande, más capacidad de razonamiento, pero más lento y más caro por token.</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Modelo</th><th>Tamaño</th><th>Punto fuerte</th><th>Uso típico</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Haiku</td><td>Pequeño</td><td>Rápido y barato</td><td>Clasificar, extraer datos, subagentes sencillos, tareas en volumen</td></tr>
+                <tr><td>Sonnet</td><td>Medio</td><td>Equilibrio calidad / coste</td><td>Programación del día a día, la mayoría de tareas</td></tr>
+                <tr><td>Opus</td><td>Grande</td><td>Máximo razonamiento</td><td>Problemas complejos, arquitectura, tareas largas y ambiguas</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Un patrón habitual en agentes</p>
+              <p>Opus o Sonnet como agente principal y Haiku para subagentes de tareas mecánicas. En Claude Code, <code>/model</code> cambia de modelo en mitad de la sesión.</p>
+            </div>
+          </div>
+
+          <h2 id="esfuerzo">
+            Esfuerzo y razonamiento (thinking)
+            <a href="#esfuerzo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El <strong>esfuerzo</strong> controla cuánto «piensa» el modelo antes de responder. Con razonamiento activado, el modelo genera primero tokens de pensamiento internos (planificar, probar hipótesis, revisar) y después la respuesta.</p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Esfuerzo bajo</h4>
+              <ul>
+                <li>Respuesta casi directa.</li>
+                <li>Rápido y barato.</li>
+                <li>Ideal para tareas simples.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Esfuerzo alto</h4>
+              <ul>
+                <li>Más tokens de pensamiento.</li>
+                <li>Mejor en problemas difíciles.</li>
+                <li>Más lento y caro.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La clave</p>
+              <p>El tamaño del modelo marca su <strong>capacidad máxima</strong>; el esfuerzo marca <strong>cuánta de esa capacidad usa</strong> en cada respuesta. Los tokens de pensamiento también ocupan ventana de contexto y se cobran. Qué gana y qué no el razonamiento extendido, en <a href="llm-alucinacion-y-razonamiento.html">alucinar, razonar y verificar</a>.</p>
+            </div>
+          </div>
+
+          <h2 id="tokens">
+            Tokens y costes
+            <a href="#tokens" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Por API, el uso se cobra por tokens, con precios distintos para <strong>entrada</strong> (lo que el modelo lee) y <strong>salida</strong> (lo que genera). La salida cuesta varias veces más que la entrada, y cada modelo tiene su tarifa: Opus es el más caro, Haiku el más barato.</p>
+
+          <h3>Qué consume tokens en una sesión de agente</h3>
+
+          <ul>
+            <li><strong>Entrada, en cada llamada:</strong> prompt de sistema, rules, descripciones de herramientas y MCP, toda la conversación hasta ese momento, archivos leídos y resultados de comandos.</li>
+            <li><strong>Salida:</strong> las respuestas, el código generado y los tokens de razonamiento (thinking).</li>
+          </ul>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Lo importante</p>
+              <p>En un agente, <strong>cada vuelta del bucle reenvía todo el contexto</strong>. Una sesión larga no cuesta «lo último que dijiste», sino todo lo acumulado en cada llamada. Por eso las sesiones largas se encarecen tanto.</p>
+            </div>
+          </div>
+
+          <h3>Suscripción vs. API</h3>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Modalidad</th><th>Cómo se paga</th><th>Cuándo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Suscripción</strong> (Pro, Max, Team)</td><td>Cuota fija con límites de uso por periodo; no se paga por token</td><td>Trabajo interactivo con Claude Code o la app. Los mismos factores que encarecen la API agotan el límite antes</td></tr>
+                <tr><td><strong>API</strong></td><td>Pago por token exacto</td><td>Al construir tus propias aplicaciones o en CI</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>En Claude Code, <code>/cost</code> muestra el coste y los tokens de la sesión (uso por API) y <code>/usage</code> el consumo respecto a los límites del plan de suscripción. La aritmética para tu propia aplicación está en <a href="ia-coste-y-evaluacion.html">coste y evaluación</a>.</p>
+
+          <h2 id="caching">
+            Prompt caching
+            <a href="#caching" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El <strong>prompt caching</strong> permite que la parte inicial del contexto que se repite entre llamadas (prompt de sistema, rules, documentos, el inicio de la conversación) se guarde en caché. Las siguientes llamadas que empiezan igual leen esa parte de la caché, mucho más barata y rápida que procesarla de nuevo.</p>
+
+          <ul>
+            <li><strong>Funciona por prefijo:</strong> solo se reaprovecha si el principio del contexto es idéntico. Cambiar algo al inicio invalida todo lo que viene detrás.</li>
+            <li><strong>Caduca:</strong> la caché dura unos minutos sin uso (hay opciones más largas, con otro precio).</li>
+            <li><strong>Escribir en caché cuesta algo más</strong> que una lectura normal; compensa cuando el mismo prefijo se reutiliza varias veces.</li>
+            <li><strong>Claude Code lo usa automáticamente:</strong> por eso una sesión de agente es mucho más barata de lo que sugiere reenviar todo el contexto cada vez.</li>
+            <li><strong>Al construir tu propia app:</strong> lo estable va al principio (instrucciones, documentación) y lo variable al final (la pregunta del usuario). Es lo que hace viable cargar la documentación entera en un chatbot sin RAG.</li>
+          </ul>
+
+          <p>Por qué el contexto largo cuesta más y qué guarda la caché por dentro lo explica <a href="llm-atencion-y-contexto.html">atención y ventana de contexto</a>.</p>
+
+          <h2 id="ahorrar">
+            Cómo ahorrar
+            <a href="#ahorrar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <ul>
+            <li><strong>Sesiones nuevas por tarea</strong> en lugar de una sesión eterna.</li>
+            <li><strong>Rules cortas y con <code>paths</code></strong>; pocas herramientas MCP conectadas a la vez.</li>
+            <li><strong>Subagentes para exploraciones que leen mucho:</strong> solo vuelve el resumen.</li>
+            <li><strong>Elegir modelo y esfuerzo según la tarea:</strong> Haiku o esfuerzo bajo para lo mecánico, Opus en esfuerzo alto solo cuando haga falta.</li>
+            <li><strong>No cambiar el inicio del contexto a mitad de sesión</strong>, para no romper la caché.</li>
+          </ul>
+
+          <h2 id="traspaso">
+            La nota de traspaso entre sesiones
+            <a href="#traspaso" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Pedirle al agente que escriba el estado de la tarea en un Markdown y continuar en una sesión limpia que lo lea <strong>reduce coste y, sobre todo, mejora la calidad</strong>. La nueva sesión arranca con unos cientos de líneas en vez de toda la conversación acumulada.</p>
+
+          <p>Qué debe tener la nota:</p>
+
+          <ol>
+            <li>Objetivo de la tarea.</li>
+            <li>Qué está hecho y qué falta.</li>
+            <li>Decisiones tomadas y por qué (lo que más se pierde entre sesiones).</li>
+            <li>Archivos clave tocados.</li>
+            <li>Problemas abiertos y siguiente paso concreto.</li>
+          </ol>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Opción en Claude Code</th><th>Qué hace</th><th>Cuándo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>/compact</code></td><td>Resume la conversación y sigue en la misma sesión</td><td>Tarea a medias que quieres continuar ya</td></tr>
+                <tr><td><code>/clear</code></td><td>Vacía el contexto por completo</td><td>Cambio de tarea</td></tr>
+                <tr><td>Nota de traspaso + <code>/clear</code></td><td>Resumen controlado por ti y guardado en un archivo</td><td>Tareas largas, pausas, o para retomar otro día o en otra máquina</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Matices:</p>
+
+          <ul>
+            <li>Gracias al prompt caching, una sesión larga es más barata de lo que parece; <strong>el ahorro real es mayor en calidad que en dinero</strong>, porque el rendimiento baja con el contexto muy cargado.</li>
+            <li>La nota es un resumen: se pierden detalles. Por eso conviene que sea <strong>el propio agente quien la escriba antes de cerrar</strong>, cuando aún lo tiene todo delante.</li>
+            <li>En tareas con spec-driven development, <code>spec.md</code>, <code>plan.md</code> y <code>tasks.md</code> ya hacen de nota de traspaso: basta con marcar qué tareas están hechas (ver <a href="flujo-con-agentes.html">SDD y flujo agéntico</a>).</li>
+            <li>Si se repite a menudo, merece una skill o un comando propio («escribe la nota de traspaso»). Cómo se escribe ese comando está en <a href="pci-entorno-claude-code.html#comandos-propios">el entorno de Claude Code</a>.</li>
+          </ul>
+
+          <p>Qué hace que una note de estado funcione de verdad lo desarrolla <a href="cc-memoria-y-continuidad.html">memoria y continuidad</a>.</p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Los precios cambian a menudo</p>
+              <p>Consulta la página oficial de precios antes de hacer cálculos.</p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Úsalo cuando…</h4>
+              <ul>
+                <li>Eliges modelo para una tarea: Haiku para lo mecánico y en volumen, Sonnet para el día a día, Opus para lo ambiguo y largo</li>
+                <li>Una sesión se alarga: corta con una nota de traspaso antes de que el contexto cargado empeore las respuestas</li>
+                <li>Diseñas una app sobre la API: lo estable al principio del prompt para aprovechar la caché</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No lo uses cuando…</h4>
+              <ul>
+                <li>La tarea es pequeña y puntual: optimizar el coste de una consulta de dos minutos no compensa el esfuerzo</li>
+                <li>Quieres ahorrar bajando el modelo en una tarea crítica: el retrabajo de una mala respuesta cuesta más que los tokens</li>
+                <li>Cambias el inicio del contexto a mitad de sesión «para ordenar»: rompes la caché</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>Haiku, Sonnet y Opus</strong> son tamaños: más capacidad, más lento y más caro. Patrón habitual: Opus o Sonnet de principal y Haiku para subagentes mecánicos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El <strong>esfuerzo</strong> decide cuánta de esa capacidad se usa; los tokens de pensamiento también se cobran y ocupan contexto.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En un agente <strong>cada vuelta reenvía todo el contexto</strong>; el <strong>prompt caching</strong> por prefijo lo abarata, pero solo si el inicio no cambia.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Sesiones por tarea y <strong>nota de traspaso</strong> escrita por el propio agente: el ahorro mayor es de calidad, no de dinero.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="conceptos-ia.html">
+              <small>← Anterior</small>
+              <b>Harness, LLM y agente</b>
+            </a>
+            <a href="como-piensa-un-llm.html" class="next">
+              <small>Siguiente →</small>
+              <b>Contexto, temperatura y alucinaciones</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

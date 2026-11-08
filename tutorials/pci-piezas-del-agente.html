@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rules, skills, subagentes, MCP y hooks: las piezas del agente — MentorAI</title>
+    <meta
+      name="description"
+      content="Qué es cada pieza con la que se configura un agente de código, cuándo se carga y para qué sirve: rules, skills, subagentes, MCP y hooks. Con el reparto entre rule y skill, rules que obligan a usar una skill y tres casos prácticos sobre un proyecto de ejemplo."
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Programar con IA</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Rules, skills, subagentes, MCP y hooks: las piezas del agente</h1>
+        <p class="tutorial-hero__lead">
+          Un agente sin configurar es un recién llegado en cada sesión. Cinco piezas cambian eso: las rules dicen lo que se cumple siempre, las skills enseñan procedimientos cuando hacen falta, los subagentes aíslan trabajo, MCP conecta sistemas y los hooks ejecutan comprobaciones sin depender de que el modelo se acuerde. Esta lección explica qué es cada una y cuál elegir.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            20 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Principiante
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Programar con IA
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#contexto-repo">El contexto del repositorio</a></li>
+            <li><a href="#mapa">Las cinco piezas de un vistazo</a></li>
+            <li><a href="#rules">Rules: lo que se cumple siempre</a></li>
+            <li><a href="#rules-skills">Rules que apuntan a skills</a></li>
+            <li><a href="#caso-tests">Caso práctico: tests unitarios, ¿rule o skill?</a></li>
+            <li><a href="#caso-equipo">Caso práctico: convenciones de equipo</a></li>
+            <li><a href="#caso-capas">Caso práctico: convenciones por capa</a></li>
+            <li><a href="#skills">Skills: procedimientos bajo demanda</a></li>
+            <li><a href="#subagentes">Subagentes: trabajo en otra ventana</a></li>
+            <li><a href="#mcp">MCP: conectar sistemas</a></li>
+            <li><a href="#hooks">Hooks: lo que no depende de la memoria del modelo</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Las cinco piezas se diferencian sobre todo en <strong>cuándo entran en el contexto</strong> y <strong>quién decide usarlas</strong>: el harness, el modelo o un evento. Elegir bien es decidir qué tiene que estar siempre, qué solo a veces y qué no puede depender de la memoria del modelo.
+          </p>
+
+          <h2 id="contexto-repo">
+            El contexto del repositorio
+            <a href="#contexto-repo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El agente puede leer tu código, pero no adivina tus convenciones ni tus decisiones. Por eso casi todos los harnesses leen un fichero de instrucciones del proyecto (<code>CLAUDE.md</code>, <code>AGENTS.md</code> o similar) donde dejas escritas las reglas: estilo, arquitectura, qué no tocar, cómo correr los tests. Es contexto permanente que no tienes que repetir en cada sesión.</p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Invierte en el contexto permanente</p>
+              <p>Cada regla que escribes una vez en el fichero del proyecto es una corrección que no tendrás que repetir mil veces. Un buen documento de convenciones convierte al agente en alguien que «conoce la casa», en vez de un recién llegado en cada sesión.</p>
+            </div>
+          </div>
+
+          <h2 id="mapa">
+            Las cinco piezas de un vistazo
+            <a href="#mapa" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Pieza</th><th>Qué aporta</th><th>Cuándo se carga</th><th>Quién decide</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Rules</strong> (<code>CLAUDE.md</code>, <code>.claude/rules/</code>)</td><td>Contexto y reglas del proyecto</td><td>Siempre al inicio, o al tocar ciertos archivos</td><td>El harness</td></tr>
+                <tr><td><strong>Skill</strong></td><td>Conocimiento o procedimiento para un tipo de tarea</td><td>Solo cuando la tarea lo requiere</td><td>El modelo, por la descripción</td></tr>
+                <tr><td><strong>Subagente</strong></td><td>Trabajo delegado y aislado en otra ventana</td><td>Cuando el principal le hace un encargo</td><td>El modelo principal</td></tr>
+                <tr><td><strong>MCP</strong></td><td>Acceso a sistemas externos (herramientas y datos)</td><td>Las descripciones de herramientas, siempre</td><td>El modelo, al usar la herramienta</td></tr>
+                <tr><td><strong>Hook</strong></td><td>Un script que se ejecuta en un evento</td><td>Siempre que ocurre el evento</td><td>El harness, sin preguntar al modelo</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Una forma de verlo</p>
+              <p>El MCP le da <strong>manos</strong> para tocar sistemas; la skill le enseña <strong>cómo</strong> hacer bien una tarea concreta; la rule le dice lo que <strong>no se negocia</strong>; el hook lo <strong>comprueba</strong> pase lo que pase.</p>
+            </div>
+          </div>
+
+          <h2 id="rules">
+            Rules: lo que se cumple siempre
+            <a href="#rules" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Las <strong>rules</strong> son instrucciones persistentes que el harness carga en el contexto sin que el modelo tenga que decidirlo: normas, convenciones y restricciones que deben cumplirse siempre (o siempre que se toquen ciertos archivos). Son lo contrario de una skill: la skill se carga cuando el modelo la considera útil; la regla está ahí de entrada.</p>
+
+          <p>Buenas prácticas:</p>
+
+          <ul>
+            <li><strong>Cortas e imperativas:</strong> «usa X», «nunca Y». Cada línea ocupa contexto en todas las sesiones.</li>
+            <li><strong>Lo general en usuario, lo del stack en proyecto:</strong> tu <code>CLAUDE.md</code> global con estilo y principios; el del repo con el stack y sus convenciones.</li>
+            <li><strong>Partir por temas con <code>paths</code>:</strong> las reglas de tests no necesitan estar cargadas mientras se edita una migración.</li>
+            <li><strong>Si una regla crece y se convierte en procedimiento</strong>, pásala a skill y deja en la regla solo la referencia.</li>
+          </ul>
+
+          <p>Dónde vive cada nivel en Claude Code, la carpeta <code>.claude/rules/</code> con <code>paths</code> y los imports, en <a href="cc-rules.html">rules: las reglas del proyecto</a>, que además explica qué merece ser regla y por qué el porqué viaja con ella.</p>
+
+          <h2 id="rules-skills">
+            Rules que apuntan a skills
+            <a href="#rules-skills" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Como las reglas están siempre en contexto, son el mejor sitio para <strong>obligar</strong> a usar una skill. La descripción de una skill hace que el modelo <em>pueda</em> elegirla; una regla hace que <em>deba</em> usarla.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">markdown · .claude/rules/flujo.md (proyecto «tienda»)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code># Reglas de flujo
+
+- Para cualquier commit, usa siempre la skill `git-commits`.
+- Antes de crear o modificar tablas, usa la skill `nueva-migracion`.
+- Nunca escribas una migración a mano sin esa skill.</code></pre>
+          </div>
+
+          <p>Como con las skills entre sí, es una referencia por nombre en lenguaje natural, no un vínculo técnico. Si la skill no existe, la regla no falla: simplemente el modelo no la encuentra.</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Va en…</th><th>Qué</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Regla</strong></td><td>Lo que debe cumplirse siempre y es corto (convenciones, prohibiciones, «usa la skill X para Y»)</td></tr>
+                <tr><td><strong>Skill</strong></td><td>El cómo detallado de una tarea concreta, que solo hace falta a veces</td></tr>
+                <tr><td><strong>Regla + skill</strong></td><td>La regla garantiza que se use; la skill contiene el procedimiento</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="caso-tests">
+            Caso práctico: tests unitarios, ¿rule o skill?
+            <a href="#caso-tests" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Lo mejor es combinarlas: las normas cortas e innegociables, en una regla limitada a los archivos de test; el procedimiento, las plantillas y los ejemplos, en una skill.</p>
+
+          <p><strong>Diferencia clave:</strong> una regla con <code>paths</code> se activa <strong>por archivos</strong> (cuando se tocan archivos de <code>tests/</code>). Una skill se activa <strong>por intención</strong> (cuando el modelo entiende que la tarea es escribir tests). Son disparadores distintos y se complementan.</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Va en la regla (<code>.claude/rules/testing.md</code>)</th><th>Va en la skill (<code>tests-unitarios/</code>)</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Convenciones que se aplican siempre: nombres, estructura Arrange-Act-Assert, un concepto por test</td><td>El procedimiento paso a paso para crear un test nuevo</td></tr>
+                <tr><td>Prohibiciones: no tocar la BD real, no mockear lo que se está probando</td><td>Plantillas de clase de test y ejemplos buenos y malos</td></tr>
+                <tr><td>«Para crear tests, usa la skill <code>tests-unitarios</code>»</td><td>Scripts: lanzar PHPUnit, medir cobertura</td></tr>
+                <tr><td>Unas pocas líneas</td><td>Todo el detalle que haga falta</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Criterio rápido:</p>
+
+          <ul>
+            <li>Si cabe en unas pocas líneas y debe cumplirse siempre que se toque un test: <strong>regla con <code>paths</code></strong>.</li>
+            <li>Si es largo, tiene pasos, plantillas o scripts, o se necesita antes de que exista el archivo (crear un test desde cero): <strong>skill</strong>.</li>
+            <li>Si se repite en las dos: déjalo solo en la skill y que la regla apunte a ella.</li>
+          </ul>
+
+          <h2 id="caso-equipo">
+            Caso práctico: convenciones de equipo
+            <a href="#caso-equipo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Las convenciones de equipo van en <strong>rules a nivel de proyecto</strong> (<code>.claude/rules/</code> dentro del repo, versionado en Git), no en skills. Una convención debe cumplirse siempre, y una skill solo se carga si el modelo decide que encaja: si no la elige, la convención se ignora.</p>
+
+          <ul>
+            <li><strong>Partir por temas con <code>paths</code>:</strong> <code>php.md</code> para <code>src/</code>, <code>testing.md</code> para <code>tests/</code>, <code>migraciones.md</code> para <code>migrations/</code>. Así cada convención solo ocupa contexto cuando toca.</li>
+            <li><strong>Lo transversal, sin <code>paths</code>:</strong> nombres de ramas, formato de commits, idioma del código. Esto se carga siempre.</li>
+            <li><strong>Las skills, para procedimientos:</strong> cuando una convención implica un proceso con pasos o plantillas (crear un endpoint, una migración), el cómo va a una skill y la regla apunta a ella.</li>
+            <li><strong>Documentación larga ya existente:</strong> no copiarla; importarla con <code>@ruta</code> o dejar que la skill la referencie en su carpeta de referencias.</li>
+            <li><strong>Tus preferencias personales</strong>, en tu <code>~/.claude/CLAUDE.md</code>, no en el repo, para no imponérselas al equipo.</li>
+          </ul>
+
+          <h2 id="caso-capas">
+            Caso práctico: convenciones por capa
+            <a href="#caso-capas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>¿Una regla por tipo de clase? Sí: una regla por capa, cada una con su patrón de <code>paths</code>, más <strong>una regla corta de arquitectura sin <code>paths</code></strong> que explique cómo se relacionan las capas. Las reglas de capa dicen cómo es cada pieza; la de arquitectura, cómo encajan entre sí. En la tienda de ejemplo, las capas son controllers, casos de uso y repositorios:</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">texto · .claude/rules/ de la tienda</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>.claude/rules/
+├── arquitectura.md   # sin paths: siempre cargada
+├── controllers.md    # paths: src/**/Controller/**/*.php
+├── casos-de-uso.md   # paths: src/**/UseCase/**/*.php
+└── repositorios.md   # paths: src/**/Repository/**/*.php</code></pre>
+          </div>
+
+          <p><strong>Por qué la de arquitectura va sin <code>paths</code>:</strong> para decidir dónde va la lógica al crear un controller, el modelo necesita saber qué es un caso de uso y qué no puede hacer un controller. Si esa relación solo está en <code>casos-de-uso.md</code>, no la verá mientras trabaja en un controller.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">markdown · arquitectura.md</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code># Arquitectura de la tienda
+
+- Los controllers solo traducen HTTP: reciben la petición, la convierten en un comando y devuelven la respuesta.
+- Cada operación de negocio es un caso de uso con un único método público, `__invoke`.
+- Los casos de uso hablan con la base de datos solo a través de repositorios; nunca con el EntityManager directamente.
+- Flujo permitido: Controller → UseCase → Repository. Nunca al revés ni saltando capas.</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">markdown · controllers.md</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>---
+paths:
+  - "src/**/Controller/**/*.php"
+---
+
+# Controllers
+
+- Un controller invocable por ruta; sin lógica de negocio ni acceso a repositorios.
+- Dependencias solo por constructor.
+- La entrada se mapea a un DTO con el serializer; nunca se lee `$request` a mano.</code></pre>
+          </div>
+
+          <p>Notas:</p>
+
+          <ul>
+            <li>Patrones con <code>**</code> (<code>src/**/Controller/**</code>) sirven tanto si el proyecto está organizado por capas (<code>src/Controller/</code>) como por módulos (<code>src/Pedidos/Controller/</code>).</li>
+            <li><strong>Alternativa equivalente:</strong> un <code>CLAUDE.md</code> dentro de cada carpeta. La carpeta <code>rules/</code> con <code>paths</code> tiene la ventaja de concentrar todas las convenciones en un solo sitio.</li>
+            <li>Los ejemplos de reglas concretas son ilustrativos; cada equipo pone las suyas.</li>
+          </ul>
+
+          <h2 id="skills">
+            Skills: procedimientos bajo demanda
+            <a href="#skills" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una <strong>skill</strong> es un paquete de instrucciones y recursos que el agente carga solo cuando le hace falta. Es una carpeta con un archivo <code>SKILL.md</code> (nombre, descripción e instrucciones) y, opcionalmente, scripts, plantillas o documentación de apoyo.</p>
+
+          <p><strong>Cómo funciona (carga progresiva):</strong> al empezar la sesión, el modelo solo ve el nombre y la descripción de cada skill, unas pocas líneas. Cuando una tarea encaja con una descripción, carga el <code>SKILL.md</code> completo y, si hace falta, los archivos que este referencia. Así puedes tener muchas skills sin llenar la ventana de contexto.</p>
+
+          <p><strong>Ejemplo:</strong> en la tienda, una skill <code>nueva-migracion</code> con las convenciones de base de datos del proyecto y un script que genera el esqueleto. Claude solo la lee cuando le pides una migración.</p>
+
+          <p>La anatomía completa —estructura de carpetas, el frontmatter de <code>SKILL.md</code>, las tres capas de carga y cómo se escribe una descripción que se active bien— está en <a href="cc-skills.html">skills: flujos empaquetados</a>.</p>
+
+          <h2 id="subagentes">
+            Subagentes: trabajo en otra ventana
+            <a href="#subagentes" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un <strong>subagente</strong> es un agente que el principal lanza para una tarea concreta, con su propia ventana de contexto limpia. Trabaja por su cuenta y devuelve solo un resumen del resultado, de modo que el contexto de la sesión principal no se llena con todo lo que el subagente ha leído o probado.</p>
+
+          <ol>
+            <li>El agente principal decide delegar y escribe un <strong>encargo</strong>: qué hacer y qué devolver.</li>
+            <li>El subagente arranca con su prompt de sistema y ese encargo. <strong>No ve la conversación principal.</strong></li>
+            <li>Trabaja con sus herramientas: lee archivos, busca, ejecuta.</li>
+            <li>Devuelve un resumen final. Solo eso entra en el contexto principal.</li>
+          </ol>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La comunicación es en una sola dirección por tarea</p>
+              <p>Encargo y resultado. Si el encargo es pobre, el subagente trabaja a ciegas; si el resumen es pobre, el principal pierde información.</p>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Uso</th><th>Ejemplo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Explorar sin ensuciar el contexto</td><td>«Busca dónde se calcula el IVA en todo el proyecto y dime los archivos y métodos»</td></tr>
+                <tr><td>Trabajo en paralelo</td><td>Varios subagentes investigando partes distintas a la vez</td></tr>
+                <tr><td>Revisión con ojos nuevos</td><td>Un revisor de código o un QA que no ha visto la implementación</td></tr>
+                <tr><td>Especialización</td><td>Herramientas restringidas o un modelo más barato (Haiku) para tareas mecánicas</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Subagente vs. skill</h3>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th></th><th>Skill</th><th>Subagente</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Dónde se ejecuta</td><td>En el contexto principal</td><td>En un contexto aparte</td></tr>
+                <tr><td>Qué aporta</td><td>Conocimiento o procedimiento</td><td>Trabajo delegado y aislado</td></tr>
+                <tr><td>Coste en contexto principal</td><td>Todo lo que carga y hace</td><td>Solo el resumen final</td></tr>
+                <tr><td>Cuándo usarlo</td><td>Cuando el principal necesita saber cómo hacer algo</td><td>Cuando la tarea genera mucho ruido o necesita ojos nuevos</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Se combinan: un subagente puede usar skills, igual que el principal. Cómo se define uno en <code>.claude/agents/</code>, sus límites, los patrones habituales y cómo escribir el encargo, en <a href="cc-subagentes.html">subagentes y delegación</a>.</p>
+
+          <h2 id="mcp">
+            MCP: conectar sistemas
+            <a href="#mcp" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p><strong>MCP</strong> (<em>Model Context Protocol</em>) es un protocolo estándar y abierto para conectar un harness con herramientas y datos externos. Lo creó Anthropic en 2024 y hoy lo soportan la mayoría de harnesses.</p>
+
+          <p><strong>Analogía:</strong> es el USB-C de la IA. Sin MCP, cada harness tendría que programar su propia integración con GitHub, con MySQL, con Gmail… Con MCP, alguien escribe un servidor una vez y funciona en cualquier harness compatible (Claude Code, Cursor, la app de Claude, etc.).</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Pieza</th><th>Qué es</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Host</strong></td><td>La aplicación de IA, es decir, el harness (Claude Code, por ejemplo)</td></tr>
+                <tr><td><strong>Cliente MCP</strong></td><td>El componente del host que habla con cada servidor</td></tr>
+                <tr><td><strong>Servidor MCP</strong></td><td>Un programa que expone capacidades de un sistema concreto (una base de datos, una API, el sistema de archivos)</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Qué expone un servidor:</p>
+
+          <ul>
+            <li><strong>Tools:</strong> acciones que el modelo puede invocar («ejecuta esta consulta», «crea una issue»).</li>
+            <li><strong>Resources:</strong> datos que se pueden leer (archivos, esquemas, documentos).</li>
+            <li><strong>Prompts:</strong> plantillas predefinidas que el usuario puede lanzar.</li>
+          </ul>
+
+          <p><strong>Cómo se comunica:</strong> JSON-RPC, en local por stdio (el host arranca el servidor como un proceso) o en remoto por HTTP.</p>
+
+          <p><strong>Cómo encaja con lo anterior:</strong> el harness pregunta al servidor qué herramientas tiene, mete sus descripciones en la ventana de contexto y, cuando el modelo decide usar una, el harness se la pide al servidor y le devuelve el resultado al modelo. Es el bucle del agente, con herramientas que vienen de fuera.</p>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Ojo con el contexto</p>
+              <p>Cada servidor conectado añade sus descripciones de herramientas a la ventana, así que conectar muchos la llena y puede empeorar el rendimiento.</p>
+            </div>
+          </div>
+
+          <p><strong>Ejemplos prácticos:</strong> servidores MCP para GitHub, MySQL o PostgreSQL, Docker, Playwright (para controlar un navegador), Gmail o Google Drive. También puedes escribir el tuyo propio; hay SDKs oficiales en varios lenguajes, incluido PHP. Un servidor mínimo funcional, cómo conectarlo y cuándo compensa uno para una herramienta interna, en <a href="cc-mcp.html">MCP: conectar herramientas</a>.</p>
+
+          <h2 id="hooks">
+            Hooks: lo que no depende de la memoria del modelo
+            <a href="#hooks" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un <strong>hook</strong> es un comando o script que el harness ejecuta automáticamente cuando ocurre un evento concreto: antes de usar una herramienta, después de editar un archivo, al terminar una respuesta… A diferencia de una rule, no depende de que el modelo se acuerde: se ejecuta siempre.</p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Rule</h4>
+              <ul>
+                <li>«Pasa PHPStan después de editar.»</li>
+                <li>El modelo puede olvidarlo.</li>
+                <li>Para convenciones que no se pueden comprobar con código.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Hook</h4>
+              <ul>
+                <li>Ejecuta PHPStan él mismo tras cada edición.</li>
+                <li>No depende de la memoria del modelo.</li>
+                <li>Para lo que sí se comprueba con código.</li>
+              </ul>
+            </div>
+          </div>
+
+          <p>Los eventos, cómo se configuran y cómo devuelven el error al agente para que lo corrija solo, en <a href="cc-hooks-y-permisos.html">hooks y permisos</a>.</p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Úsalo cuando…</h4>
+              <ul>
+                <li>Corriges lo mismo al agente por segunda vez: es una rule (si es corta) o una skill (si es un procedimiento)</li>
+                <li>Una tarea exploratoria va a leer mucho: delégala a un subagente y quédate con el resumen</li>
+                <li>Algo se puede comprobar con código: ponlo en un hook, no en una rule</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No lo uses cuando…</h4>
+              <ul>
+                <li>La instrucción es solo de esta tarea: va en el prompt, no en una rule que se paga en cada sesión</li>
+                <li>Una convención debe cumplirse siempre: no la escondas en una skill que el modelo puede no elegir</li>
+                <li>La tarea es pequeña: explicar el encargo a un subagente cuesta más que hacerla</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>Rules</strong> para lo que se cumple siempre, cortas y partidas con <code>paths</code>; una regla puede <strong>obligar</strong> a usar una skill.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>Skills</strong> para procedimientos: el modelo solo ve su descripción hasta que la tarea encaja.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>Subagentes</strong> para aislar ruido, paralelizar o revisar con ojos nuevos: solo vuelve el resumen.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>MCP</strong> conecta sistemas de forma estándar, a cambio de contexto; los <strong>hooks</strong> comprueban sin depender de que el modelo se acuerde.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="como-piensa-un-llm.html">
+              <small>← Anterior</small>
+              <b>Contexto, temperatura y alucinaciones</b>
+            </a>
+            <a href="pci-entorno-claude-code.html" class="next">
+              <small>Siguiente →</small>
+              <b>El entorno de Claude Code</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

@@ -17,10 +17,10 @@
     </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Prompting para código: cómo pedir bien — MentorAI</title>
+    <title>Prompts y contexto: cómo pedir bien — MentorAI</title>
     <meta
       name="description"
-      content="Cómo escribir prompts que dan buen código: aportar contexto, ser específico, dar ejemplos, descomponer el problema, iterar sobre el resultado y pedir el porqué. Técnicas prácticas para programar con IA."
+      content="Qué debe tener un buen prompt de tarea y qué ya no importa, tres ejemplos malo/bueno (bug, funcionalidad nueva y refactor), dar contexto, ejemplos y el porqué, qué va al prompt y qué al entorno, context engineering y quién debe escribir las rules y skills."
     />
     <link rel="stylesheet" href="../assets/css/styles.css" />
     <link
@@ -66,17 +66,14 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           <span>Programar con IA</span>
         </nav>
-        <h1 class="tutorial-hero__title">Prompting para código</h1>
+        <h1 class="tutorial-hero__title">Prompts y contexto: cómo pedir bien</h1>
         <p class="tutorial-hero__lead">
-          La calidad de lo que te devuelve un modelo depende casi por completo de
-          cómo se lo pides. Prompting no es magia de palabras secretas: es
-          comunicar un problema con la misma claridad con que se lo explicarías a
-          un colega que acaba de llegar.
+          El modelo solo ve su ventana de contexto y completa lo más probable. El prompt es tu palanca de cada tarea, y el entorno —rules, skills, MCP— la de todas. Esta lección enseña a escribir las dos: qué darle al modelo, cuándo y en qué forma.
         </p>
         <div class="tutorial-meta">
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            14 min de lectura
+            18 min de lectura
           </span>
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -96,12 +93,19 @@
           <p class="toc__title">En esta página</p>
           <ul class="toc__list">
             <li><a href="#idea">El prompt es una especificación</a></li>
+            <li><a href="#elementos">Qué debe tener un prompt</a></li>
+            <li><a href="#importa">Lo que importa y lo que no</a></li>
             <li><a href="#contexto">Dar contexto</a></li>
             <li><a href="#especifico">Ser específico</a></li>
+            <li><a href="#ejemplo-bug">Ejemplo 1: corregir un bug</a></li>
+            <li><a href="#ejemplo-feature">Ejemplo 2: nueva funcionalidad</a></li>
+            <li><a href="#ejemplo-refactor">Ejemplo 3: refactor</a></li>
             <li><a href="#ejemplos">Dar ejemplos</a></li>
-            <li><a href="#descomponer">Descomponer</a></li>
-            <li><a href="#iterar">Iterar sobre el resultado</a></li>
+            <li><a href="#descomponer">Descomponer e iterar</a></li>
             <li><a href="#porque">Pedir el porqué</a></li>
+            <li><a href="#reparto">Qué va al prompt y qué al entorno</a></li>
+            <li><a href="#context-engineering">Context engineering</a></li>
+            <li><a href="#quien-escribe">¿Quién escribe las rules y skills: el agente o tú?</a></li>
             <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
@@ -109,58 +113,71 @@
 
         <article class="prose">
           <p class="lead">
-            Recuerda <a href="como-piensa-un-llm.html">del tutorial anterior</a> que el modelo solo ve su ventana de
-            contexto y completa lo más probable. El prompt es tu única palanca:
-            es el contexto y la instrucción a la vez. Un prompt vago produce
-            código vago; uno preciso, código preciso.
+            Un buen prompt de tarea le da al modelo lo que no puede deducir solo: qué quieres, para qué, con qué límites y cómo sabrás que está bien. Ya no hacen falta trucos; hace falta claridad. Un prompt vago produce código vago; uno preciso, código preciso.
           </p>
 
           <h2 id="idea">
             El prompt es una especificación
             <a href="#idea" class="anchor" aria-hidden="true">#</a>
           </h2>
-          <p>
-            Piensa en el prompt como en un mini documento de requisitos. Si a un
-            programador humano le dijeras solo «hazme el login», te haría veinte
-            preguntas. El modelo no las hace: rellena los huecos con lo que le
-            parece más probable. Cada decisión que no tomas tú, la toma él, y no
-            siempre como querías.
-          </p>
+          <p>Piensa en el prompt como en un mini documento de requisitos. Si a un programador humano le dijeras solo «hazme el login», te haría veinte preguntas. El modelo no las hace: rellena los huecos con lo que le parece más probable. Cada decisión que no tomas tú, la toma él, y no siempre como querías.</p>
 
-          <div class="callout callout--info">
-            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
             <div class="callout__body">
               <p class="callout__title">La regla del colega nuevo</p>
-              <p>
-                Antes de enviar, léelo como si se lo dieras a alguien que entró
-                hoy al equipo y no conoce el proyecto. ¿Tendría todo lo que
-                necesita para no preguntarte? Si la respuesta es no, al modelo
-                también le falta.
-              </p>
+              <p>Antes de enviar, léelo como si se lo dieras a alguien que entró hoy al equipo y no conoce el proyecto. ¿Tendría todo lo que necesita para no preguntarte? Si la respuesta es no, al modelo también le falta.</p>
             </div>
+          </div>
+
+          <h2 id="elementos">
+            Qué debe tener un prompt
+            <a href="#elementos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Elemento</th><th>¿Necesario?</th><th>Qué aporta</th><th>Ejemplo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Objetivo</td><td>Siempre</td><td>Qué hay que conseguir, no solo qué tocar</td><td>«Que el listado de pedidos cargue en menos de 1 s»</td></tr>
+                <tr><td>Contexto</td><td>Casi siempre</td><td>Lo que el modelo no puede ver ni adivinar: el porqué, la situación, quién lo usa</td><td>«Lo usan los comerciales desde el móvil; hoy tarda 8 s con 50.000 pedidos»</td></tr>
+                <tr><td>Alcance y restricciones</td><td>Casi siempre</td><td>Qué se puede tocar y qué no</td><td>«No cambies la API pública ni el esquema de BD»</td></tr>
+                <tr><td>Criterio de terminado</td><td>En tareas de agente, siempre</td><td>Cómo sabe el modelo que ha acabado</td><td>«Los tests pasan y añades uno que cubra el caso»</td></tr>
+                <tr><td>Referencias concretas</td><td>Cuando existan</td><td>Archivos, tickets, errores exactos</td><td>«El error está en <code>OrderRepository::findByUser</code>; traza de Sentry abajo»</td></tr>
+                <tr><td>Formato de salida</td><td>Solo si importa</td><td>Cómo quieres la respuesta</td><td>«Primero un plan; no toques código hasta que lo apruebe»</td></tr>
+                <tr><td>Ejemplos</td><td>Cuando el estilo es difícil de describir</td><td>Mostrar en vez de explicar</td><td>Un test existente como modelo a imitar</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="importa">
+            Lo que importa y lo que no
+            <a href="#importa" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Importa</th><th>Ya no importa (o poco)</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Ser específico: datos, nombres, cifras</td><td>«Actúa como un experto senior en PHP»</td></tr>
+                <tr><td>Explicar el porqué de una restricción</td><td>Mayúsculas, «MUY IMPORTANTE», amenazas o propinas</td></tr>
+                <tr><td>Decir qué hacer, no solo qué evitar</td><td>Fórmulas de cortesía o frases mágicas</td></tr>
+                <tr><td>Un objetivo verificable</td><td>Longitud por sí misma: largo no es mejor</td></tr>
+                <tr><td>Pegar el error o el log exacto</td><td>Repetir lo que ya dicen las rules o el <code>CLAUDE.md</code></td></tr>
+                <tr><td>Pedir un plan antes en tareas grandes</td><td>Explicar cosas que el modelo puede leer en el código</td></tr>
+              </tbody>
+            </table>
           </div>
 
           <h2 id="contexto">
             Dar contexto
             <a href="#contexto" class="anchor" aria-hidden="true">#</a>
           </h2>
-          <p>
-            Lo que más mejora una respuesta es el contexto correcto: el código
-            que se va a tocar, el error exacto que ves, la versión del lenguaje,
-            las convenciones del proyecto. No describas el código de memoria:
-            pégalo. El modelo razona muchísimo mejor sobre lo que tiene delante
-            que sobre lo que le cuentas.
-          </p>
+          <p>Lo que más mejora una respuesta es el contexto correcto: el código que se va a tocar, el error exacto que ves, la versión del lenguaje, las convenciones del proyecto. No describas el código de memoria: pégalo, o en un agente, dile qué archivo leer. El modelo razona muchísimo mejor sobre lo que tiene delante que sobre lo que le cuentas.</p>
 
           <div class="compare">
-            <div class="compare__col compare__col--bad">
-              <h4>Sin contexto</h4>
-              <ul>
-                <li>«No me funciona el guardado, arréglalo.»</li>
-                <li>El modelo inventa cómo es tu código.</li>
-                <li>Te da una solución genérica que no encaja.</li>
-              </ul>
-            </div>
             <div class="compare__col compare__col--good">
               <h4>Con contexto</h4>
               <ul>
@@ -169,95 +186,162 @@
                 <li>El modelo trabaja sobre tu realidad.</li>
               </ul>
             </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Sin contexto</h4>
+              <ul>
+                <li>«No me funciona el guardado, arréglalo.»</li>
+                <li>El modelo inventa cómo es tu código.</li>
+                <li>Te da una solución genérica que no encaja.</li>
+              </ul>
+            </div>
           </div>
 
           <h2 id="especifico">
             Ser específico
             <a href="#especifico" class="anchor" aria-hidden="true">#</a>
           </h2>
-          <p>
-            Di el lenguaje, el estilo, las restricciones y la forma de la salida.
-            Un detalle que cambia todo: indicar qué <strong>no</strong> quieres
-            (sin librerías externas, sin cambiar la firma pública, sin
-            comentarios). Las restricciones acotan el espacio de respuestas y te
-            acercan a lo que de verdad buscas.
-          </p>
+          <p>Di el lenguaje, el estilo, las restricciones y la forma de la salida. Un detalle que cambia todo: indicar qué <strong>no</strong> quieres (sin librerías externas, sin cambiar la firma pública, sin comentarios). Las restricciones acotan el espacio de respuestas y te acercan a lo que de verdad buscas.</p>
 
           <div class="code-block">
             <div class="code-block__head">
-              <span class="code-block__lang">prompt · vago vs específico</span>
+              <span class="code-block__lang">texto · prompt · vago vs específico</span>
               <button class="copy-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
             <pre><code>VAGO:
-  "Valida un email en PHP."
+"Valida un email en PHP."
 
 ESPECÍFICO:
-  "Escribe una función PHP 8.2 que valide un email.
-   - Strict types, sin librerías externas.
-   - Devuelve bool, no lanza excepciones.
-   - Usa filter_var con FILTER_VALIDATE_EMAIL.
-   - Nombre: isValidEmail(string $email): bool.
-   Solo el código, sin explicación."</code></pre>
+"Escribe una función PHP 8.2 que valide un email.
+- Strict types, sin librerías externas.
+- Devuelve bool, no lanza excepciones.
+- Usa filter_var con FILTER_VALIDATE_EMAIL.
+- Nombre: isValidEmail(string $email): bool.
+Solo el código, sin explicación."</code></pre>
           </div>
+
+          <h2 id="ejemplo-bug">
+            Ejemplo 1: corregir un bug
+            <a href="#ejemplo-bug" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">texto · malo</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>Arregla el bug de los pedidos.</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">texto · bueno</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>Al filtrar pedidos por fecha en /admin/orders, los del último día del rango
+no aparecen. Sospecho que es una comparación con &lt; en vez de &lt;= en
+OrderRepository::findByDateRange, pero confírmalo.
+
+Arréglalo sin cambiar la firma del método y añade un test que reproduzca
+el caso del último día. Termina cuando pasen todos los tests.</code></pre>
+          </div>
+
+          <p><strong>Por qué funciona:</strong> síntoma concreto, dónde mirar, una hipótesis marcada como hipótesis, una restricción y un criterio de terminado.</p>
+
+          <h2 id="ejemplo-feature">
+            Ejemplo 2: nueva funcionalidad
+            <a href="#ejemplo-feature" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">texto · malo</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>Haz un endpoint para exportar usuarios a CSV, que sea rápido y bien hecho.</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">texto · bueno</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>Necesito un endpoint GET /api/users/export que devuelva los usuarios activos
+en CSV (id, email, fecha de alta). Lo usará soporte una vez por semana;
+hay unos 200.000 usuarios, así que hay que hacer streaming y no cargarlos
+todos en memoria.
+
+Solo accesible con rol ROLE_ADMIN. Antes de escribir código, propón un plan
+con los archivos que vas a crear o tocar y espera mi aprobación.</code></pre>
+          </div>
+
+          <p><strong>Por qué funciona:</strong> «rápido y bien hecho» no dice nada; el volumen, quién lo usa y el control de acceso sí. Pedir un plan evita que tome decisiones grandes sin ti.</p>
+
+          <h2 id="ejemplo-refactor">
+            Ejemplo 3: refactor
+            <a href="#ejemplo-refactor" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">texto · malo</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>Refactoriza este servicio, que está fatal.</code></pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">texto · bueno</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>InvoiceService tiene 900 líneas y mezcla cálculo de impuestos, generación de
+PDF y envío de emails. Sepáralo en servicios de responsabilidad única.
+
+El comportamiento externo no puede cambiar: los tests actuales deben pasar
+sin modificarlos. Hazlo en pasos pequeños y ejecuta los tests después de cada uno.</code></pre>
+          </div>
+
+          <p><strong>Por qué funciona:</strong> dice qué está mal y hacia dónde ir, protege el comportamiento con los tests existentes y marca un método de trabajo seguro.</p>
 
           <h2 id="ejemplos">
             Dar ejemplos
             <a href="#ejemplos" class="anchor" aria-hidden="true">#</a>
           </h2>
-          <p>
-            Un ejemplo vale más que un párrafo de descripción. Si quieres una
-            salida con cierto formato, enseña una entrada y su salida deseada. Si
-            quieres que siga un patrón de tu código, pega un trozo que ya lo siga.
-            Esta técnica —darle un par de ejemplos— se llama <em>few-shot</em> y
-            es de las más potentes.
-          </p>
+          <p>Un ejemplo vale más que un párrafo de descripción. Si quieres una salida con cierto formato, enseña una entrada y su salida deseada. Si quieres que siga un patrón de tu código, pega un trozo que ya lo siga, o señala el archivo. Esta técnica —darle un par de ejemplos— se llama <em>few-shot</em> y es de las más potentes.</p>
 
           <div class="callout callout--tip">
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
             <div class="callout__body">
               <p class="callout__title">Muéstrale tu estilo</p>
-              <p>
-                Para que el código generado parezca tuyo, dale una clase de
-                referencia y di «sigue este estilo y estas convenciones». El
-                modelo imita patrones muy bien: aprovéchalo para que respete tu
-                naming, tu manejo de errores y tu estructura sin tener que
-                explicarlos.
-              </p>
+              <p>Para que el código generado parezca tuyo, dale una clase de referencia y di «sigue este estilo y estas convenciones». El modelo imita patrones muy bien: aprovéchalo para que respete tu naming, tu manejo de errores y tu estructura sin tener que explicarlos.</p>
             </div>
           </div>
 
           <h2 id="descomponer">
-            Descomponer
+            Descomponer e iterar
             <a href="#descomponer" class="anchor" aria-hidden="true">#</a>
           </h2>
-          <p>
-            Pedir «toda la funcionalidad» de golpe invita al modelo a improvisar
-            y a ti a no poder revisar. Trocea: primero el diseño de la interfaz,
-            luego una pieza, luego la siguiente. Es la misma lógica de los
-            <a href="tdd-ciclo.html">baby steps</a> de TDD: pasos pequeños que
-            puedes verificar uno a uno.
-          </p>
-          <p>
-            Para problemas con razonamiento, pedirle que piense paso a paso antes
-            de escribir el código («primero explica el plan, luego impleméntalo»)
-            suele dar mejores resultados que ir directo a la solución. Le das
-            espacio para ordenar el problema antes de comprometerse.
-          </p>
+          <p>Pedir «toda la funcionalidad» de golpe invita al modelo a improvisar y a ti a no poder revisar. Trocea: primero el diseño de la interfaz, luego una pieza, luego la siguiente. Es la misma lógica de los <a href="tdd-ciclo.html">baby steps</a> de TDD: pasos pequeños que puedes verificar uno a uno. Para problemas con razonamiento, pedirle el plan antes del código («primero explica el plan, luego impleméntalo») suele dar mejores resultados que ir directo a la solución.</p>
 
-          <h2 id="iterar">
-            Iterar sobre el resultado
-            <a href="#iterar" class="anchor" aria-hidden="true">#</a>
-          </h2>
-          <p>
-            El primer intento rara vez es el final, y eso está bien. El prompting
-            es una conversación: lee lo que devolvió, señala lo que falla con
-            precisión y pide el ajuste. «Funciona, pero no contempla el caso de
-            la lista vacía; añádelo y mantén el resto» avanza mucho más que
-            empezar de cero.
-          </p>
+          <p>El primer intento rara vez es el final, y eso está bien. El prompting es una conversación: lee lo que devolvió, señala lo que falla con precisión y pide el ajuste. «Funciona, pero no contempla el caso de la lista vacía; añádelo y mantén el resto» avanza mucho más que empezar de cero.</p>
 
           <div class="diagram">
             <div class="flow">
@@ -265,64 +349,139 @@ ESPECÍFICO:
                 <span class="flow__num">1</span>
                 <span><b>Pides</b><small>Con contexto y restricciones claras</small></span>
               </div>
-              <div class="flow__arrow"></div>
+              <div class="flow__arrow" data-label="devuelve un resultado"></div>
               <div class="flow__node">
                 <span class="flow__num">2</span>
                 <span><b>Lees y evalúas</b><small>¿Hace lo que querías? ¿Qué falla?</small></span>
               </div>
-              <div class="flow__arrow"></div>
+              <div class="flow__arrow" data-label="señalas lo concreto"></div>
               <div class="flow__node flow__node--end">
                 <span class="flow__num">3</span>
-                <span><b>Refinas</b><small>Señalas el problema concreto y pides el ajuste</small></span>
+                <span><b>Refinas</b><small>Pides el ajuste y mantienes lo que ya está bien</small></span>
               </div>
             </div>
-            <p class="diagram__caption">
-              El valor no está en el prompt perfecto, sino en el bucle de
-              refinamiento.
-            </p>
+            <p class="diagram__caption">El valor no está en el prompt perfecto, sino en el bucle de refinamiento.</p>
           </div>
 
           <h2 id="porque">
             Pedir el porqué
             <a href="#porque" class="anchor" aria-hidden="true">#</a>
           </h2>
-          <p>
-            Un uso infravalorado: no pidas solo el código, pide la explicación.
-            «¿Por qué esta forma y no la otra?», «¿qué casos límite no cubre?»,
-            «¿qué riesgos tiene este enfoque?». Te obliga a entender lo que vas a
-            integrar y a menudo destapa que el modelo tomó una decisión discutible
-            que conviene cambiar.
-          </p>
+          <p>Un uso infravalorado: no pidas solo el código, pide la explicación. «¿Por qué esta forma y no la otra?», «¿qué casos límite no cubre?», «¿qué riesgos tiene este enfoque?». Te obliga a entender lo que vas a integrar y a menudo destapa que el modelo tomó una decisión discutible que conviene cambiar.</p>
 
           <div class="callout callout--warning">
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <div class="callout__body">
               <p class="callout__title">No delegues el entendimiento</p>
-              <p>
-                Pedir el porqué no es para que el modelo decida por ti, sino para
-                que tú decidas con más información. Si integras código que no
-                entiendes, la deuda es tuya. El prompting termina cuando entiendes
-                lo que aceptas, no cuando compila.
-              </p>
+              <p>Pedir el porqué no es para que el modelo decida por ti, sino para que tú decidas con más información. Si integras código que no entiendes, la deuda es tuya. El prompting termina cuando entiendes lo que aceptas, no cuando compila.</p>
             </div>
           </div>
 
-          <h2 id="cuando">Cuándo aplicarlo<a href="#cuando" class="anchor" aria-hidden="true">#</a></h2>
+          <h2 id="reparto">
+            Qué va al prompt y qué al entorno
+            <a href="#reparto" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Si una instrucción se repite en muchos prompts («usa strict_types», «sin comentarios»), no va en el prompt: va a una <strong>rule</strong>. Si es un procedimiento que se repite («así se crea una migración»), va a una <strong>skill</strong>. El prompt queda para lo que es único de esta tarea. Qué es cada pieza, en <a href="pci-piezas-del-agente.html">las piezas del agente</a>.</p>
+
+          <h2 id="context-engineering">
+            Context engineering
+            <a href="#context-engineering" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Es la disciplina de diseñar <strong>qué información recibe el modelo, cuándo y de qué forma</strong>, para que dé buenos resultados de forma consistente. Definir rules, skills, MCPs y <code>CLAUDE.md</code> es exactamente esto.</p>
+
+          <p><strong>Frente al prompt engineering:</strong> el prompt engineering se centra en redactar bien una petición concreta. El context engineering diseña todo el entorno: lo que se carga siempre, lo que se carga bajo demanda, las herramientas disponibles y cómo se gestiona la ventana de contexto a lo largo de una sesión.</p>
+
+          <p><strong>Idea central:</strong> el mismo modelo rinde muy distinto según su contexto. Demasiado poco y va a ciegas; demasiado y se satura y pierde el foco. El objetivo es la información justa en el momento justo.</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Pieza</th><th>Qué aporta al contexto</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Rules y <code>CLAUDE.md</code></td><td>Lo que debe estar siempre</td></tr>
+                <tr><td>Skills</td><td>Lo que se carga solo cuando hace falta</td></tr>
+                <tr><td>MCP y herramientas</td><td>Acceso a datos externos en el momento en que se necesitan</td></tr>
+                <tr><td>Subagentes</td><td>Tareas aisladas en su propia ventana para no ensuciar la principal</td></tr>
+                <tr><td>Compactación y sesiones nuevas</td><td>Mantener la ventana limpia</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>¿Sustituye al prompt engineering? No, lo engloba. Lo estable vive en el entorno (rules, skills); el prompt de cada tarea aporta lo específico. Los seis momentos en que algo entra al contexto y cómo elegir el canal de una norma, en <a href="ag-como-lee-el-agente.html">qué entra en el contexto y cuándo</a>.</p>
+
+          <h2 id="quien-escribe">
+            ¿Quién escribe las rules y skills: el agente o tú?
+            <a href="#quien-escribe" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Lo habitual y recomendable es un <strong>enfoque mixto: el agente redacta, el humano decide y recorta</strong>. Un modelo grande con esfuerzo alto (Opus) es buena elección para el primer borrador y las auditorías, pero el modelo no es lo que más determina la calidad: lo es la información que solo tiene el equipo.</p>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Qué hace bien el agente</h4>
+              <ul>
+                <li>Analizar el código existente y extraer los patrones reales (cómo se nombran las cosas, qué estructura siguen los controllers).</li>
+                <li>Redactar un primer borrador estructurado de rules, skills y <code>CLAUDE.md</code> (<code>/init</code> hace una versión básica).</li>
+                <li>Detectar inconsistencias entre módulos.</li>
+                <li>Convertir comentarios de review en reglas concretas.</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Qué tiene que aportar el humano</h4>
+              <ul>
+                <li>Decisiones, no descripciones: el código muestra lo que se hace, incluidos los malos hábitos. Si el proyecto tiene controllers gordos, el agente documentará controllers gordos.</li>
+                <li>El porqué: las razones de negocio o históricas que no están en el código.</li>
+                <li>Recortar: una regla que cualquier modelo ya cumple («escribe código limpio y mantenible») solo ocupa contexto.</li>
+                <li>Validar: comprobar que cada regla es cierta y que no contradice otra.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h3>Flujo recomendado</h3>
+
+          <ol>
+            <li><strong>Auditoría con Opus en esfuerzo alto:</strong> el agente analiza el proyecto y propone rules y skills.</li>
+            <li><strong>Revisión humana:</strong> quitar lo genérico, corregir lo que describe malos hábitos, añadir decisiones y porqués.</li>
+            <li><strong>Probar:</strong> pedir tareas reales y ver si el agente sigue las reglas y elige bien las skills.</li>
+            <li><strong>Iterar desde los fallos:</strong> cada error repetido en review se convierte en regla, skill o comprobación automática (ver el ciclo de mejora en <a href="flujo-con-agentes.html#mejora">SDD y flujo agéntico</a>). Aquí el modelo puede ser Sonnet: el cambio es pequeño y acotado.</li>
+            <li><strong>Revisarlas como código:</strong> cambios en rules y skills por merge request, con revisión del equipo.</li>
+          </ol>
+
+          <h3>Señales de una regla bien escrita</h3>
+
+          <ul>
+            <li><strong>Concreta y verificable:</strong> «los controllers no inyectan repositorios» mejor que «mantén los controllers limpios».</li>
+            <li><strong>Corta, imperativa</strong> y con el porqué cuando no es obvio.</li>
+            <li><strong>Sobre algo que el modelo haría mal sin ella.</strong></li>
+          </ul>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Truco útil</p>
+              <p>Pedirle al agente que revise las reglas como lo haría un modelo que no conoce el proyecto: qué es ambiguo, qué se contradice, qué sobra.</p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
           <div class="compare">
             <div class="compare__col compare__col--good">
               <h4>Úsalo cuando…</h4>
               <ul>
-                <li>La tarea es compleja y está bien definida: un prompt detallado con contexto extenso da mejores resultados</li>
-                <li>Exploración o refinamiento iterativo: usa el modo conversacional para afinar el resultado</li>
-                <li>Código repetitivo o boilerplate donde detectarías errores fácilmente</li>
+                <li>La tarea es compleja y está bien definida: objetivo, contexto, alcance y criterio de terminado</li>
+                <li>Te descubres repitiendo la misma instrucción: llévala a una rule o una skill</li>
+                <li>Arrancas la configuración de un proyecto: borrador del agente, recorte y decisiones tuyas</li>
               </ul>
             </div>
             <div class="compare__col compare__col--bad">
               <h4>No lo uses cuando…</h4>
               <ul>
                 <li>Código de seguridad crítica sin revisión humana posterior: la IA puede generar vulnerabilidades sutiles</li>
-                <li>El código requiere auditoría formal o certificación</li>
                 <li>No entiendes lo que vas a generar: primero aprende el concepto, luego pide ayuda con él</li>
+                <li>Quieres que el agente escriba las rules solo: documentará los malos hábitos tal cual</li>
               </ul>
             </div>
           </div>
@@ -331,7 +490,6 @@ ESPECÍFICO:
             Resumen
             <a href="#resumen" class="anchor" aria-hidden="true">#</a>
           </h2>
-
           <div class="keypoints">
             <h3>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -340,31 +498,31 @@ ESPECÍFICO:
             <ul>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>El prompt es una <strong>especificación</strong>: cada decisión que no tomas tú, la toma el modelo.</span>
+                <span>El prompt es una <strong>especificación</strong>: objetivo, contexto, alcance y <strong>criterio de terminado</strong>; los trucos («actúa como experto», mayúsculas) ya no aportan.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span><strong>Da contexto</strong> (pega el código real), <strong>sé específico</strong> (incluye qué no quieres) y <strong>da ejemplos</strong> (few-shot).</span>
+                <span><strong>Da contexto</strong> real, <strong>sé específico</strong> con lo que no quieres, <strong>da ejemplos</strong> e <strong>itera</strong>; pide el porqué para decidir tú.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span><strong>Descompón</strong> en pasos verificables e <strong>itera</strong>: el valor está en el bucle de refinamiento, no en el prompt perfecto.</span>
+                <span>Lo que se repite va al <strong>entorno</strong>: rules si se cumple siempre, skills si es procedimiento. Eso es <strong>context engineering</strong>.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span><strong>Pide el porqué</strong> para decidir con más información. No integres lo que no entiendes.</span>
+                <span>Las rules las <strong>redacta el agente y las decide el humano</strong>: el código muestra lo que se hace, no lo que se quiere.</span>
               </li>
             </ul>
           </div>
 
           <nav class="tutorial-nav">
-            <a href="como-piensa-un-llm.html">
+            <a href="pci-plugins-mods-worktrees.html">
               <small>← Anterior</small>
-              <b>Cómo «piensa» un LLM al programar</b>
+              <b>Plugins, mods y worktrees</b>
             </a>
             <a href="flujo-con-agentes.html" class="next">
               <small>Siguiente →</small>
-              <b>Flujo de trabajo con agentes</b>
+              <b>SDD y flujo agéntico</b>
             </a>
           </nav>
         </article>

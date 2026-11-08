@@ -17,10 +17,10 @@
     </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cómo "piensa" un LLM al programar — MentorAI</title>
+    <title>Contexto, temperatura y alucinaciones: cómo «piensa» un LLM — MentorAI</title>
     <meta
       name="description"
-      content="Qué hace por dentro un modelo de lenguaje cuando le pides código: tokens, ventana de contexto y predicción de la siguiente palabra. Por qué alucina, qué sabe y qué no, y qué implica todo eso para programar con IA."
+      content="Cómo genera texto un LLM y qué implica al programar: tokens, la ventana de contexto y qué pasa cuando se llena, qué sabe y qué no, la temperatura y por qué no sirve para diseñar mejor, y las alucinaciones típicas en código con las formas de reducirlas."
     />
     <link rel="stylesheet" href="../assets/css/styles.css" />
     <link
@@ -66,17 +66,14 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           <span>Programar con IA</span>
         </nav>
-        <h1 class="tutorial-hero__title">Cómo «piensa» un LLM al programar</h1>
+        <h1 class="tutorial-hero__title">Contexto, temperatura y alucinaciones: cómo «piensa» un LLM</h1>
         <p class="tutorial-hero__lead">
-          Un modelo de lenguaje no entiende tu código como tú: predice la
-          siguiente palabra, una y otra vez, sobre todo lo que ha leído antes.
-          Entender ese mecanismo —sin humo ni misticismo— explica por qué
-          acierta tanto, por qué a veces inventa y cómo sacarle partido.
+          Cuando le pides a una IA que escriba una función, no «sabe programar» en el sentido en que tú lo sabes. Hace algo más simple y más raro: calcula, pieza a pieza, cuál es la continuación más probable del texto que tiene delante. De ahí salen sus límites: lo que ve, el azar de sus respuestas y por qué inventa con aplomo.
         </p>
         <div class="tutorial-meta">
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            14 min de lectura
+            18 min de lectura
           </span>
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -99,7 +96,9 @@
             <li><a href="#tokens">Tokens: el alfabeto del modelo</a></li>
             <li><a href="#contexto">La ventana de contexto</a></li>
             <li><a href="#sabe">Qué sabe y qué no</a></li>
+            <li><a href="#temperatura">La temperatura</a></li>
             <li><a href="#alucina">Por qué alucina</a></li>
+            <li><a href="#reducir">Cómo reducirlas</a></li>
             <li><a href="#implicaciones">Qué implica al programar</a></li>
             <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
@@ -108,25 +107,14 @@
 
         <article class="prose">
           <p class="lead">
-            Cuando le pides a una IA que escriba una función, no «sabe
-            programar» en el sentido en que tú lo sabes. Hace algo más simple y
-            más raro: calcula, palabra a palabra, cuál es la continuación más
-            probable del texto que tiene delante. Que de ese juego salga código
-            que compila es lo sorprendente.
+            Que de un juego de autocompletar salga código que compila es lo sorprendente. Entender ese juego explica casi todo lo que te va a pasar trabajando con un agente: por qué se le «olvida» lo de antes, por qué la misma pregunta da dos respuestas y por qué afirma que existe un método que no existe.
           </p>
 
           <h2 id="idea">
             Predecir la siguiente palabra
             <a href="#idea" class="anchor" aria-hidden="true">#</a>
           </h2>
-          <p>
-            Un <strong>LLM</strong> (Large Language Model, modelo grande de
-            lenguaje) es, en esencia, una máquina de autocompletar
-            descomunal. Dada una secuencia de texto, calcula una probabilidad
-            para cada posible continuación y elige una. Luego añade esa pieza a
-            la secuencia y repite. Todo lo que hace —responder, razonar, escribir
-            código— sale de encadenar esa predicción miles de veces.
-          </p>
+          <p>Un <strong>LLM</strong> es, en esencia, una máquina de autocompletar descomunal. Dada una secuencia de texto, calcula una probabilidad para cada posible continuación y elige una. Luego añade esa pieza a la secuencia y repite. Todo lo que hace —responder, razonar, escribir código— sale de encadenar esa predicción miles de veces.</p>
 
           <div class="diagram">
             <div class="flow">
@@ -139,69 +127,43 @@
                 <span class="flow__num">2</span>
                 <span><b>Predice la siguiente pieza</b><small>Elige entre miles de opciones la más probable (con algo de azar)</small></span>
               </div>
-              <div class="flow__arrow" data-label="y repite"></div>
+              <div class="flow__arrow" data-label="la añade"></div>
               <div class="flow__node flow__node--end">
                 <span class="flow__num">3</span>
                 <span><b>La añade y vuelve a empezar</b><small>Pieza a pieza construye la respuesta completa</small></span>
               </div>
             </div>
-            <p class="diagram__caption">
-              No hay un plan global escrito de antemano: la respuesta se va
-              formando token a token.
-            </p>
+            <p class="diagram__caption">No hay un plan global escrito de antemano: la respuesta se va formando token a token.</p>
           </div>
 
-          <p>
-            Esa pizca de azar es la razón de que la misma pregunta dé respuestas
-            algo distintas cada vez: el modelo reparte probabilidades entre los
-            posibles siguientes tokens y se sortea entre ellos. La «temperatura»
-            es el mando que regula ese sorteo, aunque en algunos modelos actuales
-            el proveedor ya la fija y no deja cambiarla. No es un fallo: es cómo
-            evita sonar siempre idéntico. Pero implica que el modelo no es
-            determinista, algo importante cuando lo metes en un flujo de trabajo.
-            Si quieres ver el mecanismo por dentro, está en
-            <a href="llm-muestreo.html">Muestreo: por qué la misma pregunta da dos respuestas</a>.
-          </p>
+          <p>Esa pizca de azar es la razón de que la misma pregunta dé respuestas algo distintas cada vez. La <strong>temperatura</strong> es el mando que regula ese sorteo; la vemos más abajo.</p>
 
           <h2 id="tokens">
             Tokens: el alfabeto del modelo
             <a href="#tokens" class="anchor" aria-hidden="true">#</a>
           </h2>
-          <p>
-            El modelo no trabaja con palabras ni con letras, sino con
-            <strong>tokens</strong>: trozos de texto, a menudo fragmentos de
-            palabra. «Inyección» puede ser dos o tres tokens; un espacio o un
-            signo de puntuación es otro. Todo lo que entra y sale se mide en
-            tokens, y de ahí salen los límites y el precio.
-          </p>
+          <p>El modelo no trabaja con palabras ni con letras, sino con <strong>tokens</strong>: trozos de texto, a menudo fragmentos de palabra. «Inyección» puede ser dos o tres tokens; un espacio o un signo de puntuación es otro. Todo lo que entra y sale se mide en tokens, y de ahí salen los límites y el precio. En español, aproximadamente un token cada 3 o 4 caracteres.</p>
 
           <div class="code-block">
             <div class="code-block__head">
-              <span class="code-block__lang">cómo se trocea una frase (aprox.)</span>
+              <span class="code-block__lang">texto · cómo se trocea una frase (aprox.)</span>
               <button class="copy-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 <span class="copy-btn__label">Copiar</span>
               </button>
             </div>
             <pre><code>"function getUser($id)"
-
-   ->  [ "function" ] [ " get" ] [ "User" ] [ "($" ] [ "id" ] [ ")" ]
-
-   6 tokens para 21 caracteres: unos 3,5 por token. Con símbolos,
-   indentación e identificadores largos, el código suele ocupar
-   más tokens de lo que su longitud sugiere.</code></pre>
+ -&gt; [ "function" ] [ " get" ] [ "User" ] [ "($" ] [ "id" ] [ ")" ]
+ 6 tokens para 21 caracteres: unos 3,5 por token. Con símbolos,
+ indentación e identificadores largos, el código suele ocupar
+ más tokens de lo que su longitud sugiere.</code></pre>
           </div>
 
           <div class="callout callout--info">
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
             <div class="callout__body">
               <p class="callout__title">Por qué cuesta contar caracteres</p>
-              <p>
-                Como el modelo ve tokens y no letras, tareas como «cuenta las
-                erres de esta palabra» o «invierte estos caracteres» le cuestan:
-                no «ve» las letras sueltas. Es un buen recordatorio de que no
-                razona sobre el texto como nosotros.
-              </p>
+              <p>Como el modelo ve tokens y no letras, tareas como «cuenta las erres de esta palabra» o «invierte estos caracteres» le cuestan: no «ve» las letras sueltas. Es un buen recordatorio de que no razona sobre el texto como nosotros. El troceado por dentro, en <a href="llm-de-texto-a-tokens.html">del texto a números</a>.</p>
             </div>
           </div>
 
@@ -209,30 +171,22 @@
             La ventana de contexto
             <a href="#contexto" class="anchor" aria-hidden="true">#</a>
           </h2>
-          <p>
-            El modelo solo «ve» lo que cabe en su <strong>ventana de
-            contexto</strong>: un máximo de tokens que incluye tu pregunta, los
-            ficheros que le pegas, su propia respuesta y, en un chat, todo lo
-            dicho antes. Lo que no entra, sencillamente no existe para él.
-          </p>
-          <p>
-            Esto tiene dos consecuencias prácticas. Primera: el modelo no
-            «recuerda» tu proyecto entre sesiones; cada conversación parte de
-            cero salvo lo que le des en esa ventana. Segunda: si llenas el
-            contexto de ruido, diluyes lo importante. Dar contexto es un arte de
-            <em>selección</em>, no de cantidad.
-          </p>
+          <p>La <strong>ventana de contexto</strong> es la cantidad máxima de texto que el modelo puede ver de una vez, medida en tokens.</p>
+
+          <ul>
+            <li><strong>Qué ocupa la ventana:</strong> el prompt de sistema, la definición de las herramientas, la conversación entera, los archivos leídos y los resultados de los comandos.</li>
+            <li><strong>Sin memoria fuera de ella:</strong> lo que no está dentro de la ventana no existe para el modelo. No «recuerda» tu proyecto entre sesiones; cada conversación parte de cero salvo lo que le des en esa ventana.</li>
+            <li><strong>Cuando se llena:</strong> el harness debe actuar, normalmente resumiendo la conversación o descartando lo más antiguo. Es lo que hace Claude Code al compactar.</li>
+            <li><strong>Consejo práctico:</strong> el rendimiento suele bajar con la ventana muy cargada, así que conviene empezar una sesión nueva para cada tarea.</li>
+          </ul>
+
+          <p>Si llenas el contexto de ruido, diluyes lo importante. Dar contexto es un arte de <strong>selección</strong>, no de cantidad.</p>
 
           <div class="callout callout--warning">
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <div class="callout__body">
               <p class="callout__title">«Se le olvidó lo de antes»</p>
-              <p>
-                En conversaciones largas, lo dicho al principio puede quedar lejos
-                o salirse de la ventana, y el modelo deja de tenerlo presente. No
-                es que «olvide»: es que ya no lo está mirando. Si algo es clave,
-                recuérdaselo o reinícialo con el contexto limpio.
-              </p>
+              <p>En conversaciones largas, lo dicho al principio puede quedar lejos o salirse de la ventana, y el modelo deja de tenerlo presente. No es que «olvide»: es que ya no lo está mirando. Si algo es clave, recuérdaselo o reinícialo con el contexto limpio. Cómo gastar poco contexto y cuándo cortar, en <a href="cc-contexto-finito.html">el contexto es finito</a>.</p>
             </div>
           </div>
 
@@ -240,120 +194,173 @@
             Qué sabe y qué no
             <a href="#sabe" class="anchor" aria-hidden="true">#</a>
           </h2>
-          <p>
-            El modelo aprendió de una foto del texto de internet hasta una fecha
-            de corte. De ahí salen sus dos límites fundamentales:
-          </p>
+          <p>El modelo aprendió de una foto del texto de internet hasta una <strong>fecha de corte</strong>. De ahí salen sus dos límites fundamentales:</p>
+
           <ul>
-            <li>
-              <strong>Conocimiento congelado:</strong> no conoce la versión de
-              tu librería publicada después de su corte, ni los cambios de tu
-              repositorio. Lo que sabe es lo que era común <em>entonces</em>.
-            </li>
-            <li>
-              <strong>Sin acceso al mundo por defecto:</strong> no ejecuta tu
-              código, no ve tu base de datos ni navega, salvo que una
-              herramienta se lo permita explícitamente.
-            </li>
+            <li><strong>Conocimiento congelado:</strong> no conoce la versión de tu librería publicada después de su corte, ni los cambios de tu repositorio. Lo que sabe es lo que era <em>común</em> entonces.</li>
+            <li><strong>Sin acceso al mundo por defecto:</strong> no ejecuta tu código, no ve tu base de datos ni navega, salvo que una herramienta se lo permita explícitamente.</li>
           </ul>
-          <p>
-            Y sabe <em>mucho</em> de lo que abunda en su entrenamiento: patrones
-            comunes, lenguajes populares, los errores típicos. Es flojo en lo
-            raro, lo reciente y lo específico de tu casa. La regla mental:
-            cuanto más común sea algo, más fiable será su respuesta.
-          </p>
+
+          <p>Y sabe mucho de lo que abunda en su entrenamiento: patrones comunes, lenguajes populares, los errores típicos. Es flojo en lo raro, lo reciente y lo específico de tu casa. La regla mental: <strong>cuanto más común sea algo, más fiable será su respuesta.</strong></p>
+
+          <h2 id="temperatura">
+            La temperatura
+            <a href="#temperatura" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La <strong>temperatura</strong> controla cuánta aleatoriedad hay al elegir cada token. El modelo calcula probabilidades para el siguiente token; con temperatura baja casi siempre elige el más probable, y con temperatura alta da más oportunidades a opciones menos probables.</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Temperatura</th><th>Comportamiento</th><th>Uso típico</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Baja (0 – 0,3)</td><td>Respuestas más predecibles y repetibles</td><td>Extraer datos, clasificar, código, respuestas con formato fijo</td></tr>
+                <tr><td>Media (0,5 – 0,7)</td><td>Equilibrio</td><td>Uso general</td></tr>
+                <tr><td>Alta (0,8 – 1)</td><td>Más variedad y creatividad, también más errores</td><td>Lluvia de ideas, textos creativos</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Lo que conviene saber:</p>
+
+          <ul>
+            <li><strong>Solo se ajusta por API:</strong> en Claude Code o la app de chat no es un ajuste que manejes; el harness ya la fija.</li>
+            <li><strong>Temperatura 0 no garantiza respuestas idénticas:</strong> reduce mucho la variación, pero no la elimina del todo.</li>
+            <li><strong>Con razonamiento (thinking) activado</strong>, los modelos recientes suelen trabajar con temperatura fija o restringida; para controlar el comportamiento se usa el esfuerzo, no la temperatura.</li>
+            <li><strong>No arregla alucinaciones:</strong> una temperatura baja hace que el modelo se equivoque de forma más consistente, no que acierte más. Para eso están el contexto y la verificación.</li>
+            <li><strong>Parientes:</strong> <code>top_p</code> y <code>top_k</code> limitan entre cuántos tokens candidatos se elige. Normalmente se ajusta uno de ellos o la temperatura, no todos a la vez.</li>
+          </ul>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">¿Subir la temperatura para diseño de front?</p>
+              <p>No especialmente, y en Claude Code no se puede. La temperatura afecta igual a la idea visual que al código, así que más variedad también significa más CSS roto o clases inventadas. La variedad en diseño se consigue mejor desde el prompt: dar referencias o capturas de lo que gusta; describir el estilo concreto (paleta, tipografía, densidad, tono); pedir varias propuestas muy distintas entre sí y elegir una; y decir explícitamente qué evitar («nada de la típica landing con degradado morado»).</p>
+            </div>
+          </div>
+
+          <p><strong>Cuándo te importa:</strong> al construir tu propia aplicación por API, por ejemplo un clasificador de tickets (temperatura baja) o un generador de ideas (más alta). El mecanismo por dentro y qué deja tocar hoy cada proveedor, en <a href="llm-muestreo.html">muestreo</a>.</p>
 
           <h2 id="alucina">
             Por qué alucina
             <a href="#alucina" class="anchor" aria-hidden="true">#</a>
           </h2>
-          <p>
-            Una <strong>alucinación</strong> es cuando el modelo afirma con total
-            aplomo algo falso: una función que no existe, un parámetro inventado,
-            una cita imaginaria. No miente en el sentido humano; es consecuencia
-            directa de su mecanismo. Su trabajo es producir la continuación más
-            <em>plausible</em>, y lo plausible no siempre es lo cierto.
-          </p>
+          <p>Una <strong>alucinación</strong> es cuando el modelo genera algo falso con total seguridad: un método que no existe, una opción de configuración inventada, una cita o una cifra sin base. No es un fallo puntual sino una consecuencia de cómo funciona: el LLM predice texto <em>plausible</em>, y lo plausible no siempre es verdad.</p>
+
+          <h3>Por qué ocurren</h3>
+
+          <ul>
+            <li><strong>Predice, no consulta:</strong> si no tiene el dato delante, rellena con lo que «suena bien».</li>
+            <li><strong>Conocimiento con fecha de corte:</strong> no conoce versiones o APIs posteriores a su entrenamiento.</li>
+            <li><strong>Falta de contexto:</strong> sin ver el código real, supone cómo es.</li>
+            <li><strong>Presión por responder:</strong> tiende a dar una respuesta antes que admitir que no sabe, sobre todo con preguntas que presuponen algo falso.</li>
+          </ul>
 
           <div class="callout callout--danger">
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
             <div class="callout__body">
               <p class="callout__title">Seguridad ≠ certeza</p>
-              <p>
-                El modelo suena igual de convencido cuando acierta que cuando
-                inventa: no tiene un medidor de «esto no lo sé». Por eso una
-                respuesta confiada no es prueba de nada. La verificación la pones
-                tú: ejecutar, leer la documentación, comprobar que esa API existe.
-              </p>
+              <p>El modelo suena igual de convencido cuando acierta que cuando inventa: no tiene un medidor de «esto no lo sé». Por eso una respuesta confiada no es prueba de nada. Las alucinaciones se disparan en terreno poco común: nombres exactos de métodos de una librería de nicho, detalles de versiones, datos muy concretos.</p>
             </div>
           </div>
 
-          <p>
-            Las alucinaciones se disparan en terreno poco común: nombres exactos
-            de métodos de una librería de nicho, detalles de versiones, datos muy
-            concretos. Cuanto más empuja el modelo hacia lo específico y raro,
-            más probable es que rellene el hueco con algo verosímil pero falso.
-          </p>
+          <h3>Alucinaciones típicas en código</h3>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Tipo</th><th>Ejemplo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>API inventada</td><td>Un método de Doctrine o Symfony que no existe o es de otra versión</td></tr>
+                <tr><td>Paquete inexistente</td><td>Sugerir instalar una librería que no existe (riesgo de seguridad si alguien registra ese nombre)</td></tr>
+                <tr><td>Configuración inventada</td><td>Opciones de YAML o flags de CLI que suenan bien pero no son reales</td></tr>
+                <tr><td>Código del proyecto supuesto</td><td>Llamar a un servicio o columna que imagina en vez de leerlo</td></tr>
+                <tr><td>Afirmar éxito sin verificar</td><td>«Los tests pasan» sin haberlos ejecutado</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="reducir">
+            Cómo reducirlas
+            <a href="#reducir" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <ul>
+            <li><strong>Darle los datos:</strong> que lea el código y la documentación reales (búsqueda agéntica, MCP, RAG) en vez de responder de memoria.</li>
+            <li><strong>Verificación automática:</strong> tests, PHPStan y hooks detectan la API inventada al momento. Es la defensa más fuerte en código.</li>
+            <li><strong>Pedir fuentes o comprobación:</strong> «verifica en el código antes de afirmarlo», «cita el archivo y la línea».</li>
+            <li><strong>Permitir el «no lo sé»:</strong> decir explícitamente que, si no está seguro, lo diga.</li>
+            <li><strong>Versiones explícitas:</strong> indicar en las rules las versiones del stack (PHP, Symfony, Doctrine).</li>
+            <li><strong>Búsqueda web o documentación actualizada</strong> para librerías recientes.</li>
+            <li><strong>Esfuerzo alto en tareas delicadas:</strong> más razonamiento suele significar más autocomprobación, aunque no las elimina.</li>
+          </ul>
+
+          <p>¿Basta con permitir el «no lo sé» en las rules? Ayuda, pero su efecto es moderado: los modelos actuales ya admiten mejor la incertidumbre. En código, lo que más reduce las alucinaciones es <strong>obligar a comprobar antes de afirmar</strong>. Una regla que une las dos cosas:</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">markdown · regla anti-invención</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>- Antes de usar un método, clase u opción de configuración, verifica que existe en el código o en vendor/.
+- Si no puedes comprobarlo, dilo explícitamente en lugar de suponer.
+- No afirmes que los tests pasan sin haberlos ejecutado.</code></pre>
+          </div>
+
+          <p>Por encima de cualquier regla, tests, PHPStan y hooks siguen siendo la red que de verdad atrapa lo inventado.</p>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Regla práctica</p>
+              <p>Cuanto más fácil de verificar es algo automáticamente, menos importa que el modelo alucine; el problema son las afirmaciones que nadie comprueba. Por qué el modelo no sabe que no sabe, en <a href="llm-alucinacion-y-razonamiento.html">alucinar, razonar y verificar</a>.</p>
+            </div>
+          </div>
 
           <h2 id="implicaciones">
             Qué implica al programar
             <a href="#implicaciones" class="anchor" aria-hidden="true">#</a>
           </h2>
-          <p>
-            Todo lo anterior se traduce en una forma de trabajar:
-          </p>
+          <p>Todo lo anterior se traduce en una forma de trabajar:</p>
 
           <div class="table-wrap">
             <table>
               <thead>
-                <tr>
-                  <th>Porque el modelo…</th>
-                  <th>Tú deberías…</th>
-                </tr>
+                <tr><th>Porque el modelo…</th><th>Tú deberías…</th></tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>Solo ve su ventana de contexto</td>
-                  <td>Darle el contexto relevante (código, errores, objetivo), no esperar que adivine.</td>
-                </tr>
-                <tr>
-                  <td>Tiene conocimiento congelado</td>
-                  <td>Confirmar versiones y APIs recientes; no fiarte de su memoria de librerías.</td>
-                </tr>
-                <tr>
-                  <td>Puede alucinar con aplomo</td>
-                  <td>Verificar siempre lo generado: ejecutarlo, leerlo, probarlo.</td>
-                </tr>
-                <tr>
-                  <td>Brilla en lo común, falla en lo raro</td>
-                  <td>Apoyarte en él para lo estándar y vigilar de cerca lo específico de tu dominio.</td>
-                </tr>
+                <tr><td>Solo ve su ventana de contexto</td><td>Darle el contexto relevante (código, errores, objetivo), no esperar que adivine.</td></tr>
+                <tr><td>Tiene conocimiento congelado</td><td>Confirmar versiones y APIs recientes; no fiarte de su memoria de librerías.</td></tr>
+                <tr><td>Puede alucinar con aplomo</td><td>Verificar siempre lo generado: ejecutarlo, leerlo, probarlo.</td></tr>
+                <tr><td>Brilla en lo común, falla en lo raro</td><td>Apoyarte en él para lo estándar y vigilar de cerca lo específico de tu dominio.</td></tr>
               </tbody>
             </table>
           </div>
 
-          <p>
-            Nada de esto resta valor a la herramienta: la sitúa. Un LLM es un
-            colaborador rapidísimo y con una cultura general enorme, pero sin
-            criterio propio ni acceso a la verdad de tu sistema. El criterio
-            sigue siendo tuyo, y los siguientes tutoriales van de cómo ejercerlo.
-          </p>
+          <p>Nada de esto resta valor a la herramienta: la sitúa. Un LLM es un colaborador rapidísimo y con una cultura general enorme, pero sin criterio propio ni acceso a la verdad de tu sistema. El criterio sigue siendo tuyo.</p>
 
-          <h2 id="cuando">Cuándo aplicarlo<a href="#cuando" class="anchor" aria-hidden="true">#</a></h2>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
           <div class="compare">
             <div class="compare__col compare__col--good">
               <h4>Úsalo cuando…</h4>
               <ul>
                 <li>Diseñas prompts complejos y quieres optimizarlos sabiendo cómo el modelo procesa el texto</li>
                 <li>Depuras respuestas inesperadas o alucinaciones y necesitas entender por qué ocurren</li>
-                <li>Eliges entre modelos por coste, capacidad o límite de contexto</li>
+                <li>Construyes algo por API y tienes que decidir la temperatura de cada llamada</li>
               </ul>
             </div>
             <div class="compare__col compare__col--bad">
               <h4>No lo uses cuando…</h4>
               <ul>
                 <li>Solo usas el LLM como herramienta puntual: no necesitas este nivel de detalle para empezar</li>
-                <li>Estás en la fase de exploración: primero practica con prompts simples antes de profundizar en el mecanismo interno</li>
+                <li>Quieres arreglar alucinaciones bajando la temperatura: solo las vuelve más consistentes</li>
               </ul>
             </div>
           </div>
@@ -362,7 +369,6 @@
             Resumen
             <a href="#resumen" class="anchor" aria-hidden="true">#</a>
           </h2>
-
           <div class="keypoints">
             <h3>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -375,27 +381,27 @@
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Trabaja con <strong>tokens</strong> y solo ve su <strong>ventana de contexto</strong>: lo que no le das, no existe para él.</span>
+                <span>Solo ve su <strong>ventana de contexto</strong>: lo que no le das no existe para él, y con la ventana muy cargada rinde peor.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Su conocimiento está <strong>congelado</strong> a una fecha y <strong>alucina</strong> con aplomo, sobre todo en lo raro y específico.</span>
+                <span>La <strong>temperatura</strong> regula el azar; solo se toca por API, temperatura 0 no garantiza lo mismo y no arregla alucinaciones.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>De ahí la forma de trabajar: <strong>dar contexto</strong>, <strong>verificar siempre</strong> y poner tú el criterio.</span>
+                <span><strong>Alucina</strong> con aplomo, sobre todo en lo raro y reciente. La defensa fuerte es obligar a comprobar y verificar con tests, PHPStan y hooks.</span>
               </li>
             </ul>
           </div>
 
           <nav class="tutorial-nav">
-            <a href="../cursos.html">
-              <small>← Volver</small>
-              <b>Cursos</b>
+            <a href="pci-modelos-y-coste.html">
+              <small>← Anterior</small>
+              <b>Modelos, esfuerzo y coste</b>
             </a>
-            <a href="prompting-para-codigo.html" class="next">
+            <a href="pci-piezas-del-agente.html" class="next">
               <small>Siguiente →</small>
-              <b>Prompting para código</b>
+              <b>Rules, skills, subagentes, MCP y hooks</b>
             </a>
           </nav>
         </article>

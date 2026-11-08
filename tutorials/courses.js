@@ -583,15 +583,30 @@ window.MENTORAI_COURSES = [
     slug: "programar-con-ia",
     title: "Programar con IA",
     summary:
-      "Trabajar con modelos y agentes sin perder el criterio: cómo piensa un LLM, prompting para código, el flujo con agentes y la gestión de los riesgos de lo generado.",
+      "El mapa completo de programar con IA, del harness a producción: cómo funciona y cuánto cuesta un modelo, las piezas con las que se configura un agente (rules, skills, subagentes, MCP, hooks, plugins), cómo se trabaja con él (prompts, SDD, flujo agéntico, multiagente, evals, riesgos) y lo que hay más allá (IA local, RAG y fine-tuning). Cada tema enlaza a la lección que lo desarrolla a fondo.",
     level: "Principiante",
     icon: "signal",
-    lessons: [
-      "conceptos-ia",
-      "como-piensa-un-llm",
-      "prompting-para-codigo",
-      "flujo-con-agentes",
-      "criterio-y-riesgos",
+    modules: [
+      {
+        title: "Fundamentos",
+        summary: "Qué es un harness, un LLM y un agente, cuánto cuesta cada modelo y por qué el contexto, la temperatura y las alucinaciones condicionan todo lo demás.",
+        lessons: ["conceptos-ia", "pci-modelos-y-coste", "como-piensa-un-llm"],
+      },
+      {
+        title: "Configurar el agente",
+        summary: "Rules, skills, subagentes, MCP y hooks; dónde vive cada fichero de Claude Code, sus comandos, y cómo compartir y escalar con plugins, mods y worktrees.",
+        lessons: ["pci-piezas-del-agente", "pci-entorno-claude-code", "pci-plugins-mods-worktrees"],
+      },
+      {
+        title: "Trabajar con agentes",
+        summary: "Pedir bien y diseñar el contexto, SDD y el flujo agéntico del ticket al deploy, multiagente y evals, y los riesgos que no se delegan.",
+        lessons: ["prompting-para-codigo", "flujo-con-agentes", "pci-multiagente-y-evals", "criterio-y-riesgos"],
+      },
+      {
+        title: "Más allá: IA local, RAG y fine-tuning",
+        summary: "Modelos en tu propia máquina y las tres formas de que un modelo responda con lo tuyo: RAG, búsqueda agéntica y fine-tuning.",
+        lessons: ["pci-ia-local", "pci-rag-y-fine-tuning"],
+      },
     ],
   },
   {

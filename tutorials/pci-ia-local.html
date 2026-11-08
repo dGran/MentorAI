@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IA local: modelos en tu propia máquina — MentorAI</title>
+    <meta
+      name="description"
+      content="Qué significa ejecutar un modelo en local, qué son los parámetros, la cuantización y los modelos MoE, cuánta memoria necesita cada tamaño, hasta dónde llega cada hardware (GPU de 6 GB, Mac de 16 a 128 GB) y cómo se compara con Haiku, Sonnet y Opus."
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Programar con IA</span>
+        </nav>
+        <h1 class="tutorial-hero__title">IA local: modelos en tu propia máquina</h1>
+        <p class="tutorial-hero__lead">
+          Ejecutar un modelo en tu máquina da privacidad, cero coste por token y trabajo sin conexión. A cambio, lo que cabe en un equipo normal queda bastante por debajo de los grandes modelos comerciales, sobre todo en trabajo de agente. Esta lección explica qué limita, qué cabe en cada hardware y para qué sirve de verdad.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            12 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Programar con IA
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#parametros">Parámetros y memoria</a></li>
+            <li><a href="#cuantizacion">Cuantización, MoE y herramientas</a></li>
+            <li><a href="#hardware">Hasta dónde llega cada hardware (noviembre de 2026)</a></li>
+            <li><a href="#comparacion">Comparación con Claude (orientativa)</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            La <strong>IA local</strong> es ejecutar un modelo en tu propia máquina en lugar de llamarlo por API. Solo es posible con modelos de <strong>pesos abiertos</strong> (<em>open-weight</em>), como Llama, Qwen, Mistral, Gemma o DeepSeek. Claude, GPT y Gemini no se pueden descargar.
+          </p>
+
+          <h2 id="parametros">
+            Parámetros y memoria
+            <a href="#parametros" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Los <strong>parámetros</strong> son los números que el modelo aprendió al entrenarse; su tamaño se mide en miles de millones (B, de <em>billions</em>). Un modelo de 7B tiene 7.000 millones. Más parámetros suele significar más conocimiento y mejor razonamiento, pero más memoria necesaria.</p>
+
+          <p><strong>Lo que limita es la memoria:</strong> el modelo entero tiene que caber en la VRAM de la GPU (o en la memoria unificada, en Mac). Regla aproximada a 4 bits: unos <strong>0,5-0,6 GB por cada mil millones de parámetros</strong>, más algo extra para el contexto.</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Tamaño</th><th>Memoria aprox. (4 bits)</th><th>Nivel orientativo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>1-4B</td><td>1-3 GB</td><td>Tareas simples, autocompletado</td></tr>
+                <tr><td>7-8B</td><td>5-6 GB</td><td>Asistente básico decente</td></tr>
+                <tr><td>14B</td><td>9-10 GB</td><td>Bastante útil para código sencillo</td></tr>
+                <tr><td>30-32B</td><td>18-20 GB</td><td>Buen nivel, necesita GPU potente</td></tr>
+                <tr><td>70B</td><td>40+ GB</td><td>Cerca de modelos comerciales medianos</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="cuantizacion">
+            Cuantización, MoE y herramientas
+            <a href="#cuantizacion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <ul>
+            <li><strong>Cuantización:</strong> reducir la precisión de cada parámetro (de 16 bits a 8, 4 o menos) para que ocupe menos. Pierde algo de calidad, pero permite correr modelos más grandes. Formato habitual: GGUF.</li>
+            <li><strong>MoE (<em>Mixture of Experts</em>):</strong> modelos con muchos parámetros totales pero que solo activan una parte en cada token. Son más rápidos de lo que su tamaño sugiere, aunque siguen necesitando memoria para todos. Por ejemplo, Qwen3.6-35B-A3B tiene 35B en total y unos 3B activos por token.</li>
+            <li><strong>Herramientas:</strong> Ollama y LM Studio son las más sencillas para empezar; llama.cpp es el motor de bajo nivel que usan muchas. Varias exponen una API compatible con la de OpenAI, así que puedes conectarlas a tu propio harness.</li>
+          </ul>
+
+          <p><strong>Cuándo compensa:</strong> privacidad, sin coste por token, sin conexión. A cambio, los modelos locales que caben en un equipo normal quedan bastante por debajo de los grandes comerciales en tareas complejas de agente.</p>
+
+          <h2 id="hardware">
+            Hasta dónde llega cada hardware (noviembre de 2026)
+            <a href="#hardware" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Con 6 GB de VRAM el techo práctico es un modelo de 7-9B cuantizado a 4 bits. En un Mac, la memoria unificada permite llegar mucho más lejos: con 32 GB, unos 30B, y con 64 GB o más, modelos de 70B.</p>
+
+          <p><strong>Regla de memoria:</strong> unos 0,5-0,6 GB por cada mil millones de parámetros a 4 bits, más la memoria del contexto (KV cache) y la del sistema. Conviene no pasar del <strong>75-80 %</strong> de la memoria total.</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Hardware</th><th>Hasta dónde llega</th><th>Modelo de ejemplo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>GPU de 6 GB</td><td>7-9B a 4 bits, contexto corto</td><td>Qwen 3.5 9B (Q4_K_M, ~6,6 GB, justo) o Qwen 3.5 4B con holgura</td></tr>
+                <tr><td>Mac de 16 GB</td><td>~9B con calidad alta (Q8)</td><td>Qwen 3.5 9B (Q8, ~11 GB)</td></tr>
+                <tr><td>Mac de 24-32 GB</td><td>~30B, o MoE de ese tamaño</td><td>Qwen 3.6 35B-A3B (~22 GB), Qwen3-Coder 30B</td></tr>
+                <tr><td>Mac de 64 GB</td><td>Clase 70B</td><td>Qwen3-Coder-Next</td></tr>
+                <tr><td>Mac de 96-128 GB</td><td>MoE grandes de más de 100B</td><td>Qwen 3.5 122B-A10B (~72 GB)</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Por qué el Mac rinde bien</p>
+              <p>La GPU usa la RAM del sistema, así que un Mac de 32 GB tiene «32 GB de VRAM» en la práctica, cosa que en un PC exige una gráfica muy cara. Los modelos MoE le van especialmente bien, porque en cada token solo leen una parte de los pesos.</p>
+            </div>
+          </div>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Cifras orientativas que caducan rápido</p>
+              <p>Las cifras de memoria y nivel son aproximadas y cambian con cada generación de modelos y con la cuantización y la longitud de contexto que uses: para Qwen3-Coder-Next (80B en total, 3B activos), unas guías hablan de una sola GPU de 24 GB y otras recomiendan 64 GB de memoria unificada para usarlo como agente. Antes de comprar o descargar, mira la ficha del modelo y una guía de cuantización actual.</p>
+            </div>
+          </div>
+
+          <h2 id="comparacion">
+            Comparación con Claude (orientativa)
+            <a href="#comparacion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Local</th><th>Comparable a grandes rasgos</th><th>Para qué sirve</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>4-9B (6 GB de VRAM)</td><td>Por debajo de Haiku</td><td>Autocompletado, resúmenes, preguntas sencillas, clasificar</td></tr>
+                <tr><td>30B / MoE de 35B (32 GB)</td><td>Cerca de Haiku en tareas acotadas</td><td>Código sencillo, refactors pequeños, chat sobre tu código</td></tr>
+                <tr><td>70-120B (64-128 GB)</td><td>Se acerca a Sonnet en algunas tareas</td><td>Asistente de código serio, aunque con menos fiabilidad</td></tr>
+                <tr><td>Ninguno local</td><td>Opus</td><td>Agentes largos y autónomos, arquitectura, problemas ambiguos</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Los mejores resultados públicos en benchmarks de código son de modelos abiertos de clase servidor, como Devstral 2 (123B), que necesitan GPUs de centro de datos.</p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Donde más se nota la diferencia</p>
+              <p>En el trabajo de agente: encadenar muchas llamadas a herramientas sin perderse. Ahí los modelos locales pequeños fallan mucho más que Sonnet u Opus. Las equivalencias de la tabla son una estimación cualitativa, no un benchmark. Qué tamaño de modelo comercial elegir para cada tarea, en <a href="pci-modelos-y-coste.html">modelos, esfuerzo y coste</a>.</p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Úsalo cuando…</h4>
+              <ul>
+                <li>Los datos no pueden salir de tu máquina por privacidad o por contrato</li>
+                <li>La tarea es acotada y repetitiva (clasificar, resumir, autocompletar) y el volumen hace pesar el coste por token</li>
+                <li>Necesitas trabajar sin conexión</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No lo uses cuando…</h4>
+              <ul>
+                <li>La tarea es de agente largo y autónomo: ningún modelo local llega a Opus</li>
+                <li>Tu hardware obliga a usar la memoria al límite: pasado el 75-80 % el sistema se resiente</li>
+                <li>Quieres ahorrar en el día a día con un agente de código: lo que pierdes en fiabilidad lo pagas en revisión</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Solo se ejecutan en local los modelos de <strong>pesos abiertos</strong>; lo que limita es la <strong>memoria</strong>: unos 0,5-0,6 GB por cada mil millones de parámetros a 4 bits, más el contexto.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La <strong>cuantización</strong> reduce memoria a cambio de algo de calidad; los <strong>MoE</strong> son rápidos porque activan solo una parte de los pesos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un Mac con mucha memoria unificada llega a modelos de 30B a 120B; una GPU de 6 GB, a 7-9B.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En tareas acotadas un local grande se acerca a Haiku o Sonnet; en <strong>trabajo de agente</strong> la distancia con Opus sigue siendo grande.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="criterio-y-riesgos.html">
+              <small>← Anterior</small>
+              <b>Criterio, riesgos y stacks ajenos</b>
+            </a>
+            <a href="pci-rag-y-fine-tuning.html" class="next">
+              <small>Siguiente →</small>
+              <b>Embeddings, RAG y fine-tuning</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
