@@ -74,7 +74,7 @@
         <div class="tutorial-meta">
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            15 min de lectura
+            17 min de lectura
           </span>
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -99,6 +99,7 @@
             <li><a href="#porque">El porqué viaja con la regla</a></li>
             <li><a href="#coste">Cortas, porque se pagan siempre</a></li>
             <li><a href="#vivas">Reglas vivas: el ciclo de vuelta</a></li>
+            <li><a href="#en-claude-code">Dónde viven: niveles, carpeta y paths</a></li>
             <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
@@ -308,6 +309,68 @@
             documento con reglas muertas entrena al lector a ignorarlo — el
             mismo principio que los validadores ruidosos o los tests flaky.
           </p>
+
+          <h2 id="en-claude-code">
+            Dónde viven: niveles, carpeta y paths
+            <a href="#en-claude-code" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>En Claude Code las reglas viven en archivos Markdown de memoria, organizados por niveles. <strong>Todos los que aplican se cargan a la vez</strong>; si chocan, manda el más específico.</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Nivel</th><th>Ubicación</th><th>Alcance</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Empresa</td><td>Archivo de política gestionado por la organización</td><td>Todos los usuarios de la máquina u organización</td></tr>
+                <tr><td>Usuario</td><td><code>~/.claude/CLAUDE.md</code> y <code>~/.claude/rules/</code></td><td>Todos tus proyectos</td></tr>
+                <tr><td>Proyecto</td><td><code>CLAUDE.md</code> o <code>.claude/CLAUDE.md</code>, y <code>.claude/rules/</code></td><td>El repo, compartido con el equipo vía Git</td></tr>
+                <tr><td>Local</td><td><code>CLAUDE.local.md</code></td><td>Solo tú en ese proyecto, fuera de Git</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Los <code>CLAUDE.md</code> de subcarpetas se cargan cuando el agente trabaja en ellas, así que un módulo puede tener sus propias reglas.</p>
+
+          <h3>La carpeta .claude/rules/ y los paths</h3>
+
+          <p>En vez de un <code>CLAUDE.md</code> enorme, las reglas se pueden partir en archivos temáticos: <code>php.md</code>, <code>testing.md</code>, <code>git.md</code>… Cada archivo puede llevar una cabecera <code>paths</code> con patrones de archivo, y entonces <strong>solo se carga cuando el agente trabaja con archivos que encajan</strong>. Sin <code>paths</code>, el archivo se carga siempre, como el <code>CLAUDE.md</code>.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">markdown · .claude/rules/php.md (proyecto «tienda»)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>---
+paths:
+  - "src/**/*.php"
+  - "tests/**/*.php"
+---
+
+# Reglas PHP de la tienda
+
+- declare(strict_types=1) en todos los archivos.
+- Los importes van en céntimos y como int, nunca como float.
+- Las fechas se guardan en UTC con DateTimeImmutable.</code></pre>
+          </div>
+
+          <h3>Imports</h3>
+
+          <p>Un <code>CLAUDE.md</code> puede incluir otros archivos con <code>@ruta</code>, por ejemplo <code>@docs/convenciones-bd.md</code>. Útil para reutilizar documentación existente sin copiarla. Ojo: lo importado se carga al arrancar, igual que el propio <code>CLAUDE.md</code>, y se paga en cada sesión. No es detalle bajo demanda: para eso está una skill que lo referencie desde su carpeta.</p>
+
+          <h3>Rules en otros harnesses</h3>
+
+          <p>La idea es la misma en todos, con distinto formato:</p>
+
+          <ul>
+            <li><strong>Cursor:</strong> archivos en <code>.cursor/rules/</code> con cabecera que indica si se aplican siempre, por patrón de archivo, o si el agente decide según su descripción (este último modo se parece mucho a una skill).</li>
+            <li><strong>AGENTS.md:</strong> archivo de instrucciones estándar que leen varios harnesses (Codex, entre otros). Equivale al <code>CLAUDE.md</code>.</li>
+          </ul>
+
+          <p>Cuándo una regla debe obligar a usar una skill y tres casos prácticos de reparto (tests, convenciones de equipo, convenciones por capa), en <a href="pci-piezas-del-agente.html#rules-skills">las piezas del agente</a>.</p>
 
           <h2 id="cuando">
             Cuándo aplicarlo

@@ -74,7 +74,7 @@
         <div class="tutorial-meta">
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            13 min de lectura
+            18 min de lectura
           </span>
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -99,6 +99,7 @@
             <li><a href="#ejemplo">Un ejemplo real, entero</a></li>
             <li><a href="#crear">Cuándo crear una (y cuándo no)</a></li>
             <li><a href="#mantener">Mantenerlas: el mismo ciclo que las rules</a></li>
+            <li><a href="#en-disco">En disco: carpeta, SKILL.md y carga</a></li>
             <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
@@ -290,6 +291,141 @@ de diseño y el manifest. Usar al añadir o revisar contenido.
             en el diff como cualquier otro cambio, porque programa el
             comportamiento de todas las sesiones futuras.
           </p>
+
+          <h2 id="en-disco">
+            En disco: carpeta, SKILL.md y carga
+            <a href="#en-disco" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>No hay índice vectorial ni buscador: la «indexación» de una skill es su descripción. El harness lee la cabecera de cada <code>SKILL.md</code> y pone su nombre y descripción en el contexto, y es el propio modelo el que decide, razonando, qué skill encaja con la tarea.</p>
+
+          <h3>Estructura de carpetas</h3>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">texto · una skill de la tienda</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>nueva-migracion/
+├── SKILL.md            # obligatorio: cabecera + instrucciones
+├── scripts/            # opcional: código que el agente ejecuta
+│   └── generar_esqueleto.php
+├── references/         # opcional: documentación que lee si la necesita
+│   └── convenciones-bd.md
+└── assets/             # opcional: plantillas y ficheros de salida
+    └── plantilla-migracion.php.tpl</code></pre>
+          </div>
+
+          <h3>El archivo SKILL.md</h3>
+
+          <p>Tiene dos partes: una cabecera YAML (frontmatter) y un cuerpo en Markdown.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">markdown · nueva-migracion/SKILL.md</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>---
+name: nueva-migracion
+description: Crea migraciones de Doctrine con las convenciones de la tienda (prefijo de módulo, importes en céntimos, rollback real). Úsala cuando el usuario pida crear o modificar tablas, columnas o índices en MySQL/MariaDB, o mencione migraciones.
+---
+
+# Nueva migración
+
+## Pasos
+1. Ejecuta `scripts/generar_esqueleto.php &lt;Modulo&gt; &lt;NombreTabla&gt;`.
+2. Aplica las reglas de `references/convenciones-bd.md`.
+3. Implementa siempre `down()` con un rollback real.
+
+## Reglas
+- Tablas con el prefijo del módulo: `pedidos_linea`, `catalogo_producto`.
+- Los importes son columnas INT en céntimos.</code></pre>
+          </div>
+
+          <p>Campos de la cabecera:</p>
+
+          <ul>
+            <li><strong>name</strong>: identificador en minúsculas con guiones, que coincide con el nombre de la carpeta. Lo exige el estándar abierto; Claude Code permite omitirlo.</li>
+            <li><strong>description</strong> (obligatorio): qué hace y cuándo usarla. Es el campo más importante.</li>
+            <li><strong>Campos opcionales según el harness.</strong> En Claude Code, <code>allowed-tools</code> concede permiso para usar esas herramientas sin preguntar mientras la skill está activa. No las limita: para quitar herramientas existe <code>disallowed-tools</code>.</li>
+          </ul>
+
+          <h3>Las tres capas de carga</h3>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Capa</th><th>Qué se carga</th><th>Cuándo</th><th>Coste en contexto</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>1. Metadatos</td><td>name + description</td><td>Siempre, al iniciar la sesión</td><td>Unas decenas de tokens por skill</td></tr>
+                <tr><td>2. Cuerpo</td><td>El resto del <code>SKILL.md</code></td><td>Cuando el modelo decide que la skill encaja</td><td>Lo que mida el cuerpo; mejor corto</td></tr>
+                <tr><td>3. Recursos</td><td>scripts, references, assets</td><td>Solo si las instrucciones lo piden</td><td>Los scripts se ejecutan sin cargar su código; solo entra su salida</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Cómo localiza el agente la skill adecuada</h3>
+
+          <ol>
+            <li>Al arrancar, el harness recorre las carpetas de skills y lee solo la cabecera de cada <code>SKILL.md</code>.</li>
+            <li>Inyecta la lista de nombres y descripciones en el contexto del modelo.</li>
+            <li>Ante una petición, el modelo compara su significado con las descripciones. No hace falta que coincidan palabras exactas, porque es razonamiento, no búsqueda por texto.</li>
+            <li>Si una encaja, el modelo lee el <code>SKILL.md</code> completo (con una herramienta de lectura o una herramienta específica de skills) y sigue sus instrucciones.</li>
+            <li>Abre los archivos de references o ejecuta scripts solo cuando el cuerpo se lo indica.</li>
+          </ol>
+
+          <h3>Dónde viven (Claude Code)</h3>
+
+          <ul>
+            <li><strong>Personales:</strong> <code>~/.claude/skills/</code>, disponibles en todos tus proyectos.</li>
+            <li><strong>De proyecto:</strong> <code>.claude/skills/</code> dentro del repo, compartidas con el equipo vía Git.</li>
+            <li><strong>Plugins:</strong> paquetes instalables que traen skills, junto con otros complementos (ver <a href="pci-plugins-mods-worktrees.html">plugins, mods y worktrees</a>).</li>
+          </ul>
+
+          <p>El formato es un estándar abierto, así que una skill bien hecha funciona también en otros harnesses compatibles.</p>
+
+          <h3>Buenas prácticas para que se active bien</h3>
+
+          <ul>
+            <li><strong>Descripción en dos partes:</strong> qué hace, y «Úsala cuando…» con los disparadores reales: verbos, nombres de herramientas, tipos de archivo y palabras que usaría el usuario.</li>
+            <li><strong>Una skill, un propósito:</strong> dos skills con descripciones parecidas confunden al modelo.</li>
+            <li><strong>Cuerpo corto y directo:</strong> pasos e instrucciones. El detalle va a <code>references/</code> y se carga solo si hace falta.</li>
+            <li><strong>Lo determinista, en scripts:</strong> validar, generar o transformar con código es más fiable que pedirle al modelo que lo haga a mano, y ahorra contexto.</li>
+            <li><strong>Probarla:</strong> pedir tareas que deberían activarla y otras que no, y ajustar la descripción si falla en alguno de los dos sentidos.</li>
+            <li><strong>Seguridad:</strong> una skill puede ejecutar código, así que solo instala skills de fuentes en las que confíes y revisa sus scripts.</li>
+          </ul>
+
+          <h3>¿Una skill puede usar otra?</h3>
+
+          <p>No hay un mecanismo formal de llamada o import entre skills: no existe un campo en la cabecera para declarar dependencias. Pero en la práctica sí se encadenan, porque el modelo tiene en contexto los nombres y descripciones de todas. Se referencia por nombre en el cuerpo, en lenguaje natural:</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">markdown · encadenar skills</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>## Pasos
+1. Crea la migración con esta skill.
+2. Después, usa la skill `crear-test-integracion` para cubrir el cambio.</code></pre>
+          </div>
+
+          <p>El modelo lee esa instrucción y carga la otra skill como cargaría cualquiera. Matices:</p>
+
+          <ul>
+            <li><strong>Es una instrucción, no una garantía.</strong> Si la skill referenciada no está instalada, el modelo no la encontrará; conviene decir qué hacer en ese caso.</li>
+            <li><strong>Para contenido común a varias skills</strong> (por ejemplo, convenciones de BD), suele ser mejor una skill propia que las demás referencien que duplicarlo en cada una.</li>
+            <li><strong>Mejor evitar cadenas largas:</strong> cada skill cargada ocupa contexto, y depender de muchas hace el comportamiento menos predecible.</li>
+            <li><strong>Si la tarea es un flujo de varios pasos</strong>, puede tener más sentido una skill orquestadora que describa el flujo completo y apunte a las demás.</li>
+          </ul>
 
           <h2 id="cuando">
             Cuándo aplicarlo

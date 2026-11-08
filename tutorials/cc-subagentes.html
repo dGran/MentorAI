@@ -74,7 +74,7 @@
         <div class="tutorial-meta">
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            14 min de lectura
+            17 min de lectura
           </span>
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -99,6 +99,7 @@
             <li><a href="#costes">Lo que cuesta delegar</a></li>
             <li><a href="#dividir">Cómo dividir el trabajo</a></li>
             <li><a href="#roles">Roles: el revisor que no se contamina</a></li>
+            <li><a href="#definir">Definirlos y encargarles bien</a></li>
             <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
@@ -284,6 +285,84 @@
             por qué un «equipo virtual» con cargos casi nunca compensa, en
             <a href="pci-multiagente-y-evals.html">multiagente y evals</a>.
           </p>
+
+          <h2 id="definir">
+            Definirlos y encargarles bien
+            <a href="#definir" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Claude Code trae algunos subagentes de serie (por ejemplo, uno de exploración y uno de propósito general). Los tuyos se definen en <code>.claude/agents/</code> (proyecto) o <code>~/.claude/agents/</code> (usuario):</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">markdown · .claude/agents/revisor-codigo.md</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>---
+name: revisor-codigo
+description: Revisa cambios de código buscando bugs, problemas de seguridad e incumplimientos de las convenciones del proyecto. Úsalo después de implementar un cambio y antes de hacer commit.
+tools: Read, Grep, Glob, Bash
+model: sonnet
+---
+
+Eres un revisor de código. No modificas archivos.
+
+- Revisa solo los cambios del diff actual.
+- Clasifica cada hallazgo como bloqueante, recomendable u opcional.
+- Indica archivo, línea y una propuesta concreta de corrección.</code></pre>
+          </div>
+
+          <ul>
+            <li><strong>name y description:</strong> igual que en las skills, la descripción es lo que hace que el principal sepa cuándo delegarle. También se puede invocar explícitamente pidiéndolo por su nombre.</li>
+            <li><strong>tools:</strong> limita qué puede hacer; si se omite, hereda las herramientas del principal.</li>
+            <li><strong>model:</strong> permite usar un modelo distinto al de la sesión.</li>
+            <li><strong>Cuerpo:</strong> su prompt de sistema, es decir, sus reglas.</li>
+          </ul>
+
+          <h3>Limitaciones</h3>
+
+          <ul>
+            <li><strong>No comparte memoria con el principal:</strong> todo lo que necesite saber tiene que ir en el encargo.</li>
+            <li><strong>Más tokens:</strong> cada subagente consume su propio contexto.</li>
+            <li><strong>Menos control en tiempo real:</strong> trabaja hasta acabar y luego informa.</li>
+            <li><strong>No conviene para tareas pequeñas:</strong> el coste de explicar el encargo puede superar el de hacerla directamente.</li>
+          </ul>
+
+          <h3>Patrones habituales</h3>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Patrón</th><th>Cómo funciona</th><th>Ejemplo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Abanico (fan-out)</td><td>El principal lanza varios subagentes en paralelo y junta sus resultados</td><td>Analizar cinco módulos a la vez antes de un refactor</td></tr>
+                <tr><td>Cadena (pipeline)</td><td>La salida de uno es la entrada del siguiente</td><td>Explorar → planificar → implementar → revisar</td></tr>
+                <tr><td>Implementar y revisar</td><td>Un subagente revisa lo que hizo el principal; el principal corrige</td><td>Revisor de código o QA antes del commit</td></tr>
+                <tr><td>Explorador</td><td>Un subagente barato lee mucho y devuelve un mapa resumido</td><td>«Dime qué archivos intervienen en el flujo de pago»</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Cómo escribir un buen encargo</h3>
+
+          <p>El encargo es un prompt como cualquier otro, y todo lo de <a href="prompting-para-codigo.html">prompts y contexto</a> aplica. Lo mínimo:</p>
+
+          <ul>
+            <li><strong>Objetivo y contexto:</strong> qué necesita y por qué; el subagente no ha visto nada.</li>
+            <li><strong>Alcance:</strong> qué mirar y qué no.</li>
+            <li><strong>Formato de vuelta:</strong> qué devolver exactamente (lista de archivos, hallazgos clasificados, sí/no con motivo). Un resumen concreto y corto es lo que mantiene limpio el contexto principal.</li>
+          </ul>
+
+          <h3>Otros detalles</h3>
+
+          <ul>
+            <li><strong>Anidar, con límite:</strong> durante mucho tiempo un subagente no podía lanzar otros y la delegación salía siempre del principal. Según la documentación actual de Claude Code, ya puede, hasta una profundidad máxima (3 niveles por defecto, ajustable con <code>CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH</code>). Cada nivel suma contexto y traspasos, así que lo normal sigue siendo delegar desde el principal.</li>
+            <li><strong>Visibilidad:</strong> desde la sesión principal se ve que el subagente está trabajando, pero sus pasos intermedios no entran en tu contexto.</li>
+            <li><strong>Creación asistida:</strong> el comando <code>/agents</code> permite crear y gestionar subagentes, e incluso generar un primer borrador de la definición.</li>
+          </ul>
 
           <h2 id="cuando">
             Cuándo aplicarlo
