@@ -1,6 +1,6 @@
 # Plan: el glosario de IA en la Academia (#193 → #194, #195)
 
-**Estado (2026-11-08): inventario hecho y reparto validado por el usuario (§ Decidido con el usuario).** Al cerrar #194 y #195, esta nota pasa a `archivo/` con el veredicto aquí arriba.
+**Veredicto (2026-11-08): cerrado.** Todo el glosario está en la Academia. #194 rehízo `programar-con-ia` (12 lecciones) con las 117 filas «renovado». #195 llevó las 27 filas «enriquecer» a `cc-rules`, `cc-skills`, `cc-subagentes`, `cc-mcp`, `cc-hooks-y-permisos` e `ia-embeddings-y-rag`, en 7 secciones nuevas. Las 5 «cubierto» ya estaban. Cada ejemplo se comprobó con un script contra su lección de destino, y las diferencias que quedan están explicadas (§ Cierre de #194 y § Cierre de #195).
 
 Fuente: «Glosario de IA: Harness», un Claude Doc del usuario (5 bloques, 156 apartados, 69 ejemplos en tablas o bloques de código, ~108 KB de texto). La copia fiel en Markdown y los scripts que generan este inventario viven en `.agents/tasks/glosario-ia/` (gitignored: el documento es del usuario y no se versiona). Para regenerar las filas: `python3 -I .agents/tasks/glosario-ia/estructura.py <glosario.md> <estructura.json>` y `python3 -I .agents/tasks/glosario-ia/inventario.py`.
 
@@ -74,6 +74,11 @@ Retos (`practica.js`): uno es la **checklist de auditoría de la configuración 
 - **Comprobación de los ejemplos**: un script busca fragmentos de cada ejemplo «renovado» en el HTML de su lección. Hay 9 diferencias y todas se explican. Tres son los ejemplos de convenciones reescritos en la tienda (E010-E012). Uno es la tabla rule/skill/MCP (E013), fundida en la tabla de las cinco piezas de `pci-piezas-del-agente` con el mismo contenido. Los otros cinco son falsos positivos: el glosario usa "comillas" y la lección «comillas», o las celdas llevan varios `code` (E018, E028, E045, E046, E060).
 - **Desvíos del plan de § Contenido actual**: «qué es un agente de código» y su tabla de herramientas se quedan en `flujo-con-agentes`, como entrada a SDD; `conceptos-ia` trae la definición de agente del glosario. Los dos checks de `como-piensa-un-llm` sobre fine-tuning y RAG pasan a `pci-rag-y-fine-tuning`, con los mismos `id`, porque esa lección ya no trata esos temas.
 - **Fuentes contrastadas**: el soporte de AGENTS.md desde la 2.1.277 y los mods desde la 2.1.287, con los tres de ejemplo de `claude-code-playground`, en la cobertura de sus lanzamientos. Los modelos Qwen 3.5/3.6 y Qwen3-Coder-Next aparecen en guías actuales, aunque con cifras de memoria que no coinciden, y la lección lo dice. Los mods de la comunidad y la lista de comandos van marcados como orientativos.
+
+## Cierre de #195 (2026-11-08)
+
+- Siete secciones nuevas, cada una con su entrada en el índice: `cc-rules#en-claude-code`, `cc-skills#en-disco`, `cc-subagentes#definir`, `cc-mcp#herramienta-interna`, `cc-hooks-y-permisos#eventos` y `#settings`, e `ia-embeddings-y-rag#recuperacion`.
+- El script encontró 13 diferencias en las 43 filas «enriquecer», todas explicadas. Siete son encabezados renombrados en la lección. Cuatro son ejemplos reescritos en la tienda: las reglas PHP (E007), la skill `nueva-migracion` en lugar de `crear-migracion-doctrine` (E014, E015) y el `settings.json` con el servicio `app` (E039). Las dos restantes (E017, E037) son falsos positivos por los backticks.
 
 ## Inventario fila a fila
 

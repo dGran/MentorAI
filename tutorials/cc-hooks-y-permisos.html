@@ -74,7 +74,7 @@
         <div class="tutorial-meta">
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            14 min de lectura
+            20 min de lectura
           </span>
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -98,6 +98,8 @@
             <li><a href="#afinar">Afinar la lista: menos fricción, mismo control</a></li>
             <li><a href="#hooks">Hooks: tu código en el bucle</a></li>
             <li><a href="#ejemplo">Un hook que bloquea de verdad</a></li>
+            <li><a href="#eventos">Eventos, precauciones y pre-commit</a></li>
+            <li><a href="#settings">settings.json en detalle</a></li>
             <li><a href="#criterio">Qué automatizar con cada pieza</a></li>
             <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
@@ -369,6 +371,193 @@ exit 0</code></pre>
               </p>
             </div>
           </div>
+
+          <h2 id="eventos">
+            Eventos, precauciones y pre-commit
+            <a href="#eventos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Evento</th><th>Cuándo se dispara</th><th>Uso típico</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>PreToolUse</td><td>Antes de que el agente use una herramienta</td><td>Bloquear comandos peligrosos o edición de archivos sensibles (<code>.env</code>)</td></tr>
+                <tr><td>PostToolUse</td><td>Después de usar una herramienta</td><td>Formatear, pasar PHPStan, Deptrac o tests tras editar un archivo</td></tr>
+                <tr><td>UserPromptSubmit</td><td>Al enviar tú un mensaje</td><td>Añadir contexto automáticamente (rama actual, ticket)</td></tr>
+                <tr><td>Stop</td><td>Cuando el agente da la tarea por terminada</td><td>Comprobar que los tests pasan antes de dejarle acabar</td></tr>
+                <tr><td>SessionStart</td><td>Al iniciar la sesión</td><td>Cargar contexto inicial, comprobar que Docker está arriba</td></tr>
+                <tr><td>Notification</td><td>Cuando el agente necesita tu atención</td><td>Aviso en el escritorio</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Los nombres de eventos y el formato pueden cambiar entre versiones; contrástalos con la documentación oficial.</p>
+
+          <h3>Precauciones</h3>
+
+          <ul>
+            <li><strong>Se ejecutan con tus permisos:</strong> un hook es código que corre en tu máquina; revisa los de proyecto antes de aceptarlos.</li>
+            <li><strong>Rápidos:</strong> un hook lento en cada edición ralentiza toda la sesión. Mejor analizar solo el archivo tocado que el proyecto entero.</li>
+            <li><strong>Hooks de proyecto en Git:</strong> así todo el equipo tiene las mismas comprobaciones.</li>
+          </ul>
+
+          <h3>Pre-commit de Git vs. hooks de Claude Code</h3>
+
+          <p>Son complementarios: el pre-commit es la barrera final en el momento del commit; los hooks de Claude dan feedback durante el trabajo, para que el agente corrija sobre la marcha.</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th></th><th>Pre-commit (Git)</th><th>Hooks de Claude Code</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Cuándo actúa</td><td>Al hacer commit</td><td>Tras cada edición, o al terminar la tarea</td></tr>
+                <tr><td>A quién protege</td><td>A todos: humanos y agentes</td><td>Solo a las sesiones de Claude</td></tr>
+                <tr><td>Qué consigue</td><td>Que nada roto entre en el repo</td><td>Que el agente arregle errores al momento, sin acumularlos</td></tr>
+                <tr><td>Coste</td><td>Una vez por commit</td><td>En cada evento; debe ser rápido</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Reparto práctico:</p>
+
+          <ul>
+            <li><strong>PostToolUse (tras editar):</strong> lo rápido y por archivo, como PHP-CS-Fixer y PHPStan sobre el archivo tocado.</li>
+            <li><strong>Stop (al terminar):</strong> la batería de tests, para que el agente no dé la tarea por acabada con tests rotos.</li>
+            <li><strong>Pre-commit:</strong> se queda como está, como red de seguridad.</li>
+            <li><strong>CI:</strong> la última barrera, que no se puede saltar en local.</li>
+          </ul>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El agente puede saltarse el pre-commit</p>
+              <p>Con <code>git commit --no-verify</code>. Conviene prohibirlo en una rule y, para asegurarlo, bloquearlo con un hook PreToolUse o una regla <code>deny</code> (ver el ejemplo de <code>settings.json</code> más abajo).</p>
+            </div>
+          </div>
+
+          <h2 id="settings">
+            settings.json en detalle
+            <a href="#settings" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La configuración de Claude Code vive en archivos <code>settings.json</code> por niveles. Los comandos <code>/config</code>, <code>/permissions</code>, <code>/hooks</code> y <code>/model</code> son atajos para editar lo mismo; <strong>el archivo es la fuente de verdad y el que se versiona</strong>.</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Prioridad</th><th>Archivo</th><th>Para qué</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>1</td><td>Política gestionada por la empresa</td><td>Normas que nadie puede saltarse</td></tr>
+                <tr><td>2</td><td>Argumentos de línea de comandos</td><td>Ajustes solo para esa ejecución</td></tr>
+                <tr><td>3</td><td><code>.claude/settings.local.json</code></td><td>Tus ajustes en este proyecto, fuera de Git</td></tr>
+                <tr><td>4</td><td><code>.claude/settings.json</code></td><td>Ajustes del equipo, en Git</td></tr>
+                <tr><td>5</td><td><code>~/.claude/settings.json</code></td><td>Tus ajustes globales</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Los permisos se combinan entre niveles, y <strong>un <code>deny</code> gana siempre a un <code>allow</code></strong>.</p>
+
+          <h3>Campos principales</h3>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Campo</th><th>Qué controla</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>permissions</code></td><td>Qué puede hacer sin preguntar (<code>allow</code>), qué debe preguntar (<code>ask</code>) y qué tiene prohibido (<code>deny</code>)</td></tr>
+                <tr><td><code>permissions.defaultMode</code></td><td>Modo de arranque: <code>default</code>, <code>acceptEdits</code>, <code>plan</code> o <code>bypassPermissions</code></td></tr>
+                <tr><td><code>permissions.additionalDirectories</code></td><td>Otras carpetas a las que tiene acceso</td></tr>
+                <tr><td><code>hooks</code></td><td>Scripts automáticos por evento</td></tr>
+                <tr><td><code>env</code></td><td>Variables de entorno para la sesión</td></tr>
+                <tr><td><code>model</code></td><td>Modelo por defecto</td></tr>
+                <tr><td><code>statusLine</code></td><td>Línea de estado personalizada</td></tr>
+                <tr><td><code>enableAllProjectMcpServers</code> / <code>enabledMcpjsonServers</code></td><td>Qué servidores MCP del <code>.mcp.json</code> del proyecto se activan sin preguntar</td></tr>
+                <tr><td><code>includeCoAuthoredBy</code></td><td>Si los commits llevan la firma de coautoría de Claude</td></tr>
+                <tr><td><code>cleanupPeriodDays</code></td><td>Cuántos días se guardan las sesiones antiguas</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Sintaxis de permisos</h3>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Regla</th><th>Significado</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>Bash(composer test:*)</code></td><td>Cualquier comando que empiece por <code>composer test</code></td></tr>
+                <tr><td><code>Bash(git push:*)</code></td><td>Cualquier <code>git push</code></td></tr>
+                <tr><td><code>Read(./.env)</code></td><td>Leer ese archivo</td></tr>
+                <tr><td><code>Edit(./src/**)</code></td><td>Editar archivos bajo <code>src/</code></td></tr>
+                <tr><td><code>WebFetch(domain:symfony.com)</code></td><td>Consultar páginas de ese dominio</td></tr>
+                <tr><td><code>mcp__gitlab</code></td><td>Todas las herramientas del servidor MCP gitlab</td></tr>
+                <tr><td><code>mcp__gitlab__create_merge_request</code></td><td>Solo esa herramienta concreta</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Ejemplo: la tienda, en Symfony con Docker</h3>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">json · .claude/settings.json</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>{
+  "permissions": {
+    "defaultMode": "default",
+    "allow": [
+      "Bash(docker compose exec -T app vendor/bin/phpunit:*)",
+      "Bash(docker compose exec -T app vendor/bin/phpstan:*)",
+      "Bash(docker compose exec -T app vendor/bin/php-cs-fixer:*)",
+      "Bash(docker compose exec -T app bin/console debug:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ],
+    "ask": [
+      "Bash(docker compose exec -T app bin/console doctrine:migrations:migrate:*)",
+      "Bash(git commit:*)"
+    ],
+    "deny": [
+      "Read(./.env.local)",
+      "Read(./config/secrets/**)",
+      "Bash(git push:*)",
+      "Bash(git commit --no-verify:*)",
+      "Bash(rm -rf:*)"
+    ]
+  },
+  "includeCoAuthoredBy": false
+}</code></pre>
+          </div>
+
+          <p><strong>Criterio:</strong> <code>allow</code> para lo de solo lectura y verificación (tests, análisis, <code>git status</code>), <code>ask</code> para lo que cambia estado (migraciones, commits) y <code>deny</code> para secretos y acciones irreversibles.</p>
+
+          <h3>Modos de permisos</h3>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Modo</th><th>Comportamiento</th><th>Cuándo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>default</code></td><td>Pregunta antes de editar o ejecutar lo que no está en <code>allow</code></td><td>Uso normal</td></tr>
+                <tr><td><code>acceptEdits</code></td><td>Edita archivos sin preguntar; los comandos siguen las reglas</td><td>Tareas de confianza en las que revisas el diff al final</td></tr>
+                <tr><td><code>plan</code></td><td>Solo lee y planifica; no edita ni ejecuta</td><td>Antes de tareas grandes</td></tr>
+                <tr><td><code>bypassPermissions</code></td><td>No pregunta nada (equivale a <code>--dangerously-skip-permissions</code>)</td><td>Solo en entornos aislados (contenedor, CI)</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Las reglas <code>deny</code> y los hooks PreToolUse siguen protegiendo incluso en los modos más permisivos. Campos y sintaxis según la documentación conocida; pueden variar entre versiones.</p>
 
           <h2 id="criterio">
             Qué automatizar con cada pieza

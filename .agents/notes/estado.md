@@ -16,7 +16,7 @@ sección «Cuándo aplicarlo» en todo tutorial (#114) son ERROR.
 usuario: 12 lecciones en 4 módulos (fundamentos, configurar el agente, trabajar con agentes, más allá).
 Conserva los 5 slugs y añade 7 con prefijo `pci-` (`ia-` es de `construir-con-ia`). Es el curso «mapa»: cada
 tema enlaza a la lección que lo desarrolla, y la mecánica concreta de Claude Code (frontmatter, settings.json,
-eventos de hooks) va a las `cc-*` (#195). El reparto, fila a fila, está en `plan-glosario-ia.md`.
+eventos de hooks) va a las `cc-*` (#195). El reparto, fila a fila, está en `archivo/plan-glosario-ia.md`.
 **Decisiones que no se reabren:** los ejemplos de convenciones del glosario son del trabajo del usuario y se
 reescriben en la «tienda» ficticia, y el mod `agent-flow` no se nombra. Las lecciones se redactaron en Markdown
 y se generaron con un script de andamiaje (`.agents/tasks/glosario-ia/build.py`, gitignored): si se editan, se

@@ -74,7 +74,7 @@
         <div class="tutorial-meta">
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            15 min de lectura
+            17 min de lectura
           </span>
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -99,6 +99,7 @@
             <li><a href="#minimo">Un servidor mínimo, funcional</a></li>
             <li><a href="#conectar">Conectarlo a Claude Code</a></li>
             <li><a href="#seguridad">Seguridad: cada servidor es superficie</a></li>
+            <li><a href="#herramienta-interna">Caso práctico: ¿MCP para la herramienta interna?</a></li>
             <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
@@ -310,6 +311,52 @@ await server.connect(new StdioServerTransport());</code></pre>
               usa, no lo que mola.
             </li>
           </ul>
+
+          <h2 id="herramienta-interna">
+            Caso práctico: ¿MCP para la herramienta interna?
+            <a href="#herramienta-interna" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Para uso personal en Claude Code <strong>no hace falta MCP</strong>: si la herramienta tiene comandos o CLI, Claude puede ejecutarlos directamente, y con un buen <code>CLAUDE.md</code> que explique cómo usarla es suficiente. Las credenciales siguen en los ajustes de la herramienta.</p>
+
+          <p>Cuándo sí compensa un MCP:</p>
+
+          <ul>
+            <li><strong>Compartirla con compañeros de forma estándar:</strong> cada uno la conecta a su harness y ve las mismas herramientas, bien descritas.</li>
+            <li><strong>Usarla desde harnesses sin terminal</strong>, como la app de Claude.</li>
+            <li><strong>Que el modelo vea acciones con nombre y parámetros claros</strong>, en lugar de adivinar comandos.</li>
+          </ul>
+
+          <p>Credenciales en un MCP remoto compartido:</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Integración</th><th>Credencial</th><th>Por qué</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Jira</td><td>Personal (OAuth de cada usuario)</td><td>Las acciones quedan a nombre de cada uno</td></tr>
+                <tr><td>GitLab</td><td>Personal (OAuth o token de cada usuario)</td><td>Igual: autoría y permisos individuales</td></tr>
+                <tr><td>Sentry</td><td>Compartida, solo lectura</td><td>Consultar errores no necesita identidad individual</td></tr>
+                <tr><td>BD de producción</td><td>Compartida, usuario de solo lectura</td><td>Común para todos; idealmente contra una réplica</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Las credenciales compartidas viven solo en el servidor (variables de entorno o gestor de secretos) y nunca llegan a los clientes. Aun así:</p>
+
+          <ul>
+            <li><strong>Cada usuario se autentica contra el propio MCP</strong>, para saber quién consulta qué y dejar registro.</li>
+            <li><strong>En la BD:</strong> limitar tablas, poner límite de filas y timeout, y enmascarar datos personales si los hay.</li>
+            <li><strong>Validarlo con la empresa</strong> antes de dar acceso a producción.</li>
+          </ul>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Un MCP con datos y salida al exterior es la tríada letal a medias</p>
+              <p>Si además el agente lee contenido de terceros (tickets, issues), ya tiene las tres patas de la prompt injection. Cómo cortarla, en <a href="criterio-y-riesgos.html#injection">criterio y riesgos</a>.</p>
+            </div>
+          </div>
 
           <h2 id="cuando">
             Cuándo aplicarlo
