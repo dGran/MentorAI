@@ -254,10 +254,38 @@
       ].join(" ")
     );
 
-  function byRelevance(tutorials, query) {
-    const hasQueryInTitle = (tutorial) => MentorAI.normalize(tutorial.title).includes(query);
+  function byRelevance(items, terms) {
+    const hasTermsInTitle = (item) => MentorAI.containsAllTerms(MentorAI.normalize(item.title), terms);
 
-    return [...tutorials.filter(hasQueryInTitle), ...tutorials.filter((tutorial) => !hasQueryInTitle(tutorial))];
+    return [...items.filter(hasTermsInTitle), ...items.filter((item) => !hasTermsInTitle(item))];
+  }
+
+  const lessonCount = (course) => (course.lessons ?? (course.modules ?? []).flatMap((module) => module.lessons)).length;
+
+  function collectionCardHtml(item, href, kind, detail) {
+    const { escapeHtml, Icons } = MentorAI;
+
+    return `<a class="mini-card" href="${href}">
+      <span class="mini-card__icon">${Icons.for(item.icon)}</span>
+      <h4 class="mini-card__title">${escapeHtml(item.title)}</h4>
+      <p class="mini-card__desc">${escapeHtml(item.summary ?? "")}</p>
+      <div class="mini-card__meta"><span>${kind} · ${detail}</span></div>
+    </a>`;
+  }
+
+  function matchingCollections(terms) {
+    const matchesTerms = (item) => MentorAI.containsAllTerms(MentorAI.normalize(`${item.title} ${item.summary ?? ""}`), terms);
+    const paths = byRelevance((window.MENTORAI_PATHS ?? []).filter(matchesTerms), terms);
+    const courses = byRelevance((window.MENTORAI_COURSES ?? []).filter(matchesTerms), terms);
+
+    return [
+      ...paths.map((path) =>
+        collectionCardHtml(path, `rutas.html#ruta-${encodeURIComponent(path.slug)}`, "Ruta", `${path.steps.length} pasos`)
+      ),
+      ...courses.map((course) =>
+        collectionCardHtml(course, `curso.html?slug=${encodeURIComponent(course.slug)}`, "Curso", `${lessonCount(course)} lecciones`)
+      ),
+    ];
   }
 
   function announce(mensaje) {
@@ -274,9 +302,9 @@
 
     const escapeHtml = MentorAI.escapeHtml;
     const term = input.value.trim();
-    const query = MentorAI.normalize(term);
+    const terms = MentorAI.searchTerms(term);
 
-    if (query.length === 0) {
+    if (terms.length === 0) {
       host.hidden = true;
       host.innerHTML = "";
       announce("");
@@ -289,16 +317,17 @@
     }
 
     const Search = MentorAI.Search;
+    const colecciones = matchingCollections(terms);
     const enMetadatos = byRelevance(
-      publishedTutorials().filter((tutorial) => haystack(tutorial).includes(query)),
-      query
+      publishedTutorials().filter((tutorial) => MentorAI.containsAllTerms(haystack(tutorial), terms)),
+      terms
     );
     const yaEncontrados = new Set(enMetadatos.map((tutorial) => tutorial.slug));
     const enContenido = publishedTutorials().filter(
-      (tutorial) => !yaEncontrados.has(tutorial.slug) && Search.coincide(tutorial.slug, query)
+      (tutorial) => !yaEncontrados.has(tutorial.slug) && Search.coincide(tutorial.slug, terms)
     );
 
-    const matches = [...enMetadatos, ...enContenido];
+    const matches = [...colecciones, ...enMetadatos, ...enContenido];
 
     host.hidden = false;
 
@@ -322,8 +351,9 @@
     );
 
     const resultados = [
+      ...colecciones,
       ...enMetadatos.map((tutorial) => miniCardHtml(tutorial)),
-      ...enContenido.map((tutorial) => miniCardHtml(tutorial, Search.fragmento(tutorial.slug, query))),
+      ...enContenido.map((tutorial) => miniCardHtml(tutorial, Search.fragmento(tutorial.slug, terms))),
     ].join("");
 
     host.innerHTML = `<header class="shelf__head"><div>
@@ -331,6 +361,8 @@
         <p class="shelf__sub">${matches.length} ${
           matches.length === 1 ? "coincidencia" : "coincidencias"
         } para “${escapeHtml(term)}”${
+          colecciones.length ? ` · ${colecciones.length} entre rutas y cursos` : ""
+        }${
           enContenido.length ? ` · ${enContenido.length} dentro del contenido` : ""
         }</p>
       </div></header>

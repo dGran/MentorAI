@@ -53,24 +53,25 @@
 
   /* ---------- Consulta ---------- */
 
-  function coincide(slug, consulta) {
-    if (consulta.length < MINIMO_PARA_BUSCAR) return false;
+  function coincide(slug, terminos) {
+    if (terminos.join("").length < MINIMO_PARA_BUSCAR) return false;
 
     const cuerpo = indice()?.[slug];
 
-    return typeof cuerpo === "string" && cuerpo.includes(consulta);
+    return typeof cuerpo === "string" && MentorAI.containsAllTerms(cuerpo, terminos);
   }
 
   /* Fragmento con la coincidencia resaltada, cortado por espacios para
      no partir palabras. El texto indexado ya viene normalizado, así que
      lo que se muestra no lleva acentos: es un extracto para ubicarte,
      no el texto del tutorial. */
-  function fragmento(slug, consulta) {
+  function fragmento(slug, terminos) {
     const cuerpo = indice()?.[slug];
 
-    if (typeof cuerpo !== "string") return "";
+    if (typeof cuerpo !== "string" || terminos.length === 0) return "";
 
-    const posicion = cuerpo.indexOf(consulta);
+    const consulta = terminos[0];
+    const posicion = MentorAI.termPosition(cuerpo, consulta);
 
     if (posicion === -1) return "";
 
@@ -82,7 +83,7 @@
     const finLimpio = hasta < cuerpo.length ? recorte.lastIndexOf(" ") : recorte.length;
     const texto = recorte.slice(inicioLimpio, finLimpio);
 
-    const relativa = texto.indexOf(consulta);
+    const relativa = posicion - desde - inicioLimpio;
     const escapeHtml = MentorAI.escapeHtml;
 
     const html =

@@ -29,29 +29,29 @@ function loadSearch(index) {
 const filler = (words) => FILLER_WORD.repeat(words).trim();
 
 test("without an index there is no fragment", () => {
-  assert.equal(loadSearch(null).fragmento("opcache", "precarga"), "");
+  assert.equal(loadSearch(null).fragmento("opcache", ["precarga"]), "");
 });
 
 test("a slug without indexed text has no fragment", () => {
-  assert.equal(loadSearch({ otro: "texto" }).fragmento("opcache", "precarga"), "");
+  assert.equal(loadSearch({ otro: "texto" }).fragmento("opcache", ["precarga"]), "");
 });
 
 test("a query that does not appear has no fragment", () => {
-  assert.equal(loadSearch({ opcache: "la cache de opcodes" }).fragmento("opcache", "precarga"), "");
+  assert.equal(loadSearch({ opcache: "la cache de opcodes" }).fragmento("opcache", ["precarga"]), "");
 });
 
 test("a short text is shown whole with the match marked and no ellipsis", () => {
   const search = loadSearch({ opcache: "activa la precarga en produccion" });
 
   assert.equal(
-    search.fragmento("opcache", "precarga"),
+    search.fragmento("opcache", ["precarga"]),
     "activa la <mark>precarga</mark> en produccion"
   );
 });
 
 test("a match deep inside a long text is cut at spaces with ellipsis on both sides", () => {
   const body = `${filler(30)} activa la precarga en produccion ${filler(30)}`;
-  const fragment = loadSearch({ opcache: body }).fragmento("opcache", "precarga");
+  const fragment = loadSearch({ opcache: body }).fragmento("opcache", ["precarga"]);
 
   assert.ok(fragment.startsWith("…relleno"), fragment);
   assert.ok(fragment.endsWith("relleno…"), fragment);
@@ -61,7 +61,7 @@ test("a match deep inside a long text is cut at spaces with ellipsis on both sid
 
 test("a match at the start has no leading ellipsis", () => {
   const body = `precarga al arrancar ${filler(30)}`;
-  const fragment = loadSearch({ opcache: body }).fragmento("opcache", "precarga");
+  const fragment = loadSearch({ opcache: body }).fragmento("opcache", ["precarga"]);
 
   assert.ok(fragment.startsWith("<mark>precarga</mark>"), fragment);
   assert.ok(fragment.endsWith("…"), fragment);
@@ -69,7 +69,7 @@ test("a match at the start has no leading ellipsis", () => {
 
 test("the fragment keeps no more than the context around the match", () => {
   const body = `${filler(30)} precarga ${filler(30)}`;
-  const fragment = loadSearch({ opcache: body }).fragmento("opcache", "precarga");
+  const fragment = loadSearch({ opcache: body }).fragmento("opcache", ["precarga"]);
   const visibleText = fragment.replace(/<\/?mark>/g, "").replace(/…/g, "");
 
   assert.ok(visibleText.length <= 2 * CONTEXT_CHARACTERS + "precarga".length, visibleText);
@@ -79,7 +79,7 @@ test("indexed text is escaped as HTML around the mark", () => {
   const search = loadSearch({ php: "usa <?php y la precarga & mas" });
 
   assert.equal(
-    search.fragmento("php", "precarga"),
+    search.fragmento("php", ["precarga"]),
     "usa &lt;?php y la <mark>precarga</mark> &amp; mas"
   );
 });

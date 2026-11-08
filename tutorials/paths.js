@@ -132,7 +132,7 @@ window.MENTORAI_PATHS = [
     slug: "ingenieria-con-ia",
     title: "Ingeniería con IA",
     summary:
-      "De usar la IA con criterio a dominar la herramienta y meterla en tu producto: cómo piensa un LLM y su mecánica por dentro, el trabajo diario con un agente (rules, skills, MCP, automatización), las features construidas sobre la API y, al final, un método de entrega con agentes que escala más allá de una sesión.",
+      "Todo lo de programar con IA, de lo básico al método: primero el mapa completo (harness, modelos y coste, rules, skills, subagentes, MCP, prompts, SDD, flujo agéntico, multiagente, evals, riesgos, IA local, RAG y fine-tuning); después la mecánica de un LLM por dentro; Claude Code a fondo, de configurarlo a automatizarlo; cómo meter un LLM en tu producto desde PHP, y por último un método de entrega con agentes que escala más allá de una sesión.",
     icon: "signal",
     steps: [
       { type: "course", ref: "programar-con-ia" },
