@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Embeddings, RAG y fine-tuning — MentorAI</title>
+    <meta
+      name="description"
+      content="Qué es un embedding y dónde se guarda, cómo funciona RAG paso a paso y para qué sirve, RAG frente a búsqueda agéntica, cuándo te afecta en el día a día, cómo organizar documentación en Markdown para que un agente la encuentre sin RAG, y cuándo compensa el fine-tuning, con casos concretos."
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Programar con IA</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Embeddings, RAG y fine-tuning</h1>
+        <p class="tutorial-hero__lead">
+          Tres formas de que un modelo responda con lo tuyo: ponérselo delante buscando por significado (RAG), dejar que lo busque él con herramientas (búsqueda agéntica) o reentrenarlo (fine-tuning). Esta lección explica cuándo usar cada una, y por qué la última casi nunca es la primera opción.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            17 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Programar con IA
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#embeddings">Embeddings</a></li>
+            <li><a href="#rag">RAG: buscar antes de responder</a></li>
+            <li><a href="#agentica">RAG vs. búsqueda agéntica</a></li>
+            <li><a href="#dia-a-dia">¿Me afecta en el día a día?</a></li>
+            <li><a href="#documentacion">Caso práctico: documentación funcional en Markdown</a></li>
+            <li><a href="#fine-tuning">Fine-tuning: cambiar el propio modelo</a></li>
+            <li><a href="#ejemplos">Ejemplos prácticos de fine-tuning</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            La idea que ordena toda la lección: <strong>el fine-tuning enseña comportamiento, no conocimiento.</strong> Para que el modelo sepa cosas de tu proyecto, RAG o búsqueda agéntica; para que se comporte de una manera, primero contexto, y fine-tuning solo si el contexto no basta.
+          </p>
+
+          <h2 id="embeddings">
+            Embeddings
+            <a href="#embeddings" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un <strong>embedding</strong> es la representación de un texto como un vector de números (cientos o miles de dimensiones) que captura su significado. Textos con significado parecido tienen vectores cercanos, aunque no compartan palabras: «cancelar suscripción» y «darse de baja» quedan cerca.</p>
+
+          <ul>
+            <li>Se generan con un <strong>modelo de embeddings</strong>, distinto del LLM y mucho más barato.</li>
+            <li>La cercanía se mide con <strong>similitud del coseno</strong> o distancia entre vectores.</li>
+            <li>Se guardan en una <strong>base de datos vectorial</strong> (pgvector en PostgreSQL, Qdrant, Weaviate, Pinecone…). MariaDB y MySQL también han añadido tipos vectoriales en versiones recientes.</li>
+            <li><strong>Usos:</strong> búsqueda semántica, documentos similares, clasificación, detectar duplicados (por ejemplo, tickets de Jira repetidos).</li>
+          </ul>
+
+          <p>Cómo se convierte el texto en esos vectores, en <a href="llm-de-texto-a-tokens.html">del texto a números</a>.</p>
+
+          <h2 id="rag">
+            RAG: buscar antes de responder
+            <a href="#rag" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p><strong>RAG</strong> significa generación aumentada por recuperación: antes de responder, el sistema busca la información relevante en tus documentos y la mete en el contexto del modelo. El modelo responde con esos datos delante, en lugar de solo con lo que aprendió al entrenarse.</p>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Trocear</b><small>Los documentos en fragmentos (chunks) de unos cientos de palabras</small></span>
+              </div>
+              <div class="flow__arrow" data-label="por cada fragmento"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Calcular el embedding</b><small>Un vector por fragmento</small></span>
+              </div>
+              <div class="flow__arrow" data-label="se guarda"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Guardar</b><small>En la base vectorial</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Indexación: una vez, y al cambiar los documentos.</p>
+          </div>
+
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Embedding de la pregunta</b><small>El mismo modelo de embeddings</small></span>
+              </div>
+              <div class="flow__arrow" data-label="busca"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Fragmentos más cercanos</b><small>Los más parecidos por significado</small></span>
+              </div>
+              <div class="flow__arrow" data-label="se añaden"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Al prompt</b><small>Junto a la pregunta del usuario</small></span>
+              </div>
+              <div class="flow__arrow" data-label="responde"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>El LLM responde</b><small>Basándose en ellos, idealmente citando la fuente</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Consulta: en cada pregunta.</p>
+          </div>
+
+          <p>Para qué sirve:</p>
+
+          <ul>
+            <li><strong>Responder sobre información privada o reciente</strong> que el modelo no conoce: documentación interna, normativa, wikis, tickets antiguos.</li>
+            <li><strong>Reducir alucinaciones</strong>, porque el modelo tiene los datos delante.</li>
+            <li><strong>Escalar a volúmenes</strong> que no caben en la ventana de contexto.</li>
+          </ul>
+
+          <p>Montarlo en PHP con pgvector, con sus errores típicos (troceado, reranking, búsqueda híbrida, reindexado) y cómo comprobar que trae lo correcto, en <a href="ia-embeddings-y-rag.html">embeddings y RAG desde PHP</a>.</p>
+
+          <h2 id="agentica">
+            RAG vs. búsqueda agéntica
+            <a href="#agentica" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Los agentes de código como Claude Code no suelen usar RAG con embeddings para el código: buscan con grep, leen archivos y siguen referencias, como haría un desarrollador. Para código esto suele funcionar mejor, porque los nombres exactos importan y el índice no se queda desactualizado.</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th></th><th>RAG con embeddings</th><th>Búsqueda agéntica</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Cómo busca</td><td>Por significado, en un índice previo</td><td>Con herramientas: grep, leer archivos, MCP</td></tr>
+                <tr><td>Mejor para</td><td>Mucha documentación en lenguaje natural</td><td>Código y datos estructurados</td></tr>
+                <tr><td>Mantenimiento</td><td>Reindexar al cambiar los documentos</td><td>Ninguno: lee siempre lo actual</td></tr>
+                <tr><td>Coste</td><td>Bajo por consulta</td><td>Más tokens y llamadas</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Se pueden combinar: un MCP que haga búsqueda semántica sobre la documentación interna y que el agente use como una herramienta más.</p>
+
+          <h2 id="dia-a-dia">
+            ¿Me afecta en el día a día?
+            <a href="#dia-a-dia" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>RAG no es algo que el modelo haga internamente: es una arquitectura que alguien construye alrededor del modelo. <strong>Usando Claude Code no hay nada que configurar</strong>, porque busca en el código con sus propias herramientas.</p>
+
+          <p>Saberlo sirve cuando:</p>
+
+          <ul>
+            <li><strong>Construyes algo:</strong> un asistente que responda sobre la documentación interna, un buscador de tickets parecidos, una funcionalidad de IA en tu producto. Ahí RAG es el patrón estándar y lo montas tú en PHP con una base vectorial.</li>
+            <li><strong>Evalúas herramientas:</strong> muchos productos se anuncian «con RAG»; entender cómo funciona ayuda a saber sus límites.</li>
+            <li><strong>Entiendes respuestas raras:</strong> un chatbot con RAG que responde mal suele fallar en la recuperación, no en el modelo.</li>
+          </ul>
+
+          <h2 id="documentacion">
+            Caso práctico: documentación funcional en Markdown
+            <a href="#documentacion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Para consultar documentación funcional en Markdown con un agente <strong>no hace falta RAG</strong>: el agente busca con grep y lee los archivos que necesita, igual que con el código. Funciona bien mientras la documentación esté bien organizada.</p>
+
+          <p>Para que el agente encuentre bien:</p>
+
+          <ul>
+            <li><strong>Un índice:</strong> un <code>README.md</code> o <code>INDEX.md</code> que liste cada módulo con una línea de qué cubre y su ruta. Es lo primero que lee.</li>
+            <li><strong>Estructura uniforme:</strong> todos los documentos con las mismas secciones (propósito, entidades, flujos, reglas de negocio, integraciones, dependencias con otros módulos).</li>
+            <li><strong>Cabecera con metadatos:</strong> módulo, palabras clave, fecha de la última revisión.</li>
+            <li><strong>Nombres reales:</strong> usar los nombres de clases, tablas y endpoints tal como están en el código, para que grep los encuentre.</li>
+            <li><strong>Enlaces entre módulos:</strong> referencias explícitas a otros documentos cuando un flujo los cruza.</li>
+            <li><strong>Mantenerlos al día:</strong> documentación vieja da respuestas incorrectas con total seguridad.</li>
+          </ul>
+
+          <p>Para un chatbot sobre esa documentación:</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Opción</th><th>Cómo</th><th>Cuándo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Sin RAG</td><td>Un agente (por ejemplo con el Claude Agent SDK) con herramientas de leer y buscar en esa carpeta. Mismo enfoque que una sesión de Claude Code</td><td>Por defecto</td></tr>
+                <tr><td>Contexto completo</td><td>Cargar todo el conjunto en la ventana, con prompt caching</td><td>Si todo cabe en la ventana</td></tr>
+                <tr><td>RAG</td><td>Índice vectorial y recuperación</td><td>Solo si el volumen crece mucho, si hay que responder muy rápido y barato a muchos usuarios, o si se mezcla con otras fuentes poco estructuradas</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h2 id="fine-tuning">
+            Fine-tuning: cambiar el propio modelo
+            <a href="#fine-tuning" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El <strong>fine-tuning</strong> es volver a entrenar un modelo ya existente con tus propios ejemplos, para que cambie su comportamiento de forma permanente. El resultado es un modelo nuevo, con sus pesos modificados.</p>
+
+          <p><strong>Cómo funciona:</strong> preparas cientos o miles de ejemplos de entrada y salida esperada (por ejemplo, ticket → categoría) y el proveedor o tu propia máquina reentrena el modelo con ellos.</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th></th><th>Contexto (rules, skills, prompt)</th><th>RAG</th><th>Fine-tuning</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Qué cambia</td><td>Lo que el modelo ve en cada llamada</td><td>Lo que se le busca y añade al contexto</td><td>El propio modelo</td></tr>
+                <tr><td>Mejor para</td><td>Instrucciones, convenciones, procedimientos</td><td>Conocimiento grande o cambiante</td><td>Estilo, formato o tarea muy repetitiva y estrecha</td></tr>
+                <tr><td>Actualizar</td><td>Editar un archivo</td><td>Reindexar</td><td>Volver a entrenar</td></tr>
+                <tr><td>Coste y esfuerzo</td><td>Muy bajo</td><td>Medio</td><td>Alto: datos, entrenamiento, evaluación</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Cuándo compensa</h4>
+              <ul>
+                <li>Tareas muy repetidas y acotadas a gran volumen, donde un modelo pequeño ajustado sustituye a uno grande más caro.</li>
+                <li>Formatos o estilos muy específicos difíciles de conseguir con instrucciones.</li>
+                <li>Modelos locales de pesos abiertos especializados en una tarea (técnicas como LoRA lo abaratan mucho).</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Cuándo no</h4>
+              <ul>
+                <li>Para el día a día con agentes de código: rules, skills y hooks dan casi siempre mejor resultado con mucho menos esfuerzo.</li>
+                <li>Cuando la información cambia a menudo: el modelo ajustado se queda desactualizado.</li>
+                <li>Cuando el modelo base mejora: cada nueva generación suele superar al modelo ajustado de la anterior, y hay que repetir el trabajo.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="ejemplos">
+            Ejemplos prácticos de fine-tuning
+            <a href="#ejemplos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>¿Crear tests unitarios? <strong>No es buen caso.</strong> Aunque las reglas sean siempre las mismas, cada test depende de un código distinto y exige razonar sobre él. Eso lo hace mejor un modelo grande con una skill de tests y los ejemplos del proyecto. «Repetitivo» en fine-tuning significa misma forma de entrada y salida, mucho volumen y poco razonamiento.</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Caso</th><th>Entrada → salida</th><th>Por qué encaja</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Clasificar tickets de Jira</td><td>Texto del ticket → equipo, tipo y prioridad</td><td>Miles al mes, categorías fijas, un modelo pequeño ajustado es rápido y barato</td></tr>
+                <tr><td>Triaje de errores de Sentry</td><td>Traza → módulo responsable y gravedad</td><td>Patrón estable propio del proyecto</td></tr>
+                <tr><td>Extraer datos de documentos</td><td>Factura o email → JSON con campos fijos</td><td>Formato muy concreto y gran volumen</td></tr>
+                <tr><td>Lenguaje natural a consulta</td><td>«Pedidos de marzo sin pagar» → SQL de un esquema fijo</td><td>Un esquema concreto que el modelo aprende de memoria</td></tr>
+                <tr><td>Textos con el tono de la marca</td><td>Ficha técnica → descripción de producto</td><td>Estilo difícil de describir con reglas, miles de productos</td></tr>
+                <tr><td>Autocompletado de código local</td><td>Código propio → sugerencias en el editor</td><td>Modelo pequeño local que aprende las convenciones de tu código</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p><strong>Patrón común:</strong> tarea estrecha, salida predecible, muchos ejemplos reales disponibles y volumen suficiente para que el ahorro frente a un modelo grande compense el esfuerzo. Aun así, primero hay que probar con un buen prompt y ejemplos (<em>few-shot</em>): muchas veces basta.</p>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Disponibilidad</p>
+              <p>Los modelos de Claude más recientes no suelen ofrecerse para fine-tuning general; donde más se hace es con modelos de pesos abiertos (ver <a href="pci-ia-local.html">IA local</a>).</p>
+            </div>
+          </div>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Úsalo cuando…</h4>
+              <ul>
+                <li>Construyes un asistente sobre mucha documentación en lenguaje natural: RAG con una base vectorial</li>
+                <li>Tu documentación funcional cabe en carpetas bien organizadas: búsqueda agéntica, sin RAG</li>
+                <li>Una tarea estrecha se repite miles de veces con la misma forma: fine-tuning de un modelo pequeño</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No lo uses cuando…</h4>
+              <ul>
+                <li>Quieres que un agente de código entienda tu repo: ya busca con grep y lee lo actual</li>
+                <li>Quieres que el modelo sepa cosas de tu proyecto con fine-tuning: enseña comportamiento, no conocimiento</li>
+                <li>No has probado antes un buen prompt con ejemplos: muchas veces basta</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un <strong>embedding</strong> es un vector que captura el significado; textos parecidos quedan cerca aunque no compartan palabras.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><strong>RAG</strong> trocea, indexa y recupera fragmentos para ponerlos delante del modelo; falla más en la recuperación que en el modelo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Para código y documentación bien organizada, la <strong>búsqueda agéntica</strong> suele ganar: no hay índice que se quede viejo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El <strong>fine-tuning</strong> enseña comportamiento, no conocimiento: compensa en tareas estrechas, repetidas y a gran volumen.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="pci-ia-local.html">
+              <small>← Anterior</small>
+              <b>IA local</b>
+            </a>
+            <a href="../cursos.html" class="next">
+              <small>Fin del curso →</small>
+              <b>Cursos</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

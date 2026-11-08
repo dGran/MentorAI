@@ -925,6 +925,18 @@ window.MENTORAI_PRACTICE = {
       solution:
         "La checklist previa es el truco: si revisas sin ella, el código bien formateado y seguro de sí mismo te arrastra a asentir — el sesgo de fluidez es real. Contra la lista, aparecen los huecos típicos de lo generado: el happy path impecable, los bordes flojos (¿qué pasa con el reloj que retrocede en el rate limiter?, ¿y con múltiples workers?), y decisiones no pedidas coladas de regalo. El criterio final del curso: la IA multiplica tu producción, no tu responsabilidad — esa no se delega.",
     },
+    {
+      id: "r04608d",
+      title: "La checklist de auditoría, convertida en skill",
+      statement:
+        "Con lo visto en el curso, escribe una checklist para auditar la configuración de agentes de un proyecto (CLAUDE.md o AGENTS.md, .claude/rules/, skills, subagentes, settings.json, hooks y MCP) y conviértela en una skill: carpeta auditar-config-agentes/ con su SKILL.md. Pruébala en un repo tuyo pidiendo «audita la configuración del agente» y, en otra sesión, una tarea que NO debería activarla. ¿Se activó solo cuando tocaba? ¿Qué encontró?",
+      solution:
+        "La checklist sale de los criterios del curso y de las lecciones de Claude Code que enlaza (rules, skills, subagentes, hooks y permisos), uno por pieza: rules cortas, imperativas, con su porqué y partidas con paths, sin reglas genéricas que cualquier modelo ya cumple; lo transversal sin paths; cada skill con un solo propósito y una descripción en dos partes (qué hace y «úsala cuando…»), cuerpo corto y el detalle en references/; subagentes con tools limitadas y un encargo con formato de vuelta; settings.json con allow para lo de solo lectura, ask para lo que cambia estado y deny para secretos y acciones irreversibles, incluido git commit --no-verify; hooks rápidos y sobre el archivo tocado; MCP solo los necesarios, sin credenciales en el repo; y nada de secretos en lo que va a Git. Es una skill y no una rule porque es un procedimiento largo que solo hace falta a veces; si quieres que se pase siempre antes de mergear cambios en .claude/, una rule corta puede obligar a usarla. La prueba de las dos tareas es la eval mínima de una skill: la descripción decide, y hay que comprobar que se activa cuando debe y solo entonces.",
+      solutionCode: {
+        lang: "markdown",
+        source: "---\nname: auditar-config-agentes\ndescription: Audita la configuración de agentes de un proyecto (CLAUDE.md o AGENTS.md, .claude/rules/, skills, subagentes, settings.json, hooks y MCP) contra una checklist y devuelve hallazgos clasificados. Úsala cuando el usuario pida revisar, auditar o limpiar la configuración del agente, las rules o las skills.\n---\n\n# Auditar la configuración del agente\n\n## Pasos\n1. Lista lo que hay: CLAUDE.md o AGENTS.md, .claude/rules/, .claude/skills/, .claude/agents/, .claude/settings.json, .mcp.json.\n2. Recorre la checklist de references/checklist.md pieza a pieza.\n3. Devuelve cada hallazgo como bloqueante, recomendable u opcional, con fichero, línea y una propuesta concreta.\n\n## Reglas\n- No modifiques nada: solo informa.\n- Un secreto en un fichero versionado es siempre bloqueante.\n- Una regla genérica que cualquier modelo ya cumple es un hallazgo: ocupa contexto en cada sesión."
+      },
+    },
   ],
   "diseno-y-arquitectura": [
     {

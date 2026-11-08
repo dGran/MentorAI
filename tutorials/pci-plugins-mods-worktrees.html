@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Plugins, mods y worktrees — MentorAI</title>
+    <meta
+      name="description"
+      content="Cómo se empaqueta y comparte una configuración de Claude Code con plugins y marketplaces, qué son los mods y en qué se diferencian de un hook, ejemplos por categoría y sus precauciones, y cómo trabajar con varias sesiones en paralelo usando worktrees."
+    />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Programar con IA</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Plugins, mods y worktrees</h1>
+        <p class="tutorial-hero__lead">
+          Cuando la configuración de un proyecto funciona, el siguiente paso es compartirla sin copiar carpetas a mano, verla en vivo mientras el agente trabaja y poder lanzar varias sesiones a la vez sin que se pisen. Para eso están los plugins, los mods y los worktrees.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            13 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Programar con IA
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#plugins">Plugins</a></li>
+            <li><a href="#mods">Mods</a></li>
+            <li><a href="#worktrees">Worktrees: varias sesiones sin pisarse</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">
+            Las tres piezas resuelven problemas que aparecen al escalar: los <strong>plugins</strong> reparten un kit de configuración entre proyectos y personas, los <strong>mods</strong> cambian lo que hace y muestra Claude Code durante la sesión, y los <strong>worktrees</strong> dan a cada sesión su propia copia del repositorio.
+          </p>
+
+          <h2 id="plugins">
+            Plugins
+            <a href="#plugins" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un <strong>plugin</strong> es un paquete instalable que agrupa piezas de configuración: skills, comandos, subagentes, hooks y servidores MCP. Sirve para compartir un «kit» completo entre proyectos y personas sin copiar carpetas a mano.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">texto · estructura de un plugin</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>mi-plugin/
+├── .claude-plugin/
+│   └── plugin.json      # nombre, versión, descripción, autor
+├── skills/              # skills del plugin
+├── commands/            # comandos personalizados
+├── agents/              # subagentes
+├── hooks/               # configuración de hooks
+└── .mcp.json            # servidores MCP que trae</code></pre>
+          </div>
+
+          <p>No hace falta que tenga todas las carpetas: un plugin puede traer solo una skill o solo unos hooks.</p>
+
+          <h3>Marketplaces</h3>
+
+          <p>Los plugins se distribuyen a través de <strong>marketplaces</strong>: un repositorio Git con un archivo de catálogo que lista los plugins disponibles. Hay marketplaces públicos y se puede montar uno privado para la empresa en GitLab o GitHub.</p>
+
+          <ul>
+            <li><code>/plugin</code> abre el gestor: añadir marketplaces, instalar, activar, desactivar o actualizar plugins.</li>
+            <li>Los plugins instalados se pueden activar por proyecto o a nivel de usuario.</li>
+          </ul>
+
+          <h3>Para qué te sirve</h3>
+
+          <ul>
+            <li><strong>Configuración de equipo reutilizable:</strong> las rules de arquitectura, la skill de retro, el subagente de QA, los hooks de PHPStan y Deptrac y los MCP comunes, empaquetados en un plugin que cualquier repo de la empresa instala de una vez.</li>
+            <li><strong>Versionado:</strong> actualizar el plugin actualiza a todos, en lugar de mantener copias en cada repositorio.</li>
+            <li><strong>Separar lo común de lo específico:</strong> lo compartido por todos los proyectos va al plugin; lo de cada proyecto, en su <code>.claude/</code>.</li>
+            <li><strong>Alternativa a tus dotfiles:</strong> tu configuración personal (skill de commits, preferencias) también podría empaquetarse como plugin privado.</li>
+          </ul>
+
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Precauciones con los plugins</p>
+              <p>Un plugin puede traer hooks y MCPs que <strong>ejecutan código en tu máquina</strong>: instala solo de fuentes de confianza y revisa el contenido (ver prompt injection en <a href="criterio-y-riesgos.html#injection">criterio y riesgos</a>). Y cada plugin activo añade skills, herramientas y descripciones al contexto: activa solo los necesarios.</p>
+            </div>
+          </div>
+
+          <h2 id="mods">
+            Mods
+            <a href="#mods" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un <strong>mod</strong> es un plugin de Claude Code que, en lugar de lanzar scripts externos, ejecuta funciones en JavaScript o TypeScript <strong>dentro del propio proceso de Claude Code</strong>, durante toda la sesión. Puede engancharse a sus eventos para dibujar en pantalla (encima del prompt o en un panel lateral), bloquear o reescribir llamadas a herramientas y cambiar lo que muestra la interfaz. Llegaron con Claude Code 2.1.287, en octubre de 2026, y según la cobertura del lanzamiento vienen activados por defecto.</p>
+
+          <h3>Mod vs. hook</h3>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th></th><th>Hook de settings</th><th>Mod</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Cómo se ejecuta</td><td>Lanza un programa aparte en cada evento</td><td>Funciones JS/TS cargadas dentro de Claude Code toda la sesión</td></tr>
+                <tr><td>Qué puede hacer</td><td>Bloquear, validar, devolver errores al agente</td><td>Lo mismo, y además dibujar paneles, barras, avisos y reescribir llamadas</td></tr>
+                <tr><td>Dónde vive</td><td><code>settings.json</code></td><td>Dentro de un plugin (su <code>hooks/hooks.json</code> apunta al archivo JS/TS)</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Un mod es, por tanto, <strong>un tipo de plugin</strong>: se instala igual, desde un marketplace o con <code>/plugin</code>.</p>
+
+          <h3>Ejemplos oficiales</h3>
+
+          <p>Anthropic publica tres mods de ejemplo, sin soporte, en su repositorio <code>claude-code-playground</code>:</p>
+
+          <ul>
+            <li><strong>token-weather:</strong> muestra una «previsión» del uso de la ventana de contexto encima del prompt.</li>
+            <li><strong>blast-radius:</strong> retiene un comando arriesgado (<code>rm -rf</code>, force push), muestra qué cambiaría y pide confirmar o cancelar.</li>
+            <li><strong>replay-theater:</strong> añade <code>/replay</code> para repasar paso a paso las ediciones del último turno.</li>
+          </ul>
+
+          <p>La comunidad añade otros: explorador de archivos junto a la conversación, detección de conflictos entre sesiones paralelas, visibilidad de subagentes o convertir correcciones repetidas en instrucciones guardadas.</p>
+
+          <h3>Más ejemplos, por categoría</h3>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Categoría</th><th>Mod</th><th>Qué hace</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Contexto y coste</td><td>flightdeck</td><td>Panel en vivo con contexto, coste, comprobaciones de permisos y subagentes, sin modificar las llamadas a herramientas</td></tr>
+                <tr><td>Contexto y coste</td><td>cctop</td><td>Panel estilo btop con llenado del contexto, tokens, coste, ratio de aciertos de caché, límites, latencia por herramienta y subagentes</td></tr>
+                <tr><td>Contexto y coste</td><td>token-weather-usage</td><td>En una sola franja: contexto, ventanas del plan, cuánto le queda caliente a la caché y qué costaría dejarla caducar</td></tr>
+                <tr><td>Contexto y coste</td><td>budget-guard</td><td>Vigila el gasto y los límites del plan: avisa al 80 % y, pasado el límite, rechaza llamadas a herramientas y pregunta antes del siguiente prompt</td></tr>
+                <tr><td>Prompt caching</td><td>cache-tax</td><td>Avisa antes de un envío que reescribiría una caché fría, con el coste estimado; <code>/keepwarm</code> mantiene la caché caliente mientras te ausentas (los pings consumen tokens)</td></tr>
+                <tr><td>Prompt caching</td><td>cache-warmer</td><td>Mantiene caliente la caché de una sesión inactiva y compacta las sesiones grandes mientras la caché sigue caliente</td></tr>
+                <tr><td>Seguridad</td><td>collision-guard</td><td>Avisa si una segunda sesión de Claude intenta editar un archivo que otra sesión activa ha tocado hace poco, y puede ofrecer un worktree como alternativa</td></tr>
+                <tr><td>Seguridad</td><td>blast-radius</td><td>Retiene comandos arriesgados y muestra su efecto; solo reconoce patrones concretos y puede no detectar scripts, alias o comandos combinados</td></tr>
+                <tr><td>Visibilidad</td><td>filetree</td><td>Árbol de archivos con estado de Git que resalta los archivos que Claude lee o edita; al seleccionar uno le pasa la ruta</td></tr>
+                <tr><td>Visibilidad</td><td>(panel de subagentes)</td><td>Panel con los subagentes en marcha, su herramienta actual y el tiempo transcurrido</td></tr>
+                <tr><td>Presentación</td><td>prismantis</td><td>Muestra tablas, código, diagramas Mermaid y gráficos en la conversación, con botones de copiar (añade unos 190 tokens por prompt, desactivable)</td></tr>
+                <tr><td>Presentación</td><td>image-view</td><td>Miniaturas de las imágenes pegadas antes de enviarlas (necesita un terminal compatible, como Ghostty o kitty)</td></tr>
+                <tr><td>Optimización</td><td>token-optimizer</td><td>Comprime la salida de las herramientas, guarda un punto de control antes de compactar, puntúa la calidad del contexto y muestra el ahorro en un panel local</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Mods de la comunidad: nombres orientativos</p>
+              <p>Salvo los tres oficiales, son mods de terceros recogidos de catálogos comunitarios; los nombres y lo que hacen pueden cambiar. Hay catálogos con miles de mods que indican a qué puede acceder cada uno antes de instalarlo, como awesome-claude-code-mods. Fuentes del glosario original sobre mods: StationX, Firecrawl, MindStudio y la documentación oficial de Claude Code.</p>
+            </div>
+          </div>
+
+          <p>Los más interesantes para un flujo de trabajo con agentes: <strong>collision-guard</strong> si trabajas con varias sesiones o worktrees; <strong>un panel de subagentes</strong> si los usas; un <strong>medidor de contexto y coste</strong> (flightdeck, cctop) para decidir cuándo compactar o abrir sesión nueva; <strong>cache-tax</strong> o <strong>cache-warmer</strong> si haces pausas largas en sesiones grandes.</p>
+
+          <h3>Para qué te puede servir</h3>
+
+          <ul>
+            <li>Ver el consumo de contexto en tiempo real.</li>
+            <li>Protecciones visuales ante comandos destructivos, complementarias a <code>deny</code> y hooks.</li>
+            <li>Detectar conflictos si trabajas con varias sesiones o worktrees.</li>
+            <li>Hacer más visible lo que hacen los subagentes.</li>
+          </ul>
+
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Precauciones con los mods</p>
+              <p>Se ejecutan con tus permisos y <strong>dentro de Claude Code</strong>: pueden leer y modificar lo que pasa en la sesión, y la propia Anthropic advierte de que pueden leer tu clave de API. No son un sandbox. Antes de cargarlo, revisa sus hooks y llamadas, y pruébalo solo para una sesión con <code>--plugin-dir</code> antes de añadirlo de forma permanente. Hay miles publicados: aplica los mismos criterios que con MCPs y skills de terceros. Y un mod como blast-radius reconoce el riesgo por el texto del comando: las restricciones duras siguen siendo las reglas <code>deny</code> de <a href="cc-hooks-y-permisos.html">permisos</a>.</p>
+            </div>
+          </div>
+
+          <h2 id="worktrees">
+            Worktrees: varias sesiones sin pisarse
+            <a href="#worktrees" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un <strong>worktree</strong> de Git es una copia de trabajo adicional del mismo repositorio, en otra carpeta y con otra rama, que comparte el historial. Permite tener varias sesiones de agente trabajando en paralelo en tareas distintas sin pisarse los archivos.</p>
+
+          <ul>
+            <li><strong>Git puro:</strong> <code>git worktree add ../mi-proyecto-feature-x -b feature-x</code> crea la carpeta con su rama; en ella se abre otra sesión de Claude Code.</li>
+            <li><strong>Soporte en Claude Code:</strong> se puede arrancar una sesión directamente en un worktree nuevo con la opción <code>--worktree</code>, y los subagentes pueden configurarse para trabajar aislados en su propio worktree. Conviene confirmar los detalles en la documentación de la versión que uses.</li>
+            <li><strong>Ojo con Docker:</strong> cada worktree es otra carpeta, así que puede necesitar sus propios contenedores, puertos o base de datos para no chocar con los demás.</li>
+            <li><strong>Limpieza:</strong> <code>git worktree remove</code> al terminar, o se acumulan carpetas y ramas.</li>
+          </ul>
+
+          <p>Los comandos de Git, cómo se comparten los objetos y cómo levantar cada worktree con su propio Docker Compose, en <a href="git-worktrees.html">git worktrees</a>.</p>
+
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Úsalo cuando…</h4>
+              <ul>
+                <li>Varios repos comparten rules, skills y hooks: un plugin en un marketplace privado evita mantener copias</li>
+                <li>Quieres ver el contexto y el coste en vivo para decidir cuándo compactar: un mod medidor</li>
+                <li>Lanzas dos sesiones a la vez sobre el mismo repo: un worktree por sesión</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>No lo uses cuando…</h4>
+              <ul>
+                <li>Solo tienes un proyecto: la carpeta <code>.claude/</code> del repo basta</li>
+                <li>No has leído qué hace un mod o plugin de terceros: ejecuta código con tus permisos</li>
+                <li>La segunda sesión necesita la misma base de datos que la primera sin aislarla: se pisarán igual</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un <strong>plugin</strong> empaqueta skills, comandos, subagentes, hooks y MCP; se reparte por <strong>marketplaces</strong> y se gestiona con <code>/plugin</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un <strong>mod</strong> es un plugin que corre JS/TS dentro de Claude Code: dibuja paneles y puede bloquear o reescribir llamadas. Corre con tus permisos y no es un sandbox.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Plugins y mods de terceros se revisan antes de instalar, como cualquier código.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un <strong>worktree</strong> da a cada sesión su carpeta y su rama; con Docker, también sus contenedores y puertos.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="pci-entorno-claude-code.html">
+              <small>← Anterior</small>
+              <b>El entorno de Claude Code</b>
+            </a>
+            <a href="prompting-para-codigo.html" class="next">
+              <small>Siguiente →</small>
+              <b>Prompts y contexto</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

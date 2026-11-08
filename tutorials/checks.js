@@ -1480,15 +1480,21 @@ window.MENTORAI_CHECKS = {
     { id: "c61d3cc", q: "¿Qué es la ventana de contexto?",
       o: ["El número máximo de tokens que el modelo puede generar en una respuesta","El texto máximo que ve a la vez, prompt y respuesta incluidos","El historial de mensajes que el proveedor guarda de la conversación"], a: 1,
       w: "Cuando se llena, lo que sobra se cae: por eso en conversaciones largas parece olvidar lo del principio." },
+    { id: "cb712c3", q: "Dos herramientas usan el mismo modelo y una rinde mucho mejor. ¿De dónde sale la diferencia?",
+      o: ["Del harness que lo envuelve, con su prompt, herramientas y permisos","De la temperatura, que cada herramienta fija a un valor distinto","Del reentrenamiento que una de ellas hace con tus repositorios"], a: 0,
+      w: "El modelo es el motor y el harness el coche: lo que le pone delante y lo que le deja hacer cambia mucho el resultado con el mismo modelo." },
   ],
 
   "como-piensa-un-llm": [
-    { id: "cdbe528", q: "¿Prompting o fine-tuning para adaptar un modelo a tu dominio?",
-      o: ["Fine-tuning desde el principio: mete el dominio en los pesos y así responde de forma más fiable","Prompting casi siempre: el fine-tuning aporta poco con los modelos actuales","Empezar por prompting y RAG, y dejar el fine-tuning para formato o estilo muy concretos"], a: 2,
-      w: "El fine-tuning cambia los pesos y cuesta datos, tiempo y dinero; el prompting no toca nada y se itera en segundos." },
-    { id: "c43ad97", q: "¿Qué es RAG?",
-      o: ["Buscar información relevante y pasársela en el prompt para que responda con datos actuales","Reentrenar el modelo con tus documentos para que los tenga en los pesos","Guardar en caché respuestas previas y devolverlas cuando la pregunta se repite"], a: 0,
-      w: "Sale más barato que reentrenar y permite citar la fuente, que es lo que hace verificable la respuesta." },
+    { id: "cae2995", q: "¿Qué hace peligrosas a las alucinaciones?",
+      o: ["Que llegan con el mismo tono de seguridad que los aciertos","Que son tan frecuentes que casi ninguna respuesta es fiable","Que solo ocurren en temas oscuros, donde nadie las detecta"], a: 0,
+      w: "No hay indicador de confianza en el texto, así que la verificación tiene que venir de fuera: tests, documentación, ejecutarlo." },
+    { id: "cd07714", q: "Bajas la temperatura a 0 en tu clasificador por API. ¿Qué consigues?",
+      o: ["Que el modelo deje de alucinar porque siempre elige lo más probable","Que el modelo razone más antes de responder a cada ticket","Que las respuestas sean más repetibles, aunque no idénticas ni más ciertas"], a: 2,
+      w: "Temperatura 0 reduce mucho la variación pero no la elimina, y no arregla alucinaciones: el modelo se equivoca de forma más consistente." },
+    { id: "cdbb3da", q: "¿Qué reduce más las alucinaciones en código?",
+      o: ["Escribir en las rules que el modelo puede decir «no lo sé»","Obligar a comprobar antes de afirmar, con tests y PHPStan","Subir el esfuerzo al máximo en todas las tareas del proyecto"], a: 1,
+      w: "Permitir el «no lo sé» ayuda poco; verificar que el método existe y no afirmar que los tests pasan sin ejecutarlos ataca la causa, y la verificación automática atrapa lo que se cuele." },
   ],
 
   "prompting-para-codigo": [
@@ -1498,6 +1504,9 @@ window.MENTORAI_CHECKS = {
     { id: "c16efbc", q: "¿Qué suele mejorar más una respuesta de código?",
       o: ["Pedirle que sea breve y vaya al grano para que no se desvíe del problema","Exigirle siempre varias alternativas y quedarte tú con la que mejor encaje","Darle tus restricciones reales (versiones, convenciones, qué no tocar)"], a: 2,
       w: "El modelo no conoce tu proyecto salvo que se lo cuentes, y por defecto escribirá código idiomático… de otro proyecto." },
+    { id: "c30a5be", q: "¿Qué es context engineering?",
+      o: ["Redactar mejor cada prompt concreto con trucos de formato","Diseñar qué información recibe el modelo, cuándo y en qué forma","Reentrenar el modelo con el contexto de tu propio proyecto"], a: 1,
+      w: "Rules, skills, MCP, subagentes y compactación son sus piezas. No sustituye al prompt: lo estable vive en el entorno y el prompt aporta lo de cada tarea." },
   ],
 
   "flujo-con-agentes": [
@@ -1507,15 +1516,18 @@ window.MENTORAI_CHECKS = {
     { id: "c47de45", q: "¿Qué papel tienen las herramientas en un agente?",
       o: ["El modelo las ejecuta directamente en tu máquina cada vez que las necesita","El modelo pide ejecutarlas y el harness decide: ahí viven los permisos","Sustituyen al prompt: le dan al modelo las instrucciones concretas de la tarea"], a: 1,
       w: "El modelo nunca ejecuta nada por sí mismo. Todo lo que un agente puede hacer es lo que tú le dejas hacer." },
+    { id: "cacadb5", q: "¿Cuándo no compensa spec-driven development?",
+      o: ["En una funcionalidad grande con requisitos ambiguos","En un bug pequeño o un cambio de pocas líneas","En una tarea larga que un agente hará en varias sesiones"], a: 1,
+      w: "El papeleo de spec, plan y tareas cuesta más que el cambio. En lo grande y ambiguo, corregir la spec es mucho más barato que corregir código." },
   ],
 
   "criterio-y-riesgos": [
     { id: "c819a4e", q: "Un agente lee un issue de GitHub que contiene instrucciones ocultas y las obedece.",
       o: ["Es una alucinación: el modelo se inventa instrucciones que no existen","Solo pasa con modelos pequeños, que siguen peor el prompt de sistema","Es prompt injection: no distingue tus instrucciones del contenido que lee"], a: 2,
       w: "Por eso importa acotar sus permisos y desconfiar de todo lo que entre desde fuera, igual que con cualquier entrada de usuario." },
-    { id: "cae2995", q: "¿Qué hace peligrosas a las alucinaciones?",
-      o: ["Que llegan con el mismo tono de seguridad que los aciertos","Que son tan frecuentes que casi ninguna respuesta es fiable","Que solo ocurren en temas oscuros, donde nadie las detecta"], a: 0,
-      w: "No hay indicador de confianza en el texto, así que la verificación tiene que venir de fuera: tests, documentación, ejecutarlo." },
+    { id: "c727c12", q: "¿Cuál es la «tríada letal» de la prompt injection?",
+      o: ["Modelo grande, esfuerzo alto y una temperatura muy alta","Muchos MCP, muchas skills y una ventana llena","Datos privados, contenido ajeno y salida al exterior"], a: 2,
+      w: "Con las tres a la vez, un texto escondido en un ticket puede llevar tus secretos fuera. Quitando cualquiera, el ataque pierde casi toda su fuerza." },
   ],
 
 
@@ -1526,6 +1538,72 @@ window.MENTORAI_CHECKS = {
     { id: "c3fbb25", q: "¿Por qué 1 KB no siempre son 1000 bytes?",
       o: ["Por errores de redondeo al convertir de bits a bytes","Por el sistema de ficheros: cada uno redondea a su tamaño de bloque","Por la potencia de 2: 1024, aunque los discos cuenten con 1000"], a: 2,
       w: "Es la razón de que un disco de 1 TB muestre unos 931 GB en el sistema: no falta nada, se está midiendo distinto." },
+  ],
+
+  "pci-modelos-y-coste": [
+    { id: "c94929b", q: "¿Qué controla el esfuerzo de razonamiento?",
+      o: ["El tamaño del modelo que responde: Haiku, Sonnet u Opus","La aleatoriedad con la que se elige cada token de la salida","Cuánta de su capacidad usa el modelo en cada respuesta, a costa de tokens"], a: 2,
+      w: "El tamaño fija la capacidad máxima; el esfuerzo, cuánta se usa. Los tokens de pensamiento se cobran y ocupan contexto." },
+    { id: "c486aaf", q: "¿Por qué una sesión larga de agente se encarece tanto por API?",
+      o: ["Porque la salida de cada vuelta se cobra dos veces si hay caché","Porque cada vuelta del bucle reenvía todo el contexto","Porque Claude Code cambia a Opus al pasar de cierto tamaño"], a: 1,
+      w: "No pagas lo último que dijiste, sino todo lo acumulado en cada llamada. El prompt caching lo abarata solo si el inicio del contexto no cambia." },
+  ],
+
+  "pci-piezas-del-agente": [
+    { id: "c56d028", q: "Una convención debe cumplirse siempre que se toque src/. ¿Dónde va?",
+      o: ["En una skill con una buena descripción","En una rule de proyecto con paths","En un subagente que revise cada cambio"], a: 1,
+      w: "Una skill solo se carga si el modelo decide que encaja; una rule con paths está ahí cada vez que se trabaja en esos archivos." },
+    { id: "cbb5841", q: "¿Qué diferencia a un hook de una rule?",
+      o: ["El hook solo se carga cuando el modelo considera que encaja","El hook vive en el prompt y la rule en settings.json","El hook se ejecuta siempre que ocurre el evento, se acuerde o no el modelo"], a: 2,
+      w: "La rule dice «pasa PHPStan» y el modelo puede olvidarlo; el hook lo ejecuta él mismo cada vez." },
+  ],
+
+  "pci-entorno-claude-code": [
+    { id: "c0cc448", q: "¿Qué fichero de configuración no debe ir a Git?",
+      o: [".claude/settings.json con los permisos del equipo",".claude/settings.local.json con tus ajustes",".mcp.json con los servidores MCP comunes"], a: 1,
+      w: "Los .local son preferencias personales. settings.json y .mcp.json se comparten, siempre sin secretos." },
+    { id: "cd4de12", q: "¿Qué diferencia un comando propio de una skill?",
+      o: ["El comando puede llevar scripts y la skill solo texto en Markdown","El comando se guarda en el usuario y la skill solo en el proyecto","El comando lo lanzas tú y la skill la elige el modelo"], a: 2,
+      w: "Comando: lo invocas tú. Skill: el modelo la carga cuando la tarea encaja con su descripción. Las versiones recientes tienden a unificarlos." },
+  ],
+
+  "pci-plugins-mods-worktrees": [
+    { id: "c149d2d", q: "¿Qué es un mod de Claude Code?",
+      o: ["Un hook de settings.json que lanza un programa externo en cada evento","Un servidor MCP local que dibuja paneles encima del prompt","Un plugin que corre JS o TS dentro de Claude Code durante toda la sesión"], a: 2,
+      w: "Un mod es un tipo de plugin: se instala igual, pero corre dentro del proceso, con tus permisos, y puede dibujar paneles o reescribir llamadas." },
+    { id: "c040a69", q: "Abres dos worktrees de una app en Docker. ¿Qué suele faltar?",
+      o: ["Una segunda copia del historial de Git en cada carpeta","Sus propios contenedores, puertos o base de datos","Volver a clonar el repositorio desde el remoto en cada uno"], a: 1,
+      w: "Los worktrees comparten historial, pero cada carpeta levantada con Docker necesita no chocar con la otra en puertos y datos." },
+  ],
+
+  "pci-multiagente-y-evals": [
+    { id: "c547721", q: "¿Qué aporta de verdad usar varios agentes?",
+      o: ["Aislar contextos, paralelizar o revisar con ojos nuevos","Repartir cargos como PM, developer y QA entre los agentes","Que cada agente use una temperatura distinta"], a: 0,
+      w: "Darle a un agente el papel de «PM» es el truco de «actúa como experto» con más tokens. El valor está en el aislamiento y el paralelismo." },
+    { id: "c43c041", q: "¿Qué forma de puntuar una eval es más fiable y barata?",
+      o: ["Un LLM que juzga cada respuesta con unos criterios","Una persona que puntúa cada respuesta del conjunto","Un script que comprueba la salida, como un test"], a: 2,
+      w: "Lo comprobable por código es fiable y barato. El LLM como juez hay que calibrarlo; la revisión humana es fiable pero cara y lenta." },
+  ],
+
+  "pci-ia-local": [
+    { id: "c9aa3e3", q: "¿Qué limita qué modelo puedes ejecutar en local?",
+      o: ["Sobre todo, la velocidad de la CPU del equipo","El espacio libre en el disco duro","La memoria, sea VRAM o memoria unificada"], a: 2,
+      w: "El modelo entero tiene que caber en memoria: unos 0,5-0,6 GB por cada mil millones de parámetros a 4 bits, más el contexto." },
+    { id: "cc88435", q: "¿Qué hace la cuantización?",
+      o: ["Reduce la precisión de cada parámetro para que el modelo ocupe menos memoria","Activa solo una parte de los parámetros en cada token generado","Comprime el contexto para que quepan más tokens en la ventana"], a: 0,
+      w: "Pasar de 16 a 8 o 4 bits pierde algo de calidad y permite modelos más grandes. Activar solo una parte de los pesos es lo que hace un MoE." },
+  ],
+
+  "pci-rag-y-fine-tuning": [
+    { id: "cdbe528", q: "¿Prompting o fine-tuning para adaptar un modelo a tu dominio?",
+      o: ["Fine-tuning desde el principio: mete el dominio en los pesos y así responde de forma más fiable","Prompting casi siempre: el fine-tuning aporta poco con los modelos actuales","Empezar por prompting y RAG, y dejar el fine-tuning para formato o estilo muy concretos"], a: 2,
+      w: "El fine-tuning cambia los pesos y cuesta datos, tiempo y dinero; el prompting no toca nada y se itera en segundos." },
+    { id: "c43ad97", q: "¿Qué es RAG?",
+      o: ["Buscar información relevante y pasársela en el prompt para que responda con datos actuales","Reentrenar el modelo con tus documentos para que los tenga en los pesos","Guardar en caché respuestas previas y devolverlas cuando la pregunta se repite"], a: 0,
+      w: "Sale más barato que reentrenar y permite citar la fuente, que es lo que hace verificable la respuesta." },
+    { id: "c6a20e6", q: "¿Por qué Claude Code no usa RAG con embeddings para tu código?",
+      o: ["Porque busca con grep y lee siempre la versión actual de cada fichero","Porque los embeddings no pueden representar código fuente","Porque RAG solo funciona con documentos escritos en inglés"], a: 0,
+      w: "Para código la búsqueda agéntica suele ir mejor: los nombres exactos importan y no hay un índice que se quede desactualizado." },
   ],
 
   "texto-unicode": [

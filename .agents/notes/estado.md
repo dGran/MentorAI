@@ -1,16 +1,26 @@
 # Estado del proyecto
 
-Última actualización: **2026-10-19**.
+Última actualización: **2026-11-08**.
 
 Este fichero se lee al empezar cada sesión y está pensado para leerse **entero**.
 Lo cerrado vive en `archivo/`; si algo de aquí crece demasiado, se archiva.
 
 ## Dónde está el proyecto
 
-**344 tutoriales · 36 cursos · 7 rutas · 577 preguntas de examen · 814 checks ·
-108 retos de práctica.** `node scripts/validar.js` sale sin errores **y sin
+**351 tutoriales · 36 cursos · 7 rutas · 617 preguntas de examen · 833 checks ·
+109 retos de práctica.** `node scripts/validar.js` sale sin errores **y sin
 avisos**: el sesgo de las opciones (#25), el ancla de cada `h2` (#112) y la
 sección «Cuándo aplicarlo» en todo tutorial (#114) son ERROR.
+
+**Curso `programar-con-ia` renovado (2026-11-08, #193-#195):** se rehízo a partir del glosario de IA del
+usuario: 12 lecciones en 4 módulos (fundamentos, configurar el agente, trabajar con agentes, más allá).
+Conserva los 5 slugs y añade 7 con prefijo `pci-` (`ia-` es de `construir-con-ia`). Es el curso «mapa»: cada
+tema enlaza a la lección que lo desarrolla, y la mecánica concreta de Claude Code (frontmatter, settings.json,
+eventos de hooks) va a las `cc-*` (#195). El reparto, fila a fila, está en `plan-glosario-ia.md`.
+**Decisiones que no se reabren:** los ejemplos de convenciones del glosario son del trabajo del usuario y se
+reescriben en la «tienda» ficticia, y el mod `agent-flow` no se nombra. Las lecciones se redactaron en Markdown
+y se generaron con un script de andamiaje (`.agents/tasks/glosario-ia/build.py`, gitignored): si se editan, se
+edita el HTML.
 
 **Curso `ia-por-dentro` (2026-10-06, épica #23):** «La IA por dentro», 5
 lecciones con prefijo `llm-` (tokens y embeddings, atención y contexto,

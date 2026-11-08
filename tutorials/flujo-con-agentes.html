@@ -17,10 +17,10 @@
     </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Flujo de trabajo con agentes de código — MentorAI</title>
+    <title>SDD y flujo agéntico: del ticket a producción con agentes — MentorAI</title>
     <meta
       name="description"
-      content="Qué es un agente de código (Claude Code y similares) y cómo trabajar con él: el ciclo plan-implementar-revisar, cómo darle el contexto del repositorio, qué herramientas usa y por qué el criterio sigue siendo tuyo."
+      content="Cómo se trabaja con un agente de código: plan, implementar y revisar; spec-driven development (fases, specs, herramientas y cuándo compensa); el flujo agéntico completo del ticket al deploy con sus niveles de automatización, y el ciclo de mejora que convierte cada review en rules, hooks o Deptrac."
     />
     <link rel="stylesheet" href="../assets/css/styles.css" />
     <link
@@ -66,17 +66,14 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           <span>Programar con IA</span>
         </nav>
-        <h1 class="tutorial-hero__title">Flujo de trabajo con agentes</h1>
+        <h1 class="tutorial-hero__title">SDD y flujo agéntico: del ticket a producción con agentes</h1>
         <p class="tutorial-hero__lead">
-          Un agente de código no solo escribe en un chat: lee tu repositorio,
-          ejecuta comandos y edita ficheros. Eso cambia la forma de trabajar:
-          pasas de copiar y pegar fragmentos a dirigir un colaborador que actúa
-          sobre tu proyecto. Saber dirigirlo es la nueva habilidad.
+          Un chat te da texto que tú trasladas al código. Un agente actúa: lee, ejecuta y modifica tu proyecto. Tu papel pasa de copiar respuestas a dirigir y revisar. Esta lección va de cómo se dirige: primero el ciclo corto de una tarea y después el flujo completo, del ticket a producción.
         </p>
         <div class="tutorial-meta">
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            15 min de lectura
+            20 min de lectura
           </span>
           <span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -95,12 +92,13 @@
         <aside class="toc">
           <p class="toc__title">En esta página</p>
           <ul class="toc__list">
-            <li><a href="#idea">Qué es un agente de código</a></li>
-            <li><a href="#herramientas">Las herramientas que usa</a></li>
+            <li><a href="#herramientas">Un agente de código y sus herramientas</a></li>
             <li><a href="#ciclo">Plan, implementar, revisar</a></li>
-            <li><a href="#contexto-repo">El contexto del repositorio</a></li>
+            <li><a href="#sdd">Spec-driven development (SDD)</a></li>
+            <li><a href="#sdd-vs-flujo">SDD no es el flujo completo</a></li>
+            <li><a href="#flujo">El flujo agéntico, etapa a etapa</a></li>
+            <li><a href="#mejora">Del code review a la autonomía: el ciclo de mejora</a></li>
             <li><a href="#criterio">No delegues el criterio</a></li>
-            <li><a href="#limites">Dónde encaja y dónde no</a></li>
             <li><a href="#cuando">Cuándo aplicarlo</a></li>
             <li><a href="#resumen">Resumen</a></li>
           </ul>
@@ -108,73 +106,25 @@
 
         <article class="prose">
           <p class="lead">
-            Un chat de IA te da texto que tú trasladas al código. Un agente
-            cierra ese hueco: tiene permiso para leer, ejecutar y modificar tu
-            proyecto directamente. Es más potente y más delicado, porque actúa.
-            Tu papel deja de ser «copiar respuestas» y pasa a ser «dirigir y
-            revisar».
+            Pedirle a un agente «hazme esto» en un solo prompt funciona en cosas pequeñas. En funcionalidades grandes, el agente rellena huecos con suposiciones. Todo lo que sigue —el plan antes del código, la spec, los puntos de control— son formas de resolver esas dudas antes de que se conviertan en código.
           </p>
-
-          <h2 id="idea">
-            Qué es un agente de código
-            <a href="#idea" class="anchor" aria-hidden="true">#</a>
-          </h2>
-          <p>
-            Un <strong>agente de código</strong> es un LLM <a href="cc-agente-por-dentro.html">envuelto en un bucle</a>
-            que le da herramientas y autonomía para usarlas. En vez de
-            responderte y parar, observa el resultado de cada acción y decide la
-            siguiente: lee un fichero, busca una función, ejecuta los tests, ve
-            que fallan, corrige. Claude Code es un ejemplo; hay varios.
-          </p>
-
-          <div class="callout callout--info">
-            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            <div class="callout__body">
-              <p class="callout__title">El mismo modelo, más manos</p>
-              <p>
-                Por debajo sigue siendo <a href="como-piensa-un-llm.html">el LLM de «Cómo piensa un LLM»</a>: predice
-                texto, ve solo su ventana de contexto, puede alucinar. Lo nuevo
-                no es que «piense mejor», sino que puede <strong>actuar y
-                observar</strong> el resultado, lo que le permite corregirse sin
-                que tú hagas de intermediario.
-              </p>
-            </div>
-          </div>
 
           <h2 id="herramientas">
-            Las herramientas que usa
+            Un agente de código y sus herramientas
             <a href="#herramientas" class="anchor" aria-hidden="true">#</a>
           </h2>
-          <p>
-            La diferencia con un chat es el conjunto de acciones que puede tomar.
-            Las típicas:
-          </p>
+          <p>Un <strong>agente de código</strong> es un LLM <a href="cc-agente-por-dentro.html">envuelto en un bucle</a> que le da herramientas y autonomía para usarlas. Por debajo sigue siendo <a href="como-piensa-un-llm.html">el LLM de siempre</a>: predice texto, ve solo su ventana de contexto, puede alucinar. Lo nuevo es que puede <strong>actuar y observar</strong> el resultado, lo que le permite corregirse sin que tú hagas de intermediario.</p>
 
           <div class="table-wrap">
             <table>
               <thead>
-                <tr>
-                  <th>Herramienta</th>
-                  <th>Para qué</th>
-                </tr>
+                <tr><th>Herramienta</th><th>Para qué</th></tr>
               </thead>
               <tbody>
-                <tr>
-                  <td><strong>Leer / buscar</strong></td>
-                  <td>Abrir ficheros y rastrear símbolos por el repo para entender el código antes de tocarlo.</td>
-                </tr>
-                <tr>
-                  <td><strong>Editar / escribir</strong></td>
-                  <td>Aplicar cambios concretos a ficheros, no solo proponerlos en el chat.</td>
-                </tr>
-                <tr>
-                  <td><strong>Ejecutar comandos</strong></td>
-                  <td>Correr tests, linters, el compilador; ver la salida real y reaccionar a ella.</td>
-                </tr>
-                <tr>
-                  <td><strong>Control de versiones</strong></td>
-                  <td>Ver el diff, crear ramas, preparar commits para que revises antes de integrar.</td>
-                </tr>
+                <tr><td><strong>Leer / buscar</strong></td><td>Abrir ficheros y rastrear símbolos por el repo para entender el código antes de tocarlo.</td></tr>
+                <tr><td><strong>Editar / escribir</strong></td><td>Aplicar cambios concretos a ficheros, no solo proponerlos en el chat.</td></tr>
+                <tr><td><strong>Ejecutar comandos</strong></td><td>Correr tests, linters, el compilador; ver la salida real y reaccionar a ella.</td></tr>
+                <tr><td><strong>Control de versiones</strong></td><td>Ver el diff, crear ramas, preparar commits para que revises antes de integrar.</td></tr>
               </tbody>
             </table>
           </div>
@@ -183,13 +133,7 @@
             <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <div class="callout__body">
               <p class="callout__title">Que actúe no es que tenga barra libre</p>
-              <p>
-                Ejecutar comandos y editar ficheros es justo lo que lo hace útil
-                y lo que exige cuidado. Trabaja sobre control de versiones, revisa
-                el diff antes de aceptar y desconfía de acciones difíciles de
-                deshacer (borrar, sobrescribir, tocar producción). La autonomía es
-                una herramienta con freno, no un piloto automático.
-              </p>
+              <p>Ejecutar comandos y editar ficheros es justo lo que lo hace útil y lo que exige cuidado. Trabaja sobre control de versiones, revisa el diff antes de aceptar y desconfía de acciones difíciles de deshacer (borrar, sobrescribir, tocar producción). La autonomía es una herramienta con freno, no un piloto automático.</p>
             </div>
           </div>
 
@@ -197,136 +141,283 @@
             Plan, implementar, revisar
             <a href="#ciclo" class="anchor" aria-hidden="true">#</a>
           </h2>
-          <p>
-            El flujo que mejor funciona separa tres fases, en vez de soltar «hazlo
-            todo» y rezar:
-          </p>
+          <p>El flujo que mejor funciona en una tarea separa tres fases, en vez de soltar «hazlo todo» y rezar:</p>
 
           <div class="diagram">
             <div class="flow">
               <div class="flow__node flow__node--start">
                 <span class="flow__num">1</span>
-                <span><b>Plan</b><small>Pídele que explore y proponga un plan antes de tocar nada. Tú lo apruebas o corriges.</small></span>
+                <span><b>Plan</b><small>Pídele que explore y proponga un plan antes de tocar nada. Tú lo apruebas o corriges</small></span>
               </div>
-              <div class="flow__arrow" data-label="visto bueno"></div>
+              <div class="flow__arrow" data-label="apruebas"></div>
               <div class="flow__node">
                 <span class="flow__num">2</span>
-                <span><b>Implementar</b><small>Ejecuta el plan en pasos pequeños y verificables, corriendo los tests.</small></span>
+                <span><b>Implementar</b><small>Ejecuta el plan en pasos pequeños y verificables, corriendo los tests</small></span>
               </div>
-              <div class="flow__arrow" data-label="diff a la vista"></div>
+              <div class="flow__arrow" data-label="lees el diff"></div>
               <div class="flow__node flow__node--end">
                 <span class="flow__num">3</span>
-                <span><b>Revisar</b><small>Lees el diff, pruebas el resultado y pides ajustes antes de integrar.</small></span>
+                <span><b>Revisar</b><small>Pruebas el resultado y pides ajustes antes de integrar</small></span>
               </div>
             </div>
-            <p class="diagram__caption">
-              Aprobar el plan antes de implementar evita que se vaya por el
-              camino equivocado durante media hora.
-            </p>
+            <p class="diagram__caption">Aprobar el plan antes de implementar evita que se vaya por el camino equivocado durante media hora.</p>
           </div>
 
-          <p>
-            La fase de plan es la más rentable y la que más se salta la gente.
-            Revisar un plan de cinco líneas cuesta un minuto; revisar 600 líneas
-            de código que apuntaban al sitio equivocado cuesta la tarde. Es la
-            misma idea de los <a href="tdd-ciclo.html">pasos pequeños</a>:
-            confirmar el rumbo antes de avanzar.
-          </p>
+          <p>La fase de plan es la más rentable y la que más se salta la gente. Revisar un plan de cinco líneas cuesta un minuto; revisar 600 líneas de código que apuntaban al sitio equivocado cuesta la tarde. El modo plan de Claude Code y qué tiene un plan aprobable, en <a href="cc-plan-y-verificacion.html">planificar y verificar</a>.</p>
 
-          <h2 id="contexto-repo">
-            El contexto del repositorio
-            <a href="#contexto-repo" class="anchor" aria-hidden="true">#</a>
+          <h2 id="sdd">
+            Spec-driven development (SDD)
+            <a href="#sdd" class="anchor" aria-hidden="true">#</a>
           </h2>
-          <p>
-            El agente puede leer tu código, pero no adivina tus convenciones ni
-            tus decisiones. Por eso casi todas estas herramientas leen un fichero
-            de instrucciones del proyecto (un <code>AGENTS.md</code> o similar)
-            donde dejas escritas las reglas: estilo, arquitectura, qué no tocar,
-            cómo correr los tests. Es contexto permanente que no tienes que
-            repetir en cada sesión.
-          </p>
+          <p>Es una forma de trabajar con agentes en la que <strong>primero se escribe una especificación</strong> (qué hay que construir y por qué), después un plan técnico y una lista de tareas, y solo entonces el agente implementa. La especificación pasa a ser la fuente de verdad: el código se genera y se valida contra ella.</p>
 
-          <div class="callout callout--tip">
-            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>
+          <p><strong>Por qué surge:</strong> pedirle a un agente «hazme esto» en un solo prompt (lo que se suele llamar <em>vibe coding</em>) funciona en cosas pequeñas, pero en funcionalidades grandes el agente rellena huecos con suposiciones. SDD obliga a resolver esas dudas antes de escribir código.</p>
+
+          <h3>Las fases</h3>
+
+          <ol>
+            <li><strong>Especificar:</strong> qué y por qué, sin hablar de tecnología. Historias de usuario, criterios de aceptación, casos límite, lo que queda fuera.</li>
+            <li><strong>Planificar:</strong> el cómo técnico. Arquitectura, entidades, endpoints, decisiones y restricciones del stack.</li>
+            <li><strong>Dividir en tareas:</strong> pasos pequeños, ordenados y verificables, cada uno con su criterio de terminado.</li>
+            <li><strong>Implementar:</strong> el agente ejecuta las tareas una a una, idealmente con tests.</li>
+            <li><strong>Verificar:</strong> comprobar contra la especificación, no contra el código. Aquí encaja el agente de QA.</li>
+          </ol>
+
+          <p>En cada fase el humano revisa y aprueba antes de pasar a la siguiente. El valor está en esas revisiones: <strong>corregir una especificación es mucho más barato que corregir código.</strong></p>
+
+          <h3>Archivos típicos</h3>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">texto · specs/</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>specs/
+└── 001-exportar-usuarios/
+    ├── spec.md      # qué y por qué: requisitos y criterios de aceptación
+    ├── plan.md      # cómo: diseño técnico y decisiones
+    └── tasks.md     # lista de tareas ordenadas y verificables</code></pre>
+          </div>
+
+          <p>Los nombres varían según la herramienta, pero la estructura requisitos → diseño → tareas es común. Esos tres ficheros, además, ya hacen de nota de traspaso entre sesiones: basta con marcar qué tareas están hechas.</p>
+
+          <h3>Herramientas</h3>
+
+          <ul>
+            <li><strong>GitHub Spec Kit:</strong> kit open source que funciona con varios harnesses, incluido Claude Code, mediante comandos para cada fase (especificar, planificar, generar tareas, implementar). Añade además una «constitución»: principios del proyecto que se respetan en todas las specs.</li>
+            <li><strong>Kiro (AWS):</strong> editor con agente construido alrededor de este flujo, con archivos de requisitos, diseño y tareas.</li>
+            <li><strong>Hecho a mano:</strong> no hace falta herramienta. Con Claude Code se puede montar con skills o comandos propios para cada fase y una carpeta <code>specs/</code> en el repo.</li>
+          </ul>
+
+          <h3>Cómo encaja con lo demás</h3>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Pieza</th><th>Papel en SDD</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Rules / <code>CLAUDE.md</code></td><td>Las convenciones fijas, equivalentes a la «constitución»</td></tr>
+                <tr><td>Skills</td><td>El procedimiento de cada fase (cómo escribir una spec, cómo dividir tareas)</td></tr>
+                <tr><td>Subagentes</td><td>Investigar durante el plan, implementar tareas en paralelo, verificar con ojos nuevos</td></tr>
+                <tr><td>QA</td><td>Valida contra los criterios de aceptación de <code>spec.md</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Cuándo compensa y cuándo no</h3>
+
+          <ul>
+            <li><strong>Compensa:</strong> funcionalidades medianas o grandes, requisitos con ambigüedad, trabajo en equipo, tareas largas de agente.</li>
+            <li><strong>No compensa:</strong> bugs pequeños, cambios de pocas líneas, prototipos rápidos. El papeleo cuesta más que el cambio.</li>
+            <li><strong>Riesgo principal:</strong> que la spec y el código se desincronicen. Si se cambia el comportamiento, se actualiza primero la spec.</li>
+            <li><strong>Otro riesgo:</strong> specs demasiado largas que nadie revisa de verdad. Una spec que no se lee no aporta nada.</li>
+          </ul>
+
+          <h2 id="sdd-vs-flujo">
+            SDD no es el flujo completo
+            <a href="#sdd-vs-flujo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>SDD es un método para el tramo que va <strong>de la definición al código</strong>. El flujo de punta a punta (ticket en Jira → el agente lo interpreta → código → QA → deploy) es otra cosa, que suele llamarse <strong>flujo agéntico</strong> (<em>agentic workflow</em>) o ciclo de desarrollo agéntico (<em>agentic SDLC</em>).</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">texto · flujo agéntico completo</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>┌─────────┐   ┌─────────────────────────────┐   ┌────┐   ┌────────┐   ┌────────┐
+│ Ticket  │ → │ Spec → Plan → Tareas → Code │ → │ QA │ → │ Review │ → │ Deploy │
+│ (Jira)  │   │      (aquí vive SDD)        │   │    │   │ humano │   │ (CI/CD)│
+└─────────┘   └─────────────────────────────┘   └────┘   └────────┘   └────────┘</code></pre>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th></th><th>Spec-driven development</th><th>Flujo agéntico</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Qué es</td><td>Una metodología de trabajo</td><td>Un proceso automatizado o semiautomatizado</td></tr>
+                <tr><td>Alcance</td><td>De la idea al código</td><td>Del ticket a producción</td></tr>
+                <tr><td>Pregunta que responde</td><td>¿Cómo consigo que el agente construya lo correcto?</td><td>¿Cómo encadeno todos los pasos de una tarea?</td></tr>
+                <tr><td>Piezas</td><td><code>spec.md</code>, <code>plan.md</code>, <code>tasks.md</code></td><td>Integraciones (MCP con Jira, GitLab), subagentes, CI/CD</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p>Se complementan: un flujo agéntico puede usar SDD como una de sus etapas, convirtiendo el ticket de Jira en una spec que el humano revisa antes de implementar.</p>
+
+          <p><strong>Agentes en segundo plano:</strong> cuando ese flujo se ejecuta sin una sesión interactiva, por ejemplo un agente que arranca solo al asignar un ticket o al abrir una merge request, se habla de <em>background agents</em> o agentes en CI. Claude Code puede ejecutarse así en modo no interactivo dentro de un pipeline: lo vemos en <a href="cc-headless-y-ci.html">headless y CI</a>.</p>
+
+          <h2 id="flujo">
+            El flujo agéntico, etapa a etapa
+            <a href="#flujo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Es el ciclo completo de una tarea, del ticket a producción, con agentes haciendo buena parte del trabajo y humanos aprobando en puntos de control. No es una herramienta concreta, sino la forma de encadenar todas las piezas de este curso.</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>#</th><th>Etapa</th><th>Quién la hace</th><th>Piezas</th><th>Punto de control humano</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>1</td><td>Definición</td><td>Humano (PO, PM o dev)</td><td>Ticket en Jira</td><td>El ticket tiene objetivo y criterios de aceptación</td></tr>
+                <tr><td>2</td><td>Interpretación y spec</td><td>Agente</td><td>MCP de Jira, skill de spec, subagente explorador</td><td>Sí: revisar y aprobar la spec</td></tr>
+                <tr><td>3</td><td>Plan técnico y tareas</td><td>Agente</td><td>Rules de arquitectura, skill de planificación</td><td>Sí: aprobar el plan en tareas grandes</td></tr>
+                <tr><td>4</td><td>Implementación</td><td>Agente</td><td>Rules por capa, skills (migraciones, tests), Docker</td><td>No en cada paso; los tests hacen de control</td></tr>
+                <tr><td>5</td><td>Tests automáticos</td><td>Agente + CI</td><td>PHPUnit, pipeline de GitLab</td><td>Automático: si fallan, vuelve a 4</td></tr>
+                <tr><td>6</td><td>QA funcional</td><td>Subagente QA</td><td>Playwright, criterios de la spec</td><td>Revisar el informe si hay fallos</td></tr>
+                <tr><td>7</td><td>Code review</td><td>Subagente revisor + humano</td><td>Diff, convenciones</td><td>Sí: aprobación humana de la merge request</td></tr>
+                <tr><td>8</td><td>Deploy</td><td>CI/CD</td><td>Pipeline</td><td>Según el entorno: automático en staging, manual en producción</td></tr>
+                <tr><td>9</td><td>Seguimiento</td><td>Agente o humano</td><td>MCP de Sentry, logs</td><td>Alertas si aparecen errores nuevos</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Niveles de automatización</h3>
+
+          <ol>
+            <li><strong>Nivel 1, asistido:</strong> el humano lleva el flujo y usa el agente en cada etapa desde una sesión interactiva. Es donde está la mayoría de equipos.</li>
+            <li><strong>Nivel 2, semiautomático:</strong> el agente encadena varias etapas solo (por ejemplo de spec a merge request) y el humano aprueba en los puntos de control.</li>
+            <li><strong>Nivel 3, en segundo plano:</strong> el flujo arranca solo (al asignar un ticket o etiquetarlo) y el agente trabaja en CI sin sesión interactiva hasta abrir la merge request.</li>
+          </ol>
+
+          <h3>Principios</h3>
+
+          <ul>
+            <li><strong>Puntos de control donde el error es caro:</strong> la spec, la review y el deploy a producción. Lo intermedio se controla con tests.</li>
+            <li><strong>Cada etapa con su contexto justo:</strong> el QA no ve la implementación; el revisor no ve la conversación de desarrollo.</li>
+            <li><strong>Todo trazable:</strong> el ticket enlaza con la spec, la spec con la merge request, la merge request con el deploy.</li>
+            <li><strong>Permisos mínimos por etapa:</strong> el agente de implementación no necesita acceso a producción; el de seguimiento, solo lectura.</li>
+            <li><strong>Empezar por el nivel 1</strong> y automatizar una etapa cuando funcione de forma fiable a mano.</li>
+          </ul>
+
+          <h3>Riesgos</h3>
+
+          <ul>
+            <li><strong>Tickets pobres generan specs pobres:</strong> la calidad de la etapa 1 condiciona todo lo demás.</li>
+            <li><strong>Revisiones humanas rutinarias que se aprueban sin leer:</strong> el punto de control deja de serlo.</li>
+            <li><strong>Coste en tokens</strong> de los flujos largos con varios subagentes.</li>
+            <li><strong>Seguridad:</strong> cuanto más autónomo es el flujo, más importan los permisos y el aislamiento (sandbox, Docker, credenciales de solo lectura).</li>
+          </ul>
+
+          <p>Cómo se monta este flujo con un tablero, issues como contrato y fases con agentes distintos, en <a href="cc-flujo-de-equipo.html">el flujo de equipo</a> y, a fondo, en el curso <a href="ag-por-que-un-metodo.html">método con agentes</a>.</p>
+
+          <h2 id="mejora">
+            Del code review a la autonomía: el ciclo de mejora
+            <a href="#mejora" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Refinar rules y skills a partir de las reviews es el camino para ganar confianza en el código generado y dar más autonomía al agente. La clave es <strong>cerrar el círculo</strong>: cada comentario de review que se repite se convierte en algo que evita que vuelva a pasar.</p>
+
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">texto · el ciclo de mejora</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>Review → comentario repetido → ¿se puede comprobar con código?
+                                  ├── Sí → herramienta automática (lint, análisis estático, test)
+                                  └── No → rule (si es corta) o skill (si es procedimiento)</code></pre>
+          </div>
+
+          <p>Prioridad de mecanismos, de más a menos fiable:</p>
+
+          <ol>
+            <li><strong>Comprobaciones automáticas:</strong> PHPStan, PHP-CS-Fixer, Deptrac (reglas de arquitectura entre capas), tests. No dependen de que el modelo se acuerde.</li>
+            <li><strong>Hooks:</strong> en Claude Code, scripts que se ejecutan automáticamente en ciertos momentos (por ejemplo, tras editar un archivo) y pueden lanzar esas comprobaciones y devolver los errores al agente.</li>
+            <li><strong>Rules:</strong> convenciones que no se pueden comprobar con código.</li>
+            <li><strong>Skills:</strong> procedimientos completos.</li>
+          </ol>
+
+          <p>Subir la autonomía <strong>con datos, no con sensaciones</strong>:</p>
+
+          <ul>
+            <li>Medir comentarios por merge request generada con IA, y qué tipo de errores aparecen.</li>
+            <li>Cuando una categoría de error deja de aparecer, ese tipo de tarea puede ganar autonomía.</li>
+            <li>Dar autonomía <strong>por tipo de tarea</strong>, no en bloque: primero lo acotado y bien cubierto por tests.</li>
+            <li>La review humana se aligera, pero conviene mantenerla en lo crítico (seguridad, datos, pagos, producción).</li>
+          </ul>
+
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
             <div class="callout__body">
-              <p class="callout__title">Invierte en el contexto permanente</p>
-              <p>
-                Cada regla que escribes una vez en el fichero del proyecto es una
-                corrección que no tendrás que repetir mil veces. Un buen documento
-                de convenciones convierte al agente en alguien que «conoce la
-                casa», en vez de un recién llegado en cada sesión.
-              </p>
+              <p class="callout__title">Deptrac</p>
+              <p>Herramienta de análisis estático para PHP que comprueba las dependencias entre capas. Defines capas en un YAML (por ejemplo Controller, Service, Repository) por carpeta, namespace o nombre de clase, y qué capa puede depender de cuál. Si un controller usa directamente un repositorio, Deptrac falla. Convierte reglas de arquitectura como «thin controllers» o «no saltarse capas» en una comprobación automática que el agente puede ejecutar (vía hook o en CI), en lugar de depender de que el modelo recuerde una rule.</p>
             </div>
           </div>
+
+          <p>Dónde va cada lección aprendida y cómo se hace una retro con datos, en <a href="ag-el-metodo-que-aprende.html">el método que aprende</a>.</p>
 
           <h2 id="criterio">
             No delegues el criterio
             <a href="#criterio" class="anchor" aria-hidden="true">#</a>
           </h2>
-          <p>
-            El agente decide <em>cómo</em> hacer la tarea; tú decides <em>qué</em>
-            tarea, si la solución es buena y si entra en producción. Esa frontera
-            no se mueve. Un agente puede escribir un módulo entero en minutos,
-            pero la responsabilidad de lo que se mergea sigue siendo de quien
-            aprueba el cambio: tú.
-          </p>
-          <p>
-            En la práctica: lee siempre el diff, no apruebes lo que no entiendes,
-            y desconfía cuando el agente toma decisiones de arquitectura sin
-            consultarte. Que sea rápido no significa que tenga tu visión del
-            sistema ni tu conocimiento del negocio. <a href="criterio-y-riesgos.html">El siguiente tutorial entra</a> a
-            fondo en estos riesgos.
-          </p>
+          <p>El agente decide <strong>cómo</strong> hacer la tarea; tú decides <strong>qué</strong> tarea, si la solución es buena y si entra en producción. Esa frontera no se mueve, ni siquiera en el nivel 3. Un agente puede escribir un módulo entero en minutos, pero la responsabilidad de lo que se mergea sigue siendo de quien aprueba el cambio. En la práctica: lee siempre el diff, no apruebes lo que no entiendes y desconfía cuando el agente toma decisiones de arquitectura sin consultarte. Que sea rápido no significa que tenga tu visión del sistema ni tu conocimiento del negocio.</p>
 
-          <h2 id="limites">
-            Dónde encaja y dónde no
-            <a href="#limites" class="anchor" aria-hidden="true">#</a>
-          </h2>
-
-          <div class="compare">
-            <div class="compare__col compare__col--good">
-              <h4>Brilla en</h4>
-              <ul>
-                <li>Tareas acotadas y bien definidas.</li>
-                <li>Código repetitivo (tests, CRUD, migraciones).</li>
-                <li>Explorar un repo desconocido.</li>
-                <li>Refactors mecánicos con tests que protegen.</li>
-              </ul>
-            </div>
-            <div class="compare__col compare__col--bad">
-              <h4>Vigila en</h4>
-              <ul>
-                <li>Decisiones de arquitectura de calado.</li>
-                <li>Dominio de negocio sutil o poco documentado.</li>
-                <li>Cambios amplios sin tests que respalden.</li>
-                <li>Lo crítico de seguridad o de datos.</li>
-              </ul>
-            </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Brilla en</th><th>Vigila en</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Tareas acotadas y bien definidas</td><td>Decisiones de arquitectura de calado</td></tr>
+                <tr><td>Código repetitivo (tests, CRUD, migraciones)</td><td>Dominio de negocio sutil o poco documentado</td></tr>
+                <tr><td>Explorar un repo desconocido</td><td>Cambios amplios sin tests que respalden</td></tr>
+                <tr><td>Refactors mecánicos con tests que protegen</td><td>Lo crítico de seguridad o de datos</td></tr>
+              </tbody>
+            </table>
           </div>
 
-          <p>
-            La regla práctica: cuanto mejor puedas <strong>verificar</strong> el
-            resultado (con tests, con un diff legible, ejecutándolo), más puedes
-            apoyarte en el agente. Donde la verificación es difícil, baja el ritmo
-            y sube tu implicación. La verificación es el límite real de cuánto
-            puedes delegar.
-          </p>
+          <p>La regla práctica: cuanto mejor puedas <strong>verificar</strong> el resultado (con tests, con un diff legible, ejecutándolo), más puedes apoyarte en el agente. Donde la verificación es difícil, baja el ritmo y sube tu implicación: la verificación es el límite real de cuánto puedes delegar. Los riesgos a fondo, en <a href="criterio-y-riesgos.html">criterio y riesgos</a>.</p>
 
-          <h2 id="cuando">Cuándo aplicarlo<a href="#cuando" class="anchor" aria-hidden="true">#</a></h2>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
           <div class="compare">
             <div class="compare__col compare__col--good">
               <h4>Úsalo cuando…</h4>
               <ul>
-                <li>La tarea es larga, está bien definida y tiene pasos claros con herramientas que orquestar</li>
-                <li>El coste de un error intermedio es bajo y se puede corregir fácilmente</li>
-                <li>Quieres liberar atención para otras tareas mientras el agente trabaja de forma autónoma</li>
+                <li>La funcionalidad es mediana o grande, o los requisitos son ambiguos: spec, plan y tareas antes del código</li>
+                <li>Quieres encadenar etapas: empieza asistido y automatiza solo lo que ya funciona a mano</li>
+                <li>Un comentario de review se repite: conviértelo en test, hook, rule o skill, en ese orden</li>
               </ul>
             </div>
             <div class="compare__col compare__col--bad">
               <h4>No lo uses cuando…</h4>
               <ul>
-                <li>La tarea es corta o el coste de un error es alto: prefiere la asistencia puntual con control fino</li>
-                <li>Los pasos no están claros de antemano: el agente amplificará la ambigüedad en lugar de resolverla</li>
+                <li>Es un bug pequeño o un cambio de pocas líneas: el papeleo cuesta más que el cambio</li>
+                <li>Los pasos no están claros de antemano y no vas a escribir una spec: el agente amplificará la ambigüedad en lugar de resolverla</li>
+                <li>Los tickets de entrada son pobres: automatizar solo multiplica specs pobres</li>
+                <li>Quieres dar autonomía en bloque por sensaciones: mídela por tipo de tarea</li>
               </ul>
             </div>
           </div>
@@ -335,7 +426,6 @@
             Resumen
             <a href="#resumen" class="anchor" aria-hidden="true">#</a>
           </h2>
-
           <div class="keypoints">
             <h3>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -344,19 +434,19 @@
             <ul>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Un <strong>agente de código</strong> es un LLM con herramientas (leer, editar, ejecutar) y autonomía para usarlas en bucle.</span>
+                <span>En cada tarea, <strong>plan → implementar → revisar</strong>: aprobar el plan es lo más rentable.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Trabaja en <strong>plan → implementar → revisar</strong>. Aprobar el plan antes de codificar es lo más rentable.</span>
+                <span><strong>SDD</strong> escribe spec, plan y tareas antes del código; corregir una spec es mucho más barato que corregir código.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Dale el <strong>contexto del repo</strong> por escrito (convenciones, arquitectura) para no repetirlo cada vez.</span>
+                <span>El <strong>flujo agéntico</strong> va del ticket a producción con puntos de control humanos donde el error es caro, en tres niveles de automatización.</span>
               </li>
               <li>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                <span>Decide <strong>cómo</strong>, pero tú decides <strong>qué</strong> y qué entra. Cuanto mejor puedas verificar, más puedes delegar.</span>
+                <span>El <strong>ciclo de mejora</strong> convierte cada comentario repetido en una comprobación automática, un hook, una rule o una skill, y la autonomía se gana con datos, por tipo de tarea.</span>
               </li>
             </ul>
           </div>
@@ -364,11 +454,11 @@
           <nav class="tutorial-nav">
             <a href="prompting-para-codigo.html">
               <small>← Anterior</small>
-              <b>Prompting para código</b>
+              <b>Prompts y contexto</b>
             </a>
-            <a href="criterio-y-riesgos.html" class="next">
+            <a href="pci-multiagente-y-evals.html" class="next">
               <small>Siguiente →</small>
-              <b>Criterio y riesgos</b>
+              <b>Multiagente y evals</b>
             </a>
           </nav>
         </article>
