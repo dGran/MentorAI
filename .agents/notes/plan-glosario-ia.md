@@ -69,6 +69,12 @@ Retos (`practica.js`): uno es la **checklist de auditoría de la configuración 
 3. **Datos con fecha**: se contrastan con fuentes al escribir. Lo que no se pueda comprobar se marca como orientativo y no se omite sin preguntar.
 4. **Prefijo `pci-` y los doce títulos**: aprobados a criterio del agente («como lo veas mejor»).
 
+## Cierre de #194 (2026-11-08)
+
+- **Comprobación de los ejemplos**: un script busca fragmentos de cada ejemplo «renovado» en el HTML de su lección. Hay 9 diferencias y todas se explican. Tres son los ejemplos de convenciones reescritos en la tienda (E010-E012). Uno es la tabla rule/skill/MCP (E013), fundida en la tabla de las cinco piezas de `pci-piezas-del-agente` con el mismo contenido. Los otros cinco son falsos positivos: el glosario usa "comillas" y la lección «comillas», o las celdas llevan varios `code` (E018, E028, E045, E046, E060).
+- **Desvíos del plan de § Contenido actual**: «qué es un agente de código» y su tabla de herramientas se quedan en `flujo-con-agentes`, como entrada a SDD; `conceptos-ia` trae la definición de agente del glosario. Los dos checks de `como-piensa-un-llm` sobre fine-tuning y RAG pasan a `pci-rag-y-fine-tuning`, con los mismos `id`, porque esa lección ya no trata esos temas.
+- **Fuentes contrastadas**: el soporte de AGENTS.md desde la 2.1.277 y los mods desde la 2.1.287, con los tres de ejemplo de `claude-code-playground`, en la cobertura de sus lanzamientos. Los modelos Qwen 3.5/3.6 y Qwen3-Coder-Next aparecen en guías actuales, aunque con cifras de memoria que no coinciden, y la lección lo dice. Los mods de la comunidad y la lista de comandos van marcados como orientativos.
+
 ## Inventario fila a fila
 
 | Id | Apartado o ejemplo | Nivel o contexto | Destino | Dónde | Nota |
