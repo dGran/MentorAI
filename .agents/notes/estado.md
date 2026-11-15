@@ -7,10 +7,15 @@ Lo cerrado vive en `archivo/`; si algo de aquí crece demasiado, se archiva.
 
 ## Dónde está el proyecto
 
-**368 tutoriales · 37 cursos · 7 rutas · 654 preguntas de examen · 884 checks ·
+**369 tutoriales · 37 cursos · 7 rutas · 654 preguntas de examen · 884 checks ·
 112 retos de práctica.** `node scripts/validar.js` sale sin errores **y sin
 avisos**: el sesgo de las opciones (#25), el ancla de cada `h2` (#112) y la
 sección «Cuándo aplicarlo» en todo tutorial (#114) son ERROR.
+
+**Artículo `strata-ia-local` (2026-11-15):** Strata (`Niko1221/Strata`), motor open source que ejecuta
+Qwen3.8-Flash-Next (MoE ~125B) en PC de consumo repartiendo expertos entre VRAM, RAM y SSD. Escrito contra la
+documentación del repo (v0.2.14); entra desde `pci-ia-local`. Avisa de que `mach10x/strata` es un fork congelado y
+strata.ai otro producto. Proyecto muy volátil: entra en la revisión de frescura.
 
 **Curso `supabase` (2026-11-15, sin issue: carril directo a petición del usuario):** «Supabase a fondo»,
 17 lecciones con prefijo `sb-` en 6 módulos (qué es, la base de datos es el backend, usuarios y ficheros,
@@ -422,7 +427,7 @@ las categorías volátiles — los cursos `claude-code`, `construir-con-ia` y
 `metodo-con-agentes` (hooks, subagentes y formato de skills cambian con la
 herramienta) sobre todo (la lección de la API ya nació corrigiendo `temperature`, que desapareció
 de los modelos actuales), y de paso `programar-con-ia` y la sección «Lo que el
-proveedor ya no deja tocar» de `llm-muestreo`, y el curso `supabase` (claves de API, `@supabase/server`,
+proveedor ya no deja tocar» de `llm-muestreo`, el artículo `strata-ia-local` (requisitos y comandos cambian cada semana) y el curso `supabase` (claves de API, `@supabase/server`,
 comandos de esquemas declarativos, precios y límites) (el resto de `ia-por-dentro` es
 mecánica estable). Formato: una sesión de
 auditoría como la del 2026-08-22, leyendo contra las fuentes actuales y
