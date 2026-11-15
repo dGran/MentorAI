@@ -243,23 +243,6 @@
 
   /* ---------- Buscador del inicio ---------- */
 
-  const haystack = (tutorial) =>
-    MentorAI.normalize(
-      [
-        tutorial.title,
-        tutorial.description,
-        tutorial.topic,
-        (tutorial.categories ?? []).join(" "),
-        (tutorial.tags ?? []).join(" "),
-      ].join(" ")
-    );
-
-  function byRelevance(items, terms) {
-    const hasTermsInTitle = (item) => MentorAI.containsAllTerms(MentorAI.normalize(item.title), terms);
-
-    return [...items.filter(hasTermsInTitle), ...items.filter((item) => !hasTermsInTitle(item))];
-  }
-
   const lessonCount = (course) => (course.lessons ?? (course.modules ?? []).flatMap((module) => module.lessons)).length;
 
   function collectionCardHtml(item, href, kind, detail) {
@@ -273,11 +256,7 @@
     </a>`;
   }
 
-  function matchingCollections(terms) {
-    const matchesTerms = (item) => MentorAI.containsAllTerms(MentorAI.normalize(`${item.title} ${item.summary ?? ""}`), terms);
-    const paths = byRelevance((window.MENTORAI_PATHS ?? []).filter(matchesTerms), terms);
-    const courses = byRelevance((window.MENTORAI_COURSES ?? []).filter(matchesTerms), terms);
-
+  function collectionCards({ paths, courses }) {
     return [
       ...paths.map((path) =>
         collectionCardHtml(path, `rutas.html#ruta-${encodeURIComponent(path.slug)}`, "Ruta", `${path.steps.length} pasos`)
@@ -317,15 +296,10 @@
     }
 
     const Search = MentorAI.Search;
-    const colecciones = matchingCollections(terms);
-    const enMetadatos = byRelevance(
-      publishedTutorials().filter((tutorial) => MentorAI.containsAllTerms(haystack(tutorial), terms)),
-      terms
-    );
-    const yaEncontrados = new Set(enMetadatos.map((tutorial) => tutorial.slug));
-    const enContenido = publishedTutorials().filter(
-      (tutorial) => !yaEncontrados.has(tutorial.slug) && Search.coincide(tutorial.slug, terms)
-    );
+    const found = MentorAI.SearchEngine.find(terms);
+    const colecciones = collectionCards(found);
+    const enMetadatos = found.inMetadata;
+    const enContenido = found.inContent;
 
     const matches = [...colecciones, ...enMetadatos, ...enContenido];
 
@@ -450,6 +424,6 @@
 
   /* ---------- API pública ---------- */
 
-  MentorAI.Home = { render, initSearch, byRelevance };
+  MentorAI.Home = { render, initSearch };
   MentorAI.initHeroStat = initHeroStat;
 })();
