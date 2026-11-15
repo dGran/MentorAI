@@ -5676,4 +5676,19 @@ window.ACADEMIA_TUTORIALS = [
     status: "published",
     date: "2026-11-15",
   },
+  {
+    slug: "strata-ia-local",
+    title: "Strata: un modelo gigante en tu PC, repartido entre gráfica, RAM y SSD",
+    description:
+      "Qué es Strata, el motor open source que ejecuta Qwen3.8-Flash-Next en un PC de juegos: cómo reparte los expertos del modelo entre gráfica, RAM y SSD, qué hardware hace falta de verdad, cómo instalarlo y lanzarlo, conectarlo a Claude Code u otras herramientas y qué vigilar en seguridad.",
+    href: "tutorials/strata-ia-local.html",
+    categories: ["ia"],
+    topic: "IA local",
+    tags: ["IA local", "MoE", "Strata", "Claude Code"],
+    level: "Intermedio",
+    minutes: 15,
+    icon: "bolt",
+    status: "published",
+    date: "2026-11-15",
+  },
 ];
