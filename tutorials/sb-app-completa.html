@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Una app completa: frontend, Supabase y despliegue — MentorAI</title>
+    <meta name="description" content="Juntar las dos mitades de una app con Supabase: dónde se publican las páginas (Vercel, Netlify, Cloudflare Pages, GitHub Pages), qué variables son públicas y cuáles no, SPA frente a SSR, la configuración de Auth para producción, el orden de despliegue de migraciones, funciones y frontend, y la lista de comprobación antes de abrir." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Supabase</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Una app completa: frontend, Supabase y despliegue</h1>
+        <p class="tutorial-hero__lead">
+          Supabase no aloja tus páginas. Es la mitad de atrás de la app: datos, usuarios, ficheros y lógica de servidor. La mitad de delante (el HTML, el CSS y el JavaScript que ve el usuario) se publica en otro sitio. Esta lección junta las dos y te lleva de «funciona en mi máquina» a una URL que puedes enseñar.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            17 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Supabase
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#arquitectura">Las dos mitades</a></li>
+            <li><a href="#variables">Variables: lo público y lo secreto</a></li>
+            <li><a href="#spa-o-ssr">SPA o SSR: qué cambia</a></li>
+            <li><a href="#auth-produccion">Auth en producción: lo que hay que cambiar</a></li>
+            <li><a href="#desplegar">El orden del despliegue</a></li>
+            <li><a href="#entornos">Un proyecto por entorno</a></li>
+            <li><a href="#checklist">Lista de comprobación antes de abrir</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Todas las piezas de la app de notas están hechas: tablas con <a href="sb-rls.html">RLS</a>, <a href="sb-auth.html">Auth</a>, <a href="sb-storage.html">Storage</a>, <a href="sb-edge-functions.html">Edge Functions</a>, <a href="sb-cron.html">Cron</a> y <a href="sb-realtime.html">Realtime</a>. Falta publicarla, y aquí es donde se cuelan los errores de configuración que no aparecen en desarrollo.</p>
+          <h2 id="arquitectura">
+            Las dos mitades
+            <a href="#arquitectura" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Usuario</b><small>abre https://notas.ejemplo.com</small></span>
+              </div>
+              <div class="flow__arrow" data-label="descarga la app"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Hosting del frontend</b><small>Vercel, Netlify, Cloudflare Pages o GitHub Pages: HTML, CSS, JS y, si hay SSR, el servidor que renderiza</small></span>
+              </div>
+              <div class="flow__arrow" data-label="la app llama a"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Supabase</b><small>Data API, Auth, Storage, Realtime y Edge Functions en https://<ref>.supabase.co</small></span>
+              </div>
+              <div class="flow__arrow" data-label="todo sobre"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>Postgres</b><small>tablas, políticas, triggers, Cron y colas</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">El frontend se publica en un hosting; todo lo demás vive en el proyecto de Supabase. El navegador habla con los dos.</p>
+          </div>
+          <p>Elegir el hosting depende de cómo esté hecha tu app:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Tu frontend</th><th>Dónde publicarlo</th><th>Qué implica</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>HTML estático o SPA (Vite + React, Vue, Svelte)</td><td>Cualquier hosting estático: Netlify, Cloudflare Pages, Vercel, GitHub Pages</td><td>Todo corre en el navegador; la seguridad es enteramente RLS</td></tr>
+                <tr><td>Framework con SSR (Next.js, Nuxt, SvelteKit)</td><td>Un hosting que ejecute su servidor: Vercel, Netlify, Cloudflare, o un contenedor tuyo</td><td>Hay código de servidor: sesión en cookies con <code>@supabase/ssr</code></td></tr>
+                <tr><td>App móvil (Flutter, React Native, Swift, Kotlin)</td><td>Las tiendas de apps</td><td>Igual que una SPA: el cliente habla directamente con Supabase</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h2 id="variables">
+            Variables: lo público y lo secreto
+            <a href="#variables" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una app con Supabase necesita pocas variables, y la línea entre las públicas y las secretas es la línea entre una app segura y una filtración:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Variable</th><th>Valor</th><th>¿Al navegador?</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>NEXT_PUBLIC_SUPABASE_URL</code> (o <code>VITE_SUPABASE_URL</code>)</td><td><code>https://&lt;ref&gt;.supabase.co</code></td><td>Sí</td></tr>
+                <tr><td><code>NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</code></td><td><code>sb_publishable_...</code></td><td>Sí: está hecha para eso</td></tr>
+                <tr><td><code>SUPABASE_SECRET_KEY</code></td><td><code>sb_secret_...</code></td><td><strong>Nunca</strong>. Solo en código de servidor, sin prefijo público</td></tr>
+                <tr><td>Claves de terceros (Stripe, email)</td><td>Las de cada proveedor</td><td>Nunca: van en los secretos de las Edge Functions o del servidor</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Los frameworks deciden qué variables llegan al navegador por un <strong>prefijo</strong> (<code>NEXT_PUBLIC_</code>, <code>VITE_</code>, <code>PUBLIC_</code>): todo lo que lo lleva se incrusta en el JavaScript que descarga cualquiera. Poner el prefijo público a la clave secreta es el error más grave que se puede cometer con Supabase, porque esa clave se salta todas las políticas. <a href="config-y-entornos.html">Configuración y entornos</a> cuenta cómo se organizan las variables por entorno en general.</p>
+          <h2 id="spa-o-ssr">
+            SPA o SSR: qué cambia
+            <a href="#spa-o-ssr" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>SPA en un hosting estático</h4>
+              <ul>
+                <li>El navegador descarga la app una vez y hace todas las peticiones a Supabase</li>
+                <li>Sesión en <code>localStorage</code>, gestionada por <code>supabase-js</code></li>
+                <li>Sin servidor que mantener: el hosting más barato y simple</li>
+                <li>El primer pintado espera a que el JavaScript cargue y consulte</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Framework con SSR</h4>
+              <ul>
+                <li>El servidor consulta Supabase y manda HTML ya pintado</li>
+                <li>Sesión en cookies, con el proxy que la refresca (<a href="sb-auth-en-servidor.html">Auth en el servidor</a>)</li>
+                <li>Mejor primer pintado y SEO en páginas públicas</li>
+                <li>Más piezas: cuidado con cachear páginas de usuario</li>
+              </ul>
+            </div>
+          </div>
+          <p>Para una herramienta detrás de login (como la app de notas), una SPA basta y simplifica mucho. El SSR compensa cuando hay páginas públicas que deben indexarse o cargar al instante.</p>
+          <h2 id="auth-produccion">
+            Auth en producción: lo que hay que cambiar
+            <a href="#auth-produccion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La configuración de Auth de desarrollo apunta a <code>localhost</code> y usa el correo de pruebas. Antes de abrir, en <strong>Authentication</strong>:</p>
+          <ul>
+            <li><strong>Site URL</strong>: el dominio de producción, <code>https://notas.ejemplo.com</code>.</li>
+            <li><strong>Redirect URLs</strong>: producción, <code>http://localhost:3000/**</code> para desarrollo y las URLs de previsualización de tu hosting con comodín (por ejemplo <code>https://*-tu-equipo.vercel.app/**</code>), para que el login funcione en cada despliegue de prueba.</li>
+            <li><strong>SMTP propio</strong>: el correo por defecto apenas envía y solo a tu equipo.</li>
+            <li><strong>Proveedores OAuth</strong>: en la consola de cada proveedor (GitHub, Google), la URL de callback es la de Supabase, <code>https://&lt;ref&gt;.supabase.co/auth/v1/callback</code>, no la de tu app. Tu app es adonde Supabase redirige después.</li>
+            <li><strong>Plantillas de email</strong> con tu marca y tu dominio.</li>
+          </ul>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Un dominio propio para Supabase</p>
+              <p>Por defecto, la pantalla de consentimiento de Google dice «continuar a abcdefghijklmnop.supabase.co», que no inspira confianza. Con el complemento de <strong>dominio personalizado</strong> (de pago), tu proyecto responde en algo como <code>api.notas.ejemplo.com</code> y eso es lo que ven los usuarios en el login.</p>
+            </div>
+          </div>
+          <h2 id="desplegar">
+            El orden del despliegue
+            <a href="#desplegar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un cambio completo suele tocar las tres capas: esquema, funciones y frontend. El orden importa, porque durante unos minutos conviven versiones distintas:</p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Migraciones</b><small><code>supabase db push</code>: el esquema nuevo, compatible con el frontend que sigue publicado</small></span>
+              </div>
+              <div class="flow__arrow" data-label="después"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Edge Functions</b><small><code>supabase functions deploy</code>: aceptan peticiones del frontend viejo y del nuevo</small></span>
+              </div>
+              <div class="flow__arrow" data-label="después"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Frontend</b><small>el hosting publica la versión que usa lo nuevo</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Cada paso tiene que funcionar con la versión anterior del siguiente.</p>
+          </div>
+          <p>Las migraciones primero y <strong>siempre compatibles hacia atrás</strong>: añadir una columna con valor por defecto, sí; renombrarla en un solo paso, no, porque el frontend publicado seguiría pidiendo el nombre viejo. <a href="bd-migraciones-sin-caida.html">Migraciones sin caída</a> explica cómo partir un cambio incompatible en varios despliegues.</p>
+          <p>En la práctica, el hosting despliega el frontend solo al hacer merge en <code>main</code> (todos los mencionados lo hacen conectados a GitHub), y un workflow de CI aplica migraciones y funciones:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">yaml · .github/workflows/backend.yml</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="yaml">name: Backend
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: supabase link --project-ref ${{ vars.SUPABASE_PROJECT_REF }}
+      - run: supabase db push
+      - run: supabase functions deploy</code></pre>
+          </div>
+          <p>Que el frontend y el backend se desplieguen por caminos distintos significa que pueden publicarse en cualquier orden. Si un cambio del frontend necesita una migración, la migración va en un PR anterior, ya desplegado.</p>
+          <h2 id="entornos">
+            Un proyecto por entorno
+            <a href="#entornos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Entorno</th><th>Supabase</th><th>Frontend</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Desarrollo</td><td>Local con <code>supabase start</code></td><td><code>localhost</code></td></tr>
+                <tr><td>Previsualización</td><td>Un proyecto de pruebas compartido o una rama de Branching</td><td>La URL de previsualización del PR</td></tr>
+                <tr><td>Producción</td><td>Su propio proyecto, de pago</td><td>El dominio real</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Producción en el plan gratuito tiene un riesgo concreto: <strong>el proyecto se pausa tras una semana sin actividad</strong>, y una app con pocos usuarios puede caer en eso. Además, el plan gratuito no tiene backups. Para algo que usan personas reales, el plan de pago no es un lujo.</p>
+          <h2 id="checklist">
+            Lista de comprobación antes de abrir
+            <a href="#checklist" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comprobación</th><th>Dónde</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Todas las tablas de esquemas expuestos tienen RLS y políticas probadas</td><td>Security Advisor y tests de pgTAP</td></tr>
+                <tr><td>Ninguna vista expuesta sin <code>security_invoker</code>, ninguna función <code>security definer</code> expuesta sin necesidad</td><td>Security Advisor</td></tr>
+                <tr><td>La clave secreta no aparece en el código del frontend</td><td>Busca <code>sb_secret_</code> en el JavaScript publicado</td></tr>
+                <tr><td>Site URL, Redirect URLs y SMTP propio configurados</td><td>Authentication</td></tr>
+                <tr><td>Buckets con límite de tamaño y tipos permitidos</td><td>Storage</td></tr>
+                <tr><td>Límites de peticiones y CAPTCHA en registro y login</td><td>Authentication</td></tr>
+                <tr><td>Índices en las columnas que usan las políticas y los filtros</td><td>Performance Advisor</td></tr>
+                <tr><td>Backups activos y un plan probado para restaurar</td><td><a href="sb-produccion.html">Producción</a></td></tr>
+                <tr><td>MFA activado en las cuentas del equipo con acceso a la organización</td><td>Ajustes de la cuenta</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Este montaje (frontend en un hosting + Supabase) encaja cuando…</h4>
+              <ul>
+                <li>Tu app es sobre todo una interfaz sobre datos con usuarios</li>
+                <li>El equipo es pequeño y no quiere operar servidores</li>
+                <li>La lógica de servidor cabe en SQL y Edge Functions</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Añade tu propio backend cuando…</h4>
+              <ul>
+                <li>Hay lógica de dominio compleja que quieres en tu lenguaje, con sus tests</li>
+                <li>Integras muchos sistemas internos que no deben ver la base de datos</li>
+                <li>Necesitas procesos largos o pesados que no caben en una Edge Function</li>
+              </ul>
+            </div>
+          </div>
+          <p>Añadir un backend propio no obliga a renunciar a Supabase: tu backend verifica el JWT y habla con la misma base de datos, y el resto (Auth, Storage, Realtime) sigue igual.</p>
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Supabase es la mitad de atrás; las páginas se publican en Vercel, Netlify, Cloudflare Pages, GitHub Pages o las tiendas de apps.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La URL y la clave publicable van al navegador; la clave secreta y las de terceros, nunca, y el prefijo público de las variables es lo que decide.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una SPA basta para apps detrás de login; el SSR compensa con páginas públicas, a cambio de cookies y un proxy.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En producción: Site URL y Redirect URLs reales, SMTP propio y la URL de callback de Supabase en cada proveedor OAuth.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Se despliega en orden: migraciones compatibles hacia atrás, Edge Functions y, por último, el frontend.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un proyecto por entorno, y producción fuera del plan gratuito: se pausa y no tiene backups.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="sb-extensiones-y-wrappers.html">
+              <small>← Anterior</small>
+              <b>Extensiones, wrappers, GraphQL y Vault</b>
+            </a>
+            <a href="sb-produccion.html" class="next">
+              <small>Siguiente →</small>
+              <b>Supabase en producción: conexiones, backups, coste y salida</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

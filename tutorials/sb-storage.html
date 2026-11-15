@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Storage: ficheros con permisos de base de datos — MentorAI</title>
+    <meta name="description" content="Cómo guarda Supabase los ficheros: buckets públicos y privados, rutas que organizan los permisos, políticas sobre storage.objects, URLs firmadas para descargar y subir, subidas grandes reanudables, transformación de imágenes y la caché que sirve versiones viejas." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Supabase</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Storage: ficheros con permisos de base de datos</h1>
+        <p class="tutorial-hero__lead">
+          Los ficheros son el sitio donde más apps se dejan una puerta abierta: un bucket público con documentos privados, URLs que se pueden adivinar, subidas sin límite de tamaño. Supabase Storage resuelve los permisos con la misma herramienta que ya conoces, RLS, porque cada fichero es una fila más.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            15 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Supabase
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#modelo">Buckets, objetos y rutas</a></li>
+            <li><a href="#publico">Bucket público o privado</a></li>
+            <li><a href="#politicas">Políticas sobre storage.objects</a></li>
+            <li><a href="#subir">Subir y descargar desde el cliente</a></li>
+            <li><a href="#grandes">Ficheros grandes: subidas reanudables y S3</a></li>
+            <li><a href="#imagenes">Imágenes transformadas y la caché</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">La app de notas ya tiene usuarios (<a href="sb-auth.html">Auth</a>) y permisos por fila (<a href="sb-rls.html">RLS</a>). Ahora cada nota puede llevar adjuntos: imágenes, PDFs, audios. Esta lección cuenta dónde acaban esos ficheros, quién puede verlos y cómo servirlos rápido.</p>
+          <h2 id="modelo">
+            Buckets, objetos y rutas
+            <a href="#modelo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Storage separa los ficheros en dos sitios:</p>
+          <ul>
+            <li>El <strong>contenido</strong> (los bytes) va a un almacenamiento de objetos compatible con S3.</li>
+            <li>Los <strong>metadatos</strong> (nombre, bucket, tamaño, tipo, dueño, fechas) son una fila de la tabla **<code>storage.objects</code>** en tu Postgres.</li>
+          </ul>
+          <p>Los ficheros se agrupan en <strong>buckets</strong>, y dentro de cada uno se identifican por su ruta: <code>adjuntos/3f2a.../17/receta.pdf</code>. Las carpetas no existen como tal; son prefijos de la ruta. Pero esos prefijos son la herramienta principal de permisos, así que diseñarlos bien es la mitad del trabajo.</p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Una ruta que se pueda autorizar</p>
+              <p>Empieza la ruta por lo que decide el acceso: <code>{user_id}/{note_id}/{nombre}</code>. Así una política puede leer el primer segmento y compararlo con el usuario, sin consultar ninguna otra tabla. Una ruta como <code>receta-final-v2.pdf</code> no le dice nada a una política.</p>
+            </div>
+          </div>
+          <h2 id="publico">
+            Bucket público o privado
+            <a href="#publico" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Al crear un bucket eliges si es público, y la diferencia es solo sobre <strong>la descarga</strong>:</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Bucket público</h4>
+              <ul>
+                <li>Cualquiera con la URL descarga el fichero, sin token</li>
+                <li>URL estable: <code>/storage/v1/object/public/avatars/ruta.png</code></li>
+                <li>La CDN lo cachea sin problemas</li>
+                <li>Subir, sobrescribir y borrar <strong>siguen necesitando políticas</strong></li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Bucket privado</h4>
+              <ul>
+                <li>Descargar exige una política de lectura y un token, o una URL firmada</li>
+                <li>Sin políticas, nadie puede hacer nada (salvo la clave secreta)</li>
+                <li>Lo que hay que usar para cualquier cosa que no deba ver todo el mundo</li>
+              </ul>
+            </div>
+          </div>
+          <p>Los avatares encajan en un bucket público. Los adjuntos de una nota, no: «la URL es muy larga y nadie la va a adivinar» no es un control de acceso, porque las URLs se reenvían, quedan en historiales y se filtran en logs.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · crear el bucket en una migración, con límites</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'attachments',
+  'attachments',
+  false,
+  10485760,
+  array['image/png', 'image/jpeg', 'image/webp', 'application/pdf']
+);</code></pre>
+          </div>
+          <p><code>file_size_limit</code> (10 MB aquí) y <code>allowed_mime_types</code> se aplican en el servidor: el cliente no puede saltárselos. Ponlos siempre; un bucket sin límite acepta lo que le manden hasta el máximo del plan.</p>
+          <h2 id="politicas">
+            Políticas sobre storage.objects
+            <a href="#politicas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Los permisos de Storage son políticas RLS sobre <code>storage.objects</code>. Cada operación de la API necesita la suya:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Operación</th><th>Política necesaria</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Subir (<code>upload</code>)</td><td><code>insert</code></td></tr>
+                <tr><td>Sobrescribir (<code>upload</code> con <code>upsert: true</code>)</td><td><code>insert</code>, <code>select</code> y <code>update</code></td></tr>
+                <tr><td>Descargar, listar, crear URL firmada</td><td><code>select</code></td></tr>
+                <tr><td>Mover o renombrar</td><td><code>update</code> (y <code>select</code>)</td></tr>
+                <tr><td>Borrar</td><td><code>delete</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>La función <code>storage.foldername(name)</code> parte la ruta en un array de carpetas, y con eso se escriben las políticas de «cada uno en su carpeta»:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · cada usuario gestiona los adjuntos de su carpeta</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">create policy "Subir a mi carpeta"
+on storage.objects for insert to authenticated
+with check (
+  bucket_id = 'attachments'
+  and (storage.foldername(name))[1] = (select auth.uid()::text)
+);
+
+create policy "Leer de mi carpeta"
+on storage.objects for select to authenticated
+using (
+  bucket_id = 'attachments'
+  and (storage.foldername(name))[1] = (select auth.uid()::text)
+);
+
+create policy "Borrar de mi carpeta"
+on storage.objects for delete to authenticated
+using (
+  bucket_id = 'attachments'
+  and (storage.foldername(name))[1] = (select auth.uid()::text)
+);</code></pre>
+          </div>
+          <p>Fíjate en el <code>bucket_id</code> de cada política: sin él, la regla se aplicaría a todos los buckets del proyecto. Y como son políticas normales, pueden consultar tus tablas: «puedo leer el adjunto si puedo leer la nota» es una política de <code>select</code> que extrae el <code>note_id</code> del segundo segmento de la ruta y mira <code>note_shares</code>, igual que en <a href="sb-rls.html">RLS</a>.</p>
+          <h2 id="subir">
+            Subir y descargar desde el cliente
+            <a href="#subir" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · subir un adjunto y registrarlo</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>const path = `${userId}/${noteId}/${crypto.randomUUID()}-${file.name}`;
+
+const { error: uploadError } = await supabase.storage
+  .from("attachments")
+  .upload(path, file, { contentType: file.type, upsert: false });
+
+if (uploadError) throw uploadError;
+
+await supabase.from("attachments").insert({ note_id: noteId, path, name: file.name });</code></pre>
+          </div>
+          <p>La tabla <code>public.attachments</code> es tuya: guarda la relación entre la nota y la ruta, para listar los adjuntos de una nota sin recorrer Storage. Con <code>upsert: false</code>, subir a una ruta ocupada falla en vez de pisar el fichero anterior.</p>
+          <p>Para mostrar un fichero privado, se pide una <strong>URL firmada</strong>: una dirección con un token que caduca.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · enlace temporal de una hora</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>const { data } = await supabase.storage
+  .from("attachments")
+  .createSignedUrl(path, 3600);
+
+window.open(data.signedUrl);</code></pre>
+          </div>
+          <p>La URL firmada se puede compartir mientras no caduque, sin sesión: úsala con caducidades cortas. Para un bucket público basta con <code>getPublicUrl(path)</code>, que solo construye la dirección, sin llamar al servidor.</p>
+          <h3>Subidas que decide el servidor</h3>
+          <p>A veces no quieres que el cliente elija la ruta, o el usuario no tiene permiso de subida por sí mismo (un formulario de contacto con adjunto, por ejemplo). Tu servidor o una Edge Function crea una <strong>URL firmada de subida</strong> con <code>createSignedUploadUrl(path)</code> y se la da al cliente, que sube directamente a Storage sin que los bytes pasen por tu servidor. Tú decides la ruta y el momento; el cliente solo puede subir ahí.</p>
+          <h2 id="grandes">
+            Ficheros grandes: subidas reanudables y S3
+            <a href="#grandes" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La subida normal manda el fichero en una sola petición: para unos pocos MB, perfecto; para un vídeo de 2 GB con wifi inestable, un corte obliga a empezar de cero. Para eso Storage soporta:</p>
+          <ul>
+            <li><strong>Subidas reanudables</strong> con el protocolo TUS: el fichero va en trozos y, si la conexión cae, continúa donde se quedó. Supabase recomienda TUS a partir de unos 6 MB.</li>
+            <li><strong>Protocolo S3</strong>: Storage habla la API de S3, así que herramientas como <code>rclone</code>, <code>aws s3 cp</code> o cualquier SDK de S3 pueden subir y descargar contra tu proyecto.</li>
+          </ul>
+          <h2 id="imagenes">
+            Imágenes transformadas y la caché
+            <a href="#imagenes" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>En los planes de pago, Storage redimensiona y optimiza imágenes al vuelo: pides la miniatura en la URL y la CDN cachea el resultado.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · miniatura de 400 × 300 recortada</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>const { data } = supabase.storage
+  .from("avatars")
+  .getPublicUrl(`${userId}/avatar.png`, {
+    transform: { width: 400, height: 300, resize: "cover" },
+  });</code></pre>
+          </div>
+          <p>Te ahorra generar y guardar cada tamaño, y sirve formatos modernos como WebP a los navegadores que los aceptan. Las transformaciones se facturan por imagen original, no por cada tamaño pedido.</p>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Sobrescribir un fichero cacheado</p>
+              <p>La CDN cachea los ficheros públicos según su <code>cacheControl</code>. Si subes un avatar nuevo <strong>a la misma ruta</strong>, durante un tiempo algunos usuarios seguirán viendo el viejo. La solución robusta es no sobrescribir: cada versión, en una ruta nueva (<code>avatar-&lt;timestamp&gt;.png</code>), y la tabla de perfiles apunta a la última. Además, la URL vieja deja de usarse sola.</p>
+            </div>
+          </div>
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <ul>
+            <li><strong>Documentos privados en un bucket público.</strong> El bucket público no pide token para descargar, aunque las políticas de subida sean estrictas.</li>
+            <li>**Borrar la fila de <code>storage.objects</code> con SQL.** Los metadatos desaparecen, pero el contenido se queda huérfano en el almacenamiento. Borra siempre con la API de Storage (<code>remove</code>).</li>
+            <li><strong>Adjuntos huérfanos.</strong> Al borrar una nota, sus ficheros no se borran solos. Una tarea programada con <a href="sb-cron.html">Cron</a> o una Edge Function que limpie ficheros sin nota resuelve la acumulación.</li>
+            <li><strong>Fiarse del tipo que dice el cliente.</strong> <code>contentType</code> lo manda el navegador; <code>allowed_mime_types</code> filtra lo declarado, no el contenido real. <a href="sec-subida-de-ficheros.html">Subida de ficheros</a> cuenta qué más comprobar cuando el fichero se procesa.</li>
+            <li><strong>Olvidar que los backups de la base de datos no incluyen los ficheros.</strong> Lo veremos en <a href="sb-produccion.html">producción</a>.</li>
+          </ul>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Fichero</th><th>Montaje</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Avatares, imágenes públicas de contenido</td><td>Bucket público, políticas de subida por carpeta, rutas versionadas</td></tr>
+                <tr><td>Adjuntos privados de usuario</td><td>Bucket privado, rutas <code>{user_id}/...</code> y URLs firmadas cortas</td></tr>
+                <tr><td>Ficheros compartidos entre usuarios</td><td>Bucket privado y políticas que consultan tus tablas de permisos</td></tr>
+                <tr><td>Subidas anónimas controladas</td><td>URL firmada de subida generada por el servidor</td></tr>
+                <tr><td>Vídeos y ficheros de cientos de MB</td><td>Subida reanudable (TUS) o protocolo S3</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Cada fichero son bytes en un almacenamiento compatible con S3 más una fila en <code>storage.objects</code>; los permisos son políticas RLS sobre esa tabla.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La ruta organiza los permisos: empieza por lo que decide el acceso, como <code>{user_id}/...</code>, y léela con <code>storage.foldername(name)</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Público solo afecta a la descarga; subir, sobrescribir y borrar siempre necesitan políticas, y sobrescribir pide tres.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los ficheros privados se sirven con URLs firmadas de vida corta; las subidas controladas, con URLs firmadas de subida.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Límite de tamaño y tipos permitidos en el bucket, TUS para ficheros grandes y rutas nuevas por versión para no pelearse con la caché.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="sb-auth-en-servidor.html">
+              <small>← Anterior</small>
+              <b>Auth en el servidor: SSR, cookies y roles</b>
+            </a>
+            <a href="sb-edge-functions.html" class="next">
+              <small>Siguiente →</small>
+              <b>Edge Functions: tu código en el servidor</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

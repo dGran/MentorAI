@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Funciones, triggers y webhooks: lógica dentro de Postgres — MentorAI</title>
+    <meta name="description" content="Llevar lógica a la base de datos con criterio: funciones invoker y definer, el search_path que evita secuestros, el trigger que crea el perfil al registrarse, campos automáticos, webhooks de base de datos con pg_net y las extensiones que más se usan." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Supabase</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Funciones, triggers y webhooks: lógica dentro de Postgres</h1>
+        <p class="tutorial-hero__lead">
+          Sin un backend propio en medio, la base de datos asume parte del trabajo que antes hacía tu código: crear el perfil cuando alguien se registra, mantener un updated_at, avisar a otro servicio cuando cambia una fila. Postgres sabe hacer todo eso. La pregunta es cuánto meter ahí sin que se convierta en lógica escondida.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            16 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Supabase
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#funciones">Funciones: SQL o PL/pgSQL, invoker o definer</a></li>
+            <li><a href="#perfil">El trigger que crea el perfil al registrarse</a></li>
+            <li><a href="#negocio">Triggers para el día a día</a></li>
+            <li><a href="#webhooks">Webhooks de base de datos: avisar fuera con pg_net</a></li>
+            <li><a href="#extensiones">Extensiones: lo que ya trae tu Postgres</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Ya usaste una función con <code>rpc</code> en <a href="sb-data-api.html">la Data API</a> y otra <code>security definer</code> para romper la recursión en <a href="sb-rls.html">RLS</a>. Esta lección ordena todo eso: qué tipos de funciones hay, cuándo se disparan solas con un trigger y cómo hacer que un cambio en una tabla llegue a un servicio externo.</p>
+          <h2 id="funciones">
+            Funciones: SQL o PL/pgSQL, invoker o definer
+            <a href="#funciones" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una función de Postgres tiene dos decisiones importantes. La primera es el lenguaje:</p>
+          <ul>
+            <li>**<code>language sql</code>**: una o varias consultas, sin variables ni control de flujo. El planificador puede integrarla en la consulta que la llama, así que suele ser la más rápida. Úsala siempre que te baste.</li>
+            <li>**<code>language plpgsql</code>**: el lenguaje procedural de Postgres, con variables, <code>if</code>, bucles y excepciones. Para lógica con pasos.</li>
+          </ul>
+          <p>La segunda es <strong>con qué permisos corre</strong>, y es una decisión de seguridad:</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>security invoker (por defecto)</h4>
+              <ul>
+                <li>Corre con el rol de quien la llama</li>
+                <li>RLS se aplica dentro como en cualquier consulta</li>
+                <li>Es la opción segura para casi todo lo que se llama con <code>rpc</code></li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>security definer</h4>
+              <ul>
+                <li>Corre con el rol de quien la <strong>creó</strong> (normalmente <code>postgres</code>)</li>
+                <li>Se salta RLS y puede tocar esquemas como <code>auth</code></li>
+                <li>Necesaria para triggers sobre <code>auth.users</code> y para romper recursiones; peligrosa si la puede llamar cualquiera</li>
+              </ul>
+            </div>
+          </div>
+          <p>Una función <code>security definer</code> es una puerta con llave maestra. Tres reglas la mantienen cerrada:</p>
+          <ul>
+            <li>**Siempre <code>set search_path = ''</code>** y nombres completos dentro (<code>public.notes</code>, no <code>notes</code>). Sin eso, quien la llama podría crear en otro esquema un objeto con el mismo nombre que una tabla que la función usa y hacer que la función lo use con sus privilegios. El Security Advisor marca las funciones sin <code>search_path</code> fijo.</li>
+            <li><strong>Fuera de los esquemas expuestos</strong>, en uno como <code>private</code>, si no está pensada para llamarse desde la API.</li>
+            <li><strong>Si tiene que ser pública, quita el permiso de ejecución a quien no lo necesite</strong>: <code>revoke execute on function ... from public, anon;</code>.</li>
+          </ul>
+          <h2 id="perfil">
+            El trigger que crea el perfil al registrarse
+            <a href="#perfil" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La tabla <code>auth.users</code> es de Auth: no la expongas ni le añadas columnas. Los datos públicos del usuario (nombre visible, avatar) van en una tabla tuya, <code>public.profiles</code>, con una fila por usuario. Para que esa fila exista siempre, se crea con un trigger en el momento del registro:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · perfiles creados automáticamente</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">create table public.profiles (
+  id uuid primary key references auth.users (id) on delete cascade,
+  display_name text,
+  avatar_path text,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.profiles enable row level security;
+
+create policy "Perfiles visibles para usuarios con sesión"
+on public.profiles for select to authenticated using (true);
+
+create policy "Cada uno edita su perfil"
+on public.profiles for update to authenticated
+using ((select auth.uid()) = id)
+with check ((select auth.uid()) = id);
+
+create function private.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  insert into public.profiles (id, display_name)
+  values (new.id, new.raw_user_meta_data -&gt;&gt; 'display_name');
+
+  return new;
+end;
+$$;
+
+create trigger on_auth_user_created
+after insert on auth.users
+for each row execute function private.handle_new_user();</code></pre>
+          </div>
+          <p><code>raw_user_meta_data</code> es el <code>user_metadata</code> que el cliente mandó al registrarse (<code>signUp({ email, password, options: { data: { display_name: "Ana" } } })</code>). Sirve para rellenar el perfil; no para autorizar, porque lo escribe el usuario.</p>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Si el trigger falla, el registro falla</p>
+              <p>El trigger corre dentro de la misma transacción que crea el usuario. Un error ahí (una columna <code>not null</code> que el cliente no mandó, una restricción que no se cumple) hace que <strong>nadie pueda registrarse</strong>, con un error genérico de «Database error saving new user». Mantén estos triggers mínimos, tolerantes con datos que faltan y probados con <code>db reset</code> y un registro real en local.</p>
+            </div>
+          </div>
+          <h2 id="negocio">
+            Triggers para el día a día
+            <a href="#negocio" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Además del perfil, hay tres usos de triggers que aparecen en casi todos los proyectos:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · updated_at automático</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">create function private.touch_updated_at()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+create trigger notes_touch_updated_at
+before update on public.notes
+for each row execute function private.touch_updated_at();</code></pre>
+          </div>
+          <ul>
+            <li><strong>Campos derivados</strong>: <code>updated_at</code>, un contador de notas por libreta, un <code>search_vector</code> para búsqueda de texto. Un trigger <code>before</code> modifica <code>new</code> antes de guardar.</li>
+            <li><strong>Auditoría</strong>: un trigger <code>after</code> que copia en una tabla de historial quién cambió qué y cuándo.</li>
+            <li><strong>Invariantes entre tablas</strong> que un <code>check</code> no puede expresar porque miran otras filas.</li>
+          </ul>
+          <p>Lo que no conviene meter en triggers: llamadas lentas, lógica que cambia cada semana y reglas que nadie va a buscar ahí. Un trigger es invisible desde el código de la app; si alguien no sabe que existe, un <code>update</code> que «hace cosas raras» le costará una tarde.</p>
+          <h2 id="webhooks">
+            Webhooks de base de datos: avisar fuera con pg_net
+            <a href="#webhooks" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>A veces un cambio en una tabla tiene que llegar a otro sitio: mandar un email cuando se comparte una nota, avisar a Slack o lanzar una Edge Function. Supabase lo resuelve con <strong>Database Webhooks</strong> (en Integrations), que por debajo son un trigger que hace una petición HTTP con la extensión **<code>pg_net</code>**.</p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Insert en note_shares</b><small>la transacción del usuario</small></span>
+              </div>
+              <div class="flow__arrow" data-label="trigger after insert"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>pg_net encola la petición</b><small><code>net.http_post(url, body, headers)</code> devuelve un id al momento</small></span>
+              </div>
+              <div class="flow__arrow" data-label="commit"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Proceso de pg_net</b><small>envía la petición HTTP en segundo plano</small></span>
+              </div>
+              <div class="flow__arrow"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>Tu Edge Function o servicio</b><small>recibe <code>{ type, table, schema, record, old_record }</code></small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">El insert no espera a la petición: pg_net la encola y la manda un proceso aparte.</p>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · lo que hace un webhook por dentro</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">create function private.notify_share()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform net.http_post(
+    url := 'https://abcdefghijklmnop.supabase.co/functions/v1/notify-share',
+    body := jsonb_build_object('record', to_jsonb(new)),
+    headers := jsonb_build_object('Content-Type', 'application/json')
+  );
+
+  return new;
+end;
+$$;</code></pre>
+          </div>
+          <p>Que sea asíncrono es una ventaja (el usuario no espera a Slack) y tiene dos consecuencias que hay que asumir:</p>
+          <ul>
+            <li><strong>El cambio se guarda aunque la petición falle.</strong> pg_net no reintenta. Las respuestas quedan unas horas en <code>net._http_response</code>, donde puedes ver los fallos, pero nadie los reprocesa por ti.</li>
+            <li><strong>Si el aviso es importante, no basta.</strong> Para «este email tiene que salir sí o sí», el patrón robusto es encolar el trabajo en una tabla o en <a href="sb-queues.html">una cola</a> dentro de la misma transacción y procesarla con reintentos. <a href="pr-webhooks.html">Webhooks</a> cuenta el lado del receptor: responder rápido y deduplicar.</li>
+          </ul>
+          <h2 id="extensiones">
+            Extensiones: lo que ya trae tu Postgres
+            <a href="#extensiones" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Mucho de lo que en otros stacks sería un servicio aparte, en Supabase es una extensión que se activa en <strong>Database → Extensions</strong> o con <code>create extension</code>. Las que más se usan:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Extensión</th><th>Para qué</th><th>Dónde se ve en el curso</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>pg_net</code></td><td>Peticiones HTTP asíncronas desde SQL</td><td>Webhooks, <a href="sb-cron.html">Cron</a></td></tr>
+                <tr><td><code>pg_cron</code></td><td>Tareas programadas</td><td><a href="sb-cron.html">Cron</a></td></tr>
+                <tr><td><code>pgmq</code></td><td>Colas de mensajes</td><td><a href="sb-queues.html">Queues</a></td></tr>
+                <tr><td><code>vector</code> (pgvector)</td><td>Embeddings y búsqueda semántica</td><td><a href="sb-vectores-e-ia.html">Vectores e IA</a></td></tr>
+                <tr><td><code>pg_trgm</code></td><td>Búsqueda aproximada por similitud de texto</td><td>Buscar «recta» y encontrar «receta»</td></tr>
+                <tr><td><code>postgis</code></td><td>Datos geográficos: distancias, áreas, cercanía</td><td>Mapas y búsquedas por zona</td></tr>
+                <tr><td><code>pg_stat_statements</code></td><td>Estadísticas de cada consulta</td><td><a href="sb-produccion.html">Producción</a></td></tr>
+                <tr><td><code>moddatetime</code></td><td>El trigger de <code>updated_at</code> ya hecho</td><td>Alternativa a escribirlo tú</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Supabase instala las extensiones en el esquema <code>extensions</code> para que no ensucien <code>public</code> ni queden expuestas en la API. <a href="sb-extensiones-y-wrappers.html">Extensiones y wrappers</a> recorre las menos conocidas.</p>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Lógica</th><th>Mejor sitio</th><th>Por qué</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Garantizar que existe el perfil de cada usuario</td><td>Trigger sobre <code>auth.users</code></td><td>Ocurre siempre, venga el registro de donde venga</td></tr>
+                <tr><td><code>updated_at</code>, contadores, columnas derivadas</td><td>Trigger <code>before</code></td><td>No depende de que cada cliente se acuerde</td></tr>
+                <tr><td>Operación atómica sobre varias tablas pedida por el usuario</td><td>Función invoker con <code>rpc</code></td><td>Una transacción y RLS aplicado</td></tr>
+                <tr><td>Aviso a un servicio externo que puede perderse</td><td>Webhook de base de datos</td><td>Sencillo y no frena la escritura</td></tr>
+                <tr><td>Aviso que no puede perderse, o trabajo lento</td><td>Cola con reintentos</td><td>pg_net no reintenta</td></tr>
+                <tr><td>Reglas de negocio extensas y cambiantes</td><td>Edge Function o tu backend</td><td>Se leen, se prueban y se versionan mejor como código</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Las funciones <code>language sql</code> son las más simples y rápidas; <code>plpgsql</code> añade variables y control de flujo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>security invoker</code> respeta RLS; <code>security definer</code> corre como su creador y exige <code>search_path</code> vacío, esquema privado y permisos de ejecución recortados.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El perfil de cada usuario se crea con un trigger sobre <code>auth.users</code>; si ese trigger falla, falla el registro.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los triggers resuelven campos derivados, auditoría e invariantes, pero esconden lógica: mantenlos pocos y pequeños.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los webhooks de base de datos usan <code>pg_net</code>: asíncronos, sin frenar la transacción y sin reintentos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Muchas piezas de Supabase son extensiones de Postgres que viven en el esquema <code>extensions</code>.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="sb-rls.html">
+              <small>← Anterior</small>
+              <b>Row Level Security: la seguridad vive en la base de datos</b>
+            </a>
+            <a href="sb-auth.html" class="next">
+              <small>Siguiente →</small>
+              <b>Auth: usuarios, sesiones y JWT</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

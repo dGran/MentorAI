@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Row Level Security: la seguridad vive en la base de datos — MentorAI</title>
+    <meta name="description" content="RLS a fondo: los roles anon, authenticated y service_role, cómo llega el usuario a Postgres, la diferencia entre using y with check, compartir filas sin recursión infinita, políticas que no hunden el rendimiento y cómo probarlas." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Supabase</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Row Level Security: la seguridad vive en la base de datos</h1>
+        <p class="tutorial-hero__lead">
+          En Supabase el navegador consulta tus tablas directamente. Lo único que impide que un usuario lea las notas de otro es una regla dentro de Postgres. Esta es la lección más importante del curso, porque un error aquí no se nota en las pruebas, se nota cuando alguien abre las herramientas de desarrollo.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            19 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Supabase
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#modelo">De la petición al usuario: roles y claims</a></li>
+            <li><a href="#activar">Activar RLS: cerrado por defecto</a></li>
+            <li><a href="#anatomia">Anatomía de una política: using y with check</a></li>
+            <li><a href="#compartir">Compartir: políticas que miran otras tablas</a></li>
+            <li><a href="#rendimiento">Políticas rápidas</a></li>
+            <li><a href="#probar">Probar las políticas</a></li>
+            <li><a href="#errores">Errores que abren agujeros</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">En <a href="sb-data-api.html">la Data API</a> viste que cada petición se convierte en SQL ejecutado con el rol del usuario. Aquí entramos en qué hace Postgres con ese rol: cómo sabe quién eres, qué filas te deja tocar y cómo escribir reglas que sean a la vez correctas y rápidas.</p>
+          <h2 id="modelo">
+            De la petición al usuario: roles y claims
+            <a href="#modelo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Cada petición que llega a la Data API se ejecuta con uno de estos roles de Postgres:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Rol</th><th>Cuándo</th><th>¿RLS se aplica?</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>anon</code></td><td>Clave publicable y nadie ha iniciado sesión</td><td>Sí</td></tr>
+                <tr><td><code>authenticated</code></td><td>Clave publicable más el token de un usuario con sesión</td><td>Sí</td></tr>
+                <tr><td><code>service_role</code></td><td>Clave secreta</td><td><strong>No</strong>: tiene el atributo <code>BYPASSRLS</code></td></tr>
+                <tr><td><code>postgres</code></td><td>Conexión directa, SQL Editor, migraciones</td><td>No: es el dueño de las tablas</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Antes de ejecutar tu consulta, PostgREST cambia al rol que toca y deja el contenido del token (sus <em>claims</em>) disponible para la transacción. Dos funciones lo leen:</p>
+          <ul>
+            <li><code>auth.uid()</code> devuelve el id del usuario (el claim <code>sub</code>), o <code>null</code> si no hay sesión.</li>
+            <li><code>auth.jwt()</code> devuelve el token entero como <code>jsonb</code>: email, rol, <code>app_metadata</code>, nivel de autenticación…</li>
+          </ul>
+          <p>Esto es lo que hace funcionar el modelo: <strong>las políticas pueden preguntar quién está consultando</strong>, y el token está firmado por Auth, así que el cliente no puede inventárselo.</p>
+          <h2 id="activar">
+            Activar RLS: cerrado por defecto
+            <a href="#activar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · cerrar la tabla</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">alter table public.notes enable row level security;</code></pre>
+          </div>
+          <p>Con RLS activado y <strong>ninguna política</strong>, la tabla devuelve cero filas a <code>anon</code> y <code>authenticated</code> y rechaza toda escritura. A partir de ahí, cada política abre una puerta concreta. Las políticas son <strong>permisivas</strong>: si hay varias para la misma operación, basta con que una se cumpla (se combinan con <code>or</code>).</p>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Una tabla sin RLS es una tabla pública</p>
+              <p>Si una tabla de un esquema expuesto no tiene RLS, cualquiera con tu clave publicable (que está en el código de tu web) puede leerla entera, modificarla y borrarla con un <code>curl</code>. No hace falta saltarse nada: es el comportamiento documentado. El Security Advisor lo marca como error; trátalo como tal.</p>
+            </div>
+          </div>
+          <h2 id="anatomia">
+            Anatomía de una política: using y with check
+            <a href="#anatomia" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · la forma general</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">create policy "nombre descriptivo"
+on public.notes
+for select            -- select | insert | update | delete | all
+to authenticated      -- a qué roles aplica
+using ( ... )         -- qué filas existentes puede ver o tocar
+with check ( ... );   -- qué filas nuevas o modificadas se aceptan</code></pre>
+          </div>
+          <p>Las dos cláusulas responden a preguntas distintas, y confundirlas es el error más caro de RLS:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Operación</th><th><code>using</code> (filas que ya existen)</th><th><code>with check</code> (cómo quedan después)</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>select</code></td><td>Qué filas puedes ver</td><td>No aplica</td></tr>
+                <tr><td><code>insert</code></td><td>No aplica</td><td>Qué filas puedes crear</td></tr>
+                <tr><td><code>update</code></td><td>Qué filas puedes modificar</td><td>Cómo pueden quedar tras modificarlas</td></tr>
+                <tr><td><code>delete</code></td><td>Qué filas puedes borrar</td><td>No aplica</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Las cuatro políticas de las notas privadas:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · notas: cada uno las suyas</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">create policy "Ver mis notas"
+on public.notes for select to authenticated
+using ((select auth.uid()) = user_id);
+
+create policy "Crear mis notas"
+on public.notes for insert to authenticated
+with check ((select auth.uid()) = user_id);
+
+create policy "Editar mis notas"
+on public.notes for update to authenticated
+using ((select auth.uid()) = user_id)
+with check ((select auth.uid()) = user_id);
+
+create policy "Borrar mis notas"
+on public.notes for delete to authenticated
+using ((select auth.uid()) = user_id);</code></pre>
+          </div>
+          <p>Si omites <code>with check</code> en un update, Postgres reutiliza la expresión de <code>using</code>. Escribirla explícita deja clara la intención, y obliga a pensar en lo que de verdad importa: <strong>cómo puede quedar la fila</strong>, que es donde se esconden los agujeros.</p>
+          <p>Un detalle de lo anterior que no es estético: <code>(select auth.uid())</code> entre paréntesis con <code>select</code>. Lo explica la sección de rendimiento.</p>
+          <h2 id="compartir">
+            Compartir: políticas que miran otras tablas
+            <a href="#compartir" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La app de notas permite compartir una nota con otra persona:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · tabla de comparticiones</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">create table public.note_shares (
+  note_id bigint not null references public.notes (id) on delete cascade,
+  shared_with uuid not null references auth.users (id) on delete cascade,
+  can_edit boolean not null default false,
+  primary key (note_id, shared_with)
+);
+
+alter table public.note_shares enable row level security;</code></pre>
+          </div>
+          <p>La política natural de lectura de notas sería «es mía <strong>o</strong> está compartida conmigo»:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · ver notas compartidas conmigo</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">create policy "Ver notas compartidas conmigo"
+on public.notes for select to authenticated
+using (
+  id in (
+    select note_id from public.note_shares
+    where shared_with = (select auth.uid())
+  )
+);</code></pre>
+          </div>
+          <p>Y aquí aparece un clásico. Si la política de <code>note_shares</code> dice a su vez «puedes ver una compartición si eres el dueño de la nota» (consultando <code>notes</code>), cada tabla evalúa la política de la otra, que evalúa la de la primera… y Postgres corta con **<code>infinite recursion detected in policy</code>**.</p>
+          <p>La salida es una función <code>security definer</code> que consulta la tabla sin pasar por RLS, en un esquema que la API no expone:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · romper la recursión con una función privada</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">create schema if not exists private;
+
+create function private.owns_note(target_note_id bigint)
+returns boolean
+language sql
+security definer
+stable
+set search_path = ''
+as $$
+  select exists (
+    select 1 from public.notes
+    where id = target_note_id and user_id = (select auth.uid())
+  );
+$$;
+
+create policy "El dueño gestiona las comparticiones"
+on public.note_shares for all to authenticated
+using ((select private.owns_note(note_id)))
+with check ((select private.owns_note(note_id)));
+
+create policy "Veo lo que han compartido conmigo"
+on public.note_shares for select to authenticated
+using (shared_with = (select auth.uid()));</code></pre>
+          </div>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El editor invitado que se queda la nota</p>
+              <p>Supón una política que deja editar a quien tiene la nota compartida con <code>can_edit</code>: <code>using (id in (select note_id from public.note_shares where shared_with = (select auth.uid()) and can_edit))</code>, sin <code>with check</code>. Postgres reutiliza <code>using</code> como comprobación final: la fila editada tiene que seguir compartida con el editor… y lo sigue estando aunque cambie <code>user_id</code> por su propio id. El invitado acaba de quedarse la nota. RLS no ve el valor anterior de la fila, así que no puede expresar «esta columna no cambia». Eso se resuelve con permisos por columna, debajo.</p>
+            </div>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · solo se pueden actualizar estas columnas</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">revoke update on public.notes from authenticated;
+grant update (title, body, notebook_id) on public.notes to authenticated;</code></pre>
+          </div>
+          <p>La segunda política no es decorativa: la política de notas consulta <code>note_shares</code> <strong>con el rol del usuario</strong>, así que quien recibe una nota tiene que poder ver su propia fila de compartición. Sin ella, la subconsulta le devolvería vacío y la nota compartida seguiría invisible.</p>
+          <p>La función corre con los permisos de su dueño (se salta RLS al leer <code>notes</code>), pero solo responde una pregunta de sí o no sobre el usuario actual. Al estar en <code>private</code>, nadie puede llamarla desde la API. El mismo patrón sirve para apps multiempresa: <code>private.is_member(org_id)</code> sobre una tabla de membresías, y cada tabla de la organización usa esa función en sus políticas.</p>
+          <h2 id="rendimiento">
+            Políticas rápidas
+            <a href="#rendimiento" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una política es un <code>where</code> extra en <strong>cada consulta</strong>. Mal escrita, multiplica el coste de todo. Cuatro reglas cubren casi todos los casos:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Regla</th><th>Por qué</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Envuelve las funciones en <code>(select ...)</code>: <code>(select auth.uid()) = user_id</code></td><td>Sin el <code>select</code>, Postgres puede llamar a la función una vez <strong>por fila</strong>. Con él, la evalúa una vez por consulta y reutiliza el resultado</td></tr>
+                <tr><td>Indexa las columnas de las políticas: <code>create index on notes (user_id)</code></td><td>La política filtra por <code>user_id</code> en cada consulta; sin índice, cada lectura recorre la tabla entera</td></tr>
+                <tr><td>Pon siempre <code>to authenticated</code> (o el rol que toque)</td><td>Una política sin rol se evalúa también para <code>anon</code>, que nunca la va a cumplir</td></tr>
+                <tr><td>Prefiere <code>columna in (select ...)</code> a subconsultas correlacionadas con joins</td><td>La forma <code>in</code> deja al planificador resolver la subconsulta una vez</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Además, <strong>filtra también en la consulta</strong> aunque la política ya lo haga: <code>.eq("user_id", userId)</code> le da al planificador una condición que puede usar con el índice desde el principio, en vez de descubrir el filtro dentro de la política.</p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Mídelo</p>
+              <p>El Performance Advisor del panel detecta las políticas que llaman a <code>auth.uid()</code> sin envolver y las que duplican trabajo. Y <code>explain analyze</code> en el SQL Editor, ejecutado con el rol <code>authenticated</code>, enseña el coste real que añade cada política.</p>
+            </div>
+          </div>
+          <h2 id="probar">
+            Probar las políticas
+            <a href="#probar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una política que no se prueba es una suposición. Tres formas, de más rápida a más seria:</p>
+          <ul>
+            <li><strong>El selector de rol del SQL Editor.</strong> Permite ejecutar una consulta como <code>anon</code> o como un usuario concreto. Ideal para comprobar a mano.</li>
+            <li><strong>Simular el rol en SQL</strong>, dentro de una transacción que se deshace:</li>
+          </ul>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · ver lo que vería un usuario concreto</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">begin;
+set local role authenticated;
+set local request.jwt.claims = '{"sub": "1b4e28ba-2fa1-11d2-883f-0016d3cca427", "role": "authenticated"}';
+
+select id, title from public.notes;
+
+rollback;</code></pre>
+          </div>
+          <ul>
+            <li><strong>Tests automáticos con pgTAP.</strong> La CLI ejecuta los ficheros de <code>supabase/tests/</code> con <code>supabase test db</code>. Un test de seguridad crea dos usuarios, inserta una nota de cada uno y comprueba que cada uno solo ve la suya. Es la única forma de que una migración futura no abra un agujero sin que nadie se entere.</li>
+          </ul>
+          <h2 id="errores">
+            Errores que abren agujeros
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <ul>
+            <li>**Usar <code>user_metadata</code> en una política.** El usuario puede modificar su propio <code>user_metadata</code> desde el cliente. Si una política dice «es admin si <code>user_metadata.role = 'admin'</code>», cualquiera se hace admin. Los datos de autorización van en <code>app_metadata</code> (solo se cambia desde el servidor) o en una tabla propia.</li>
+            <li>**<code>using (true)</code> en update o delete «para probar».** Se queda. Y abre la tabla a cualquier usuario autenticado.</li>
+            <li>**Vistas sin <code>security_invoker</code>** y funciones <code>security definer</code> en esquemas expuestos: las dos se saltan RLS.</li>
+            <li><strong>Confiar en filtrar en el frontend.</strong> Ocultar un botón no es seguridad: la petición se puede hacer igual a mano.</li>
+            <li>**Políticas sin <code>to</code>.** Aparte del rendimiento, hacen que una regla pensada para usuarios con sesión se evalúe también para anónimos.</li>
+          </ul>
+          <p>La capa de autorización de cualquier backend sigue estas mismas ideas; <a href="sec-autorizacion.html">Autorización</a> las cuenta fuera de Supabase, y te servirá para reconocer qué parte de tu lógica cabe en una política y cuál no.</p>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>RLS es obligatorio cuando…</h4>
+              <ul>
+                <li>La tabla está en un esquema expuesto por la Data API (siempre que uses Supabase desde un cliente)</li>
+                <li>Varios usuarios comparten la base de datos y cada uno solo debe ver lo suyo</li>
+                <li>Una app multiempresa separa los datos por organización</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>RLS no es el sitio para…</h4>
+              <ul>
+                <li>Reglas de negocio complejas («solo se puede cancelar si el pedido no ha salido y faltan 24 h»): mejor una función con <code>rpc</code> o una Edge Function</li>
+                <li>Validar formatos: para eso están los <code>check</code> y los tipos de la tabla</li>
+                <li>Limitar cuántas veces se puede hacer algo por minuto: es <em>rate limiting</em>, no permisos</li>
+              </ul>
+            </div>
+          </div>
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Cada petición entra como <code>anon</code>, <code>authenticated</code> o <code>service_role</code>; solo este último se salta RLS, y <code>auth.uid()</code> y <code>auth.jwt()</code> dan acceso al token firmado.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Activar RLS cierra la tabla; cada política permisiva abre una puerta, y varias se combinan con <code>or</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>using</code> decide qué filas existentes se ven o tocan; <code>with check</code> decide cómo pueden quedar. Un update necesita las dos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La recursión entre políticas se rompe con funciones <code>security definer</code> en un esquema privado.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Rendimiento: <code>(select auth.uid())</code>, índice en las columnas de la política, <code>to authenticated</code> y el filtro repetido en la consulta.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Prueba las políticas con roles simulados y con pgTAP; nunca autorices con <code>user_metadata</code>.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="sb-data-api.html">
+              <small>← Anterior</small>
+              <b>La Data API: consultar Postgres por HTTP sin escribir backend</b>
+            </a>
+            <a href="sb-funciones-y-triggers.html" class="next">
+              <small>Siguiente →</small>
+              <b>Funciones, triggers y webhooks: lógica dentro de Postgres</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

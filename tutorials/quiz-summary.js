@@ -142,5 +142,9 @@ window.MENTORAI_QUIZ_SUMMARY = {
   "oficio-de-ingenieria": {
     "total": 18,
     "passingScore": null
+  },
+  "supabase": {
+    "total": 37,
+    "passingScore": null
   }
 };

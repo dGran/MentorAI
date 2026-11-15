@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Supabase en producción: conexiones, backups, coste y salida — MentorAI</title>
+    <meta name="description" content="Operar Supabase de verdad: conexión directa, pooler en modo sesión y en modo transacción y cuándo usar cada uno, tamaño de cómputo, los asesores de seguridad y rendimiento, backups y PITR (y lo que no incluyen), logs, la factura que sorprende y cómo irse o autoalojarlo si hace falta." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Supabase</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Supabase en producción: conexiones, backups, coste y salida</h1>
+        <p class="tutorial-hero__lead">
+          Que la app funcione es el principio. En producción las preguntas son otras: por qué se agotan las conexiones con el tráfico de un lunes, qué pasa si alguien borra la tabla equivocada, por qué la factura del mes duplica la anterior y qué harías si tuvieras que salir de Supabase. Esta lección responde a esas preguntas antes de que te las hagas con prisa.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            18 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Supabase
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#conexiones">Conexiones: directa, sesión o transacción</a></li>
+            <li><a href="#computo">Tamaño de cómputo</a></li>
+            <li><a href="#asesores">Rendimiento y seguridad: los asesores</a></li>
+            <li><a href="#backups">Backups: qué hay, qué no y cómo restaurar</a></li>
+            <li><a href="#observabilidad">Logs y métricas</a></li>
+            <li><a href="#coste">La factura: de dónde sale</a></li>
+            <li><a href="#salida">Irse de Supabase, o no depender de la plataforma</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Con <a href="sb-app-completa.html">la app publicada</a>, lo que queda es operarla: conexiones, rendimiento, copias de seguridad, observabilidad y coste. Es la última lección del curso, y la que más vas a releer cuando algo vaya mal.</p>
+          <h2 id="conexiones">
+            Conexiones: directa, sesión o transacción
+            <a href="#conexiones" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La Data API gestiona sus conexiones por ti. Pero en cuanto algo se conecta <strong>directamente</strong> a Postgres (tu backend, un ORM, una función serverless, una herramienta de BI), tienes que elegir cómo, porque Postgres admite un número limitado de conexiones y cada una consume memoria.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Forma</th><th>Puerto</th><th>Encaja con</th><th>Cuidado con</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Conexión directa (<code>db.&lt;ref&gt;.supabase.co</code>)</td><td>5432</td><td>Servidores de vida larga, migraciones, <code>pg_dump</code></td><td>Usa IPv6 salvo que contrates el complemento de IPv4</td></tr>
+                <tr><td>Pooler en <strong>modo sesión</strong></td><td>5432 en el host del pooler</td><td>Servidores de vida larga en redes solo IPv4, herramientas de BI</td><td>Cada cliente ocupa una conexión mientras está conectado</td></tr>
+                <tr><td>Pooler en <strong>modo transacción</strong></td><td>6543</td><td>Serverless y edge: muchas conexiones cortas</td><td>Sin sentencias preparadas ni estado de sesión entre transacciones</td></tr>
+                <tr><td>Pooler dedicado</td><td>6543 en el host de la base de datos</td><td>Mucha carga, planes de pago</td><td>Solo modo transacción</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>El pooler (<strong>Supavisor</strong>) es un intermediario que reparte pocas conexiones reales a Postgres entre muchos clientes. En <strong>modo transacción</strong> una conexión real se presta solo mientras dura una transacción y vuelve al montón: mil funciones serverless pueden compartir veinte conexiones. El precio es que nada de lo que dependa de la sesión sobrevive entre transacciones: <code>set</code>, bloqueos consultivos de sesión, <code>LISTEN/NOTIFY</code>, tablas temporales y <strong>sentencias preparadas</strong>. Por eso hay que desactivarlas en el driver:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Driver</th><th>Ajuste para el modo transacción</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Postgres.js / Drizzle</td><td><code>prepare: false</code></td></tr>
+                <tr><td>Prisma</td><td><code>?pgbouncer=true</code> en la URL</td></tr>
+                <tr><td>PDO (PHP)</td><td><code>PDO::ATTR_EMULATE_PREPARES =&gt; true</code></td></tr>
+                <tr><td>asyncpg (Python)</td><td><code>statement_cache_size=0</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p><a href="cr-conexiones-y-pool.html">Conexiones y pool</a> cuenta por qué una conexión a Postgres es cara y cómo dimensionar un pool en general.</p>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El clásico de serverless</p>
+              <p>Una función serverless que abre una conexión directa por invocación funciona en las pruebas y se cae con el primer pico: cien invocaciones simultáneas son cien conexiones, y Postgres responde «too many connections». Serverless va siempre por el pooler en modo transacción.</p>
+            </div>
+          </div>
+          <h2 id="computo">
+            Tamaño de cómputo
+            <a href="#computo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Cada proyecto de pago corre en una instancia de cómputo con CPU, memoria y un máximo de conexiones según su tamaño. El plan Pro incluye crédito para la instancia más pequeña, y subir de tamaño se hace desde el panel con un reinicio de unos minutos.</p>
+          <p>Antes de subir de tamaño, mira si el problema es de consultas: una consulta sin índice que recorre un millón de filas no se arregla con el doble de CPU, solo tarda la mitad en saturarla. Los informes del panel (uso de CPU, memoria, conexiones, disco) dicen cuál de los dos es.</p>
+          <h2 id="asesores">
+            Rendimiento y seguridad: los asesores
+            <a href="#asesores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Supabase revisa tu base de datos con una batería de comprobaciones automáticas, los <strong>Advisors</strong>:</p>
+          <ul>
+            <li><strong>Security Advisor</strong>: tablas expuestas sin RLS, vistas sin <code>security_invoker</code>, funciones sin <code>search_path</code> fijo, extensiones en <code>public</code>, configuración de Auth débil.</li>
+            <li><strong>Performance Advisor</strong>: claves foráneas sin índice, índices que no se usan o duplicados, políticas RLS que reevalúan <code>auth.uid()</code> en cada fila.</li>
+          </ul>
+          <p>Y para las consultas concretas, el informe <strong>Query Performance</strong> (basado en <code>pg_stat_statements</code>) ordena las consultas por tiempo total, que es lo que de verdad pesa: una consulta de 5 ms ejecutada un millón de veces importa más que una de 2 segundos que corre una vez al día. Desde ahí, <code>explain analyze</code> y <a href="bd-explain-comparado.html">Explain comparado</a> para entender el plan, e <code>index_advisor</code> para el índice que falta.</p>
+          <h2 id="backups">
+            Backups: qué hay, qué no y cómo restaurar
+            <a href="#backups" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Plan</th><th>Copias de la base de datos</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Gratuito</td><td>Ninguna gestionada: haz tus propios volcados</td></tr>
+                <tr><td>Pro</td><td>Copia diaria, guardada 7 días</td></tr>
+                <tr><td>Superiores</td><td>Copias diarias con más retención</td></tr>
+                <tr><td>Complemento PITR</td><td>Restaurar a cualquier segundo de los últimos días (según lo contratado)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Con copias diarias, un borrado accidental a las 18:00 te devuelve a la copia de la noche anterior: pierdes el día. <strong>Point-in-Time Recovery</strong> guarda el WAL continuamente y permite volver al segundo anterior al error. Si los datos de un día valen más de lo que cuesta el complemento, la cuenta es fácil.</p>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Los ficheros no están en los backups de la base de datos</p>
+              <p>Las copias de seguridad cubren Postgres: tablas, y también las filas de <code>storage.objects</code>. <strong>El contenido de los ficheros de Storage no</strong>. Si borras un bucket, restaurar la base de datos te devuelve los metadatos de ficheros que ya no existen. Para los ficheros importantes, copia periódica a otro almacenamiento con la API compatible con S3 (por ejemplo, con <code>rclone</code> desde una tarea programada).</p>
+            </div>
+          </div>
+          <p>Además de las copias gestionadas, ten un volcado tuyo, fuera de Supabase:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · volcado lógico del proyecto</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">npx supabase db dump --linked -f schema.sql
+npx supabase db dump --linked --data-only -f data.sql
+npx supabase db dump --linked --role-only -f roles.sql</code></pre>
+          </div>
+          <p>Y la regla de <a href="inf-backups.html">Backups</a> que nadie cumple hasta que le duele: <strong>una copia que nunca has restaurado no es una copia</strong>. Restaura de vez en cuando en un proyecto de pruebas y comprueba que la app arranca contra él.</p>
+          <h2 id="observabilidad">
+            Logs y métricas
+            <a href="#observabilidad" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <ul>
+            <li><strong>Logs Explorer</strong>: los logs de cada servicio (Data API, Auth, Storage, Edge Functions, Postgres) consultables con SQL. La retención depende del plan: 1 día en el gratuito, 7 en Pro.</li>
+            <li><strong>Log drains</strong>: reenvío de los logs a tu propio sistema (Datadog, un endpoint HTTP…) en planes de pago, para guardarlos más tiempo y alertar.</li>
+            <li><strong>Métricas en formato Prometheus</strong>: un endpoint con las métricas de la base de datos para que tu Grafana o tu proveedor de monitorización las recoja.</li>
+          </ul>
+          <p>Lo mínimo que merece una alerta: errores 5xx de la Data API, conexiones cerca del máximo, disco cerca del límite, cola con mensajes cada vez más viejos y tareas de Cron que fallan.</p>
+          <h2 id="coste">
+            La factura: de dónde sale
+            <a href="#coste" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El plan Pro cuesta 25 dólares al mes por organización e incluye una cuota de cada recurso y 10 dólares de crédito de cómputo, que cubre la instancia más pequeña de un proyecto. Lo que sorprende en la factura suele ser:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Concepto</th><th>Por qué crece</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Cómputo de proyectos adicionales</td><td>Cada proyecto de pago tiene su instancia: un segundo proyecto de pruebas en Pro suma su cómputo</td></tr>
+                <tr><td>Tráfico de salida (egress)</td><td>Cada byte que sale: consultas con <code>select *</code>, ficheros grandes sin caché, imágenes sin transformar</td></tr>
+                <tr><td>Disco</td><td>La base de datos crece, y con ella el disco provisionado</td></tr>
+                <tr><td>Usuarios activos al mes</td><td>Por encima de la cuota incluida</td></tr>
+                <tr><td>Complementos</td><td>PITR, IPv4, dominio personalizado, ramas de Branching por hora</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>En Pro, el <strong>límite de gasto</strong> viene activado: al pasar la cuota, el servicio se restringe en vez de cobrarte de más. Para un proyecto con usuarios reales suele convenir desactivarlo con alertas de facturación, porque restringir el servicio también es una caída.</p>
+          <h2 id="salida">
+            Irse de Supabase, o no depender de la plataforma
+            <a href="#salida" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El miedo al <em>lock-in</em> con Supabase es menor que con otros servicios gestionados, porque casi todo es estándar:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Pieza</th><th>Cómo sale</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Base de datos</td><td>Es Postgres: <code>pg_dump</code> y a cualquier Postgres</td></tr>
+                <tr><td>Usuarios</td><td>Son filas de <code>auth.users</code>, con las contraseñas en hash bcrypt, que otros sistemas pueden importar</td></tr>
+                <tr><td>Ficheros</td><td>Por la API compatible con S3, a cualquier almacenamiento de objetos</td></tr>
+                <tr><td>Edge Functions</td><td>TypeScript con APIs web estándar; se adaptan a otros runtimes con poco trabajo</td></tr>
+                <tr><td>Políticas, funciones, triggers</td><td>SQL de Postgres: viajan con el volcado</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Lo que sí ata es la parte de la plataforma: la Data API generada, Realtime, el panel, Branching, los backups gestionados. Si te vas, eso hay que reemplazarlo.</p>
+          <p>La alternativa intermedia es <strong>autoalojar</strong> Supabase: todos sus servicios son open source y se despliegan con Docker Compose. Ganas control total y, a gran escala, puede salir más barato; a cambio, operas tú todo lo que la plataforma hacía: actualizaciones, backups, seguridad, escalado y guardias. Para la mayoría de equipos, la plataforma gestionada compensa con mucho.</p>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Momento</th><th>Revisa</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Antes de abrir la app</td><td>Asesores en verde, backups y PITR decididos, alertas mínimas</td></tr>
+                <tr><td>Al añadir un backend, una herramienta de BI o funciones serverless</td><td>Qué forma de conexión usa cada uno</td></tr>
+                <tr><td>Cuando algo va lento</td><td>Query Performance y <code>explain analyze</code> antes de subir el cómputo</td></tr>
+                <tr><td>Cada mes</td><td>La factura por concepto y la tendencia de disco y egress</td></tr>
+                <tr><td>Cada trimestre</td><td>Restaurar un backup en un proyecto de pruebas</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Conexión directa para servidores de vida larga; pooler en modo transacción (6543) para serverless, con las sentencias preparadas desactivadas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Antes de subir el tamaño de cómputo, mira las consultas: los asesores y Query Performance dicen dónde está el problema.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Pro incluye copias diarias de 7 días; PITR permite volver al segundo anterior al error; los ficheros de Storage no van en esos backups.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Ten volcados propios fuera de Supabase y restaura de vez en cuando para comprobar que funcionan.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La factura crece por cómputo de proyectos extra, egress, disco y complementos; el límite de gasto evita sorpresas, pero también restringe el servicio.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Casi todo es estándar y se puede llevar a otro sitio; autoalojar es posible, a cambio de operarlo todo tú.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="sb-app-completa.html">
+              <small>← Anterior</small>
+              <b>Una app completa: frontend, Supabase y despliegue</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

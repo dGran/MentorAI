@@ -1475,4 +1475,60 @@ window.MENTORAI_PRACTICE = {
       },
     },
   ],
+  "supabase": [
+    {
+      id: "r5b1a01",
+      title: "La tabla que cualquiera puede leer",
+      statement:
+        "Con un Supabase local (npx supabase init y npx supabase start), crea una tabla public.secrets con dos filas desde el Studio local o con psql en el puerto 54322, sin activar RLS y dándole grant select al rol anon. Léela con curl usando solo la clave publicable que imprime supabase start. Después ciérrala sin borrar el grant y explica por qué la misma petición devuelve otra cosa.",
+      code: {
+        lang: "sql",
+        source:
+          "create table public.secrets (id int primary key, owner text, value text);\ninsert into public.secrets values (1, 'ana', 'pin 1234'), (2, 'luis', 'pin 9876');\ngrant select on public.secrets to anon;",
+      },
+      solution:
+        "Sin RLS, el grant basta: la petición entra con el rol anon y PostgREST devuelve las dos filas a cualquiera que tenga la clave publicable, que en una app real está en el JavaScript que descarga el navegador. Al activar RLS, la tabla queda cerrada por defecto: sin políticas, la misma petición devuelve [] y no un error, porque para RLS una fila que no puedes ver no existe. El grant decide si el rol puede tocar la tabla; RLS decide qué filas. Hacen falta las dos capas, y la que protege los datos de cada usuario es la segunda.",
+      solutionCode: {
+        lang: "bash",
+        source:
+          "curl \"http://127.0.0.1:54321/rest/v1/secrets?select=*\" -H \"apikey: $PUBLISHABLE_KEY\"\n\npsql postgresql://postgres:postgres@127.0.0.1:54322/postgres \\\n  -c 'alter table public.secrets enable row level security;'\n\ncurl \"http://127.0.0.1:54321/rest/v1/secrets?select=*\" -H \"apikey: $PUBLISHABLE_KEY\"",
+      },
+    },
+    {
+      id: "r5b1a02",
+      title: "El editor invitado que se queda la nota",
+      statement:
+        "En tu base de datos local, crea una tabla notes con user_id y RLS, y una política de update para editores invitados que solo tenga using (sin with check). Simula con set local role y request.jwt.claims que el invitado cambia el user_id de la nota por el suyo. Comprueba que funciona y ciérralo sin tocar la política.",
+      code: {
+        lang: "sql",
+        source:
+          "create table public.notes (id int primary key, user_id uuid not null, editor_id uuid, title text);\nalter table public.notes enable row level security;\ngrant select, update on public.notes to authenticated;\n\ncreate policy \"Los editores editan\" on public.notes for update to authenticated\nusing (editor_id = (select auth.uid()));\n\ncreate policy \"Los editores ven\" on public.notes for select to authenticated\nusing (editor_id = (select auth.uid()) or user_id = (select auth.uid()));\n\ninsert into public.notes values (1, '00000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000b', 'Receta');",
+      },
+      solution:
+        "Sin with check, Postgres usa la expresión de using también para validar la fila resultante, y esa expresión solo mira editor_id: la nota sigue «editable por el invitado» aunque ahora user_id también sea suyo, así que el update pasa. RLS no puede expresar «esta columna no cambia» porque no ve el valor anterior de la fila. La solución está en otra capa: los permisos por columna. Al revocar el update general y conceder solo title, el mismo update falla con permission denied antes de llegar a las políticas. Un trigger before update que compare old.user_id con new.user_id sería la alternativa si necesitas reglas más finas.",
+      solutionCode: {
+        lang: "sql",
+        source:
+          "begin;\nset local role authenticated;\nset local request.jwt.claims = '{\"sub\": \"00000000-0000-0000-0000-00000000000b\", \"role\": \"authenticated\"}';\nupdate public.notes set user_id = '00000000-0000-0000-0000-00000000000b' where id = 1;\nselect id, user_id from public.notes;\nrollback;\n\nrevoke update on public.notes from authenticated;\ngrant update (title) on public.notes to authenticated;",
+      },
+    },
+    {
+      id: "r5b1a03",
+      title: "Una cola que reintenta sola",
+      statement:
+        "Activa la extensión pgmq en tu base de datos local (create extension pgmq), crea una cola jobs y encola tres mensajes. Léelos con un tiempo de invisibilidad de 5 segundos y no los archives, simulando un consumidor que se cae. Vuelve a leer al momento y pasados 6 segundos. Archiva uno, consulta las métricas y explica qué ha pasado con read_ct y por qué el consumidor de una cola así tiene que ser idempotente.",
+      code: {
+        lang: "sql",
+        source:
+          "create extension if not exists pgmq;\nselect pgmq.create('jobs');\nselect pgmq.send_batch('jobs', array['{\"n\": 1}', '{\"n\": 2}', '{\"n\": 3}']::jsonb[]);",
+      },
+      solution:
+        "La primera lectura devuelve los tres mensajes con read_ct = 1 y los esconde 5 segundos; una segunda lectura inmediata no devuelve nada, porque siguen invisibles. Pasado ese tiempo reaparecen con read_ct = 2: nadie los archivó, así que la cola asume que el consumidor falló y los vuelve a entregar. Es la garantía de al menos una vez: no se pierde ningún mensaje, pero el mismo trabajo puede ejecutarse dos veces si el consumidor hizo su parte y se cayó antes de archivar. Por eso el consumidor apunta qué trabajos completó (con una clave única por mensaje) y comprueba antes de repetir. Tras archivar uno, metrics da una longitud de 2: el archivado sale de la cola y queda en pgmq.a_jobs como historial.",
+      solutionCode: {
+        lang: "sql",
+        source:
+          "select msg_id, read_ct, message from pgmq.read('jobs', 5, 10);\nselect msg_id, read_ct, message from pgmq.read('jobs', 5, 10);\nselect pg_sleep(6);\nselect msg_id, read_ct, message from pgmq.read('jobs', 5, 10);\nselect pgmq.archive('jobs', 1);\nselect queue_length, oldest_msg_age_sec from pgmq.metrics('jobs');",
+      },
+    },
+  ],
 };

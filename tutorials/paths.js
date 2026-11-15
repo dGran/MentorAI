@@ -94,7 +94,7 @@ window.MENTORAI_PATHS = [
     slug: "construir-un-servicio",
     title: "Construir un servicio",
     summary:
-      "El ciclo completo de construir y operar un servicio real: versionarlo con Git, gestionar sus dependencias, diseñar su API, hablar con la base de datos y escribir el SQL que de verdad se escribe, containerizarlo, configurarlo por entornos, automatizar su camino a producción y saber qué está pasando ahí dentro cuando ya está en marcha.",
+      "El ciclo completo de construir y operar un servicio real: versionarlo con Git, gestionar sus dependencias, diseñar su API, hablar con la base de datos y escribir el SQL que de verdad se escribe, saber cuándo te ahorra trabajo una plataforma como Supabase, containerizarlo, configurarlo por entornos, automatizar su camino a producción y saber qué está pasando ahí dentro cuando ya está en marcha.",
     icon: "bolt",
     steps: [
       { type: "course", ref: "git" },
@@ -104,6 +104,7 @@ window.MENTORAI_PATHS = [
       { type: "course", ref: "acceso-a-datos" },
       { type: "course", ref: "sql-aplicado" },
       { type: "course", ref: "concurrencia-en-bd" },
+      { type: "course", ref: "supabase" },
       { type: "course", ref: "cache-y-rendimiento" },
       { type: "article", ref: "redis-a-fondo" },
       { type: "article", ref: "rabbitmq" },
