@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edge Functions: tu código en el servidor — MentorAI</title>
+    <meta name="description" content="Funciones TypeScript que corren en el servidor de Supabase: crear, probar en local y desplegar, cómo saben quién llama, secretos, CORS, recibir webhooks de terceros, tareas en segundo plano y los límites de CPU, memoria y tiempo que deciden qué cabe en ellas." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Supabase</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Edge Functions: tu código en el servidor</h1>
+        <p class="tutorial-hero__lead">
+          Hay cosas que no pueden pasar en el navegador ni caben en SQL: cobrar con Stripe, mandar un email con tu proveedor, llamar a un modelo de IA con una clave secreta, recibir el webhook de otro servicio. Para eso están las Edge Functions, pequeñas funciones TypeScript que despliegas con un comando y que ya saben quién es el usuario.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            17 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Supabase
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#que-son">Qué son y dónde corren</a></li>
+            <li><a href="#crear">Crear, probar y desplegar</a></li>
+            <li><a href="#quien-llama">Saber quién llama</a></li>
+            <li><a href="#secretos">Secretos y variables de entorno</a></li>
+            <li><a href="#cors-y-webhooks">CORS y webhooks de terceros</a></li>
+            <li><a href="#segundo-plano">Responder rápido y seguir trabajando</a></li>
+            <li><a href="#limites">Los límites deciden qué cabe</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Con <a href="sb-data-api.html">la Data API</a>, <a href="sb-rls.html">RLS</a> y <a href="sb-funciones-y-triggers.html">las funciones de Postgres</a> cubres casi todo lo que toca la base de datos. Esta lección es para lo que sale de ella: código de servidor con secretos, llamadas a APIs externas y trabajo que no debe hacer el cliente.</p>
+          <h2 id="que-son">
+            Qué son y dónde corren
+            <a href="#que-son" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una Edge Function es un fichero TypeScript que recibe una petición HTTP (<code>Request</code>) y devuelve una respuesta (<code>Response</code>), con las APIs estándar de la web. Corre en el <strong>Edge Runtime</strong> de Supabase, compatible con Deno: puedes importar paquetes de npm con el prefijo <code>npm:</code> y de JSR con <code>jsr:</code>.</p>
+          <p>«Edge» quiere decir que se despliegan en varias regiones y cada petición se atiende cerca de quien llama. Ojo con la intuición: si la función consulta la base de datos, que vive en <strong>una</strong> región, cada consulta cruza hasta ella. Para lógica que habla mucho con la base de datos, la cercanía al usuario importa menos que el número de consultas.</p>
+          <h2 id="crear">
+            Crear, probar y desplegar
+            <a href="#crear" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · el ciclo de vida de una función</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">npx supabase functions new share-note
+npx supabase start
+npx supabase functions serve share-note
+npx supabase functions deploy share-note</code></pre>
+          </div>
+          <p><code>new</code> crea <code>supabase/functions/share-note/index.ts</code>. <code>serve</code> la ejecuta en local con recarga al guardar, servida en <code>http://127.0.0.1:54321/functions/v1/share-note</code>. <code>deploy</code> la sube al proyecto enlazado. Desde el cliente se llama con <code>invoke</code>, que adjunta solo la clave y el token del usuario:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · llamar a la función desde la app</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>const { data, error } = await supabase.functions.invoke("share-note", {
+  body: { noteId: 7, email: "luis@ejemplo.com" },
+});</code></pre>
+          </div>
+          <h2 id="quien-llama">
+            Saber quién llama
+            <a href="#quien-llama" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una función expuesta en internet tiene que decidir quién puede llamarla. Supabase da dos capas:</p>
+          <ul>
+            <li>**<code>verify_jwt</code>** (activado por defecto): la plataforma rechaza la petición antes de ejecutar tu código si no trae un JWT válido en <code>Authorization</code>. Se desactiva por función en <code>supabase/config.toml</code>.</li>
+            <li><strong>Tu código</strong>, que decide qué puede hacer ese usuario y con qué cliente consulta la base de datos.</li>
+          </ul>
+          <p>La forma recomendada hoy es el envoltorio <code>withSupabase</code> del paquete <code>@supabase/server</code>, que valida la llamada según el modo que pidas y te da clientes ya configurados:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · supabase/functions/share-note/index.ts</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>import { withSupabase } from "npm:@supabase/server@1";
+
+export default {
+  fetch: withSupabase({ auth: "user" }, async (req, ctx) =&gt; {
+    const { noteId, email } = await req.json();
+
+    const { data: note, error } = await ctx.supabase
+      .from("notes")
+      .select("id, title")
+      .eq("id", noteId)
+      .single();
+
+    if (error) return Response.json({ error: "Nota no encontrada" }, { status: 404 });
+
+    const { data: invited } = await ctx.supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .eq("email", email)
+      .single();
+
+    if (!invited) return Response.json({ error: "Usuario no encontrado" }, { status: 404 });
+
+    await ctx.supabase.from("note_shares").insert({ note_id: note.id, shared_with: invited.id });
+
+    return Response.json({ shared: true });
+  }),
+};</code></pre>
+          </div>
+          <p>En el ejemplo, <code>profiles</code> tendría una columna <code>email</code>. Con la política de lectura de <a href="sb-funciones-y-triggers.html">funciones y triggers</a> la verían todos los usuarios con sesión, así que en una app real iría en una tabla aparte sin políticas de lectura, que solo <code>supabaseAdmin</code> puede consultar. Los dos clientes son la idea central de la lección:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Cliente</th><th>Actúa como</th><th>Úsalo para</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>ctx.supabase</code></td><td>El usuario que llama: su token, sus políticas</td><td>Todo lo que el usuario podría hacer por sí mismo. RLS te protege de bugs propios</td></tr>
+                <tr><td><code>ctx.supabaseAdmin</code></td><td><code>service_role</code>, con la clave secreta</td><td>Lo que el usuario <strong>no</strong> puede hacer solo, filtrando a mano por su id</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>El modo de <code>auth</code> decide quién puede llamar: <code>"user"</code> exige un usuario con sesión (te da sus claims en <code>ctx.userClaims</code>), <code>"publishable"</code> acepta la clave publicable sin usuario y <code>"secret"</code> solo acepta llamadas de servidor con la clave secreta, como las de una tarea programada.</p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El código que encontrarás en otros sitios</p>
+              <p>Muchos tutoriales y proyectos anteriores a este envoltorio escriben la función con <code>Deno.serve(async (req) =&gt; ...)</code> y crean el cliente a mano con <code>createClient</code> de <code>npm:@supabase/supabase-js</code>, reenviando la cabecera <code>Authorization</code> de la petición para actuar como el usuario. Es lo mismo por dentro y sigue funcionando. La forma de escribir funciones ha cambiado varias veces; la plantilla que genera <code>functions new</code> en tu versión de la CLI es la referencia.</p>
+            </div>
+          </div>
+          <h2 id="secretos">
+            Secretos y variables de entorno
+            <a href="#secretos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Las claves de terceros (Stripe, tu proveedor de email, un modelo de IA) se guardan como secretos del proyecto y se leen como variables de entorno:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · gestionar secretos</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">npx supabase secrets set RESEND_API_KEY=re_xxxxxxxx
+npx supabase secrets list</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · leerlos en la función</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>const apiKey = Deno.env.get("RESEND_API_KEY");</code></pre>
+          </div>
+          <p>En local se cargan de <code>supabase/functions/.env</code>, que no se sube a git. La plataforma inyecta además variables propias, como <code>SUPABASE_URL</code>, y por eso los nombres que empiezan por <code>SUPABASE_</code> están reservados.</p>
+          <h2 id="cors-y-webhooks">
+            CORS y webhooks de terceros
+            <a href="#cors-y-webhooks" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Si la función se llama desde el navegador, el navegador mandará antes una petición <code>OPTIONS</code> (el <em>preflight</em> de CORS) y la función tiene que responderla con las cabeceras que permiten la llamada. Sin eso, <code>invoke</code> falla en el navegador aunque con <code>curl</code> funcione. La documentación de Edge Functions trae el bloque de cabeceras CORS que hay que devolver en el <code>OPTIONS</code> y en cada respuesta.</p>
+          <p>Recibir un webhook de un tercero es el caso contrario: quien llama es Stripe, que no tiene un JWT de tu proyecto. Hay que desactivar la verificación para esa función y <strong>verificar la firma del proveedor</strong> en tu código:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ini · supabase/config.toml</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="ini">[functions.stripe-webhook]
+verify_jwt = false</code></pre>
+          </div>
+          <p>Desactivar <code>verify_jwt</code> no deja la función abierta si tu código comprueba la firma: es el único control que tiene sentido para ese emisor. <a href="pr-firmas-y-replay.html">Firmar y verificar</a> cuenta los cuatro detalles en que se estropea esa comprobación.</p>
+          <h2 id="segundo-plano">
+            Responder rápido y seguir trabajando
+            <a href="#segundo-plano" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una función que manda un email y luego responde hace esperar al usuario lo que tarde el proveedor. Con <code>EdgeRuntime.waitUntil</code> respondes al momento y el trabajo sigue en segundo plano:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · responder y seguir</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>const sendEmail = fetch("https://api.resend.com/emails", { method: "POST", headers, body });
+
+EdgeRuntime.waitUntil(sendEmail);
+
+return Response.json({ shared: true });</code></pre>
+          </div>
+          <p>El trabajo en segundo plano sigue sujeto a los límites de la función. Para trabajo largo o que no puede perderse, <a href="sb-queues.html">una cola</a> es la herramienta.</p>
+          <h2 id="limites">
+            Los límites deciden qué cabe
+            <a href="#limites" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Límite</th><th>Valor</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Memoria</td><td>256 MB</td></tr>
+                <tr><td>Tiempo de CPU por petición</td><td>2 s (sin contar la espera de red)</td></tr>
+                <tr><td>Duración máxima</td><td>150 s en el plan gratuito, 400 s en los de pago</td></tr>
+                <tr><td>Sin respuesta</td><td>A los 150 s sin responder, la plataforma devuelve un 504</td></tr>
+                <tr><td>Tamaño del paquete</td><td>20 MB construido con la CLI</td></tr>
+                <tr><td>Puertos de salida</td><td>El 25 y el 587 están bloqueados: el email va por la API HTTP de tu proveedor</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Los 2 segundos de CPU son el límite que más sorprende: no cuentan esperas de red, pero sí cálculo puro. Redimensionar imágenes, generar PDFs grandes o recorrer un JSON de cien mil elementos puede pasarse. Las librerías nativas que usan varios hilos (como <code>sharp</code>) no funcionan.</p>
+          <p>Las funciones también tienen <strong>arranque en frío</strong>: la primera petición tras un rato sin uso tarda más, porque hay que cargar el código. Importar menos dependencias lo reduce.</p>
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <ul>
+            <li>**Usar <code>supabaseAdmin</code> para todo.** Funciona, y convierte cada bug de filtrado en una fuga de datos. Empieza siempre por el cliente del usuario.</li>
+            <li><strong>Bucles de consultas.</strong> Una función que hace cien consultas a la base de datos en serie paga cien veces la latencia hasta la región. Una función SQL con <code>rpc</code> lo hace en una.</li>
+            <li>**Olvidar el <code>OPTIONS</code> de CORS** y depurar durante una hora un error que solo sale en el navegador.</li>
+            <li>**Webhooks con <code>verify_jwt = false</code> y sin verificar la firma.** Cualquiera puede llamarlos.</li>
+            <li><strong>Trabajos largos dentro de la petición.</strong> Chocan con la duración máxima y con los 2 s de CPU.</li>
+          </ul>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Una Edge Function encaja cuando…</h4>
+              <ul>
+                <li>Necesitas una clave secreta de un tercero (pagos, email, IA)</li>
+                <li>Recibes webhooks de otros servicios</li>
+                <li>La lógica es TypeScript con dependencias de npm, no SQL</li>
+                <li>Quieres una operación que el usuario no puede hacer solo, controlada por código</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Mejor otra cosa si…</h4>
+              <ul>
+                <li>Es leer o escribir filas con permisos: la Data API directa</li>
+                <li>Son varias operaciones atómicas sobre la base de datos: una función SQL con <code>rpc</code></li>
+                <li>Es trabajo pesado de CPU o de minutos: una cola con un worker, o tu propio servidor</li>
+              </ul>
+            </div>
+          </div>
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Las Edge Functions son TypeScript sobre un runtime compatible con Deno, con APIs web estándar y paquetes de npm.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>functions new</code>, <code>serve</code> y <code>deploy</code> son el ciclo completo; el cliente las llama con <code>functions.invoke</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>verify_jwt</code> filtra en la plataforma; en tu código, un cliente actúa como el usuario (RLS aplica) y otro como <code>service_role</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los secretos se gestionan con <code>supabase secrets</code> y se leen con <code>Deno.env.get</code>; los webhooks de terceros desactivan <code>verify_jwt</code> y verifican la firma.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>EdgeRuntime.waitUntil</code> responde antes y sigue trabajando, dentro de los límites de 256 MB, 2 s de CPU y 150-400 s de duración.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="sb-storage.html">
+              <small>← Anterior</small>
+              <b>Storage: ficheros con permisos de base de datos</b>
+            </a>
+            <a href="sb-cron.html" class="next">
+              <small>Siguiente →</small>
+              <b>Cron: tareas programadas dentro de Postgres</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

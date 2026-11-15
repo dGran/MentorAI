@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cron: tareas programadas dentro de Postgres — MentorAI</title>
+    <meta name="description" content="Supabase Cron por dentro: pg_cron, la sintaxis de cron y de segundos, tareas en SQL y llamadas a Edge Functions con pg_net y la clave guardada en Vault, el historial de ejecuciones, qué pasa cuando una ejecución se solapa con la siguiente y cómo versionar las tareas." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Supabase</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Cron: tareas programadas dentro de Postgres</h1>
+        <p class="tutorial-hero__lead">
+          Limpiar datos viejos cada noche, mandar un resumen semanal, recalcular estadísticas cada cinco minutos. En un backend clásico necesitas un servidor con crontab o un planificador externo. En Supabase la base de datos programa sus propias tareas, sin nada más que mantener.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Supabase
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#que-es">Qué es Supabase Cron</a></li>
+            <li><a href="#sintaxis">Cuándo: la sintaxis de cron</a></li>
+            <li><a href="#sql">Tareas en SQL</a></li>
+            <li><a href="#http">Tareas que llaman a una Edge Function</a></li>
+            <li><a href="#historial">Vigilar y gestionar las tareas</a></li>
+            <li><a href="#solapes">Solapes, límites y tareas idempotentes</a></li>
+            <li><a href="#versionar">Las tareas también van en migraciones</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Ya sabes ejecutar código bajo demanda con <a href="sb-edge-functions.html">Edge Functions</a>. Esta lección lo ejecuta a una hora fija: tareas que corren solas dentro de Postgres, ya sean SQL puro o una llamada HTTP a una función.</p>
+          <h2 id="que-es">
+            Qué es Supabase Cron
+            <a href="#que-es" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Supabase Cron es la extensión **<code>pg_cron</code>** de Postgres con una interfaz en el panel (Integrations → Cron). Al activarla, crea el esquema <code>cron</code>, y un proceso de fondo dentro de Postgres lanza cada tarea cuando le toca.</p>
+          <p>Que el planificador viva en la base de datos tiene ventajas claras: no hay otro servidor que se pueda caer o quedarse sin desplegar, una tarea SQL corre sin latencia de red, y las tareas son filas de una tabla que puedes consultar y versionar. El precio es que <strong>cada tarea consume recursos de tu base de datos</strong>: una tarea pesada a las 9 de la mañana compite con tus usuarios.</p>
+          <h2 id="sintaxis">
+            Cuándo: la sintaxis de cron
+            <a href="#sintaxis" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Cada tarea tiene un nombre, una programación y un comando. La programación usa los cinco campos clásicos de cron, <strong>en UTC</strong>:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Programación</th><th>Significa</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>*/5 * * * *</code></td><td>Cada 5 minutos</td></tr>
+                <tr><td><code>0 3 * * *</code></td><td>Todos los días a las 03:00 UTC</td></tr>
+                <tr><td><code>30 3 * * 6</code></td><td>Los sábados a las 03:30 UTC</td></tr>
+                <tr><td><code>0 9 * * 1-5</code></td><td>De lunes a viernes a las 09:00 UTC</td></tr>
+                <tr><td><code>0 0 1 * *</code></td><td>El día 1 de cada mes a medianoche UTC</td></tr>
+                <tr><td><code>30 seconds</code></td><td>Cada 30 segundos (de 1 a 59 segundos)</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Los cinco campos son minuto, hora, día del mes, mes y día de la semana. La forma <code>N seconds</code> no es cron estándar: es una extensión de <code>pg_cron</code> para intervalos por debajo del minuto.</p>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La hora es UTC</p>
+              <p><code>0 9 * * *</code> son las 9:00 UTC, que en España son las 10 en invierno y las 11 en verano. Si una tarea tiene que correr a una hora local fija todo el año, o asumes ese desfase o compruebas la hora local dentro de la tarea.</p>
+            </div>
+          </div>
+          <h2 id="sql">
+            Tareas en SQL
+            <a href="#sql" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La forma más directa: la tarea ejecuta SQL dentro de la base de datos. Si las notas tienen una papelera (una columna <code>deleted_at</code> que se rellena al borrar), vaciarla es una línea:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · vaciar la papelera cada noche</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">select cron.schedule(
+  'purge-trashed-notes',
+  '0 3 * * *',
+  $$ delete from public.notes where deleted_at &lt; now() - interval '30 days' $$
+);</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · llamar a una función o procedimiento</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">select cron.schedule('refresh-stats', '*/10 * * * *', 'select private.refresh_notebook_stats()');</code></pre>
+          </div>
+          <p>Las tareas corren como el usuario que las creó (normalmente <code>postgres</code>), así que <strong>RLS no se aplica</strong>: la tarea ve y modifica todas las filas. Es lo que quieres para mantenimiento, y es una razón más para que el SQL de una tarea sea corto y revisado.</p>
+          <h2 id="http">
+            Tareas que llaman a una Edge Function
+            <a href="#http" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Cuando la tarea necesita algo que no es SQL (mandar emails, llamar a una API), la tarea hace una petición HTTP a una Edge Function con <code>pg_net</code>. La función la llama un servidor, no un usuario, así que se autentica con la <strong>clave secreta</strong>, que no debe quedar escrita en el texto de la tarea: va en <strong>Vault</strong>, el almacén cifrado de secretos de Supabase.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · guardar la URL y la clave en Vault (una vez)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">select vault.create_secret('https://abcdefghijklmnop.supabase.co', 'project_url');
+select vault.create_secret('sb_secret_xxxxxxxx', 'cron_secret_key');</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · la tarea: resumen semanal cada lunes a las 7:00 UTC</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">select cron.schedule(
+  'weekly-digest',
+  '0 7 * * 1',
+  $$
+  select net.http_post(
+    url := (select decrypted_secret from vault.decrypted_secrets where name = 'project_url')
+           || '/functions/v1/weekly-digest',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'apikey', (select decrypted_secret from vault.decrypted_secrets where name = 'cron_secret_key')
+    ),
+    body := jsonb_build_object('scheduled_at', now()),
+    timeout_milliseconds := 5000
+  );
+  $$
+);</code></pre>
+          </div>
+          <p>En la función, el modo <code>auth: "secret"</code> del envoltorio de <a href="sb-edge-functions.html">Edge Functions</a> acepta solo llamadas con la clave secreta, y hay que desactivar <code>verify_jwt</code> para ella porque no llega un JWT de usuario. Puedes crear una clave secreta dedicada solo a Cron y revocarla sin afectar al resto.</p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Que la tarea «salga bien» no significa que la función funcionara</p>
+              <p><code>net.http_post</code> solo <strong>encola</strong> la petición y devuelve un id; la tarea termina en milisegundos y queda registrada como correcta. Si la función respondió un 500, eso está en <code>net._http_response</code>, no en el historial de Cron. Para tareas importantes, la propia función debe registrar su resultado o avisar cuando falla.</p>
+            </div>
+          </div>
+          <h2 id="historial">
+            Vigilar y gestionar las tareas
+            <a href="#historial" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Las tareas son filas de <code>cron.job</code> y cada ejecución deja una fila en <code>cron.job_run_details</code>:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · últimas ejecuciones de una tarea</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">select status, return_message, start_time, end_time
+from cron.job_run_details
+where jobid = (select jobid from cron.job where jobname = 'purge-trashed-notes')
+order by start_time desc
+limit 10;</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · cambiar, pausar y borrar</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">select cron.alter_job(
+  job_id := (select jobid from cron.job where jobname = 'refresh-stats'),
+  schedule := '*/15 * * * *'
+);
+
+select cron.alter_job(job_id := (select jobid from cron.job where jobname = 'refresh-stats'), active := false);
+
+select cron.unschedule('refresh-stats');</code></pre>
+          </div>
+          <p>El historial no se limpia solo. Una tarea cada 30 segundos genera casi 3.000 filas al día; al cabo de meses, la tabla pesa. La solución es, cómo no, otra tarea:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · limpiar el historial de Cron</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">select cron.schedule(
+  'purge-cron-history',
+  '0 4 * * *',
+  $$ delete from cron.job_run_details where end_time &lt; now() - interval '7 days' $$
+);</code></pre>
+          </div>
+          <h2 id="solapes">
+            Solapes, límites y tareas idempotentes
+            <a href="#solapes" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p><code>pg_cron</code> no lanza dos ejecuciones de la misma tarea a la vez: si una ejecución no ha terminado cuando toca la siguiente, la siguiente <strong>espera</strong> a que acabe. Así no se pisan, pero una tarea que tarda más que su intervalo va acumulando retraso.</p>
+          <p>Supabase recomienda <strong>no tener más de 8 tareas ejecutándose a la vez</strong> y que ninguna dure más de 10 minutos. Si una tarea necesita más, divídela: procesa un lote por ejecución en lugar de todo de golpe.</p>
+          <p>Y escribe cada tarea para que <strong>ejecutarla dos veces no haga daño</strong>: borrar lo que tiene más de 30 días se puede repetir sin problema; «mandar el resumen de esta semana» necesita guardar que ya se mandó. Un reinicio de la base de datos en mal momento, o una ejecución manual para probar, no deben duplicar emails. <a href="idempotencia.html">Idempotencia</a> cuenta las técnicas.</p>
+          <h2 id="versionar">
+            Las tareas también van en migraciones
+            <a href="#versionar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una tarea creada a mano en el panel de producción es un cambio que no está en git, igual que una columna creada con clics. Escribe <code>cron.schedule</code> en una migración: si se llama con un nombre que ya existe, actualiza esa tarea en lugar de crear otra, así que la migración se puede aplicar en cada entorno sin duplicados. Los secretos de Vault, en cambio, no van en migraciones (acabarían en git): se crean a mano en cada entorno o desde tu CI.</p>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Necesidad</th><th>Solución</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Mantenimiento de datos: borrar, archivar, recalcular</td><td>Tarea Cron con SQL</td></tr>
+                <tr><td>Algo periódico que sale de la base de datos: emails, informes, APIs</td><td>Tarea Cron que llama a una Edge Function</td></tr>
+                <tr><td>Procesar trabajos a medida que llegan, con reintentos</td><td><a href="sb-queues.html">Una cola</a>, con Cron como despertador del worker</td></tr>
+                <tr><td>Algo que debe pasar justo cuando cambia una fila</td><td>Un trigger o un webhook, no un Cron que pregunta cada minuto</td></tr>
+                <tr><td>Tareas de minutos u horas</td><td>Divididas en lotes, o fuera de la base de datos</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Supabase Cron es <code>pg_cron</code>: las tareas viven en <code>cron.job</code>, su historial en <code>cron.job_run_details</code>, y la programación va en UTC.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Las tareas SQL corren como su dueño y no pasan por RLS; las que salen fuera llaman a una Edge Function con <code>pg_net</code> y la clave secreta guardada en Vault.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>net.http_post</code> solo encola la petición: el éxito de la tarea no dice nada de la respuesta de la función.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una tarea no se solapa consigo misma; la siguiente ejecución espera. Máximo recomendado: 8 a la vez y 10 minutos cada una.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Tareas idempotentes, historial que se limpia con otra tarea y <code>cron.schedule</code> en migraciones.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="sb-edge-functions.html">
+              <small>← Anterior</small>
+              <b>Edge Functions: tu código en el servidor</b>
+            </a>
+            <a href="sb-queues.html" class="next">
+              <small>Siguiente →</small>
+              <b>Queues: trabajo en segundo plano con pgmq</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

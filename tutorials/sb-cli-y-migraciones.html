@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Desarrollo local con la CLI: migraciones, entornos y tipos — MentorAI</title>
+    <meta name="description" content="Levantar Supabase entero en tu máquina con Docker, versionar el esquema con migraciones, llevarlas a producción con db push, generar los tipos de TypeScript y elegir entre migraciones a mano, esquemas declarativos y ramas de previsualización." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Supabase</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Desarrollo local con la CLI: migraciones, entornos y tipos</h1>
+        <p class="tutorial-hero__lead">
+          Cambiar el esquema con clics en el panel de producción funciona hasta el primer día en que algo se rompe y nadie sabe qué cambió. La CLI de Supabase te da lo que tiene cualquier proyecto serio: todo el stack en local, el esquema en ficheros versionados y un camino repetible hasta producción.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            16 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Supabase
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#por-que">Por qué no basta con el panel</a></li>
+            <li><a href="#local">Supabase entero en tu máquina</a></li>
+            <li><a href="#migraciones">Escribir migraciones</a></li>
+            <li><a href="#remoto">Llevarlo a producción</a></li>
+            <li><a href="#tipos">Tipos de TypeScript generados del esquema</a></li>
+            <li><a href="#declarativo">Otra forma: esquemas declarativos</a></li>
+            <li><a href="#entornos">Entornos y ramas de previsualización</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">En <a href="sb-primer-proyecto.html">el primer proyecto</a> creaste la tabla de notas en el SQL Editor de la nube. Esta lección convierte ese SQL en una migración, la ejecuta en un Supabase local y la lleva a producción con un comando que también puede lanzar tu CI.</p>
+          <h2 id="por-que">
+            Por qué no basta con el panel
+            <a href="#por-que" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El panel es cómodo, pero un cambio hecho con clics tiene tres problemas: no queda en git, no se revisa en un PR y no se puede repetir igual en otro entorno. El día que tengas un proyecto de pruebas y otro de producción, mantenerlos idénticos a mano es imposible.</p>
+          <p>La solución es la misma que en cualquier backend (la cuenta <a href="migraciones-de-esquema.html">Migraciones de esquema</a>): <strong>cada cambio de esquema es un fichero SQL con fecha</strong>, que se aplica en orden y una sola vez por entorno. Supabase guarda en cada base de datos qué migraciones ya se aplicaron, en la tabla <code>supabase_migrations.schema_migrations</code>.</p>
+          <h2 id="local">
+            Supabase entero en tu máquina
+            <a href="#local" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La CLI levanta en contenedores Docker los mismos servicios de la plataforma: Postgres, Auth, Data API, Storage, Realtime, Edge Functions, Studio y un servidor de correo falso para ver los emails de registro sin enviarlos.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · arrancar un proyecto local</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">npx supabase init
+npx supabase start</code></pre>
+          </div>
+          <p><code>init</code> crea la carpeta <code>supabase/</code> con su <code>config.toml</code>. <code>start</code> descarga las imágenes la primera vez (tarda) y al terminar imprime las direcciones y las claves locales:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · salida de supabase start (resumida)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">API URL: http://127.0.0.1:54321
+DB URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+Studio URL: http://127.0.0.1:54323
+Mailpit URL: http://127.0.0.1:54324
+Publishable key: sb_publishable_...
+Secret key: sb_secret_...</code></pre>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Puerto</th><th>Servicio</th><th>Para qué lo usas</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>54321</td><td>Pasarela de API</td><td>Lo que pones como URL en <code>createClient</code> en desarrollo</td></tr>
+                <tr><td>54322</td><td>Postgres</td><td><code>psql</code>, tu IDE de base de datos, PDO</td></tr>
+                <tr><td>54323</td><td>Studio</td><td>El mismo panel que en la nube, contra tu base de datos local</td></tr>
+                <tr><td>54324</td><td>Mailpit</td><td>Los emails de confirmación y de enlace mágico que «envía» Auth</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Las claves locales son fijas y públicas: no protegen nada porque la base de datos solo existe en tu máquina. <code>supabase stop</code> lo para todo, conservando los datos.</p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Instálala en el proyecto</p>
+              <p><code>npx supabase</code> funciona sin instalar nada, pero conviene fijar la versión de la CLI como dependencia de desarrollo del proyecto (o en la imagen de CI): dos personas con versiones distintas pueden generar migraciones distintas a partir del mismo cambio.</p>
+            </div>
+          </div>
+          <h2 id="migraciones">
+            Escribir migraciones
+            <a href="#migraciones" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una migración nueva es un fichero vacío con marca de tiempo en el nombre:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · crear una migración</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">npx supabase migration new create_notes</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · resultado</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">supabase/migrations/20261115093000_create_notes.sql</code></pre>
+          </div>
+          <p>Dentro va el SQL de la tabla de notas de la lección anterior. Para aplicarlo hay dos comandos, y la diferencia importa:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Comando</th><th>Qué hace</th><th>Cuándo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>supabase migration up</code></td><td>Aplica solo las migraciones pendientes</td><td>Tras crear una migración nueva</td></tr>
+                <tr><td><code>supabase db reset</code></td><td>Borra la base de datos local, aplica <strong>todas</strong> las migraciones desde cero y carga <code>supabase/seed.sql</code></td><td>Para comprobar que el historial completo funciona y volver a un estado limpio</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p><code>db reset</code> es tu mejor test: si una base de datos vacía no llega al esquema actual aplicando las migraciones en orden, producción tampoco llegaría si mañana tuvieras que recrearla.</p>
+          <h3>Los datos de prueba van en el seed</h3>
+          <p><code>supabase/seed.sql</code> se ejecuta tras las migraciones en cada <code>db reset</code> local, y <strong>nunca</strong> en producción. Es el sitio para las libretas y notas de ejemplo con las que desarrollas. Los datos que sí deben existir en todos los entornos (una lista de categorías, por ejemplo) van en una migración.</p>
+          <h3>Cambios hechos en el Studio local</h3>
+          <p>Si prefieres diseñar con el Table Editor local, la CLI puede escribir la migración por ti comparando la base de datos local con lo que dicen las migraciones:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · generar la migración a partir de los cambios</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">npx supabase db diff -f add_notebooks</code></pre>
+          </div>
+          <p>Revisa siempre el fichero generado. Un diff detecta <em>qué</em> cambió, no <em>cómo</em> querías hacerlo: renombrar una columna puede salir como «borrar columna y crear otra», que en producción es perder los datos de esa columna.</p>
+          <h2 id="remoto">
+            Llevarlo a producción
+            <a href="#remoto" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La CLI se conecta con tu cuenta y se enlaza a un proyecto de la nube:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · enlazar y desplegar</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">npx supabase login
+npx supabase link --project-ref abcdefghijklmnop
+npx supabase migration list
+npx supabase db push</code></pre>
+          </div>
+          <p><code>migration list</code> enseña en dos columnas qué migraciones hay en local y cuáles se aplicaron en remoto. <code>db push</code> aplica en el proyecto remoto las que faltan, en orden.</p>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">La deriva: cuando alguien tocó producción a mano</p>
+              <p>Si alguien cambió el esquema de producción con el panel, tus migraciones ya no describen la realidad. <code>supabase db pull</code> trae ese cambio como una migración nueva para que vuelva a estar en git. Lo sano es que el panel de producción sea de solo lectura para el esquema: cada cambio, por migración y PR.</p>
+            </div>
+          </div>
+          <p>En CI el mismo flujo se automatiza. Un ejemplo con GitHub Actions que aplica las migraciones al hacer merge en <code>main</code>:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">yaml · .github/workflows/supabase.yml</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="yaml">name: Migraciones
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: supabase link --project-ref ${{ vars.SUPABASE_PROJECT_REF }}
+      - run: supabase db push</code></pre>
+          </div>
+          <p>En un proyecto real, fija <code>version</code> a la versión que usáis en local en vez de <code>latest</code>. Y una migración que se aplica mientras la versión anterior de la app sigue sirviendo tiene que ser compatible con las dos: añadir una columna, sí; renombrarla de golpe, no. <a href="bd-migraciones-sin-caida.html">Migraciones sin caída</a> cuenta cómo partir los cambios peligrosos.</p>
+          <h2 id="tipos">
+            Tipos de TypeScript generados del esquema
+            <a href="#tipos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La CLI lee el esquema y genera los tipos de cada tabla, vista y función:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · generar tipos</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">npx supabase gen types typescript --local &gt; src/database.types.ts</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · cliente tipado</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>import { createClient } from "@supabase/supabase-js";
+import type { Database } from "./database.types";
+
+const supabase = createClient&lt;Database&gt;(url, publishableKey);
+
+const { data } = await supabase.from("notes").select("id, title");</code></pre>
+          </div>
+          <p>Con el cliente tipado, <code>data</code> sabe que cada nota tiene <code>id: number</code> y <code>title: string</code>, y un <code>select("titel")</code> mal escrito falla al compilar en vez de en producción. Regenera los tipos en cada migración; muchos equipos lo comprueban en CI.</p>
+          <h2 id="declarativo">
+            Otra forma: esquemas declarativos
+            <a href="#declarativo" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Las migraciones describen <strong>los pasos</strong>: crea esta tabla, añade esta columna. Los esquemas declarativos describen <strong>el resultado</strong>: en <code>supabase/schemas/</code> escribes cómo debe quedar cada tabla, y la CLI calcula la migración que lleva la base de datos de su estado actual a ese.</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Migraciones a mano</h4>
+              <ul>
+                <li>Controlas exactamente qué SQL corre en producción</li>
+                <li>Renombrados, movimientos de datos y cambios delicados se escriben como quieres</li>
+                <li>El estado actual de una tabla se reconstruye leyendo muchos ficheros</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--good">
+              <h4>Esquemas declarativos</h4>
+              <ul>
+                <li>Cada tabla se lee en un solo fichero, como está hoy</li>
+                <li>Las migraciones se generan solas</li>
+                <li>Hay cosas que el diff no captura: datos (<code>insert</code>, <code>update</code>), objetos de <code>auth</code> y <code>storage</code> y algunos tipos de objeto, que siguen yendo en migraciones</li>
+              </ul>
+            </div>
+          </div>
+          <p>Los dos caminos acaban en lo mismo: ficheros en <code>supabase/migrations/</code> que <code>db push</code> aplica. La herramienta declarativa ha cambiado de comandos y de motor de diff más de una vez; consulta la guía «Declarative database schemas» de la documentación antes de adoptarla.</p>
+          <h2 id="entornos">
+            Entornos y ramas de previsualización
+            <a href="#entornos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El montaje mínimo sano tiene tres entornos con el mismo historial de migraciones:</p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Local</b><small><code>supabase start</code>, datos del seed, se rompe y se rehace sin miedo</small></span>
+              </div>
+              <div class="flow__arrow" data-label="db push al proyecto de pruebas"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Pruebas</b><small>un proyecto de Supabase aparte, con datos falsos</small></span>
+              </div>
+              <div class="flow__arrow" data-label="db push tras el merge"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Producción</b><small>otro proyecto, nunca compartido con pruebas</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Cada flecha es el mismo comando contra otro destino: las migraciones son las mismas en los tres.</p>
+          </div>
+          <p>Supabase ofrece además <strong>Branching</strong>: al abrir un PR en GitHub crea un entorno temporal con sus propias migraciones aplicadas y su seed, para probar la rama de verdad, y lo borra al cerrar el PR. Cada rama se cobra por horas de cómputo, así que compensa cuando hay varias personas revisando cambios de esquema a la vez.</p>
+          <div class="callout callout--danger">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Pruebas y producción en el mismo proyecto</p>
+              <p>Usar un único proyecto con tablas <code>notes_test</code> o un esquema de pruebas es tentador para ahorrar, y mezcla usuarios, ficheros, claves y logs de los dos mundos. Un proyecto gratuito de pruebas cuesta cero; un borrado accidental en producción, mucho más.</p>
+            </div>
+          </div>
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <ul>
+            <li><strong>Editar una migración ya aplicada.</strong> El entorno donde ya corrió no la vuelve a ejecutar, así que los entornos divergen en silencio. Una migración aplicada no se toca: se escribe otra.</li>
+            <li><strong>Datos de prueba en migraciones.</strong> Acaban en producción. Van en <code>seed.sql</code>.</li>
+            <li>**Secretos en <code>config.toml</code>.** El fichero va a git. Los valores sensibles (claves de proveedores OAuth, SMTP) se leen de variables de entorno con <code>env(NOMBRE)</code>.</li>
+            <li>**Confiar en <code>db diff</code> sin leerlo.** Un renombrado puede salir como borrar y crear.</li>
+            <li>**No probar <code>db reset</code> nunca.** El día que lo necesitas descubres que una migración antigua dependía de algo hecho a mano.</li>
+          </ul>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Usa CLI y migraciones desde el primer día si…</h4>
+              <ul>
+                <li>Hay o va a haber más de un entorno</li>
+                <li>Más de una persona toca el esquema</li>
+                <li>Quieres revisar los cambios de base de datos en un PR como el resto del código</li>
+                <li>Tu CI tiene que desplegar backend y frontend juntos</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Puedes esperar si…</h4>
+              <ul>
+                <li>Es un prototipo de una tarde que vas a tirar</li>
+                <li>Solo estás explorando qué hace Supabase</li>
+              </ul>
+            </div>
+          </div>
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>supabase start</code> levanta todo el stack en local con Docker: API en el 54321, Postgres en el 54322, Studio en el 54323 y los emails en el 54324.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Cada cambio de esquema es un fichero en <code>supabase/migrations/</code>; <code>migration up</code> aplica lo pendiente y <code>db reset</code> reconstruye desde cero con el seed.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>link</code> y <code>db push</code> llevan las migraciones a un proyecto remoto; <code>db pull</code> recupera cambios hechos a mano en el panel.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>gen types typescript</code> convierte el esquema en tipos y hace que los errores de nombres fallen al compilar.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Los esquemas declarativos generan las migraciones a partir del estado deseado, pero datos y objetos de <code>auth</code> y <code>storage</code> siguen en migraciones.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Local, pruebas y producción son proyectos distintos con el mismo historial de migraciones.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="sb-primer-proyecto.html">
+              <small>← Anterior</small>
+              <b>Tu primer proyecto: el panel, las claves y la primera consulta</b>
+            </a>
+            <a href="sb-data-api.html" class="next">
+              <small>Siguiente →</small>
+              <b>La Data API: consultar Postgres por HTTP sin escribir backend</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

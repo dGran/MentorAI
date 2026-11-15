@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Auth en el servidor: SSR, cookies y roles — MentorAI</title>
+    <meta name="description" content="La sesión cuando hay servidor de por medio: por qué el SSR necesita cookies, el cliente de @supabase/ssr, getClaims frente a getUser y getSession, verificar el JWT desde cualquier backend con las claves asimétricas y roles en el token con el hook de access token." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Supabase</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Auth en el servidor: SSR, cookies y roles</h1>
+        <p class="tutorial-hero__lead">
+          En una app que solo corre en el navegador, la sesión vive en localStorage y todo funciona. En cuanto un servidor renderiza páginas o tu propio backend recibe peticiones, aparece la pregunta de verdad: ¿cómo sabe el servidor quién es el usuario, y de qué se puede fiar?
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            17 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Supabase
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#problema">El servidor no ve localStorage</a></li>
+            <li><a href="#cliente">Los dos clientes de @supabase/ssr</a></li>
+            <li><a href="#confiar">getClaims, getUser y getSession: de qué fiarse</a></li>
+            <li><a href="#verificar">Verificar el token desde cualquier backend</a></li>
+            <li><a href="#roles">Roles en el token: el hook de access token</a></li>
+            <li><a href="#errores">Errores típicos</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">En <a href="sb-auth.html">Auth</a> viste los dos tokens de la sesión y cómo <code>supabase-js</code> los gestiona en el navegador. Aquí los llevamos al servidor: renderizado en servidor (SSR) con frameworks como Next.js, SvelteKit o Nuxt, y backends propios, en PHP o en lo que sea, que reciben el token y tienen que validarlo.</p>
+          <h2 id="problema">
+            El servidor no ve localStorage
+            <a href="#problema" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Con SSR, la primera petición de una página la atiende un servidor, que tiene que saber quién eres <strong>antes</strong> de mandar el HTML: para pintar tus notas, o para redirigirte al login. Pero <code>localStorage</code> solo existe en el navegador, y el navegador no lo manda en las peticiones.</p>
+          <p>Lo que el navegador sí manda en cada petición son las <strong>cookies</strong>. Por eso, en apps con servidor, la sesión de Supabase se guarda en cookies, y el paquete **<code>@supabase/ssr</code>** se encarga de leerlas y escribirlas de forma que navegador y servidor compartan la misma sesión.</p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Navegador</b><small><code>createBrowserClient</code> guarda la sesión en cookies</small></span>
+              </div>
+              <div class="flow__arrow" data-label="petición con cookies"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Servidor (proxy o middleware)</b><small>lee las cookies, valida el token y lo refresca si va a caducar</small></span>
+              </div>
+              <div class="flow__arrow" data-label="cookies renovadas en la respuesta"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Página renderizada en el servidor</b><small><code>createServerClient</code> consulta como ese usuario: RLS aplica</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">El navegador y el servidor leen la misma sesión porque viaja en cookies.</p>
+          </div>
+          <h2 id="cliente">
+            Los dos clientes de @supabase/ssr
+            <a href="#cliente" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El cliente del servidor necesita que le digas cómo leer y escribir cookies en tu framework. En Next.js (App Router) queda así:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · lib/supabase/server.ts</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+
+export async function createClient() {
+  const cookieStore = await cookies();
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =&gt; cookieStore.set(name, value, options));
+          } catch {
+            // Un Server Component no puede escribir cookies: las renueva el proxy.
+          }
+        },
+      },
+    },
+  );
+}</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · lib/supabase/client.ts (navegador)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>import { createBrowserClient } from "@supabase/ssr";
+
+export const createClient = () =&gt;
+  createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+  );</code></pre>
+          </div>
+          <p>Un cliente de servidor <strong>se crea por petición</strong>: cada una trae las cookies de un usuario distinto. Guardarlo en una variable global del módulo mezclaría las sesiones de usuarios diferentes.</p>
+          <h3>El proxy que refresca la sesión</h3>
+          <p>Los Server Components no pueden escribir cookies, así que alguien tiene que renovar el token antes de que caduque. En Next.js lo hace el fichero <code>proxy.ts</code> (se llamaba <code>middleware.ts</code> hasta Next.js 16), que se ejecuta antes de cada petición: crea un cliente de servidor, llama a <code>supabase.auth.getClaims()</code> (que refresca si hace falta) y devuelve la respuesta con las cookies nuevas.</p>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Devuelve la respuesta que tiene las cookies</p>
+              <p>El error clásico del proxy es construir una respuesta nueva (una redirección, por ejemplo) y devolver esa en lugar de la que recibió las cookies renovadas en <code>setAll</code>. El navegador no recibe los tokens nuevos, el refresh token ya usado deja de valer y el usuario «pierde la sesión» sin motivo aparente. La guía de SSR de Supabase para cada framework trae el proxy completo; cópialo tal cual y modifica solo lo marcado.</p>
+            </div>
+          </div>
+          <h2 id="confiar">
+            getClaims, getUser y getSession: de qué fiarse
+            <a href="#confiar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p><code>supabase-js</code> tiene tres formas de preguntar por el usuario, y en el servidor la diferencia es de seguridad:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Método</th><th>Qué hace</th><th>¿Fiable en el servidor?</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>getSession()</code></td><td>Lee la sesión de donde esté guardada (las cookies) <strong>sin validarla</strong></td><td><strong>No</strong>. Las cookies las manda el cliente y pueden estar manipuladas</td></tr>
+                <tr><td><code>getClaims()</code></td><td>Verifica la firma del token y devuelve sus claims; refresca si va a caducar</td><td><strong>Sí</strong>. Con claves asimétricas lo verifica en local, sin ir a Auth</td></tr>
+                <tr><td><code>getUser()</code></td><td>Pregunta al servidor de Auth por el usuario actual</td><td><strong>Sí</strong>, y además trae datos frescos; cuesta una petición de red</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Para proteger una página o decidir qué mostrar, usa <code>getClaims()</code>. Usa <code>getUser()</code> cuando necesites saber algo que pudo cambiar después de emitirse el token, como si el usuario sigue existiendo o si cambió su email.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · proteger una página en el servidor</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>const supabase = await createClient();
+const { data } = await supabase.auth.getClaims();
+
+if (!data?.claims) redirect("/login");
+
+const { data: notes } = await supabase.from("notes").select("id, title");</code></pre>
+          </div>
+          <p>Fíjate en que la consulta de notas ni siquiera necesita filtrar por usuario: el cliente de servidor manda el token de las cookies, y RLS hace el resto, igual que en el navegador.</p>
+          <h2 id="verificar">
+            Verificar el token desde cualquier backend
+            <a href="#verificar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Si tienes tu propio backend (una API en PHP, Go o Python), el frontend le manda el access token en la cabecera <code>Authorization</code> y tu backend tiene que verificarlo. Cómo depende de con qué firma Auth los tokens:</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Claves asimétricas (recomendado)</h4>
+              <ul>
+                <li>Auth firma con una clave privada (ES256 o RS256) que nunca sale de Supabase</li>
+                <li>Las claves públicas se publican en <code>https://&lt;ref&gt;.supabase.co/auth/v1/.well-known/jwks.json</code></li>
+                <li>Tu backend descarga ese JWKS, lo cachea y verifica en local, sin secretos compartidos</li>
+                <li>Se pueden rotar sin cortar sesiones</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Secreto compartido (antiguo)</h4>
+              <ul>
+                <li>Auth firma con HS256 y un secreto que tu backend también tiene que conocer</li>
+                <li>Quien tenga el secreto puede <strong>fabricar</strong> tokens válidos de cualquier usuario</li>
+                <li>Rotarlo invalida todas las sesiones a la vez</li>
+              </ul>
+            </div>
+          </div>
+          <p>Los proyectos nuevos usan claves asimétricas, y los antiguos pueden migrar desde <strong>Project Settings → JWT Keys</strong>. En PHP, con una librería JWT que soporte JWKS, verificar es una línea más la caché de las claves:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · verificar el access token en un backend PHP</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+use Firebase\JWT\JWK;
+use Firebase\JWT\JWT;
+
+$jwks = json_decode($cachedJwksJson, true, flags: JSON_THROW_ON_ERROR);
+$claims = JWT::decode($accessToken, JWK::parseKeySet($jwks));
+
+if ($claims-&gt;aud !== 'authenticated') {
+    throw new InvalidTokenAudience($claims-&gt;aud);
+}
+
+$userId = $claims-&gt;sub;</code></pre>
+          </div>
+          <p><code>JWT::decode</code> comprueba firma y caducidad; la audiencia la compruebas tú. Con el <code>$userId</code> verificado, tu backend tiene dos formas de hablar con la base de datos: reenviar el mismo token a la Data API (RLS se aplica como si consultara el usuario) o conectarse directamente y filtrar él. La primera mantiene una sola fuente de permisos; la segunda te obliga a replicarlos en tu código.</p>
+          <h2 id="roles">
+            Roles en el token: el hook de access token
+            <a href="#roles" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una app con roles (admin, editor, lector) necesita que las políticas sepan el rol de quien consulta. Consultar una tabla de roles en cada política funciona, pero se ejecuta en cada fila de cada consulta. La alternativa es meter el rol en el JWT una sola vez, al emitirlo, con el <strong>Custom Access Token Hook</strong>:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · el rol del usuario como claim del token</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">create table public.user_roles (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  role text not null check (role in ('admin', 'editor'))
+);
+
+create function public.custom_access_token_hook(event jsonb)
+returns jsonb
+language plpgsql
+stable
+as $$
+declare
+  claims jsonb := event -&gt; 'claims';
+  user_role text;
+begin
+  select role into user_role from public.user_roles where user_id = (event -&gt;&gt; 'user_id')::uuid;
+
+  claims := jsonb_set(claims, '{user_role}', coalesce(to_jsonb(user_role), 'null'::jsonb));
+
+  return jsonb_set(event, '{claims}', claims);
+end;
+$$;
+
+grant execute on function public.custom_access_token_hook to supabase_auth_admin;
+revoke execute on function public.custom_access_token_hook from authenticated, anon, public;
+grant select on table public.user_roles to supabase_auth_admin;</code></pre>
+          </div>
+          <p>Se activa en <strong>Authentication → Hooks</strong>, y a partir de ahí las políticas leen el rol del token: <code>(select auth.jwt() -&gt;&gt; 'user_role') = 'admin'</code>. La tabla <code>user_roles</code> necesita además RLS y una política que deje leer a <code>supabase_auth_admin</code>, el rol con el que corre el hook.</p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El rol del token llega tarde</p>
+              <p>El claim se calcula al emitir el token. Si cambias el rol de alguien, lo verá en su próximo refresco, como mucho una hora después con la configuración por defecto. Para quitar permisos de inmediato, la política tiene que consultar la tabla y no el token.</p>
+            </div>
+          </div>
+          <h2 id="errores">
+            Errores típicos
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <ul>
+            <li>**Confiar en <code>getSession()</code> en el servidor.** Sus datos vienen de cookies que controla el cliente.</li>
+            <li><strong>Un cliente de servidor compartido entre peticiones.</strong> Mezcla sesiones de usuarios distintos.</li>
+            <li><strong>Cachear en una CDN páginas que dependen del usuario.</strong> La página de Ana se sirve a Luis. Las respuestas con datos de usuario llevan <code>Cache-Control: private</code> o no se cachean.</li>
+            <li><strong>Usar la clave secreta en el SSR «para que funcione».</strong> Las consultas se saltan RLS y el servidor acaba enseñando datos de otros.</li>
+            <li><strong>Verificar el JWT sin comprobar la audiencia y la caducidad</strong>, o con el secreto antiguo copiado en diez servicios.</li>
+          </ul>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Tu app</th><th>Qué necesitas</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>SPA que solo corre en el navegador (Vite, React, Vue)</td><td><code>supabase-js</code> normal; la sesión en <code>localStorage</code> basta</td></tr>
+                <tr><td>Framework con SSR (Next.js, SvelteKit, Nuxt, Remix)</td><td><code>@supabase/ssr</code>, sesión en cookies y proxy que refresca</td></tr>
+                <tr><td>Backend propio que recibe peticiones del frontend</td><td>Verificar el JWT con el JWKS y reenviarlo a la Data API o filtrar tú</td></tr>
+                <tr><td>Roles que las políticas consultan mucho</td><td>Hook de access token, asumiendo el retraso hasta el refresco</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Con SSR la sesión viaja en cookies; <code>@supabase/ssr</code> da un cliente de navegador y otro de servidor que se crea por petición.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un proxy o middleware refresca el token en cada petición y tiene que devolver la respuesta que lleva las cookies renovadas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>En el servidor, <code>getSession()</code> no es fiable; <code>getClaims()</code> verifica la firma y <code>getUser()</code> pregunta a Auth.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Las claves asimétricas permiten verificar el token en cualquier backend con el JWKS público, sin compartir secretos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El hook de access token mete el rol en el JWT para que las políticas lo lean sin consultar tablas, a cambio de que los cambios lleguen en el siguiente refresco.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="sb-auth.html">
+              <small>← Anterior</small>
+              <b>Auth: usuarios, sesiones y JWT</b>
+            </a>
+            <a href="sb-storage.html" class="next">
+              <small>Siguiente →</small>
+              <b>Storage: ficheros con permisos de base de datos</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

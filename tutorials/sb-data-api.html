@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>La Data API: consultar Postgres por HTTP sin escribir backend — MentorAI</title>
+    <meta name="description" content="Cómo PostgREST convierte cada tabla en un recurso REST: filtros, relaciones embebidas, paginación con range y por cursor, escrituras, funciones con rpc, vistas seguras y qué tablas quedan expuestas." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Supabase</span>
+        </nav>
+        <h1 class="tutorial-hero__title">La Data API: consultar Postgres por HTTP sin escribir backend</h1>
+        <p class="tutorial-hero__lead">
+          Creas una tabla y ya tienes una API REST para leerla, filtrarla, paginarla y escribir en ella, con joins incluidos. No es magia ni un ORM: es un traductor de URLs a SQL. Saber qué SQL sale de cada llamada es lo que separa una app rápida de una que hace cien consultas por pantalla.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            17 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Intermedio
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Supabase
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#como-funciona">Cómo funciona: URL entra, SQL sale</a></li>
+            <li><a href="#leer">Leer y filtrar</a></li>
+            <li><a href="#relaciones">Relaciones: el join que no escribes</a></li>
+            <li><a href="#paginar">Paginar: range, count y cursor</a></li>
+            <li><a href="#escribir">Escribir: insert, update, upsert y delete</a></li>
+            <li><a href="#rpc">Cuando la API se queda corta: funciones con rpc</a></li>
+            <li><a href="#vistas">Vistas: cómodas y con una trampa</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Ya tienes la tabla de notas versionada con <a href="sb-cli-y-migraciones.html">migraciones</a>. Ahora le añadimos libretas y aprendemos a sacarle partido a la API que Supabase genera sola: qué se puede pedir, cómo se pagina y cuándo conviene salirse de ella hacia una función SQL.</p>
+          <h2 id="como-funciona">
+            Cómo funciona: URL entra, SQL sale
+            <a href="#como-funciona" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La Data API es <strong>PostgREST</strong>, un servidor que lee el esquema de tu base de datos al arrancar y expone cada tabla, vista y función de los esquemas expuestos (por defecto, <code>public</code>). Cada petición se convierte en <strong>una sola consulta SQL</strong>, que se ejecuta con el rol del usuario que llama:</p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>GET /rest/v1/notes?select=id,title&title=ilike.<em>receta</em></b><small>lo que manda <code>supabase-js</code> por debajo</small></span>
+              </div>
+              <div class="flow__arrow" data-label="traducir"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>SQL</b><small><code>select id, title from notes where title ilike '%receta%'</code></small></span>
+              </div>
+              <div class="flow__arrow" data-label="ejecutar como"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Rol del usuario</b><small><code>anon</code> o <code>authenticated</code>, con su token disponible para las políticas</small></span>
+              </div>
+              <div class="flow__arrow" data-label="filtrar"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>Filas que la política deja ver</b><small>en JSON</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Una petición, una consulta y un rol: por eso RLS se aplica a todo lo que entra por la Data API.</p>
+          </div>
+          <p>Que una tabla esté en <code>public</code> no basta para que la API la sirva: el rol tiene que tener <strong>permisos</strong> (<code>grant</code>) sobre ella, y RLS decide qué filas. Durante años, Supabase daba esos permisos automáticamente a cada tabla nueva de <code>public</code>; ahora hay un ajuste, <strong>«Automatically expose new tables»</strong>, en la configuración de la Data API, y Supabase está cambiando el comportamiento por defecto para que exponer sea una decisión explícita.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · exponer una tabla de forma explícita</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">grant select, insert, update, delete on public.notes to authenticated;</code></pre>
+          </div>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Dato que caduca</p>
+              <p>Si en tu proyecto la API responde que no encuentra una tabla que sí existe, revisa dos cosas: que su esquema esté en la lista de esquemas expuestos y que el rol tenga <code>grant</code> sobre ella. Escribir los <code>grant</code> en tus migraciones hace que funcione igual con cualquiera de los dos comportamientos por defecto.</p>
+            </div>
+          </div>
+          <h2 id="leer">
+            Leer y filtrar
+            <a href="#leer" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Añadimos libretas para tener una relación con la que jugar:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · migración: libretas</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">create table public.notebooks (
+  id bigint generated always as identity primary key,
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  name text not null
+);
+
+alter table public.notes add column notebook_id bigint references public.notebooks (id) on delete set null;
+create index on public.notes (notebook_id);</code></pre>
+          </div>
+          <p>Cada método de <code>supabase-js</code> añade un trozo a la URL, y cada trozo es un trozo de SQL:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>supabase-js</th><th>Parámetro en la URL</th><th>SQL</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>.select("id, title")</code></td><td><code>select=id,title</code></td><td><code>select id, title</code></td></tr>
+                <tr><td><code>.eq("notebook_id", 5)</code></td><td><code>notebook_id=eq.5</code></td><td><code>where notebook_id = 5</code></td></tr>
+                <tr><td><code>.ilike("title", "%receta%")</code></td><td><code>title=ilike.*receta*</code></td><td><code>title ilike '%receta%'</code></td></tr>
+                <tr><td><code>.in("id", [1, 2, 3])</code></td><td><code>id=in.(1,2,3)</code></td><td><code>id in (1, 2, 3)</code></td></tr>
+                <tr><td><code>.is("notebook_id", null)</code></td><td><code>notebook_id=is.null</code></td><td><code>notebook_id is null</code></td></tr>
+                <tr><td><code>.or("title.ilike.*pan*,body.ilike.*pan*")</code></td><td><code>or=(...)</code></td><td><code>(title ilike ... or body ilike ...)</code></td></tr>
+                <tr><td><code>.order("created_at", { ascending: false })</code></td><td><code>order=created_at.desc</code></td><td><code>order by created_at desc</code></td></tr>
+                <tr><td><code>.limit(20)</code></td><td><code>limit=20</code></td><td><code>limit 20</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Pide solo las columnas que usas. <code>select("*")</code> sobre una tabla con un campo de texto largo (el cuerpo de la nota) trae ese texto en cada fila del listado aunque la pantalla solo muestre el título.</p>
+          <h2 id="relaciones">
+            Relaciones: el join que no escribes
+            <a href="#relaciones" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>PostgREST lee las claves foráneas y te deja <strong>embeber</strong> las filas relacionadas en la misma consulta:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · notas con su libreta, en una sola petición</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>const { data, error } = await supabase
+  .from("notes")
+  .select("id, title, notebook:notebooks ( id, name )")
+  .order("created_at", { ascending: false });</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · forma de la respuesta</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>[
+  { id: 7, title: "Pan de masa madre", notebook: { id: 2, name: "Recetas" } },
+  { id: 6, title: "Ideas charla", notebook: null },
+]</code></pre>
+          </div>
+          <p>Funciona en los dos sentidos (una libreta con sus notas: <code>notebooks.select("name, notes ( title )")</code>) y a través de tablas intermedias en relaciones muchos a muchos. Por defecto es un <em>left join</em>: las notas sin libreta salen con <code>notebook: null</code>. Para filtrar por la tabla relacionada se marca el embebido como <code>!inner</code>:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · solo las notas de la libreta «Recetas»</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>supabase
+  .from("notes")
+  .select("id, title, notebooks!inner ( name )")
+  .eq("notebooks.name", "Recetas");</code></pre>
+          </div>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El N+1 de siempre, ahora desde el navegador</p>
+              <p>Pedir la lista de notas y luego, en un bucle, la libreta de cada una, es una petición HTTP por fila: veinte notas, veintiuna idas y vueltas de red. Embeber la relación lo resuelve en una. Es el mismo problema que con un ORM, solo que cada consulta además cruza internet.</p>
+            </div>
+          </div>
+          <h2 id="paginar">
+            Paginar: range, count y cursor
+            <a href="#paginar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La API nunca devuelve filas sin límite: hay un máximo por petición (1.000 por defecto, configurable en los ajustes de la Data API). Para paginar hay dos estrategias, y son las mismas que en cualquier API (<a href="cr-paginacion.html">Paginación</a> las compara a fondo):</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · paginación por desplazamiento, con total</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>const pageSize = 20;
+const page = 3;
+
+const { data, count } = await supabase
+  .from("notes")
+  .select("id, title", { count: "exact" })
+  .order("created_at", { ascending: false })
+  .range((page - 1) * pageSize, page * pageSize - 1);</code></pre>
+          </div>
+          <p><code>range(40, 59)</code> pide las filas de la 40 a la 59, ambas incluidas. Con <code>count: "exact"</code> la respuesta trae además el total, que sirve para pintar «página 3 de 12». Ese total es un <code>count(*)</code> completo sobre la tabla filtrada: en tablas grandes cuesta, y <code>count: "estimated"</code> usa la estimación del planificador cuando no necesitas la cifra exacta.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · paginación por cursor (keyset)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>const { data } = await supabase
+  .from("notes")
+  .select("id, title")
+  .lt("id", lastSeenId)
+  .order("id", { ascending: false })
+  .limit(20);</code></pre>
+          </div>
+          <p>La paginación por cursor no salta filas: pide «las 20 siguientes a la última que vi». Es estable aunque se inserten notas mientras paginas y no se degrada en la página 500, que es lo que pide un scroll infinito.</p>
+          <h2 id="escribir">
+            Escribir: insert, update, upsert y delete
+            <a href="#escribir" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · las cuatro escrituras</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>const { data: created, error } = await supabase
+  .from("notes")
+  .insert({ title: "Lista de la compra", notebook_id: 2 })
+  .select()
+  .single();
+
+await supabase.from("notes").update({ title: "Compra del sábado" }).eq("id", created.id);
+
+await supabase.from("notebooks").upsert({ id: 2, name: "Recetas de casa" }, { onConflict: "id" });
+
+await supabase.from("notes").delete().eq("id", created.id);</code></pre>
+          </div>
+          <p>Tres detalles que muerden:</p>
+          <ul>
+            <li>**Sin <code>.select()</code> no hay fila de vuelta.** Un insert devuelve solo el estado HTTP. Si quieres el <code>id</code> generado, encadena <code>.select()</code>, y entonces la fila tiene que pasar también tu política de lectura.</li>
+            <li><strong>Un update o delete sin filtro afecta a todo lo que RLS te deje.</strong> <code>supabase-js</code> exige un filtro en <code>update</code> y <code>delete</code> para evitar sustos, pero un filtro mal puesto sigue siendo un filtro.</li>
+            <li>**No mandes <code>user_id</code> desde el cliente.** Lo rellena el <code>default auth.uid()</code> de la tabla, y la política de inserción comprobará que coincide con quien escribe. Un cliente que manda el dueño puede mandar el de otro.</li>
+          </ul>
+          <h2 id="rpc">
+            Cuando la API se queda corta: funciones con rpc
+            <a href="#rpc" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una petición es una consulta. Cuando necesitas <strong>varias operaciones en una transacción</strong>, una agregación compleja o lógica que no se expresa con filtros, escribes una función de Postgres y la llamas con <code>rpc</code>:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · mover una nota de libreta comprobando que las dos son tuyas</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">create function public.move_note(note_id bigint, target_notebook_id bigint)
+returns void
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+begin
+  if not exists (
+    select 1 from public.notebooks
+    where id = target_notebook_id and user_id = (select auth.uid())
+  ) then
+    raise exception 'La libreta no existe o no es tuya';
+  end if;
+
+  update public.notes set notebook_id = target_notebook_id where id = note_id;
+end;
+$$;</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · llamarla</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>const { error } = await supabase.rpc("move_note", { note_id: 7, target_notebook_id: 3 });</code></pre>
+          </div>
+          <p>Con <code>security invoker</code> la función corre con los permisos de quien la llama, así que RLS sigue aplicándose dentro. La alternativa, <code>security definer</code>, la verás en <a href="sb-funciones-y-triggers.html">funciones y triggers</a>, junto con por qué ese <code>set search_path = ''</code> no es opcional.</p>
+          <h2 id="vistas">
+            Vistas: cómodas y con una trampa
+            <a href="#vistas" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una vista se expone como una tabla más y es una forma limpia de ofrecer una consulta compleja (la nota con su número de adjuntos, por ejemplo; la tabla <code>attachments</code> llega con <a href="sb-storage.html">Storage</a>). La trampa: por defecto, <strong>una vista de Postgres se ejecuta con los permisos de su dueño</strong>, que es <code>postgres</code>, y se salta RLS de las tablas que lee.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · vista que respeta RLS</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">create view public.notes_with_counts
+with (security_invoker = true)
+as
+select n.id, n.title, count(a.id) as attachments
+from public.notes n
+left join public.attachments a on a.note_id = n.id
+group by n.id;</code></pre>
+          </div>
+          <p><code>security_invoker = true</code> (desde Postgres 15) hace que la vista consulte con el rol de quien la pide. Sin esa línea, cualquiera con la clave publicable vería los títulos de <strong>todas</strong> las notas de todos los usuarios. El Security Advisor del panel marca las vistas que no la llevan.</p>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Necesitas…</th><th>Usa</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Leer y escribir filas de una tabla con permisos por usuario</td><td>La Data API directamente desde el cliente</td></tr>
+                <tr><td>Varias operaciones en una transacción, o lógica que debe ser atómica</td><td>Una función SQL llamada con <code>rpc</code></td></tr>
+                <tr><td>Una consulta compleja reutilizable</td><td>Una vista con <code>security_invoker = true</code></td></tr>
+                <tr><td>Llamar a un servicio externo con una clave secreta</td><td>Una <a href="sb-edge-functions.html">Edge Function</a></td></tr>
+                <tr><td>Lógica de dominio rica en tu lenguaje</td><td>Tu propio backend, hablando con Postgres o con la Data API</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La Data API es PostgREST: cada petición HTTP se traduce a una consulta SQL que se ejecuta con el rol del usuario y pasa por RLS.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Una tabla necesita estar en un esquema expuesto y tener <code>grant</code> para el rol; escribir los <code>grant</code> en las migraciones evita depender del comportamiento por defecto.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Las relaciones se embeben con la sintaxis de <code>select</code> aprovechando las claves foráneas; <code>!inner</code> filtra por la tabla relacionada y evita el N+1.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>range</code> pagina por desplazamiento (con <code>count</code> para el total) y los filtros por <code>id</code> permiten paginar por cursor.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Un insert no devuelve la fila sin <code>.select()</code>, y el dueño de la fila lo pone la base de datos, no el cliente.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>rpc</code> llama a funciones de Postgres para lo que no cabe en una consulta; las vistas expuestas llevan <code>security_invoker = true</code>.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="sb-cli-y-migraciones.html">
+              <small>← Anterior</small>
+              <b>Desarrollo local con la CLI: migraciones, entornos y tipos</b>
+            </a>
+            <a href="sb-rls.html" class="next">
+              <small>Siguiente →</small>
+              <b>Row Level Security: la seguridad vive en la base de datos</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

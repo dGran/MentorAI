@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Queues: trabajo en segundo plano con pgmq — MentorAI</title>
+    <meta name="description" content="Colas de mensajes dentro de Postgres con Supabase Queues: enviar, leer con tiempo de invisibilidad, archivar, reintentar y mandar a una cola de mensajes muertos; el patrón trigger, cola, Cron y Edge Function, y cuándo hace falta un broker de verdad." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Supabase</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Queues: trabajo en segundo plano con pgmq</h1>
+        <p class="tutorial-hero__lead">
+          Hay trabajo que no debe hacerse mientras el usuario espera ni puede perderse si algo falla: mandar emails, procesar un PDF, generar embeddings. Lo que necesitas es una cola. Supabase la mete en tu propia base de datos, con la ventaja que eso trae: encolar puede ir en la misma transacción que el cambio que lo provoca.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            16 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Supabase
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#por-que">Por qué una cola</a></li>
+            <li><a href="#pgmq">pgmq: una cola es una tabla</a></li>
+            <li><a href="#garantias">Al menos una vez: consumidores idempotentes</a></li>
+            <li><a href="#transaccion">La ventaja de vivir en Postgres: encolar en la transacción</a></li>
+            <li><a href="#consumidor">El consumidor: Cron despierta a una Edge Function</a></li>
+            <li><a href="#vigilar">Vigilar la cola</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">En <a href="sb-funciones-y-triggers.html">funciones y triggers</a> viste que un webhook con <code>pg_net</code> no reintenta, y en <a href="sb-cron.html">Cron</a> que una tarea periódica no sabe qué trabajo hay pendiente. Una cola une las dos cosas: el trabajo se apunta en cuanto aparece y un consumidor lo procesa con reintentos.</p>
+          <h2 id="por-que">
+            Por qué una cola
+            <a href="#por-que" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Cuando alguien comparte una nota hay que mandar un email al invitado. Hacerlo dentro de la petición tiene dos problemas: el usuario espera al proveedor de email, y si el proveedor falla en ese momento, el email se pierde. Una cola separa <strong>apuntar el trabajo</strong> de <strong>hacerlo</strong>:</p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Productor</b><small>la transacción que comparte la nota encola <code>{ note_id, email }</code></small></span>
+              </div>
+              <div class="flow__arrow" data-label="send"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Cola</b><small>el mensaje espera, guardado en una tabla</small></span>
+              </div>
+              <div class="flow__arrow" data-label="read"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Consumidor</b><small>lee un lote, lo oculta un tiempo y manda los emails</small></span>
+              </div>
+              <div class="flow__arrow" data-label="archive si va bien"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>Archivo</b><small>el mensaje procesado queda como historial</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">El productor no espera al trabajo y el trabajo no se pierde si el consumidor falla: el mensaje vuelve a la cola.</p>
+          </div>
+          <p>Si el concepto de cola, productor y consumidor es nuevo para ti, <a href="sd-colas-y-topicos.html">Colas y tópicos</a> lo cuenta en general; aquí vamos a la implementación de Supabase.</p>
+          <h2 id="pgmq">
+            pgmq: una cola es una tabla
+            <a href="#pgmq" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Supabase Queues es la extensión **<code>pgmq</code>**. Cada cola es una tabla en el esquema <code>pgmq</code> (<code>pgmq.q_emails</code> para la cola <code>emails</code>) y cada mensaje, una fila con un <code>jsonb</code>. Se crean desde Integrations → Queues o con SQL:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · crear la cola</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">select pgmq.create('emails');</code></pre>
+          </div>
+          <p>La operación que lo hace funcionar es la lectura con <strong>tiempo de invisibilidad</strong> (<em>visibility timeout</em>). Leer no borra el mensaje: lo esconde durante unos segundos. Si el consumidor termina, lo archiva o lo borra; si se cae a mitad, el tiempo vence y el mensaje vuelve a ser visible para otro consumidor.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · el ciclo de un mensaje</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">select pgmq.send('emails', '{"note_id": 7, "to": "luis@ejemplo.com"}'::jsonb);
+
+select msg_id, read_ct, message from pgmq.read('emails', 30, 10);
+
+select pgmq.archive('emails', 42);</code></pre>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Función</th><th>Qué hace</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>pgmq.send(cola, mensaje, retraso)</code></td><td>Encola un mensaje; con retraso, no será visible hasta pasados esos segundos</td></tr>
+                <tr><td><code>pgmq.send_batch(cola, mensajes)</code></td><td>Encola varios de una vez</td></tr>
+                <tr><td><code>pgmq.read(cola, vt, n)</code></td><td>Lee hasta <code>n</code> mensajes y los esconde <code>vt</code> segundos</td></tr>
+                <tr><td><code>pgmq.archive(cola, msg_id)</code></td><td>Lo mueve a la tabla de archivo (<code>pgmq.a_emails</code>): procesado, con historial</td></tr>
+                <tr><td><code>pgmq.delete(cola, msg_id)</code></td><td>Lo borra sin dejar rastro</td></tr>
+                <tr><td><code>pgmq.pop(cola)</code></td><td>Lee y borra a la vez: si el consumidor falla, el mensaje se pierde</td></tr>
+                <tr><td><code>pgmq.metrics(cola)</code></td><td>Longitud de la cola y edad del mensaje más antiguo</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Cada lectura incrementa <code>read_ct</code>, el número de veces que se ha entregado el mensaje. Es la base para los reintentos.</p>
+          <h2 id="garantias">
+            Al menos una vez: consumidores idempotentes
+            <a href="#garantias" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Con tiempo de invisibilidad, la garantía es <strong>al menos una vez</strong>: un mensaje nunca se pierde mientras no se archive, pero puede procesarse dos veces. Basta con que el consumidor mande el email y se caiga antes de archivar: el mensaje reaparece y el email sale otra vez.</p>
+          <p>No hay configuración que lo evite; se diseña el consumidor para que repetir no haga daño. Para el email, guardando en una tabla que ese envío ya se hizo (con una clave única por mensaje) y comprobándolo antes de mandar. Es la misma técnica de <a href="idempotencia.html">Idempotencia</a>.</p>
+          <p>Y elige bien el tiempo de invisibilidad: tiene que ser mayor que lo que tarda en procesarse un lote. Si es menor, el mensaje reaparece <strong>mientras todavía se está procesando</strong> y otro consumidor lo coge.</p>
+          <h3>Mensajes envenenados</h3>
+          <p>Un mensaje con datos que siempre fallan (un email mal formado) volvería a la cola para siempre. La defensa es mirar <code>read_ct</code>: pasado un número de intentos, el consumidor lo manda a una cola aparte de <strong>mensajes muertos</strong> y lo archiva de la principal, para revisarlo a mano.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · en el consumidor: tras 5 intentos, a la cola de muertos</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>if (message.read_ct &gt; 5) {
+  await queue.rpc("send", { queue_name: "emails_dead", message: message.message });
+  await queue.rpc("archive", { queue_name: "emails", message_id: message.msg_id });
+  continue;
+}</code></pre>
+          </div>
+          <h2 id="transaccion">
+            La ventaja de vivir en Postgres: encolar en la transacción
+            <a href="#transaccion" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Con un broker externo (RabbitMQ, SQS) hay un problema clásico: guardas la compartición en la base de datos y luego publicas el mensaje en el broker. Si el proceso se cae entre las dos cosas, tienes la compartición sin email. O al revés: el mensaje sale y la transacción hace rollback.</p>
+          <p>Con <code>pgmq</code>, encolar es un <code>insert</code> más <strong>en la misma transacción</strong>. O se guardan los dos o ninguno. Un trigger lo hace automático:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · cada compartición encola su email, en la misma transacción</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">create function private.enqueue_share_email()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform pgmq.send(
+    'emails',
+    jsonb_build_object('note_id', new.note_id, 'shared_with', new.shared_with)
+  );
+
+  return new;
+end;
+$$;
+
+create trigger note_shares_enqueue_email
+after insert on public.note_shares
+for each row execute function private.enqueue_share_email();</code></pre>
+          </div>
+          <p>Es el patrón <em>outbox</em> resuelto sin tabla extra: <a href="sd-outbox.html">Outbox</a> explica por qué la escritura doble es un problema y por qué esta es la solución.</p>
+          <h2 id="consumidor">
+            El consumidor: Cron despierta a una Edge Function
+            <a href="#consumidor" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Falta quien procese la cola. El montaje habitual en Supabase combina tres piezas que ya conoces:</p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Cron, cada 10 segundos</b><small><code>net.http_post</code> a la función con la clave secreta (como en <a href="sb-cron.html">Cron</a>)</small></span>
+              </div>
+              <div class="flow__arrow" data-label="despierta"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Edge Function worker</b><small>lee un lote con <code>read</code>, procesa cada mensaje</small></span>
+              </div>
+              <div class="flow__arrow" data-label="por cada mensaje"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">3</span>
+                <span><b>Bien: archive</b><small>mal: no hace nada y el mensaje reaparece al vencer el tiempo</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Cada pieza hace una sola cosa: Cron marca el ritmo, la función trabaja y la cola guarda el estado.</p>
+          </div>
+          <p>Para que una Edge Function (o cualquier cliente) hable con la cola por la Data API, Supabase expone un esquema envoltorio, **<code>pgmq_public</code>**, con <code>send</code>, <code>send_batch</code>, <code>read</code>, <code>pop</code>, <code>archive</code> y <code>delete</code>. Se activa en los ajustes de Queues, y el acceso a cada cola se controla con políticas RLS sobre su tabla, como cualquier otra.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · supabase/functions/email-worker/index.ts (resumido)</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>import { withSupabase } from "npm:@supabase/server@1";
+
+export default {
+  fetch: withSupabase({ auth: "secret" }, async (_req, ctx) =&gt; {
+    const queue = ctx.supabaseAdmin.schema("pgmq_public");
+    const { data: messages } = await queue.rpc("read", {
+      queue_name: "emails",
+      sleep_seconds: 60,
+      n: 20,
+    });
+
+    for (const message of messages ?? []) {
+      const delivered = await sendShareEmail(message.message);
+
+      if (!delivered) continue;
+
+      await queue.rpc("archive", { queue_name: "emails", message_id: message.msg_id });
+    }
+
+    return Response.json({ processed: messages?.length ?? 0 });
+  }),
+};</code></pre>
+          </div>
+          <p>Si un email falla, el mensaje no se archiva y vuelve a la cola a los 60 segundos: los reintentos salen solos. Con un <code>n</code> moderado, cada ejecución cabe holgada en los límites de una Edge Function.</p>
+          <h2 id="vigilar">
+            Vigilar la cola
+            <a href="#vigilar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una cola sana se vacía. Las dos cifras que hay que mirar son la <strong>longitud</strong> y la <strong>edad del mensaje más antiguo</strong>:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · estado de la cola</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">select queue_length, oldest_msg_age_sec, total_messages from pgmq.metrics('emails');</code></pre>
+          </div>
+          <p>Si la edad del más antiguo crece sin parar, el consumidor no da abasto o está fallando siempre con algo. Una tarea Cron que consulte esto y avise cuando pase de un umbral vale más que cualquier panel que nadie mira.</p>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>pgmq en Supabase encaja cuando…</h4>
+              <ul>
+                <li>El trabajo nace de cambios en tu base de datos y quieres encolarlo en la misma transacción</li>
+                <li>Hablamos de cientos o miles de mensajes por minuto, no de cientos de miles por segundo</li>
+                <li>No quieres operar otro sistema (RabbitMQ, SQS, Redis) solo para esto</li>
+                <li>Te basta con colas punto a punto con reintentos</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Un broker dedicado cuando…</h4>
+              <ul>
+                <li>El volumen es tan alto que la cola competiría con tus consultas por la base de datos</li>
+                <li>Necesitas enrutado complejo, <em>fan-out</em> a muchos consumidores o tópicos</li>
+                <li>Varios sistemas que no son tu base de datos publican y consumen (<a href="rabbitmq.html">RabbitMQ</a>)</li>
+              </ul>
+            </div>
+          </div>
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Supabase Queues es <code>pgmq</code>: cada cola es una tabla y cada mensaje una fila <code>jsonb</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>read</code> esconde los mensajes durante el tiempo de invisibilidad; si no se archivan, reaparecen. La garantía es al menos una vez.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Consumidores idempotentes, tiempo de invisibilidad mayor que el procesado y cola de mensajes muertos a partir de <code>read_ct</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Encolar desde un trigger mete el mensaje en la misma transacción que el cambio: el patrón outbox sin infraestructura extra.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El montaje típico es Cron que despierta a una Edge Function worker que lee y archiva por <code>pgmq_public</code>.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Vigila la longitud y la edad del mensaje más antiguo con <code>pgmq.metrics</code>.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="sb-cron.html">
+              <small>← Anterior</small>
+              <b>Cron: tareas programadas dentro de Postgres</b>
+            </a>
+            <a href="sb-realtime.html" class="next">
+              <small>Siguiente →</small>
+              <b>Realtime: cambios, broadcast y presencia</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

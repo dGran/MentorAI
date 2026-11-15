@@ -1001,4 +1001,67 @@ window.MENTORAI_COURSES = [
       },
     ],
   },
+  {
+    slug: "supabase",
+    title: "Supabase a fondo",
+    summary:
+      "Supabase de principio a fin: qué es (Postgres con todo lo de alrededor) y cómo se trabaja en local con migraciones; la Data API, Row Level Security, funciones y triggers; Auth en el cliente y en el servidor, Storage, Edge Functions, Cron, Queues y Realtime; búsqueda vectorial, extensiones y wrappers, y por último cómo publicar una app completa y operarla en producción.",
+    level: "Principiante",
+    icon: "database",
+    modules: [
+      {
+        title: "Qué es Supabase",
+        summary: "Las piezas y la idea que lo explica todo, el primer proyecto con sus claves y el trabajo en local con migraciones.",
+        lessons: [
+          "sb-que-es-supabase",
+          "sb-primer-proyecto",
+          "sb-cli-y-migraciones",
+        ],
+      },
+      {
+        title: "La base de datos es el backend",
+        summary: "Consultar Postgres por HTTP, proteger cada fila con RLS y llevar lógica a funciones, triggers y webhooks.",
+        lessons: [
+          "sb-data-api",
+          "sb-rls",
+          "sb-funciones-y-triggers",
+        ],
+      },
+      {
+        title: "Usuarios y ficheros",
+        summary: "Auth por dentro, la sesión cuando hay servidor y ficheros con permisos de base de datos.",
+        lessons: [
+          "sb-auth",
+          "sb-auth-en-servidor",
+          "sb-storage",
+        ],
+      },
+      {
+        title: "Lógica en el servidor y tiempo",
+        summary: "Código de servidor con Edge Functions, tareas programadas, colas de trabajo y tiempo real.",
+        lessons: [
+          "sb-edge-functions",
+          "sb-cron",
+          "sb-queues",
+          "sb-realtime",
+        ],
+      },
+      {
+        title: "Más allá del CRUD",
+        summary: "Búsqueda semántica con pgvector y el resto del ecosistema: extensiones, GraphQL, Vault y wrappers.",
+        lessons: [
+          "sb-vectores-e-ia",
+          "sb-extensiones-y-wrappers",
+        ],
+      },
+      {
+        title: "A producción",
+        summary: "Publicar la app completa y operarla: conexiones, rendimiento, backups, coste y salida.",
+        lessons: [
+          "sb-app-completa",
+          "sb-produccion",
+        ],
+      },
+    ],
+  },
 ];

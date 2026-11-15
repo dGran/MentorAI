@@ -1,16 +1,30 @@
 # Estado del proyecto
 
-Última actualización: **2026-11-08**.
+Última actualización: **2026-11-15**.
 
 Este fichero se lee al empezar cada sesión y está pensado para leerse **entero**.
 Lo cerrado vive en `archivo/`; si algo de aquí crece demasiado, se archiva.
 
 ## Dónde está el proyecto
 
-**351 tutoriales · 36 cursos · 7 rutas · 617 preguntas de examen · 833 checks ·
-109 retos de práctica.** `node scripts/validar.js` sale sin errores **y sin
+**368 tutoriales · 37 cursos · 7 rutas · 654 preguntas de examen · 884 checks ·
+112 retos de práctica.** `node scripts/validar.js` sale sin errores **y sin
 avisos**: el sesgo de las opciones (#25), el ancla de cada `h2` (#112) y la
 sección «Cuándo aplicarlo» en todo tutorial (#114) son ERROR.
+
+**Curso `supabase` (2026-11-15, sin issue: carril directo a petición del usuario):** «Supabase a fondo»,
+17 lecciones con prefijo `sb-` en 6 módulos (qué es, la base de datos es el backend, usuarios y ficheros,
+lógica en el servidor y tiempo, más allá del CRUD, a producción). Hilo conductor: una app de **notas
+compartidas**. Examen de 37 preguntas (la correcta, la más larga solo en 7), 51 checks y 3 retos con
+`supabase start` (tabla sin RLS, el editor invitado que se queda la nota, cola con reintentos). Va en la ruta
+`construir-un-servicio` tras `concurrencia-en-bd`, y entra desde `sec-autorizacion` y `ia-embeddings-y-rag`.
+Categoría nueva `supabase` (chip automático). **Decisiones:** Supabase no aloja frontends, así que «páginas» se
+cubre con `sb-app-completa` (frontend en Vercel/Netlify/Pages + Supabase); el curso enseña las claves nuevas
+(`sb_publishable_`/`sb_secret_`; las `anon`/`service_role` se retiran a finales de 2026), `getClaims()` y el
+envoltorio `withSupabase` de `@supabase/server` en Edge Functions, con callouts «Dato que caduca» donde la
+plataforma cambia rápido. Redactado en Markdown y generado con un script de andamiaje fuera del repo: si se
+edita, se edita el HTML. **Trampa:** RLS reutiliza `using` como `with check` si se omite; el agujero real
+del update es una columna que no debe cambiar (RLS no ve el valor anterior), y se cierra con `grant update (cols)`.
 
 **Curso `programar-con-ia` renovado (2026-11-08, #193-#195):** se rehízo a partir del glosario de IA del
 usuario: 12 lecciones en 4 módulos (fundamentos, configurar el agente, trabajar con agentes, más allá).
@@ -408,7 +422,8 @@ las categorías volátiles — los cursos `claude-code`, `construir-con-ia` y
 `metodo-con-agentes` (hooks, subagentes y formato de skills cambian con la
 herramienta) sobre todo (la lección de la API ya nació corrigiendo `temperature`, que desapareció
 de los modelos actuales), y de paso `programar-con-ia` y la sección «Lo que el
-proveedor ya no deja tocar» de `llm-muestreo` (el resto de `ia-por-dentro` es
+proveedor ya no deja tocar» de `llm-muestreo`, y el curso `supabase` (claves de API, `@supabase/server`,
+comandos de esquemas declarativos, precios y límites) (el resto de `ia-por-dentro` es
 mecánica estable). Formato: una sesión de
 auditoría como la del 2026-08-22, leyendo contra las fuentes actuales y
 corrigiendo con `/tutorial`. Repetir cada ~6 meses solo para esas categorías;

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vectores e IA: búsqueda semántica con pgvector — MentorAI</title>
+    <meta name="description" content="Búsqueda por significado dentro de tu Postgres: columnas vector, operadores de distancia, generar embeddings en una Edge Function, una función de búsqueda que respeta RLS, índices HNSW, embeddings que se mantienen solos con colas y búsqueda híbrida con texto completo." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Supabase</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Vectores e IA: búsqueda semántica con pgvector</h1>
+        <p class="tutorial-hero__lead">
+          Buscar «cómo hacer pan» y encontrar la nota titulada «Masa madre: proporciones», aunque no comparta ni una palabra. Eso es búsqueda semántica, y en Supabase no necesita una base de datos vectorial aparte: es una columna más en tu tabla de notas, con tus políticas de seguridad aplicadas.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            16 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Avanzado
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Supabase
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#pgvector">pgvector: una columna con significado</a></li>
+            <li><a href="#generar">Generar los embeddings</a></li>
+            <li><a href="#buscar">Buscar: una función que respeta RLS</a></li>
+            <li><a href="#indices">Índices: de recorrer todo a buscar aproximado</a></li>
+            <li><a href="#automaticos">Embeddings que se mantienen solos</a></li>
+            <li><a href="#hibrida">Búsqueda híbrida: palabras y significado</a></li>
+            <li><a href="#rag">Del buscador al asistente: RAG</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">Si los embeddings son nuevos para ti, <a href="ia-embeddings-y-rag.html">Embeddings y RAG</a> explica qué son y para qué sirven. Esta lección los lleva a Supabase: dónde se guardan, cómo se generan, cómo se busca rápido y cómo se mantienen al día sin que nadie se acuerde de recalcularlos.</p>
+          <h2 id="pgvector">
+            pgvector: una columna con significado
+            <a href="#pgvector" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Un embedding es una lista de números que representa el significado de un texto: textos parecidos dan listas cercanas. La extensión **<code>pgvector</code>** añade a Postgres el tipo <code>vector</code> y operadores para medir distancias:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · activar la extensión y añadir la columna</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">create extension if not exists vector with schema extensions;
+
+alter table public.notes add column embedding extensions.vector(384);</code></pre>
+          </div>
+          <p>El número entre paréntesis es la <strong>dimensión</strong>, y la fija el modelo que genera los embeddings: 384 para <code>gte-small</code>, 1536 para muchos modelos de OpenAI. Todos los vectores de la columna tienen que venir <strong>del mismo modelo</strong>: dos modelos distintos no comparten espacio, y compararlos no tiene sentido aunque tuvieran la misma dimensión.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Operador</th><th>Distancia</th><th>Cuándo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>&lt;=&gt;</code></td><td>Coseno</td><td>La opción por defecto para texto: mide el ángulo, no la longitud</td></tr>
+                <tr><td><code>&lt;#&gt;</code></td><td>Producto interior (negativo)</td><td>Con vectores normalizados da el mismo orden que el coseno y es algo más rápida</td></tr>
+                <tr><td><code>&lt;-&gt;</code></td><td>Euclídea (L2)</td><td>Cuando el modelo lo recomienda o la magnitud importa</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h2 id="generar">
+            Generar los embeddings
+            <a href="#generar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Los embeddings los calcula un modelo. Tienes dos opciones desde una Edge Function:</p>
+          <ul>
+            <li><strong>El modelo integrado de Supabase.</strong> El Edge Runtime trae <code>gte-small</code> (384 dimensiones) sin clave ni coste por llamada aparte del de la función.</li>
+            <li><strong>Una API externa</strong> (OpenAI, Voyage, Cohere…) con su clave en los secretos de la función. Modelos más grandes y mejores en algunos idiomas, con coste por token.</li>
+          </ul>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · embedding con el modelo integrado</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>const session = new Supabase.ai.Session("gte-small");
+
+const embedding = await session.run(text, { mean_pool: true, normalize: true });</code></pre>
+          </div>
+          <p>Con <code>normalize: true</code> los vectores salen con longitud 1, y entonces coseno y producto interior ordenan igual. Elige uno y úsalo de forma coherente en la búsqueda y en el índice.</p>
+          <h2 id="buscar">
+            Buscar: una función que respeta RLS
+            <a href="#buscar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La búsqueda es una función SQL que recibe el embedding de la consulta y devuelve las notas más cercanas:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · las notas más parecidas a una consulta</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">create function public.match_notes(
+  query_embedding extensions.vector(384),
+  match_count int default 10
+)
+returns table (id bigint, title text, similarity float)
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select
+    n.id,
+    n.title,
+    1 - (n.embedding operator(extensions.&lt;=&gt;) query_embedding) as similarity
+  from public.notes n
+  where n.embedding is not null
+  order by n.embedding operator(extensions.&lt;=&gt;) query_embedding
+  limit least(match_count, 50);
+$$;</code></pre>
+          </div>
+          <p>Como el <code>search_path</code> está vacío, el operador se escribe con su esquema: <code>operator(extensions.&lt;=&gt;)</code>. Lo importante es <code>security invoker</code>: la búsqueda pasa por <strong>las mismas políticas RLS que cualquier consulta</strong>. Un usuario solo encuentra entre las notas que puede leer, las suyas y las compartidas con él, sin una línea extra. Con una base de datos vectorial separada tendrías que copiar allí los permisos y mantenerlos sincronizados.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · buscar desde la app</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>const { data: embeddingData } = await supabase.functions.invoke("embed", { body: { text: query } });
+
+const { data: notes } = await supabase.rpc("match_notes", {
+  query_embedding: embeddingData.embedding,
+  match_count: 10,
+});</code></pre>
+          </div>
+          <h2 id="indices">
+            Índices: de recorrer todo a buscar aproximado
+            <a href="#indices" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Sin índice, cada búsqueda calcula la distancia con <strong>todas</strong> las filas: con unos miles de notas va bien; con millones, no. Los índices vectoriales hacen búsqueda <strong>aproximada</strong>: devuelven casi siempre los más cercanos, mucho más rápido.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · índice HNSW para distancia coseno</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">create index on public.notes using hnsw (embedding extensions.vector_cosine_ops);</code></pre>
+          </div>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>HNSW (recomendado)</h4>
+              <ul>
+                <li>Un grafo por capas que se recorre de lo general a lo concreto</li>
+                <li>Buena precisión y velocidad sin ajustar casi nada</li>
+                <li>Se puede crear con la tabla vacía: se mantiene al insertar</li>
+                <li>Construirlo y mantenerlo consume más memoria</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>IVFFlat</h4>
+              <ul>
+                <li>Agrupa los vectores en listas y busca solo en las más cercanas</li>
+                <li>Más ligero de construir</li>
+                <li>Hay que crearlo <strong>después</strong> de cargar datos representativos, o agrupa mal</li>
+                <li>Menos precisión para la misma velocidad</li>
+              </ul>
+            </div>
+          </div>
+          <p>El índice tiene que usar la misma familia de operador que la consulta: un índice <code>vector_cosine_ops</code> solo acelera órdenes por <code>&lt;=&gt;</code>. Si buscas con <code>&lt;#&gt;</code>, necesitas <code>vector_ip_ops</code>.</p>
+          <h2 id="automaticos">
+            Embeddings que se mantienen solos
+            <a href="#automaticos" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Una nota editada cuyo embedding no se recalcula se vuelve invisible a la búsqueda, o peor, aparece por lo que decía antes. Calcular el embedding dentro de la petición de guardado hace lenta cada edición y falla si el modelo no responde. El patrón que propone Supabase reutiliza todo lo visto en el curso:</p>
+          <div class="diagram">
+            <div class="flow">
+              <div class="flow__node flow__node--start">
+                <span class="flow__num">1</span>
+                <span><b>Insert o update de la nota</b><small>un trigger limpia <code>embedding</code> y encola <code>{ id }</code> si cambió el texto</small></span>
+              </div>
+              <div class="flow__arrow" data-label="pgmq.send"></div>
+              <div class="flow__node">
+                <span class="flow__num">2</span>
+                <span><b>Cola embedding_jobs</b><small>los trabajos pendientes, con reintentos</small></span>
+              </div>
+              <div class="flow__arrow" data-label="cada 10 s"></div>
+              <div class="flow__node">
+                <span class="flow__num">3</span>
+                <span><b>Cron</b><small>llama a la Edge Function worker</small></span>
+              </div>
+              <div class="flow__arrow" data-label="lote de mensajes"></div>
+              <div class="flow__node flow__node--end">
+                <span class="flow__num">4</span>
+                <span><b>Edge Function</b><small>genera los embeddings y actualiza las notas</small></span>
+              </div>
+            </div>
+            <p class="diagram__caption">Cada pieza ya la conoces: trigger, cola, Cron y Edge Function.</p>
+          </div>
+          <p>El trigger solo encola si cambiaron <code>title</code> o <code>body</code>, no por cualquier update. Y como el trabajo llega por <a href="sb-queues.html">una cola</a>, si el modelo falla un rato los mensajes vuelven a la cola y se procesan después, sin perder ninguno.</p>
+          <h2 id="hibrida">
+            Búsqueda híbrida: palabras y significado
+            <a href="#hibrida" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>La búsqueda semántica falla donde la de texto acierta: un código de producto, un nombre propio, un término exacto. La de texto falla donde la semántica acierta: sinónimos y paráfrasis. La <strong>búsqueda híbrida</strong> ejecuta las dos y combina los rankings, normalmente con <em>Reciprocal Rank Fusion</em> (RRF): cada resultado suma puntos según su posición en cada lista.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · columna de texto completo para combinar con la vectorial</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">alter table public.notes add column fts tsvector
+  generated always as (to_tsvector('spanish', title || ' ' || body)) stored;
+
+create index on public.notes using gin (fts);</code></pre>
+          </div>
+          <p>Una función <code>hybrid_search</code> hace las dos consultas como subconsultas, cruza los resultados por <code>id</code> y ordena por la suma de <code>1 / (k + posición)</code> de cada lista. La documentación de Supabase trae la función completa; la idea es esa.</p>
+          <h2 id="rag">
+            Del buscador al asistente: RAG
+            <a href="#rag" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Con la búsqueda hecha, un asistente que responde preguntas sobre tus notas está a un paso: una Edge Function recibe la pregunta, busca las 5 notas más parecidas con <code>match_notes</code> (actuando como el usuario, así que solo ve las suyas) y se las pasa a un modelo de lenguaje con la pregunta. Eso es RAG, y <a href="pci-rag-y-fine-tuning.html">RAG y fine-tuning</a> cuenta cuándo compensa y cuándo hay alternativas más simples.</p>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>pgvector en Supabase encaja cuando…</h4>
+              <ul>
+                <li>Los textos a buscar ya viven en tu base de datos</li>
+                <li>La búsqueda tiene que respetar permisos por usuario</li>
+                <li>Hablamos de miles a unos pocos millones de vectores</li>
+                <li>Quieres combinar significado con filtros SQL normales (por libreta, por fecha)</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Piénsalo antes si…</h4>
+              <ul>
+                <li>Son cientos de millones de vectores con mucho tráfico de búsqueda: el índice compite por memoria con tus consultas</li>
+                <li>Tus usuarios buscan códigos y términos exactos: la búsqueda de texto completo de Postgres basta</li>
+                <li>No tienes forma de evaluar si los resultados son buenos: mide antes de añadir complejidad</li>
+              </ul>
+            </div>
+          </div>
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>pgvector</code> añade el tipo <code>vector</code> y los operadores <code>&lt;=&gt;</code> (coseno), <code>&lt;#&gt;</code> (producto interior) y <code>&lt;-&gt;</code> (euclídea); la dimensión la fija el modelo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Todos los vectores de una columna vienen del mismo modelo; los embeddings se generan en una Edge Function, con <code>gte-small</code> integrado o una API externa.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La búsqueda es una función SQL <code>security invoker</code>: respeta RLS sin replicar permisos.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>HNSW es el índice por defecto; el operador del índice tiene que coincidir con el de la consulta.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Trigger, cola, Cron y Edge Function mantienen los embeddings al día sin frenar las escrituras.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La búsqueda híbrida combina texto completo y vectores con RRF.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="sb-realtime.html">
+              <small>← Anterior</small>
+              <b>Realtime: cambios, broadcast y presencia</b>
+            </a>
+            <a href="sb-extensiones-y-wrappers.html" class="next">
+              <small>Siguiente →</small>
+              <b>Extensiones, wrappers, GraphQL y Vault</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>

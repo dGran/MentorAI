@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+  <head>
+    <script>
+      (function () {
+        var stored = null;
+
+        try {
+          stored = localStorage.getItem("academia-theme");
+        } catch (error) {
+          stored = null;
+        }
+
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.setAttribute("data-theme", stored || (prefersDark ? "dark" : "light"));
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tu primer proyecto: el panel, las claves y la primera consulta — MentorAI</title>
+    <meta name="description" content="Crear un proyecto de Supabase sin errores de los que no se deshacen, recorrer el panel, entender las claves de API (publicable, secreta y las antiguas anon y service_role) y hacer la primera consulta desde JavaScript, curl y PHP." />
+    <link rel="stylesheet" href="../assets/css/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%236d6df7'/><stop offset='1' stop-color='%234b3fe4'/></linearGradient></defs><rect width='100' height='100' rx='26' fill='url(%23g)'/><path d='M28 72L28 30L50 56L72 30L72 72' fill='none' stroke='%23fff' stroke-width='9' stroke-linecap='round' stroke-linejoin='round'/></svg>"
+    />
+    <link rel="manifest" href="../manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MentorAI" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#f7f8fc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0c12" media="(prefers-color-scheme: dark)" />
+  </head>
+  <body>
+    <div class="reading-progress"></div>
+
+    <header class="nav">
+      <div class="container nav__inner">
+        <a href="../index.html" class="brand">
+          <span class="brand__mark"><svg class="brand__logo" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6d6df7"/><stop offset="1" stop-color="#4b3fe4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#brandGrad)"/><path d="M28 72L28 30L50 56L72 30L72 72" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          MentorAI
+        </a>
+        <nav class="nav__actions">
+          <a href="../index.html" class="nav__link">Inicio</a>
+          <a href="../rutas.html" class="nav__link">Rutas</a>
+          <a href="../cursos.html" class="nav__link">Cursos</a>
+          <a href="../articulos.html" class="nav__link">Artículos</a>
+          <button class="icon-btn theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+            <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+    <section class="tutorial-hero">
+      <div class="container">
+        <nav class="breadcrumb">
+          <a href="../index.html">Inicio</a>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          <span>Supabase</span>
+        </nav>
+        <h1 class="tutorial-hero__title">Tu primer proyecto: el panel, las claves y la primera consulta</h1>
+        <p class="tutorial-hero__lead">
+          En diez minutos tienes una base de datos en la nube con API, login y ficheros. Lo que cuesta no es crearla: es elegir bien las dos o tres cosas que luego no se cambian, y entender qué clave va en cada sitio antes de publicar ninguna.
+        </p>
+        <div class="tutorial-meta">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            14 min de lectura
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Nivel Principiante
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            Supabase
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="tutorial-layout">
+        <aside class="toc">
+          <p class="toc__title">En esta página</p>
+          <ul class="toc__list">
+            <li><a href="#crear">Crear el proyecto: lo que no se cambia después</a></li>
+            <li><a href="#panel">Un paseo por el panel (Studio)</a></li>
+            <li><a href="#primera-tabla">La primera tabla</a></li>
+            <li><a href="#claves">Las claves: cuál va en cada sitio</a></li>
+            <li><a href="#consultar">La primera consulta desde fuera</a></li>
+            <li><a href="#otros-lenguajes">Desde otros lenguajes: HTTP o Postgres directo</a></li>
+            <li><a href="#errores">Errores típicos del primer día</a></li>
+            <li><a href="#cuando">Cuándo aplicarlo</a></li>
+            <li><a href="#resumen">Resumen</a></li>
+          </ul>
+        </aside>
+
+        <article class="prose">
+          <p class="lead">En <a href="sb-que-es-supabase.html">la lección anterior</a> viste que Supabase es Postgres con servicios alrededor. Ahora lo tocas: creas el proyecto, das una vuelta por el panel, creas la primera tabla de la app de notas y la consultas desde fuera.</p>
+          <h2 id="crear">
+            Crear el proyecto: lo que no se cambia después
+            <a href="#crear" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Te registras en supabase.com (con GitHub o con email) y creas una <strong>organización</strong>, que es la unidad de facturación: el plan se paga por organización y dentro caben varios proyectos. Al crear un proyecto te pide cuatro cosas:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Campo</th><th>Qué es</th><th>Lo que importa</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Nombre</td><td>Solo una etiqueta</td><td>Se cambia cuando quieras</td></tr>
+                <tr><td>Contraseña de la base de datos</td><td>La del usuario <code>postgres</code></td><td>Guárdala en tu gestor de contraseñas: la necesitarás para conectar con <code>psql</code>, PDO o la CLI. Se puede resetear, pero rompe lo que la use</td></tr>
+                <tr><td>Región</td><td>Dónde vive físicamente la base de datos</td><td><strong>No se cambia</strong> sin migrar el proyecto. Elige la más cercana a tus usuarios (o a tu servidor, si lo hay)</td></tr>
+                <tr><td>Plan</td><td>Gratuito o de pago</td><td>Se cambia cuando quieras</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>Tras un par de minutos de aprovisionamiento, el proyecto tiene un identificador corto, el <strong>project ref</strong> (algo como <code>abcdefghijklmnop</code>), que aparece en todas las URLs: <code>https://abcdefghijklmnop.supabase.co</code>.</p>
+          <div class="callout callout--tip">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Región y latencia</p>
+              <p>Cada consulta viaja de tu usuario a la región de la base de datos y vuelve. Con la base de datos en Fráncfort y usuarios en España son unos 30-40 ms por ida y vuelta; con la base de datos en Virginia, más de 100. Una pantalla que hace cinco consultas seguidas multiplica esa diferencia.</p>
+            </div>
+          </div>
+          <h2 id="panel">
+            Un paseo por el panel (Studio)
+            <a href="#panel" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>El panel tiene muchas secciones, pero en el día a día usarás estas:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Sección</th><th>Para qué</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Table Editor</strong></td><td>Ver y editar filas como en una hoja de cálculo. Cómodo para mirar; peligroso para cambiar el esquema en producción</td></tr>
+                <tr><td><strong>SQL Editor</strong></td><td>Escribir y guardar consultas SQL. Puede ejecutar como otro rol para probar permisos</td></tr>
+                <tr><td><strong>Database</strong></td><td>Esquemas, tablas, funciones, triggers, extensiones, índices, roles y backups</td></tr>
+                <tr><td><strong>Authentication</strong></td><td>Usuarios, proveedores de login, plantillas de email, URLs de redirección y hooks</td></tr>
+                <tr><td><strong>Storage</strong></td><td>Buckets y ficheros, con sus políticas</td></tr>
+                <tr><td><strong>Edge Functions</strong></td><td>Las funciones desplegadas, sus logs y sus secretos</td></tr>
+                <tr><td><strong>Integrations</strong></td><td>Cron, Queues, Vault, Wrappers, GraphQL y webhooks de base de datos</td></tr>
+                <tr><td><strong>Advisors</strong></td><td>Avisos automáticos de seguridad y rendimiento: tablas sin RLS, índices que faltan…</td></tr>
+                <tr><td><strong>Logs</strong></td><td>Las peticiones a cada servicio y los logs de Postgres</td></tr>
+                <tr><td><strong>Project Settings</strong></td><td>Claves de API, cadenas de conexión, dominios y facturación</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">El Table Editor no deja rastro</p>
+              <p>Cada cambio de esquema hecho con clics (una columna nueva, un tipo cambiado) es un cambio que no está en ningún fichero. Funciona para trastear, pero en cuanto haya un segundo entorno o una segunda persona, el esquema tiene que vivir en migraciones versionadas. Es justo lo que cuenta <a href="sb-cli-y-migraciones.html">la lección de la CLI</a>.</p>
+            </div>
+          </div>
+          <h2 id="primera-tabla">
+            La primera tabla
+            <a href="#primera-tabla" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Abre el <strong>SQL Editor</strong> y crea la tabla de notas. Escribirla en SQL en vez de con clics tiene una ventaja inmediata: este mismo texto será tu primera migración.</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">sql · notas.sql</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="sql">create table public.notes (
+  id bigint generated always as identity primary key,
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  title text not null check (char_length(title) between 1 and 200),
+  body text not null default '',
+  created_at timestamptz not null default now()
+);
+
+alter table public.notes enable row level security;
+
+create policy "Cada usuario ve sus notas"
+on public.notes for select
+to authenticated
+using ((select auth.uid()) = user_id);</code></pre>
+          </div>
+          <p>Fíjate en tres detalles que irán apareciendo durante todo el curso:</p>
+          <ul>
+            <li><code>auth.users</code> es la tabla donde Auth guarda los usuarios. Tu tabla la referencia con una clave foránea, así que al borrar un usuario se borran sus notas.</li>
+            <li><code>auth.uid()</code> es una función que devuelve el id del usuario que hace la petición, sacado de su token. Como <code>default</code>, rellena el dueño de la nota sin que el cliente lo mande.</li>
+            <li><code>enable row level security</code> cierra la tabla y la política abre solo lo que dice. <a href="sb-rls.html">RLS a fondo</a> lo explica entero; por ahora basta con saber que sin esas líneas la tabla quedaría abierta.</li>
+          </ul>
+          <h2 id="claves">
+            Las claves: cuál va en cada sitio
+            <a href="#claves" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>En <strong>Project Settings → API Keys</strong> encuentras la URL del proyecto y las claves. Supabase está en plena transición de un sistema de claves a otro, así que verás dos familias:</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Clave</th><th>Formato</th><th>Rol en Postgres</th><th>Dónde puede ir</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Publicable</strong></td><td><code>sb_publishable_...</code></td><td><code>anon</code> sin sesión, <code>authenticated</code> con sesión</td><td>Navegador, app móvil, código público. Está pensada para verse</td></tr>
+                <tr><td><strong>Secreta</strong></td><td><code>sb_secret_...</code></td><td><code>service_role</code>, que <strong>se salta RLS</strong></td><td>Solo en servidores, Edge Functions y tareas programadas</td></tr>
+                <tr><td><code>anon</code> (antigua)</td><td>JWT larguísimo</td><td>Igual que la publicable</td><td>Igual que la publicable</td></tr>
+                <tr><td><code>service_role</code> (antigua)</td><td>JWT larguísimo</td><td>Igual que la secreta</td><td>Igual que la secreta</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>La regla que no se rompe nunca: <strong>la clave secreta no sale de un servidor</strong>. Quien la tenga puede leer y borrar cualquier fila de cualquier tabla, porque el rol <code>service_role</code> ignora todas las políticas. Supabase incluso rechaza con un 401 las peticiones con clave secreta que vienen de un navegador, pero eso no protege una clave filtrada: con <code>curl</code> funciona igual. Si se filtra, se rota.</p>
+          <div class="callout callout--info">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Por qué hay claves nuevas</p>
+              <p>Las antiguas <code>anon</code> y <code>service_role</code> eran JWT firmados con el mismo secreto que los tokens de usuario y con una caducidad de años: rotarlas obligaba a invalidar todas las sesiones de golpe. Las nuevas son claves opacas e independientes: se pueden crear varias secretas (una por servicio), revocar una sola y rotar sin cortar a nadie. Supabase anunció la retirada de las antiguas para finales de 2026: si tu proyecto aún las usa, migra a las nuevas y desactiva las antiguas en el panel.</p>
+            </div>
+          </div>
+          <p>La clave publicable no es un secreto ni un mecanismo de seguridad. Identifica tu proyecto y pone a la petición el rol <code>anon</code>. Lo que protege tus datos es RLS, no esconder la clave.</p>
+          <h2 id="consultar">
+            La primera consulta desde fuera
+            <a href="#consultar" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>Desde una app JavaScript se usa la librería oficial <code>@supabase/supabase-js</code>:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · terminal</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">npm install @supabase/supabase-js</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">ts · supabase.ts</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code>import { createClient } from "@supabase/supabase-js";
+
+export const supabase = createClient(
+  "https://abcdefghijklmnop.supabase.co",
+  "sb_publishable_xxxxxxxxxxxxxxxx",
+);
+
+const { data, error } = await supabase
+  .from("notes")
+  .select("id, title, created_at")
+  .order("created_at", { ascending: false });
+
+if (error) throw error;
+console.log(data);</code></pre>
+          </div>
+          <p>La librería no lanza excepciones: devuelve siempre <code>{ data, error }</code>, y comprobar <code>error</code> es tu trabajo. Por debajo no hay magia, es una petición HTTP a la Data API que puedes repetir con <code>curl</code>:</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">bash · la misma consulta con curl</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="bash">curl "https://abcdefghijklmnop.supabase.co/rest/v1/notes?select=id,title,created_at&amp;order=created_at.desc" \
+  -H "apikey: sb_publishable_xxxxxxxxxxxxxxxx"</code></pre>
+          </div>
+          <div class="callout callout--warning">
+            <svg class="callout__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="callout__body">
+              <p class="callout__title">Un array vacío no es un error</p>
+              <p>Si ejecutas esa consulta sin haber iniciado sesión, la respuesta es <code>[]</code>, no un error de permisos. La petición entra como <code>anon</code>, la política solo deja ver filas a <code>authenticated</code>, así que Postgres filtra todas. Es el comportamiento correcto de RLS: una fila que no puedes ver, para ti, no existe. Y es también la causa número uno de «Supabase no me devuelve nada».</p>
+            </div>
+          </div>
+          <h2 id="otros-lenguajes">
+            Desde otros lenguajes: HTTP o Postgres directo
+            <a href="#otros-lenguajes" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <p>No necesitas una librería oficial. Hay dos caminos, y conviene saber qué implica cada uno:</p>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Por la Data API (HTTP)</h4>
+              <ul>
+                <li>Cualquier lenguaje con un cliente HTTP</li>
+                <li>Mandas la clave publicable y, si hay usuario, su token</li>
+                <li><strong>RLS se aplica</strong>: ves lo que ese usuario puede ver</li>
+                <li>Lo natural para apps y para un backend que actúa en nombre del usuario</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Por conexión directa a Postgres</h4>
+              <ul>
+                <li>PDO, <code>psql</code>, un ORM, una herramienta de BI</li>
+                <li>Te conectas con un usuario de base de datos (por defecto <code>postgres</code>)</li>
+                <li><strong>RLS no te filtra</strong>: <code>postgres</code> es el dueño de las tablas</li>
+                <li>Lo natural para migraciones, tareas internas y backends de confianza</li>
+              </ul>
+            </div>
+          </div>
+          <p>La cadena de conexión está en el botón <strong>Connect</strong> del panel. Para un script PHP que corre en un servidor, la conexión pasa por el pooler de conexiones (lo explica <a href="sb-produccion.html">la lección de producción</a>):</p>
+          <div class="code-block">
+            <div class="code-block__head">
+              <span class="code-block__lang">php · notas.php</span>
+              <button class="copy-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span class="copy-btn__label">Copiar</span>
+              </button>
+            </div>
+            <pre><code data-lang="php">&lt;?php
+
+declare(strict_types=1);
+
+$pdo = new PDO(
+    'pgsql:host=aws-0-eu-central-1.pooler.supabase.com;port=5432;dbname=postgres;sslmode=require',
+    'postgres.abcdefghijklmnop',
+    getenv('SUPABASE_DB_PASSWORD'),
+    [PDO::ATTR_ERRMODE =&gt; PDO::ERRMODE_EXCEPTION],
+);
+
+$notes = $pdo-&gt;query('select id, title from public.notes order by created_at desc limit 10')-&gt;fetchAll();</code></pre>
+          </div>
+          <p>Fíjate en el usuario <code>postgres.abcdefghijklmnop</code>: el pooler es compartido entre muchos proyectos y usa el sufijo para saber a qué base de datos llevarte.</p>
+          <h2 id="errores">
+            Errores típicos del primer día
+            <a href="#errores" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <ul>
+            <li><strong>Poner la clave secreta en el frontend «para que funcione».</strong> Funciona porque se salta RLS, que es exactamente el problema. La solución es escribir la política que falta.</li>
+            <li><strong>Crear tablas sin RLS.</strong> El panel avisa en Advisors, y el aviso no bloquea nada: la tabla queda accesible para cualquiera con la clave publicable.</li>
+            <li><strong>No guardar la contraseña de la base de datos.</strong> Se puede resetear, pero todo lo que conectaba con la anterior deja de funcionar.</li>
+            <li><strong>Elegir la región por defecto sin mirar.</strong> Moverla después exige migrar el proyecto.</li>
+            <li><strong>Olvidar que el plan gratuito se pausa.</strong> Un proyecto sin actividad durante una semana se pausa. Para una demo o un proyecto de clase está bien; para algo que usan personas, no.</li>
+          </ul>
+          <h2 id="cuando">
+            Cuándo aplicarlo
+            <a href="#cuando" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="compare">
+            <div class="compare__col compare__col--good">
+              <h4>Con lo de esta lección te basta para…</h4>
+              <ul>
+                <li>Prototipar una idea con datos reales y login en una tarde</li>
+                <li>Probar cómo responde la Data API a tus consultas</li>
+                <li>Conectar una herramienta de BI o un script de análisis a la base de datos</li>
+              </ul>
+            </div>
+            <div class="compare__col compare__col--bad">
+              <h4>Todavía no es suficiente si…</h4>
+              <ul>
+                <li>Hay más de un entorno (local, pruebas, producción): necesitas migraciones</li>
+                <li>Varias personas tocan el esquema: los clics en el panel no se revisan en un PR</li>
+                <li>Vas a publicar la app: antes, RLS en todas las tablas expuestas</li>
+              </ul>
+            </div>
+          </div>
+          <h2 id="resumen">
+            Resumen
+            <a href="#resumen" class="anchor" aria-hidden="true">#</a>
+          </h2>
+          <div class="keypoints">
+            <h3>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              Lo que te llevas
+            </h3>
+            <ul>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La región y la contraseña de la base de datos se eligen con cuidado al crear el proyecto: la primera no se cambia y la segunda la usarán tus conexiones directas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>El SQL Editor es mejor punto de partida que el Table Editor: el SQL se convierte en tu primera migración.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>La clave publicable (<code>sb_publishable_</code>) va en el cliente y entra con el rol <code>anon</code> o <code>authenticated</code>; la secreta (<code>sb_secret_</code>) se salta RLS y solo vive en servidores.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Las claves antiguas <code>anon</code> y <code>service_role</code> se retiran: los proyectos nuevos usan las nuevas.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span><code>supabase-js</code> devuelve <code>{ data, error }</code> sin lanzar excepciones, y un <code>[]</code> suele ser RLS filtrando, no un fallo.</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Por la Data API se aplica RLS; por conexión directa como <code>postgres</code>, no.</span>
+              </li>
+            </ul>
+          </div>
+
+          <nav class="tutorial-nav">
+            <a href="sb-que-es-supabase.html">
+              <small>← Anterior</small>
+              <b>Qué es Supabase: Postgres con todo lo de alrededor</b>
+            </a>
+            <a href="sb-cli-y-migraciones.html" class="next">
+              <small>Siguiente →</small>
+              <b>Desarrollo local con la CLI: migraciones, entornos y tipos</b>
+            </a>
+          </nav>
+        </article>
+      </div>
+    </div>
+
+    </main>
+
+    <footer class="footer">
+      <div class="container footer__inner">
+        <span><strong>MentorAI</strong> · Formación técnica iterada con IA</span>
+        <span>© <span data-year>2026</span> · Hecho para leer con gusto</span>
+      </div>
+    </footer>
+
+    <script src="../tutorials/manifest.js"></script>
+    <script src="../tutorials/courses.js"></script>
+    <script src="../tutorials/paths.js"></script>
+    <script src="../tutorials/quiz-summary.js"></script>
+
+    <script src="../assets/js/modules/core.js"></script>
+    <script src="../assets/js/modules/storage.js"></script>
+    <script src="../assets/js/modules/ui-text.js"></script>
+    <script src="../assets/js/modules/data-loader.js"></script>
+    <script src="../assets/js/modules/ui-undo.js"></script>
+    <script src="../assets/js/modules/ui-icons.js"></script>
+    <script src="../assets/js/modules/catalog-card.js"></script>
+    <script src="../assets/js/modules/catalog-filters.js"></script>
+    <script src="../assets/js/modules/catalog.js"></script>
+    <script src="../assets/js/modules/courses.js"></script>
+    <script src="../assets/js/modules/practica.js"></script>
+    <script src="../assets/js/modules/exams.js"></script>
+    <script src="../assets/js/modules/paths.js"></script>
+    <script src="../assets/js/modules/examen-ruta.js"></script>
+    <script src="../assets/js/modules/home.js"></script>
+    <script src="../assets/js/modules/search.js"></script>
+    <script src="../assets/js/modules/syntax.js"></script>
+    <script src="../assets/js/modules/tutorial-audio.js"></script>
+    <script src="../assets/js/modules/tutorial-nav.js"></script>
+    <script src="../assets/js/modules/tutorial-feedback.js"></script>
+    <script src="../assets/js/modules/tutorial.js"></script>
+    <script src="../assets/js/modules/highlights.js"></script>
+    <script src="../assets/js/modules/perfil.js"></script>
+    <script src="../assets/js/modules/sync.js"></script>
+    <script src="../assets/js/modules/checks.js"></script>
+    <script src="../assets/js/modules/repaso.js"></script>
+    <script src="../assets/js/modules/quiz.js"></script>
+    <script src="../assets/js/modules/offline.js"></script>
+    <script src="../assets/js/modules/init.js"></script>
+  </body>
+</html>
