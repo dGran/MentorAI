@@ -8,15 +8,15 @@ const vm = require("node:vm");
 
 const MODULES = path.join(__dirname, "..", "..", "assets", "js", "modules");
 const UI_TEXT_SOURCE = fs.readFileSync(path.join(MODULES, "ui-text.js"), "utf8");
-const HOME_SOURCE = fs.readFileSync(path.join(MODULES, "home.js"), "utf8");
+const SEARCH_ENGINE_SOURCE = fs.readFileSync(path.join(MODULES, "search-engine.js"), "utf8");
 
-function loadHome() {
+function loadSearchEngine() {
   const sandbox = { console, document: {} };
   sandbox.window = sandbox;
 
   vm.createContext(sandbox);
   vm.runInContext(UI_TEXT_SOURCE, sandbox);
-  vm.runInContext(HOME_SOURCE, sandbox);
+  vm.runInContext(SEARCH_ENGINE_SOURCE, sandbox);
 
   return sandbox.MentorAI;
 }
@@ -31,9 +31,9 @@ const TUTORIALS = [
 ];
 
 test("matches in the title come before matches elsewhere", () => {
-  const { Home, searchTerms } = loadHome();
+  const { SearchEngine, searchTerms } = loadSearchEngine();
 
-  assert.deepEqual(slugsOf(Home.byRelevance(TUTORIALS, searchTerms("indice"))), [
+  assert.deepEqual(slugsOf(SearchEngine.byRelevance(TUTORIALS, searchTerms("indice"))), [
     "indices-btree",
     "indices-compuestos",
     "webhooks",
@@ -42,21 +42,21 @@ test("matches in the title come before matches elsewhere", () => {
 });
 
 test("the title match ignores accents and case", () => {
-  const { Home, searchTerms } = loadHome();
+  const { SearchEngine, searchTerms } = loadSearchEngine();
 
-  const ranked = slugsOf(Home.byRelevance(TUTORIALS, searchTerms("ÍNDICES")));
+  const ranked = slugsOf(SearchEngine.byRelevance(TUTORIALS, searchTerms("ÍNDICES")));
 
   assert.deepEqual(ranked.slice(0, 2), ["indices-btree", "indices-compuestos"]);
 });
 
 test("without any title match the original order is kept", () => {
-  const { Home, searchTerms } = loadHome();
+  const { SearchEngine, searchTerms } = loadSearchEngine();
 
-  assert.deepEqual(slugsOf(Home.byRelevance(TUTORIALS, searchTerms("explain"))), slugsOf(TUTORIALS));
+  assert.deepEqual(slugsOf(SearchEngine.byRelevance(TUTORIALS, searchTerms("explain"))), slugsOf(TUTORIALS));
 });
 
 test("the query is split into words, ignoring empty words, order, accents and case", () => {
-  const { searchTerms } = loadHome();
+  const { searchTerms } = loadSearchEngine();
 
   assert.deepEqual(Array.from(searchTerms("Programar con la IA")), ["programar", "ia"]);
   assert.deepEqual(Array.from(searchTerms("ia programar")), ["ia", "programar"]);
@@ -64,7 +64,7 @@ test("the query is split into words, ignoring empty words, order, accents and ca
 });
 
 test("every word must start a word of the text, in any order", () => {
-  const { containsAllTerms, normalize, searchTerms } = loadHome();
+  const { containsAllTerms, normalize, searchTerms } = loadSearchEngine();
   const text = normalize("Programar con IA: el mapa del ecosistema");
 
   assert.equal(containsAllTerms(text, searchTerms("programar con la ia")), true);
@@ -76,7 +76,7 @@ test("every word must start a word of the text, in any order", () => {
 });
 
 test("symbols that are part of a term still match", () => {
-  const { containsAllTerms, normalize, searchTerms } = loadHome();
+  const { containsAllTerms, normalize, searchTerms } = loadSearchEngine();
 
   assert.equal(containsAllTerms(normalize("Plantillas en C++ modernas"), searchTerms("c++")), true);
 });

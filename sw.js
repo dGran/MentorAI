@@ -12,7 +12,7 @@
    navegadores que ya lo tienen cacheado se traigan lo nuevo.
    ============================================================ */
 
-var VERSION = "v103";
+var VERSION = "v104";
 var SHELL = "academia-shell-" + VERSION;
 var CACHE_PREFIX = "academia-";
 var CONTENT = "academia-content";
@@ -58,6 +58,7 @@ var SHELL_PATHS = [
   "assets/js/modules/perfil.js",
   "assets/js/modules/sync.js",
   "assets/js/modules/search.js",
+  "assets/js/modules/search-engine.js",
   "assets/js/modules/syntax.js",
   "assets/js/modules/tutorial-audio.js",
   "assets/js/modules/tutorial-nav.js",
