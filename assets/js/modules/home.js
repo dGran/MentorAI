@@ -241,8 +241,6 @@
     renderRoute(map);
   }
 
-  /* ---------- Buscador del inicio ---------- */
-
   const lessonCount = (course) => (course.lessons ?? (course.modules ?? []).flatMap((module) => module.lessons)).length;
 
   function collectionCardHtml(item, href, kind, detail) {

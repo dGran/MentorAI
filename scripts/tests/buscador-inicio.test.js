@@ -50,6 +50,19 @@ const TUTORIALS = [
     status: "published",
   },
   {
+    slug: "planes-de-ejecucion",
+    title: "Planes de ejecución",
+    description: "Cuándo el planificador usa un índice",
+    href: "tutorials/planes-de-ejecucion.html",
+    topic: "Bases de datos",
+    categories: ["bbdd"],
+    tags: ["Planificador"],
+    level: "Avanzado",
+    minutes: 11,
+    icon: "database",
+    status: "published",
+  },
+  {
     slug: "indices-btree",
     title: "Índices B-tree",
     description: "Por qué tu consulta es lenta",
@@ -191,6 +204,7 @@ const REFERENCE_QUERIES = [
     expected: [
       "rutas.html#ruta-construir-un-servicio",
       "tutorials/indices-btree.html",
+      "tutorials/planes-de-ejecucion.html",
       "tutorials/consultas-lentas.html",
       "tutorials/sb-rls.html",
     ],
@@ -216,11 +230,17 @@ for (const { query, expected } of REFERENCE_QUERIES) {
   });
 }
 
-test("collections come first, then metadata matches with titles first, then content matches", () => {
+test("collections come first, then metadata matches, then content matches", () => {
   const hrefs = search("postgres").hrefs;
 
   assert.equal(hrefs[0], "curso.html?slug=supabase");
   assert.deepEqual(hrefs.slice(2), ["tutorials/sec-autorizacion.html", "tutorials/docker-compose.html"]);
+});
+
+test("a title match comes before a description match even when it is later in the manifest", () => {
+  const hrefs = search("indice").hrefs;
+
+  assert.ok(hrefs.indexOf("tutorials/indices-btree.html") < hrefs.indexOf("tutorials/planes-de-ejecucion.html"));
 });
 
 test("unpublished tutorials never appear, not even through their content", () => {
