@@ -12,6 +12,10 @@ Lo cerrado vive en `archivo/`; si algo de aquí crece demasiado, se archiva.
 avisos**: el sesgo de las opciones (#25), el ancla de cada `h2` (#112) y la
 sección «Cuándo aplicarlo» en todo tutorial (#114) son ERROR.
 
+**Tanda en pausa: buscador global (#202 → #203).** #202 (extraer el motor de búsqueda a `search-engine.js`) está
+desplegado; #203 (la paleta de búsqueda en el header, con `Ctrl+K`) espera a que el usuario fije un límite de tiempo
+nuevo. Contrato, registro y cómo retomar: `.agents/notes/plan-tanda-2026-11-15.md` § Cómo retomar.
+
 **Artículo `strata-ia-local` (2026-11-15):** Strata (`Niko1221/Strata`), motor open source que ejecuta
 Qwen3.8-Flash-Next (MoE ~125B) en PC de consumo repartiendo expertos entre VRAM, RAM y SSD. Escrito contra la
 documentación del repo (v0.2.14); entra desde `pci-ia-local`. Avisa de que `mach10x/strata` es un fork congelado y

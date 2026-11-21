@@ -49,3 +49,27 @@ borrar algo no acordado; dos intentos seguidos con el mismo fallo sin evidencia 
   (`usage-brake.sh --clear`).
 - Review en subagente sin el contexto de implementación (tanda en solitario). El orquestador commitea,
   empuja y abre PR; los subagentes de review solo leen.
+
+## Registro
+
+| Issue | PR | Merge | Carril | Claridad | Vueltas de review | Bloqueantes | QA | Correcciones del usuario |
+|---|---|---|---|---|---|---|---|---|
+| #202 | #204 | d69ef33 (squash) | completo | clara | 2 (hallazgo «a confirmar» de cobertura → arreglado) | 0 | pasa | — |
+
+## Cómo retomar (pausada el 2026-11-16 por límite de tiempo)
+
+- **Hecho:** #202 desplegado (PR #204, `d69ef33`, Pages v104), en Done. Su handoff ya se borró.
+- **Siguiente:** #203 (paleta del buscador global), en Backlog, asignado a dGran, P2. Su bloqueante (#202) está
+  cerrado. Antes de tomarlo hay que pedir al usuario un **límite de tiempo nuevo**: el de este contrato venció.
+  Siguen valiendo el automerge y el freno de uso «ninguno» (§ 6).
+- **Estado fino:** `.agents/tasks/buscador-global/workflow.md` (gitignored, solo en esta máquina): ciclos 5/20.
+- **Esta note tiene cambios sin commitear en `main`** (el registro de #202 y esta sección): entran con el PR de #203.
+- **Para el cierre de la tanda:**
+  - Crear un issue (`fix`): `scripts/verificar-offline.js` crea su perfil de Chrome en `/tmp` y no limpia si falla
+    (deja un `http.server` vivo en el 8899 y el directorio del perfil), contra la regla de Chrome headless del
+    `CLAUDE.md`. Quedan `/tmp/mentorai-offline-AsI8f8` y `/tmp/mentorai-offline-NnWd44`, que el agente no tiene
+    permiso para borrar.
+  - Sumar las fichas del registro y archivar esta note en `archivo/` con el veredicto al principio.
+- **QA en esta máquina:** Playwright 1.62.1 en `~/pw-qa/node_modules` (`PLAYWRIGHT_ROOT`); para
+  `verificar-offline.js`, que llama a `google-chrome`, un alias en el PATH al Chromium de
+  `~/.cache/ms-playwright/chromium-1234/chrome-linux/chrome`.
